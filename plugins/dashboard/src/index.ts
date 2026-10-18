@@ -1,6 +1,8 @@
 import { bindingSchema, definePlugin, defineTool, specSchema, widgetSizeSchema, type HostServices, type Widget } from '@pku-harness/sdk';
 import { z } from 'zod';
 
+import { DashboardTab } from './ui/dashboard-tab';
+
 const view = (w: Widget) => ({ id: w.id, title: w.title, size: w.size, position: w.position, bindings: w.bindings, spec: w.spec });
 
 function checkBindings(services: HostServices, bindings: Record<string, z.infer<typeof bindingSchema>>) {
@@ -21,6 +23,10 @@ export const dashboardPlugin = definePlugin({
   icon: 'dashboard',
   core: true,
   scopes: [],
+  contributes: {
+    screens: { home: { title: '看板', component: DashboardTab } },
+    tabs: [{ slot: 'dashboard', screen: 'home' }],
+  },
   instructions: `用户想在看板上看到某些数字时，用 dashboard__upsertWidget 创建组件；修改时传入已有 id。
 - spec 与 ui__render 相同（同一套组件），但看板组件不要放按钮表单，重点是数字：通常一个 Card 或 Column 里放 Stat / ListItem / Progress。
 - 实时数据用 bindings：{ "/card": { tool: "campus-card.getBalance", path: "balance", ttlMinutes: 5 } }，然后在 props 里写 { "$state": "/card" }；文本可用 { "$template": "第 \${/today/semester/week} 周" }。

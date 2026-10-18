@@ -93,6 +93,8 @@ export interface HostServices {
     reorder(ids: string[]): Promise<void>;
     /** Resolve bindings now; returns the state the spec will see. */
     preview(widget: Widget): Promise<Record<string, unknown>>;
+    /** Resolve bindings through the TTL cache (`force` refetches). */
+    resolve(widget: Widget, force?: boolean): Promise<Record<string, unknown>>;
   };
   todos: {
     list(): Todo[];

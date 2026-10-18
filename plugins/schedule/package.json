@@ -1,0 +1,16 @@
+{
+  "name": "@pku-harness/plugin-schedule",
+  "version": "0.1.0",
+  "description": "Schedule tab UI: classes, to-dos, reminders and their forms",
+  "type": "module",
+  "main": "src/index.ts",
+  "license": "MIT",
+  "pkuHarness": {
+    "builtin": true
+  },
+  "peerDependencies": {
+    "@pku-harness/sdk": "*",
+    "react": ">=19",
+    "react-native": "*"
+  }
+}

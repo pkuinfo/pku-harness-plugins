@@ -6,6 +6,7 @@ import { deepseekPlugin } from './deepseek/src';
 import { memoryPlugin } from './memory/src';
 import { openAICompatiblePlugin } from './openai-compatible/src';
 import { pluginsPlugin } from './plugins/src';
+import { schedulePlugin } from './schedule/src';
 import { schedulerPlugin } from './scheduler/src';
 import { timetablePlugin } from './timetable/src';
 import { todoPlugin } from './todo/src';
@@ -21,6 +22,7 @@ export const builtinPlugins: PluginDef[] = [
   dashboardPlugin,
   schedulerPlugin,
   todoPlugin,
+  schedulePlugin,
   timetablePlugin,
   calendarPlugin,
   memoryPlugin,

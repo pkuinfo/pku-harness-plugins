@@ -85,6 +85,22 @@
       "verified": true
     },
     {
+      "id": "schedule",
+      "name": "日程",
+      "description": "日程页：今天的课、待办、提醒，以及课表周视图和相关表单。",
+      "author": "pkuinfo",
+      "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/schedule",
+      "kind": "builtin",
+      "icon": "schedule",
+      "requires": [],
+      "scopes": [],
+      "tags": [
+        "official",
+        "ui"
+      ],
+      "verified": true
+    },
+    {
       "id": "calendar",
       "name": "日期与校历",
       "description": "今天的日期、星期，以及当前是本学期第几周。",
