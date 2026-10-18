@@ -1,5 +1,6 @@
 import type { z } from 'zod';
 
+import type { CampusRequest, CampusResponse, CampusService, CampusStatus } from './campus';
 import type { Binding, Widget, WidgetSize } from './dashboard';
 import type { SpecCheck, UISpec } from './genui';
 import type { Action, Job, JobSource, Trigger } from './scheduler/types';
@@ -103,6 +104,11 @@ export interface HostServices {
     update(id: string, patch: Partial<TodoInput>, source: JobSource): Promise<Todo>;
     setDone(id: string, done: boolean): Promise<Todo>;
     remove(id: string): Promise<void>;
+  };
+  /** Signed-in campus services (requires the 'campus-session' capability). */
+  campus: {
+    status(): CampusStatus;
+    request(service: CampusService, req: CampusRequest): Promise<CampusResponse>;
   };
   timetable: {
     get(): { courses: Course[]; semester: Semester | null; reminderMinutes: number | null };

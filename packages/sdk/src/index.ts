@@ -1,3 +1,4 @@
+export * from './campus';
 export * from './dashboard';
 export * from './genui';
 export * from './plugin';

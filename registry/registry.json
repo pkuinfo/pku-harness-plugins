@@ -116,6 +116,48 @@
       "verified": true
     },
     {
+      "id": "campus-card",
+      "name": "校园卡",
+      "description": "查询校园卡余额和消费记录。",
+      "author": "pkuinfo",
+      "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/campus-card",
+      "kind": "builtin",
+      "icon": "card",
+      "requires": [
+        "campus-session",
+        "network"
+      ],
+      "scopes": [
+        "bdcard.pku.edu.cn"
+      ],
+      "tags": [
+        "official",
+        "campus"
+      ],
+      "verified": true
+    },
+    {
+      "id": "netfee",
+      "name": "网费",
+      "description": "查询校园网账户余额和本月用量。",
+      "author": "pkuinfo",
+      "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/netfee",
+      "kind": "builtin",
+      "icon": "wifi",
+      "requires": [
+        "campus-session",
+        "network"
+      ],
+      "scopes": [
+        "its.pku.edu.cn"
+      ],
+      "tags": [
+        "official",
+        "campus"
+      ],
+      "verified": true
+    },
+    {
       "id": "memory",
       "name": "AI 记忆",
       "description": "记住你的偏好、习惯和长期信息，让 AI 越用越懂你。只保存在本机，可随时查看和删除。",

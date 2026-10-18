@@ -1,0 +1,15 @@
+{
+  "name": "@pku-harness/plugin-campus-card",
+  "version": "0.1.0",
+  "description": "Campus card balance and transactions",
+  "type": "module",
+  "main": "src/index.ts",
+  "license": "MIT",
+  "pkuHarness": {
+    "builtin": true
+  },
+  "peerDependencies": {
+    "@pku-harness/sdk": "*",
+    "zod": "^4.0.0"
+  }
+}

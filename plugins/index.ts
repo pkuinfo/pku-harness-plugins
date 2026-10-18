@@ -1,9 +1,11 @@
 import type { PluginDef } from '@pku-harness/sdk';
 
 import { calendarPlugin } from './calendar/src';
+import { campusCardPlugin } from './campus-card/src';
 import { dashboardPlugin } from './dashboard/src';
 import { deepseekPlugin } from './deepseek/src';
 import { memoryPlugin } from './memory/src';
+import { netfeePlugin } from './netfee/src';
 import { openAICompatiblePlugin } from './openai-compatible/src';
 import { pluginsPlugin } from './plugins/src';
 import { schedulePlugin } from './schedule/src';
@@ -25,6 +27,8 @@ export const builtinPlugins: PluginDef[] = [
   schedulePlugin,
   timetablePlugin,
   calendarPlugin,
+  campusCardPlugin,
+  netfeePlugin,
   memoryPlugin,
   pluginsPlugin,
   deepseekPlugin,

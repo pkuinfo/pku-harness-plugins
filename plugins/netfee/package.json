@@ -1,0 +1,15 @@
+{
+  "name": "@pku-harness/plugin-netfee",
+  "version": "0.1.0",
+  "description": "Campus network fee balance and usage",
+  "type": "module",
+  "main": "src/index.ts",
+  "license": "MIT",
+  "pkuHarness": {
+    "builtin": true
+  },
+  "peerDependencies": {
+    "@pku-harness/sdk": "*",
+    "zod": "^4.0.0"
+  }
+}
