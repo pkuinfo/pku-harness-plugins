@@ -48,5 +48,8 @@ Add an entry to `registry/registry.json`:
 }
 ```
 
+Use the registry `id` as your MCP server `name` (`new McpServer({ name: 'my-plugin', … })`): the app
+installs remote plugins as `mcp-<server name>` and uses that to show them as installed.
+
 Run `bun scripts/validate-registry.ts`, then open a pull request. Maintainers review new
 entries and mark them `verified` after checking the source.
