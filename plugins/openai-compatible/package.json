@@ -1,0 +1,16 @@
+{
+  "name": "@pku-harness/plugin-openai-compatible",
+  "version": "0.2.0",
+  "description": "Any OpenAI-compatible model provider",
+  "type": "module",
+  "main": "src/index.ts",
+  "license": "MIT",
+  "pkuHarness": {
+    "builtin": true
+  },
+  "peerDependencies": {
+    "@pku-harness/sdk": "*",
+    "zod": "^4.0.0",
+    "@ai-sdk/openai-compatible": "^3.0.0"
+  }
+}

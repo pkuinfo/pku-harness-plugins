@@ -1,0 +1,15 @@
+{
+  "name": "@pku-harness/plugin-plugins",
+  "version": "0.2.0",
+  "description": "Plugin management and remote (MCP) installs",
+  "type": "module",
+  "main": "src/index.ts",
+  "license": "MIT",
+  "pkuHarness": {
+    "builtin": true
+  },
+  "peerDependencies": {
+    "@pku-harness/sdk": "*",
+    "zod": "^4.0.0"
+  }
+}

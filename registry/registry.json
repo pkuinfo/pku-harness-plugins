@@ -1,0 +1,175 @@
+{
+  "version": 1,
+  "updatedAt": "2026-10-18",
+  "plugins": [
+    {
+      "id": "ui",
+      "name": "界面生成",
+      "description": "让 AI 在对话里生成原生界面：表单、选择器、数据卡片。",
+      "author": "pkuinfo",
+      "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/ui",
+      "kind": "builtin",
+      "icon": "sparkles",
+      "requires": [],
+      "scopes": [],
+      "tags": [
+        "official"
+      ],
+      "verified": true
+    },
+    {
+      "id": "dashboard",
+      "name": "看板",
+      "description": "由 AI 搭建、可随时修改的数据看板。",
+      "author": "pkuinfo",
+      "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/dashboard",
+      "kind": "builtin",
+      "icon": "dashboard",
+      "requires": [],
+      "scopes": [],
+      "tags": [
+        "official"
+      ],
+      "verified": true
+    },
+    {
+      "id": "scheduler",
+      "name": "提醒与定时任务",
+      "description": "准时的本地提醒，以及定期检查数据并在满足条件时通知。",
+      "author": "pkuinfo",
+      "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/scheduler",
+      "kind": "builtin",
+      "icon": "alarm",
+      "requires": [
+        "notifications",
+        "background"
+      ],
+      "scopes": [],
+      "tags": [
+        "official"
+      ],
+      "verified": true
+    },
+    {
+      "id": "todo",
+      "name": "待办",
+      "description": "待办事项，可设截止时间和准时提醒。",
+      "author": "pkuinfo",
+      "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/todo",
+      "kind": "builtin",
+      "icon": "todo",
+      "requires": [
+        "notifications"
+      ],
+      "scopes": [],
+      "tags": [
+        "official"
+      ],
+      "verified": true
+    },
+    {
+      "id": "timetable",
+      "name": "课表",
+      "description": "课程表、今天的课和上课提醒。",
+      "author": "pkuinfo",
+      "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/timetable",
+      "kind": "builtin",
+      "icon": "book",
+      "requires": [
+        "notifications"
+      ],
+      "scopes": [],
+      "tags": [
+        "official"
+      ],
+      "verified": true
+    },
+    {
+      "id": "calendar",
+      "name": "日期与校历",
+      "description": "今天的日期、星期，以及当前是本学期第几周。",
+      "author": "pkuinfo",
+      "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/calendar",
+      "kind": "builtin",
+      "icon": "schedule",
+      "requires": [],
+      "scopes": [],
+      "tags": [
+        "official"
+      ],
+      "verified": true
+    },
+    {
+      "id": "plugins",
+      "name": "插件管理",
+      "description": "查看已安装的插件，安装或移除远程（MCP）插件。",
+      "author": "pkuinfo",
+      "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/plugins",
+      "kind": "builtin",
+      "icon": "puzzle",
+      "requires": [
+        "network"
+      ],
+      "scopes": [],
+      "tags": [
+        "official"
+      ],
+      "verified": true
+    },
+    {
+      "id": "deepseek",
+      "name": "DeepSeek",
+      "description": "DeepSeek 官方 API（默认 AI 服务）。",
+      "author": "pkuinfo",
+      "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/deepseek",
+      "kind": "builtin",
+      "icon": "sparkles",
+      "requires": [
+        "network"
+      ],
+      "scopes": [],
+      "tags": [
+        "official"
+      ],
+      "verified": true
+    },
+    {
+      "id": "openai-compatible",
+      "name": "OpenAI 兼容服务",
+      "description": "接入任意兼容 OpenAI Chat Completions 接口的模型服务。",
+      "author": "pkuinfo",
+      "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/openai-compatible",
+      "kind": "builtin",
+      "icon": "server",
+      "requires": [
+        "network"
+      ],
+      "scopes": [],
+      "tags": [
+        "official"
+      ],
+      "verified": true
+    },
+    {
+      "id": "demo-canteen",
+      "name": "食堂菜单（演示）",
+      "description": "示例远程插件：模拟的食堂菜单与座位预约，演示如何用 MCP 写一个插件。",
+      "author": "pkuinfo",
+      "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/examples/demo-canteen",
+      "kind": "remote",
+      "endpoint": null,
+      "auth": "bearer",
+      "icon": "globe",
+      "requires": [
+        "network"
+      ],
+      "scopes": [
+        "自行部署的服务器"
+      ],
+      "tags": [
+        "example"
+      ],
+      "verified": true
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "name": "@pku-harness/plugin-todo",
+  "version": "0.2.0",
+  "description": "To-dos with reminders",
+  "type": "module",
+  "main": "src/index.ts",
+  "license": "MIT",
+  "pkuHarness": {
+    "builtin": true
+  },
+  "peerDependencies": {
+    "@pku-harness/sdk": "*",
+    "zod": "^4.0.0"
+  }
+}

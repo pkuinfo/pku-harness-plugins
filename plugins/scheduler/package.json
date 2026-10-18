@@ -1,0 +1,15 @@
+{
+  "name": "@pku-harness/plugin-scheduler",
+  "version": "0.2.0",
+  "description": "Exact reminders and scheduled checks",
+  "type": "module",
+  "main": "src/index.ts",
+  "license": "MIT",
+  "pkuHarness": {
+    "builtin": true
+  },
+  "peerDependencies": {
+    "@pku-harness/sdk": "*",
+    "zod": "^4.0.0"
+  }
+}
