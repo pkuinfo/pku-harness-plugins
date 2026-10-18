@@ -3,6 +3,7 @@ import type { PluginDef } from '@pku-harness/sdk';
 import { calendarPlugin } from './calendar/src';
 import { dashboardPlugin } from './dashboard/src';
 import { deepseekPlugin } from './deepseek/src';
+import { memoryPlugin } from './memory/src';
 import { openAICompatiblePlugin } from './openai-compatible/src';
 import { pluginsPlugin } from './plugins/src';
 import { schedulerPlugin } from './scheduler/src';
@@ -22,6 +23,7 @@ export const builtinPlugins: PluginDef[] = [
   todoPlugin,
   timetablePlugin,
   calendarPlugin,
+  memoryPlugin,
   pluginsPlugin,
   deepseekPlugin,
   openAICompatiblePlugin,

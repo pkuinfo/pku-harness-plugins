@@ -199,6 +199,19 @@ export interface PluginDef {
   providers?: Record<string, ProviderDef>;
   /** Extra guidance appended to the agent's system prompt. */
   instructions?: Dynamic<string>;
+  /**
+   * Request context (as in DeepSeek Harness's context plugins): called before each agent turn
+   * with the user's message; returned text is shown to the model for that turn, marked as data.
+   * Keep it short and relevant — it costs tokens on every request.
+   */
+  context?: (input: ContextInput) => Promise<string | undefined>;
+}
+
+export interface ContextInput {
+  /** The user's latest message. */
+  query: string;
+  kv: KV;
+  services: HostServices;
 }
 
 export function definePlugin(def: PluginDef): PluginDef {

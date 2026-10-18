@@ -55,6 +55,14 @@
         "zod": "^4.0.0",
       },
     },
+    "plugins/memory": {
+      "name": "@pku-harness/plugin-memory",
+      "version": "0.1.0",
+      "peerDependencies": {
+        "@pku-harness/sdk": "*",
+        "zod": "^4.0.0",
+      },
+    },
     "plugins/openai-compatible": {
       "name": "@pku-harness/plugin-openai-compatible",
       "version": "0.2.0",
@@ -132,6 +140,8 @@
     "@pku-harness/plugin-dashboard": ["@pku-harness/plugin-dashboard@workspace:plugins/dashboard"],
 
     "@pku-harness/plugin-deepseek": ["@pku-harness/plugin-deepseek@workspace:plugins/deepseek"],
+
+    "@pku-harness/plugin-memory": ["@pku-harness/plugin-memory@workspace:plugins/memory"],
 
     "@pku-harness/plugin-openai-compatible": ["@pku-harness/plugin-openai-compatible@workspace:plugins/openai-compatible"],
 

@@ -100,6 +100,21 @@
       "verified": true
     },
     {
+      "id": "memory",
+      "name": "AI 记忆",
+      "description": "记住你的偏好、习惯和长期信息，让 AI 越用越懂你。只保存在本机，可随时查看和删除。",
+      "author": "pkuinfo",
+      "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/memory",
+      "kind": "builtin",
+      "icon": "sparkles",
+      "requires": [],
+      "scopes": [],
+      "tags": [
+        "official"
+      ],
+      "verified": true
+    },
+    {
       "id": "plugins",
       "name": "插件管理",
       "description": "查看已安装的插件，安装或移除远程（MCP）插件。",
