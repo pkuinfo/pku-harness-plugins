@@ -12,6 +12,7 @@ and the ones the community runs — plus the SDK and the marketplace registry.
 | `registry/registry.json` | The marketplace index the app's 插件市场 reads (built-in and remote plugins side by side) |
 | `templates/remote-plugin` | Starting point for a remote plugin (MCP over Streamable HTTP) |
 | `examples/demo-canteen` | A working remote plugin with mock data |
+| `examples/mock-llm` | Scripted OpenAI-compatible model server for testing the agent loop without a key |
 
 ## Two kinds of plugin, one contract
 
