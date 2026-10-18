@@ -5,6 +5,7 @@ import type { SpecCheck, UISpec } from './genui';
 import type { Action, Job, JobSource, Trigger } from './scheduler/types';
 import type { Course, Semester } from './timetable';
 import type { Todo, TodoInput } from './todo';
+import type { Contributions } from './ui';
 
 /**
  * The plugin contract of PKU Harness. The app is only a harness: it runs plugins, gives them
@@ -205,6 +206,8 @@ export interface PluginDef {
    * Keep it short and relevant — it costs tokens on every request.
    */
   context?: (input: ContextInput) => Promise<string | undefined>;
+  /** UI the plugin adds to the harness (screens, Settings rows), built from `HostUI`. */
+  contributes?: Contributions;
 }
 
 export interface ContextInput {

@@ -14,5 +14,5 @@
       "@pku-harness/sdk/*": ["./packages/sdk/src/*"]
     }
   },
-  "include": ["packages/*/src/**/*.ts", "plugins/*/src/**/*.ts", "plugins/index.ts", "scripts/**/*.ts", "registry/**/*.ts"]
+  "include": ["packages/*/src/**/*.ts", "plugins/*/src/**/*.ts", "plugins/*/src/**/*.tsx", "plugins/index.ts", "scripts/**/*.ts", "registry/**/*.ts"]
 }

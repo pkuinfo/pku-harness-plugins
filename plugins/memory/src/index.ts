@@ -2,6 +2,7 @@ import { definePlugin, defineTool, type KV } from '@pku-harness/sdk';
 import { z } from 'zod';
 
 import { findDuplicate, score, selectForContext, type Memory, type MemoryKind } from './rank';
+import { MemoryScreen } from './screen';
 
 /**
  * Long-term memory about the student: preferences, routines, facts, people. Stored on the
@@ -26,7 +27,7 @@ export const memoryPlugin = definePlugin({
   id: 'memory',
   name: 'AI 记忆',
   description: '记住你的偏好、习惯和长期信息，让 AI 越用越懂你。只保存在本机，可随时查看和删除。',
-  version: '0.1.0',
+  version: '0.2.0',
   icon: 'sparkles',
   core: true,
   scopes: [],
@@ -34,6 +35,10 @@ export const memoryPlugin = definePlugin({
 - 不要记密码、验证码、API Key、一次性的事情或别人的隐私。
 - 记忆和用户说的话冲突时，以用户最新说的为准，并用 memory__remember 更新（会自动合并相近的条目）。
 - 用户要求忘记时用 memory__forget。`,
+  contributes: {
+    screens: { memory: { title: 'AI 记忆', component: MemoryScreen } },
+    settings: [{ screen: 'memory', title: 'AI 记忆', subtitle: '它记住了关于你的什么', icon: 'bolt' }],
+  },
   context: async ({ query, kv }) => {
     const items = await load(kv);
     if (!items.length) return undefined;

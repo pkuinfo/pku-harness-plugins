@@ -27,6 +27,14 @@ A phone is not a workstation: no shell, no filesystem, limited background time, 
 hosts answer only on the campus network. Plugins declare `requires` (see `Capability` in the
 SDK); the app hides what the device can't run. Anything heavier belongs in a remote plugin.
 
+## Plugin UI
+
+Plugins can contribute screens and Settings rows (`contributes` in `PluginDef`). Screens get
+`HostUI` — the harness's components (native controls, tokens, motion), haptics and navigation —
+plus `services`, their own `kv` and `invoke(tool, input)`. They never import app code, so a
+plugin's UI looks native to the app and keeps working as the harness evolves. See
+`plugins/memory/src/screen.tsx`.
+
 ## Develop
 
 ```bash
