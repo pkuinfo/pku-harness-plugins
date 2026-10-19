@@ -3,7 +3,8 @@ import { z } from 'zod';
 
 import { BalanceWidget } from './widget';
 
-import { INCOME_ICONS, unwrap, yuan, type CardInfo, type Turnover } from './api';
+import { cardMode, INCOME_ICONS, setDigitalCard, unwrap, yuan, type CardInfo, type Turnover } from './api';
+import { PayScreen } from './pay';
 
 /** Campus card: balance and transactions (pkucli crates/campuscard). Read-only for now. */
 export const campusCardPlugin = definePlugin({
@@ -15,6 +16,8 @@ export const campusCardPlugin = definePlugin({
   requires: ['campus-session', 'network'],
   scopes: ['bdcard.pku.edu.cn', 'portal.pku.edu.cn（登录）'],
   contributes: {
+    screens: { pay: { title: '付款码', component: PayScreen, presentation: 'modal' } },
+    settings: [{ screen: 'pay', title: '校园卡付款码', subtitle: '食堂、超市扫码付款', icon: 'qr' }],
     widgets: {
       balance: {
         title: '校园卡余额',
@@ -26,7 +29,7 @@ export const campusCardPlugin = definePlugin({
       },
     },
   },
-  instructions: '校园卡金额单位是元。用户问余额用 campus-card__getBalance；问最近花了多少、在哪消费用 campus-card__listTransactions。',
+  instructions: '校园卡金额单位是元。用户问余额用 campus-card__getBalance；问最近花了多少、在哪消费用 campus-card__listTransactions。付款码不经过你：让用户点看板校园卡组件上的「付款码」，或在 设置 →「校园卡付款码」打开。',
   dataSources: {
     balance: { title: '校园卡余额', tool: 'getBalance', ttlMs: 5 * 60_000 },
   },
@@ -49,6 +52,18 @@ export const campusCardPlugin = definePlugin({
           dailyLimit: yuan(acc?.daycostlimit),
           expires: card.expdate ?? null,
         };
+      },
+    }),
+    setDigitalCard: defineTool({
+      title: '切换到数字卡',
+      description: 'Switch the card\'s 用卡方式 to 数字卡, which the payment code needs. Physical card / phone NFC may stop working until switched back. Only when the user asks.',
+      input: z.object({}),
+      effect: 'write',
+      execute: async (_input, ctx) => {
+        const before = await cardMode(ctx.services);
+        if (before.digital) return { changed: false, mode: before.name };
+        await setDigitalCard(ctx.services);
+        return { changed: true, from: before.name, mode: '数字卡' };
       },
     }),
     listTransactions: defineTool({

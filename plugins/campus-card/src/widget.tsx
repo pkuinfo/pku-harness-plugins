@@ -66,9 +66,12 @@ function Live({ host, size, config }: PluginWidgetProps) {
           {b.dailyLimit ? ` / 限额 ¥${b.dailyLimit.toFixed(0)}` : ''}
         </Text>
       ) : null}
-      <Text variant="micro" tone={data.error ? 'warn' : 'faint'}>
-        {data.fetching ? '刷新中…' : `${data.error ? '刷新失败 · ' : ''}${data.updatedAt ? host.formatAgo(data.updatedAt, now.getTime()) : ''}`}
-      </Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: t.spacing.sm }}>
+        <Text variant="micro" tone={data.error ? 'warn' : 'faint'} style={{ flex: 1 }}>
+          {data.fetching ? '刷新中…' : `${data.error ? '刷新失败 · ' : ''}${data.updatedAt ? host.formatAgo(data.updatedAt, now.getTime()) : ''}`}
+        </Text>
+        {size !== 'sm' ? <Button title="付款码" size="sm" icon="qr" onPress={() => host.navigate('/m/campus-card/pay')} /> : null}
+      </View>
     </View>
   );
 }

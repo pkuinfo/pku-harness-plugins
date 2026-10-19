@@ -53,6 +53,8 @@ export interface HostComponents {
   SortableList: ComponentType<{ ids: string[]; rowHeight: number; onReorder: (ids: string[]) => void; renderRow: (id: string, handle: ReactNode) => ReactNode }>;
   /** Mount a plugin-contributed dashboard widget (error-isolated; shows a notice if the plugin is off). */
   PluginWidget: ComponentType<{ source: { plugin: string; widget: string; config?: Record<string, unknown> }; size: WidgetSize }>;
+  /** Scannable QR code (dark on white in every theme). */
+  QRCode: ComponentType<{ value: string; size?: number; ecl?: 'L' | 'M' | 'Q' | 'H' }>;
 }
 
 /**
@@ -118,6 +120,8 @@ export interface HostUI {
   refreshAll(): Promise<void>;
   /** "刚刚" / "3 分钟前" / "昨天 08:00" for a past timestamp. */
   formatAgo(ms: number, now?: number): string;
+  /** While the calling screen is mounted: block screenshots/recording; `brightness` raises it for scanners. */
+  useSecureDisplay(opts?: { brightness?: boolean }): void;
 }
 
 export interface PluginScreenProps {
