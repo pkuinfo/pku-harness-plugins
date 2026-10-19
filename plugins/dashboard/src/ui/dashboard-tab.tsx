@@ -2,6 +2,7 @@ import type { PluginScreenProps, Widget, WidgetSize } from '@pku-harness/sdk';
 import { useState } from 'react';
 import { RefreshControl, StyleSheet, View } from 'react-native';
 
+import { Greeting } from './greeting';
 import { WidgetCard } from './widget-card';
 
 const IDEAS = ['把校园卡余额放到看板最上面', '加一个显示本学期第几周的卡片', '显示我接下来的三个提醒'];
@@ -65,6 +66,7 @@ export function DashboardTab({ host, services }: PluginScreenProps) {
           <RefreshControl refreshing={refreshing} onRefresh={() => void refresh()} tintColor={t.colors.accent} colors={[t.colors.accent]} progressBackgroundColor={t.colors.surface} />
         )
       }>
+      {editing ? null : <Greeting host={host} services={services} />}
       {widgets.length === 0 ? (
         <FadeIn>
           <View style={{ gap: t.spacing.lg }}>

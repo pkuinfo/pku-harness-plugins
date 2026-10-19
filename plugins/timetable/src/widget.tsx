@@ -59,7 +59,8 @@ export function NextClassWidget({ host, services, size }: PluginWidgetProps) {
               </View>
             ) : null}
             <Text variant="micro" tone="faint">
-              {week ? `第 ${week} 周 · ` : ''}今天还有 {left} 节
+              {week ? `第 ${week} 周 · ` : ''}
+              {left > 0 ? `今天还有 ${left} 节` : '今天最后一节'}
             </Text>
           </View>
         ) : null}

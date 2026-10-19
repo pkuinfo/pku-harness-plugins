@@ -28,4 +28,4 @@ export type CampusRequest = {
 
 export type CampusResponse = { status: number; url: string; headers: Record<string, string>; body: string };
 
-export type CampusStatus = { signedIn: boolean; username: string | null };
+export type CampusStatus = { signedIn: boolean; username: string | null; /** Holder's name when known (from the campus card). */ name: string | null };
