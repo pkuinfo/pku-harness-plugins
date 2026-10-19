@@ -1,6 +1,8 @@
 import { classesOn, classStatus, definePlugin, defineTool, formatWeeks, parseWeeks, timeOfDay, weekOf, type Course } from '@pku-harness/sdk';
 import { z } from 'zod';
 
+import { NextClassWidget } from './widget';
+
 const WEEKDAY = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
 
 const view = (c: Course) => ({
@@ -31,10 +33,15 @@ export const timetablePlugin = definePlugin({
   id: 'timetable',
   name: '课表',
   description: '课程表、今天的课和上课提醒。',
-  version: '0.2.0',
+  version: '0.3.0',
   icon: 'book',
   core: true,
   scopes: [],
+  contributes: {
+    widgets: {
+      next: { title: '下一节课', description: '正在上或接下来的一节课，含地点、倒计时和进度，随时间自动更新。', sizes: ['sm', 'md'], defaultSize: 'md', component: NextClassWidget },
+    },
+  },
   instructions: '课表用 timetable 工具。用户口述课程时，逐门调用 timetable__addCourse（时间用 HH:MM，星期 0=周日）。上课提醒用 timetable__setReminder 设置提前分钟数。',
   dataSources: {
     today: { title: '今天的课', tool: 'today', ttlMs: 60_000 },

@@ -1,5 +1,8 @@
 import type { ComponentType, ReactNode } from 'react';
 
+import type { z } from 'zod';
+
+import type { Binding, Widget, WidgetSize } from './dashboard';
 import type { HostServices, KV } from './plugin';
 
 /**
@@ -48,6 +51,28 @@ export interface HostComponents {
   GenUI: ComponentType<{ spec: Record<string, unknown>; onSubmit?: (form: Record<string, unknown>, label?: string) => void }>;
   /** Vertical list sortable by dragging a handle; rows are rendered by the plugin. */
   SortableList: ComponentType<{ ids: string[]; rowHeight: number; onReorder: (ids: string[]) => void; renderRow: (id: string, handle: ReactNode) => ReactNode }>;
+  /** Mount a plugin-contributed dashboard widget (error-isolated; shows a notice if the plugin is off). */
+  PluginWidget: ComponentType<{ source: { plugin: string; widget: string; config?: Record<string, unknown> }; size: WidgetSize }>;
+}
+
+/**
+ * Live data from read tools, stale-while-revalidate: the last value (persisted across launches)
+ * shows at once, and the host refetches when it is older than its TTL, on screen focus, when
+ * the app returns to the foreground, every TTL while visible, and on `refresh()`. Same tool +
+ * args share one request and one cache entry across widgets, screens and scheduled checks.
+ */
+export interface LiveData<T = unknown> {
+  /** 'loading' only before the first value; afterwards errors keep the last value. */
+  status: 'loading' | 'error' | 'ready';
+  value?: T;
+  /** Last refresh error (also set while a stale value is shown). */
+  error?: string;
+  /** When the shown value was fetched (ms epoch). */
+  updatedAt?: number;
+  /** A request is in flight. */
+  fetching: boolean;
+  /** Refetch now, ignoring the TTL. */
+  refresh(): Promise<void>;
 }
 
 /** Design tokens and helpers for plugin layouts (styles are plain React Native styles). */
@@ -83,6 +108,16 @@ export interface HostUI {
   dismiss(fallback?: string): void;
   /** Ask the agent: switch to chat and send a message. */
   ask(text: string): void;
+  /** Live result of a read-only tool (see LiveData). `ttlMinutes` defaults to 5. */
+  useToolData<T = unknown>(tool: string, args?: Record<string, unknown>, opts?: { ttlMinutes?: number; path?: string }): LiveData<T>;
+  /** An AI-built widget's spec state with every binding filled in (see LiveData). */
+  useWidgetData(widget: Pick<Widget, 'spec' | 'bindings'>): LiveData<Record<string, unknown>>;
+  /** Live values for several bindings at once. */
+  useBindings(bindings: Binding[]): LiveData<unknown[]>;
+  /** Force-refresh every live query on screen (pull-to-refresh); resolves when all settle. */
+  refreshAll(): Promise<void>;
+  /** "刚刚" / "3 分钟前" / "昨天 08:00" for a past timestamp. */
+  formatAgo(ms: number, now?: number): string;
 }
 
 export interface PluginScreenProps {
@@ -93,6 +128,31 @@ export interface PluginScreenProps {
   /** Run one of the app's tools as the user (same validation and permissions as the agent). */
   invoke(toolId: string, input?: Record<string, unknown>): Promise<unknown>;
   params: Record<string, string | undefined>;
+}
+
+export interface PluginWidgetProps {
+  host: HostUI;
+  services: HostServices;
+  kv: KV;
+  invoke(toolId: string, input?: Record<string, unknown>): Promise<unknown>;
+  size: WidgetSize;
+  /** Agent/user-chosen options, validated by `configSchema`. */
+  config: Record<string, unknown>;
+}
+
+/**
+ * A native dashboard widget a plugin ships. The agent places it with `dashboard.addPluginWidget`
+ * (or the user from the dashboard's widget gallery). Load data with `host.useToolData` so refresh
+ * behaves like every other widget; the card chrome (title, background) is drawn by the dashboard.
+ */
+export interface WidgetContribution {
+  title: string;
+  /** What it shows; the agent reads this to pick widgets. */
+  description: string;
+  sizes?: WidgetSize[];
+  defaultSize?: WidgetSize;
+  configSchema?: z.ZodType<Record<string, unknown>>;
+  component: ComponentType<PluginWidgetProps>;
 }
 
 export interface ScreenContribution {
@@ -126,4 +186,6 @@ export interface Contributions {
   settings?: SettingsContribution[];
   /** Fill one of the harness's tab slots with a screen. */
   tabs?: TabContribution[];
+  /** Native dashboard widgets, keyed by id. */
+  widgets?: Record<string, WidgetContribution>;
 }

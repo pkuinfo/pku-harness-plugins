@@ -1,6 +1,6 @@
 {
   "name": "@pku-harness/plugin-timetable",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Class timetable and class reminders",
   "type": "module",
   "main": "src/index.ts",
@@ -10,6 +10,8 @@
   },
   "peerDependencies": {
     "@pku-harness/sdk": "*",
-    "zod": "^4.0.0"
+    "zod": "^4.0.0",
+    "react": "*",
+    "react-native": "*"
   }
 }

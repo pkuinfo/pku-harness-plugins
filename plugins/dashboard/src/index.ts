@@ -2,8 +2,21 @@ import { bindingSchema, definePlugin, defineTool, specSchema, widgetSizeSchema, 
 import { z } from 'zod';
 
 import { DashboardTab } from './ui/dashboard-tab';
+import { Gallery } from './ui/gallery';
 
-const view = (w: Widget) => ({ id: w.id, title: w.title, size: w.size, position: w.position, bindings: w.bindings, spec: w.spec });
+const view = (w: Widget) =>
+  w.source
+    ? { id: w.id, title: w.title, size: w.size, position: w.position, source: w.source }
+    : { id: w.id, title: w.title, size: w.size, position: w.position, bindings: w.bindings, spec: w.spec };
+
+async function place(services: HostServices, w: Widget, position?: number) {
+  await services.widgets.put(w);
+  if (position != null) {
+    const ids = services.widgets.list().map((x) => x.id).filter((x) => x !== w.id);
+    ids.splice(position, 0, w.id);
+    await services.widgets.reorder(ids);
+  }
+}
 
 function checkBindings(services: HostServices, bindings: Record<string, z.infer<typeof bindingSchema>>) {
   for (const [pointer, b] of Object.entries(bindings)) {
@@ -19,19 +32,22 @@ export const dashboardPlugin = definePlugin({
   id: 'dashboard',
   name: '看板',
   description: '由 AI 搭建、可随时修改的数据看板。',
-  version: '0.2.0',
+  version: '0.3.0',
   icon: 'dashboard',
   core: true,
   scopes: [],
   contributes: {
-    screens: { home: { title: '看板', component: DashboardTab } },
+    screens: { home: { title: '看板', component: DashboardTab }, gallery: { title: '添加组件', component: Gallery, presentation: 'modal' } },
     tabs: [{ slot: 'dashboard', screen: 'home' }],
   },
-  instructions: `用户想在看板上看到某些数字时，用 dashboard__upsertWidget 创建组件；修改时传入已有 id。
+  instructions: `用户想在看板上看到某些数字时：
+- 先用 dashboard__catalog 看插件有没有现成的原生组件（如校园卡余额），有就用 dashboard__addPluginWidget 放上去，外观和刷新由插件负责。
+- 没有合适的，再用 dashboard__upsertWidget 自己搭一个；修改时传入已有 id。
 - spec 与 ui__render 相同（同一套组件），但看板组件不要放按钮表单，重点是数字：通常一个 Card 或 Column 里放 Stat / ListItem / Progress。
 - 实时数据用 bindings：{ "/card": { tool: "campus-card.getBalance", path: "balance", ttlMinutes: 5 } }，然后在 props 里写 { "$state": "/card" }；文本可用 { "$template": "第 \${/today/semester/week} 周" }。
 - size：sm 半宽小卡片（单个数字），md 全宽，lg 全宽重点卡片。
-- 可绑定的数据源用 dashboard__sources 查看；只读工具都可以绑定。创建后看返回的 preview 确认数据正确。`,
+- 可绑定的数据源用 dashboard__sources 查看；只读工具都可以绑定。创建后看返回的 preview 确认数据正确。
+- 刷新：数据超过 ttlMinutes 就会在用户打开看板、回到 App 时自动重新获取，看板可见时也会按 ttl 定时刷新，用户还可以下拉强制刷新。余额类 5–15 分钟，学期周次这类 60 分钟以上。`,
   tools: {
     list: defineTool({
       title: '查看看板',
@@ -50,6 +66,49 @@ export const dashboardPlugin = definePlugin({
           .plugins()
           .filter((p) => p.enabled && !['ui', 'dashboard'].includes(p.id))
           .flatMap((p) => p.tools.filter((t) => t.effect === 'read').map((t) => ({ tool: t.id, title: t.title, plugin: p.name }))),
+    }),
+    catalog: defineTool({
+      title: '插件组件',
+      description: 'Native widgets shipped by enabled plugins (prefer these over building one). Each has sizes and an optional config JSON Schema.',
+      input: z.object({}),
+      effect: 'read',
+      execute: async (_input, ctx) => ctx.services.widgets.catalog(),
+    }),
+    addPluginWidget: defineTool({
+      title: '添加插件组件',
+      description: 'Place a plugin-provided widget from dashboard__catalog on the dashboard, or update one when id is given.',
+      input: z.object({
+        id: z.string().optional().describe('existing widget id to replace'),
+        plugin: z.string(),
+        widget: z.string(),
+        title: z.string().optional().describe('default: the widget\'s own title'),
+        size: widgetSizeSchema.optional(),
+        config: z.record(z.string(), z.unknown()).optional(),
+        position: z.number().int().min(0).optional().describe('0 = top; default end (or unchanged)'),
+      }),
+      effect: 'write',
+      execute: async ({ id, plugin, widget, title, size, config, position }, ctx) => {
+        const widgets = ctx.services.widgets;
+        const entry = widgets.catalog().find((e) => e.plugin === plugin && e.widget === widget);
+        if (!entry) throw new Error(`没有这个插件组件：${plugin}/${widget}（插件未安装或已关闭）`);
+        if (size && !entry.sizes.includes(size)) throw new Error(`${entry.title} 只支持 ${entry.sizes.join(' / ')}`);
+        const cur = id ? widgets.get(id) : undefined;
+        if (id && !cur) throw new Error(`没有这个组件：${id}`);
+        const now = Date.now();
+        const w: Widget = {
+          id: cur?.id ?? widgets.newId(),
+          title: title ?? entry.title,
+          size: size ?? cur?.size ?? entry.defaultSize,
+          spec: {},
+          bindings: {},
+          source: { plugin, widget, config },
+          position: cur?.position ?? widgets.list().length,
+          createdAt: cur?.createdAt ?? now,
+          updatedAt: now,
+        };
+        await place(ctx.services, w, position);
+        return { saved: true, id: w.id, title: w.title, size: w.size };
+      },
     }),
     upsertWidget: defineTool({
       title: '添加或修改看板组件',
@@ -81,12 +140,7 @@ export const dashboardPlugin = definePlugin({
           createdAt: cur?.createdAt ?? now,
           updatedAt: now,
         };
-        await widgets.put(w);
-        if (position != null) {
-          const ids = widgets.list().map((x) => x.id).filter((x) => x !== w.id);
-          ids.splice(position, 0, w.id);
-          await widgets.reorder(ids);
-        }
+        await place(ctx.services, w, position);
         let preview: unknown;
         try {
           preview = await widgets.preview(w);

@@ -1,40 +1,58 @@
-import type { HostServices, HostUI, Widget } from '@pku-harness/sdk';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { HostUI, Widget } from '@pku-harness/sdk';
+import { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-type Data = { status: 'loading' } | { status: 'error'; error: string } | { status: 'ready'; state: Record<string, unknown>; refreshing: boolean };
-
-/** Loading / error / ready for one widget; `refreshToken` changes force a refetch. */
-function useWidgetData(services: HostServices, w: Widget, refreshToken: number) {
-  const [data, setData] = useState<Data>({ status: 'loading' });
-  const first = useRef(true);
-  const load = useCallback(
-    (force: boolean) => {
-      setData((d) => (d.status === 'ready' ? { ...d, refreshing: true } : { status: 'loading' }));
-      services.widgets
-        .resolve(w, force)
-        .then((state) => setData({ status: 'ready', state, refreshing: false }))
-        .catch((e) => setData({ status: 'error', error: e instanceof Error ? e.message : String(e) }));
-    },
-    [services, w],
-  );
-  useEffect(() => {
-    const force = !first.current;
-    first.current = false;
-    const t = setTimeout(() => load(force), 0);
-    return () => clearTimeout(t);
-  }, [load, refreshToken]);
-  return { data, retry: () => load(true) };
+/** AI-built widget body: skeleton → live spec; a failed refresh keeps the last value. */
+function SpecBody({ host, widget, hero }: { host: HostUI; widget: Widget; hero: boolean }) {
+  const { Text, Button, Icon, Skeleton, GenUI } = host.components;
+  const t = host.useTheme();
+  const data = host.useWidgetData(widget);
+  // Stable spec object so the renderer keeps its state between renders.
+  const spec = useMemo(() => (data.value ? { ...widget.spec, state: data.value } : null), [data.value, widget.spec]);
+  if (data.status === 'loading')
+    return (
+      <View style={{ gap: t.spacing.sm }}>
+        <Skeleton width="45%" height={hero ? 40 : 28} />
+        <Skeleton width="70%" height={12} />
+      </View>
+    );
+  if (data.status === 'error' || !spec)
+    return (
+      <View style={{ gap: t.spacing.md }}>
+        <View style={{ flexDirection: 'row', gap: t.spacing.sm, alignItems: 'flex-start' }}>
+          <Icon name="warning" size={16} color={t.colors.warn} />
+          <Text variant="caption" tone="muted" numberOfLines={3} style={{ flex: 1 }}>
+            {data.error ?? '没有数据'}
+          </Text>
+        </View>
+        <Button title="重试" size="sm" variant="secondary" icon="refresh" loading={data.fetching} onPress={() => void data.refresh()} style={{ alignSelf: 'flex-start' }} />
+      </View>
+    );
+  return <GenUI spec={spec} />;
 }
 
-/** One widget: title (except small tiles), then skeleton / error with retry / live spec. */
-export function WidgetCard({ host, services, widget, refreshToken, onLongPress }: { host: HostUI; services: HostServices; widget: Widget; refreshToken: number; onLongPress: () => void }) {
-  const { Text, Button, Icon, Pressable, Skeleton, GenUI } = host.components;
+/** Freshness of the widget's data, for the card header (AI-built widgets only; plugins show their own). */
+function Freshness({ host, widget }: { host: HostUI; widget: Widget }) {
+  const { Text } = host.components;
   const t = host.useTheme();
-  const { data, retry } = useWidgetData(services, widget, refreshToken);
+  const now = host.useNow(30_000);
+  const data = host.useWidgetData(widget);
+  if (data.fetching) return <View accessibilityLabel="正在刷新" style={[styles.dot, { backgroundColor: t.colors.accent, borderRadius: t.radius.full }]} />;
+  if (data.status !== 'ready' || data.updatedAt == null) return null;
+  return (
+    <Text variant="micro" tone={data.error ? 'warn' : 'faint'} numberOfLines={1}>
+      {data.error ? '刷新失败 · ' : ''}
+      {host.formatAgo(data.updatedAt, now.getTime())}
+    </Text>
+  );
+}
+
+/** One widget card: chrome (title, freshness, long-press to edit) around an AI-built or plugin body. */
+export function WidgetCard({ host, widget, onLongPress }: { host: HostUI; widget: Widget; onLongPress: () => void }) {
+  const { Text, Pressable, PluginWidget } = host.components;
+  const t = host.useTheme();
   const hero = widget.size === 'lg';
-  // Stable spec object so the renderer keeps its state between renders.
-  const spec = useMemo(() => (data.status === 'ready' ? { ...widget.spec, state: data.state } : null), [data, widget.spec]);
+  const live = !widget.source && Object.keys(widget.bindings).length > 0;
   return (
     <Pressable
       accessibilityRole="summary"
@@ -50,27 +68,10 @@ export function WidgetCard({ host, services, widget, refreshToken, onLongPress }
           <Text variant="micro" tone="faint" numberOfLines={1} style={{ flex: 1 }}>
             {widget.title.toUpperCase()}
           </Text>
-          {data.status === 'ready' && data.refreshing ? <View style={[styles.dot, { backgroundColor: t.colors.accent, borderRadius: t.radius.full }]} /> : null}
+          {live ? <Freshness host={host} widget={widget} /> : null}
         </View>
       )}
-      {data.status === 'loading' ? (
-        <View style={{ gap: t.spacing.sm }}>
-          <Skeleton width="45%" height={hero ? 40 : 28} />
-          <Skeleton width="70%" height={12} />
-        </View>
-      ) : data.status === 'error' ? (
-        <View style={{ gap: t.spacing.md }}>
-          <View style={{ flexDirection: 'row', gap: t.spacing.sm, alignItems: 'flex-start' }}>
-            <Icon name="warning" size={16} color={t.colors.warn} />
-            <Text variant="caption" tone="muted" numberOfLines={3} style={{ flex: 1 }}>
-              {data.error}
-            </Text>
-          </View>
-          <Button title="重试" size="sm" variant="secondary" icon="refresh" onPress={retry} style={{ alignSelf: 'flex-start' }} />
-        </View>
-      ) : spec ? (
-        <GenUI spec={spec} />
-      ) : null}
+      {widget.source ? <PluginWidget source={widget.source} size={widget.size} /> : <SpecBody host={host} widget={widget} hero={hero} />}
     </Pressable>
   );
 }

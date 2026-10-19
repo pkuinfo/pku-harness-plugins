@@ -58,6 +58,18 @@ export type JobPatch = Partial<Pick<Job, 'title' | 'trigger' | 'action' | 'enabl
 export type CheckResult = { notified: boolean; value?: unknown; error?: string };
 
 /** Services the harness provides. Everything a plugin does outside itself goes through here. */
+export interface WidgetCatalogEntry {
+  plugin: string;
+  pluginName: string;
+  widget: string;
+  title: string;
+  description: string;
+  sizes: WidgetSize[];
+  defaultSize: WidgetSize;
+  /** JSON Schema of the widget's config, if it takes any. */
+  config?: Record<string, unknown>;
+}
+
 export interface HostServices {
   /** Introspection of installed plugins and tools (read-only). */
   registry: {
@@ -96,6 +108,8 @@ export interface HostServices {
     preview(widget: Widget): Promise<Record<string, unknown>>;
     /** Resolve bindings through the TTL cache (`force` refetches). */
     resolve(widget: Widget, force?: boolean): Promise<Record<string, unknown>>;
+    /** Native widgets that enabled plugins contribute (`contributes.widgets`). */
+    catalog(): WidgetCatalogEntry[];
   };
   todos: {
     list(): Todo[];

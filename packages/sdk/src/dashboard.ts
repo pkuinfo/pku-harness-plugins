@@ -19,6 +19,18 @@ export type Binding = z.infer<typeof bindingSchema>;
 export const widgetSizeSchema = z.enum(['sm', 'md', 'lg']).describe('sm = half width tile, md = full width, lg = full width hero');
 export type WidgetSize = z.infer<typeof widgetSizeSchema>;
 
+/** A widget a plugin ships (`contributes.widgets`), placed on the dashboard by key. */
+export const widgetSourceSchema = z.object({
+  plugin: z.string(),
+  widget: z.string().describe('key in the plugin\'s contributes.widgets'),
+  config: z.record(z.string(), z.unknown()).optional(),
+});
+export type WidgetSource = z.infer<typeof widgetSourceSchema>;
+
+/**
+ * Two kinds, rendered side by side: AI-built (`spec` + `bindings`) or plugin-provided
+ * (`source`, the plugin draws it natively; `spec`/`bindings` stay empty).
+ */
 export type Widget = {
   id: string;
   title: string;
@@ -27,6 +39,7 @@ export type Widget = {
   spec: Record<string, unknown>;
   /** State path (JSON pointer, e.g. "/card") → data source. */
   bindings: Record<string, Binding>;
+  source?: WidgetSource;
   position: number;
   createdAt: number;
   updatedAt: number;

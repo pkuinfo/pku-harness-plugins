@@ -1,6 +1,6 @@
 {
   "name": "@pku-harness/plugin-netfee",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Campus network fee balance and usage",
   "type": "module",
   "main": "src/index.ts",
@@ -10,6 +10,8 @@
   },
   "peerDependencies": {
     "@pku-harness/sdk": "*",
-    "zod": "^4.0.0"
+    "zod": "^4.0.0",
+    "react": "*",
+    "react-native": "*"
   }
 }

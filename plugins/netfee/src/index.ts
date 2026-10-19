@@ -1,6 +1,8 @@
 import { definePlugin, defineTool } from '@pku-harness/sdk';
 import { z } from 'zod';
 
+import { NetfeeWidget } from './widget';
+
 import { parseBilling, parseItsInfo, toNumber } from './parse';
 
 /** Network fee (its.pku.edu.cn) balance and usage (pkucli crates/portal/src/netfee.rs). */
@@ -8,10 +10,15 @@ export const netfeePlugin = definePlugin({
   id: 'netfee',
   name: '网费',
   description: '查询校园网账户余额和本月用量。',
-  version: '0.1.0',
+  version: '0.2.0',
   icon: 'wifi',
   requires: ['campus-session', 'network'],
   scopes: ['its.pku.edu.cn'],
+  contributes: {
+    widgets: {
+      balance: { title: '网费', description: '校园网余额和本月用量。', sizes: ['sm', 'md'], defaultSize: 'sm', component: NetfeeWidget },
+    },
+  },
   instructions: '网费余额单位是元。用户问网费、上网余额时用 netfee__getStatus。',
   dataSources: {
     balance: { title: '网费余额', tool: 'getStatus', ttlMs: 30 * 60_000 },

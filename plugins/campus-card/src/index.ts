@@ -1,6 +1,8 @@
 import { definePlugin, defineTool } from '@pku-harness/sdk';
 import { z } from 'zod';
 
+import { BalanceWidget } from './widget';
+
 import { INCOME_ICONS, unwrap, yuan, type CardInfo, type Turnover } from './api';
 
 /** Campus card: balance and transactions (pkucli crates/campuscard). Read-only for now. */
@@ -8,10 +10,22 @@ export const campusCardPlugin = definePlugin({
   id: 'campus-card',
   name: '校园卡',
   description: '查询校园卡余额和消费记录。',
-  version: '0.1.0',
+  version: '0.2.0',
   icon: 'card',
   requires: ['campus-session', 'network'],
   scopes: ['bdcard.pku.edu.cn', 'portal.pku.edu.cn（登录）'],
+  contributes: {
+    widgets: {
+      balance: {
+        title: '校园卡余额',
+        description: '校园卡余额、今日消费和卡状态，余额偏低时变色提醒（默认低于 50 元）。',
+        sizes: ['sm', 'md', 'lg'],
+        defaultSize: 'md',
+        configSchema: z.object({ warnBelow: z.number().min(0).optional().describe('highlight below this balance, yuan') }),
+        component: BalanceWidget,
+      },
+    },
+  },
   instructions: '校园卡金额单位是元。用户问余额用 campus-card__getBalance；问最近花了多少、在哪消费用 campus-card__listTransactions。',
   dataSources: {
     balance: { title: '校园卡余额', tool: 'getBalance', ttlMs: 5 * 60_000 },

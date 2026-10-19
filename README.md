@@ -35,6 +35,12 @@ plus `services`, their own `kv` and `invoke(tool, input)`. They never import app
 plugin's UI looks native to the app and keeps working as the harness evolves. See
 `plugins/memory/src/screen.tsx`.
 
+**Dashboard widgets.** `contributes.widgets` ships native widgets the user (widget gallery) or
+the agent (`dashboard.addPluginWidget`) can place on the dashboard. Load data with
+`host.useToolData(tool, args, { ttlMinutes })`: the harness shows the last value at once and
+refetches when stale on focus, app foreground and pull-to-refresh, shared with every other
+widget and scheduled check, so don't poll yourself. See `plugins/campus-card/src/widget.tsx`.
+
 ## Develop
 
 ```bash

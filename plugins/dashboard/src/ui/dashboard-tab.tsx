@@ -16,8 +16,8 @@ export function DashboardTab({ host, services }: PluginScreenProps) {
   host.useStoreVersion();
   const widgets = services.widgets.list();
   const [editing, setEditing] = useState(false);
-  const [refreshToken, setRefreshToken] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
+  const hasGallery = services.widgets.catalog().length > 0;
 
   const columns = t.contentWidth >= 700 ? 3 : 2;
   const gridWidth = t.contentWidth - t.spacing.lg * 2;
@@ -28,10 +28,11 @@ export function DashboardTab({ host, services }: PluginScreenProps) {
     host.haptics.tap();
     setEditing(true);
   };
-  const refresh = () => {
+  // Pull-to-refresh forces every widget on screen and ends when the requests settle.
+  const refresh = async () => {
     setRefreshing(true);
-    setRefreshToken((n) => n + 1);
-    setTimeout(() => setRefreshing(false), 600);
+    await host.refreshAll();
+    setRefreshing(false);
   };
   const remove = (w: Widget) => {
     host.haptics.warning();
@@ -51,19 +52,27 @@ export function DashboardTab({ host, services }: PluginScreenProps) {
           editing ? (
             <Button title="完成" size="sm" onPress={() => setEditing(false)} />
           ) : (
-            <IconButton icon="edit" label="编辑看板" variant="ghost" onPress={enterEdit} />
+            <View style={{ flexDirection: 'row' }}>
+              {hasGallery ? <IconButton icon="plus" label="添加组件" variant="ghost" onPress={() => host.navigate('/m/dashboard/gallery')} /> : null}
+              <IconButton icon="edit" label="编辑看板" variant="ghost" onPress={enterEdit} />
+            </View>
           )
         ) : null
       }
       refreshControl={
         editing ? undefined : (
-          <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={t.colors.accent} colors={[t.colors.accent]} progressBackgroundColor={t.colors.surface} />
+          <RefreshControl refreshing={refreshing} onRefresh={() => void refresh()} tintColor={t.colors.accent} colors={[t.colors.accent]} progressBackgroundColor={t.colors.surface} />
         )
       }>
       {widgets.length === 0 ? (
         <FadeIn>
           <View style={{ gap: t.spacing.lg }}>
-            <EmptyState icon="sparkles" title="让 AI 帮你搭建看板" message="告诉它你想随时看到哪些数字，它会生成卡片并保持更新。" />
+            <EmptyState
+              icon="sparkles"
+              title="让 AI 帮你搭建看板"
+              message="告诉它你想随时看到哪些数字，它会生成卡片并保持更新。"
+              action={hasGallery ? <Button title="从插件添加组件" variant="secondary" icon="plus" onPress={() => host.navigate('/m/dashboard/gallery')} /> : undefined}
+            />
             <View style={{ gap: t.spacing.sm }}>
               {IDEAS.map((idea) => (
                 <Pressable
@@ -117,7 +126,7 @@ export function DashboardTab({ host, services }: PluginScreenProps) {
         <View style={[styles.grid, { gap: t.spacing.md }]}>
           {widgets.map((w, i) => (
             <FadeIn key={w.id} index={i} style={{ width: widthOf(w.size) }}>
-              <WidgetCard host={host} services={services} widget={w} refreshToken={refreshToken} onLongPress={enterEdit} />
+              <WidgetCard host={host} widget={w} onLongPress={enterEdit} />
             </FadeIn>
           ))}
           <Pressable
