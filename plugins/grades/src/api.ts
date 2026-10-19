@@ -65,7 +65,16 @@ export async function fetchScores(ctx: ToolContext, code: string | undefined, me
     await redeem(ctx, pending, code, method);
     await ctx.kv.delete('pending');
   }
-  const res = await call<RawScoreData>(ctx, '/chapi/api/course/score_v2');
+  let res = await call<RawScoreData>(ctx, '/chapi/api/course/score_v2');
+  // Course token with the harness's 手机令牌 bound: redeem a code ourselves (pkucli api.rs
+  // course_token_exchange tries the local OTP first), then retry once.
+  if (res.code === CODE_COURSE_TOKEN && !code) {
+    const otp = await ctx.services.campus.otp().catch(() => null);
+    if (otp) {
+      await redeem(ctx, 'course', otp.code, 'otp').catch(() => {});
+      res = await call<RawScoreData>(ctx, '/chapi/api/course/score_v2');
+    }
+  }
   if (res.code === CODE_SMS_CHECK || res.code === CODE_COURSE_TOKEN) {
     const kind: Pending = res.code === CODE_SMS_CHECK ? 'login' : 'course';
     await ctx.kv.set('pending', kind);

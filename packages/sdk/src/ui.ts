@@ -47,6 +47,11 @@ export interface HostComponents {
   SheetScreen: ComponentType<{ title: string; children: ReactNode; primary: string; onPrimary: () => void; primaryDisabled?: boolean; loading?: boolean; danger?: string; onDanger?: () => void; secondary?: string; onSecondary?: () => void }>;
   Sparkline: ComponentType<{ values: number[]; tone?: 'accent' | 'up' | 'down' | 'info'; height?: number }>;
   Ring: ComponentType<{ value: number; label?: string; caption?: string; tone?: 'accent' | 'up' | 'down' | 'warn'; size?: number }>;
+  /**
+   * Hourglass that drains over `period` seconds aligned to Unix time (boundaries at multiples of
+   * `period` since the epoch, e.g. a TOTP window) and flips at each boundary; self-syncing.
+   */
+  Hourglass: ComponentType<{ period?: number; size?: number; tone?: 'accent' | 'up' | 'down' | 'warn' }>;
   /** Render a generative-UI spec with the host catalog. */
   GenUI: ComponentType<{ spec: Record<string, unknown>; onSubmit?: (form: Record<string, unknown>, label?: string) => void }>;
   /** Vertical list sortable by dragging a handle; rows are rendered by the plugin. */
@@ -129,6 +134,8 @@ export interface HostUI {
   formatAgo(ms: number, now?: number): string;
   /** While the calling screen is mounted: block screenshots/recording; `brightness` raises it for scanners. */
   useSecureDisplay(opts?: { brightness?: boolean }): void;
+  /** Copy text to the system clipboard; undefined when this build has no clipboard module. */
+  clipboard?: { setString(text: string): Promise<void> };
 }
 
 export interface PluginScreenProps {

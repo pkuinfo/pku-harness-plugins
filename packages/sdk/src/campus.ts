@@ -30,3 +30,9 @@ export type CampusRequest = {
 export type CampusResponse = { status: number; url: string; headers: Record<string, string>; body: string };
 
 export type CampusStatus = { signedIn: boolean; username: string | null; /** Holder's name when known (from the campus card). */ name: string | null };
+
+/** The current 手机令牌 (IAAA TOTP) code; the secret itself never leaves the harness. */
+export type OtpCode = { code: string; /** Seconds until the code rolls over (1–30). */ remainingSeconds: number };
+
+/** The harness's 手机令牌 binding (no secret). `pending` = binding SMS sent, awaiting the code. */
+export type OtpStatus = { bound: boolean; userId: string | null; userName: string | null; boundAt: number | null; pending: boolean };

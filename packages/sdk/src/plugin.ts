@@ -1,6 +1,6 @@
 import type { z } from 'zod';
 
-import type { CampusRequest, CampusResponse, CampusService, CampusStatus } from './campus';
+import type { CampusRequest, CampusResponse, CampusService, CampusStatus, OtpCode, OtpStatus } from './campus';
 import type { Binding, Widget, WidgetSize } from './dashboard';
 import type { SpecCheck, UISpec } from './genui';
 import type { Action, Job, JobSource, Trigger } from './scheduler/types';
@@ -123,6 +123,19 @@ export interface HostServices {
   campus: {
     status(): CampusStatus;
     request(service: CampusService, req: CampusRequest): Promise<CampusResponse>;
+    /**
+     * Current IAAA 手机令牌 code when the user bound the harness's authenticator, else null.
+     * For second factors such as treehole's course token (40077). Never the secret.
+     */
+    otp(): Promise<OtpCode | null>;
+    /** Authenticator management, for the bundled authenticator plugin's screens only. */
+    otpStatus(): Promise<OtpStatus>;
+    /** Verify the stored credentials with IAAA and send the binding SMS; returns the masked phone. */
+    otpBindStart(): Promise<{ sentTo: string | null }>;
+    /** Finish binding with the SMS code: IAAA's 手机令牌 now points at this device. */
+    otpBindFinish(smsCode: string): Promise<OtpStatus>;
+    /** Forget the secret on this device (IAAA keeps the binding). */
+    otpUnbindLocal(): Promise<void>;
   };
   timetable: {
     get(): { courses: Course[]; semester: Semester | null; reminderMinutes: number | null };

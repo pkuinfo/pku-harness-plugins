@@ -1,5 +1,6 @@
 import type { PluginDef } from '@pku-harness/sdk';
 
+import { authenticatorPlugin } from './authenticator/src';
 import { calendarPlugin } from './calendar/src';
 import { campusCardPlugin } from './campus-card/src';
 import { campusEventsPlugin } from './campus-events/src';
@@ -36,6 +37,7 @@ export const builtinPlugins: PluginDef[] = [
   schedulePlugin,
   timetablePlugin,
   courseSyncPlugin,
+  authenticatorPlugin,
   calendarPlugin,
   campusCardPlugin,
   netfeePlugin,

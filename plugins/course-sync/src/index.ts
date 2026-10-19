@@ -25,6 +25,7 @@ export const courseSyncPlugin = definePlugin({
     settings: [{ screen: 'home', title: '教务课表', subtitle: '从学校同步课表', icon: 'book' }],
   },
   instructions: `用户想导入/同步/更新课表时调用 course-sync__sync。
+- 已在「手机令牌」插件绑定时，课表二次验证会自动完成，不必问用户。
 - 返回 status "verification_required" 时：kind "login" 只能用短信；kind "course" 可用手机令牌（OTP）或短信。用 ui__render 给用户一个输入验证码的表单（发短信前先调用 course-sync__sendCode），拿到验证码后再调用 sync 并传 code 和 method。
 - 同步结果里 location 是从教务原文 info 解析出的教室；解析不到时为 null，可用 timetable__updateCourse 补上。`,
   tools: {
@@ -42,7 +43,16 @@ export const courseSyncPlugin = definePlugin({
           await redeem(ctx, pending, code, method);
           await ctx.kv.delete('pending');
         }
-        const res = await call<{ course?: RawRow[] }>(ctx, '/chapi/api/getCoursetable_v2');
+        let res = await call<{ course?: RawRow[] }>(ctx, '/chapi/api/getCoursetable_v2');
+        // Course token with the harness's 手机令牌 bound: redeem a code ourselves (pkucli api.rs
+        // course_token_exchange tries the local OTP first), then retry once.
+        if (res.code === CODE_COURSE_TOKEN && !code) {
+          const otp = await ctx.services.campus.otp().catch(() => null);
+          if (otp) {
+            await redeem(ctx, 'course', otp.code, 'otp').catch(() => {});
+            res = await call<{ course?: RawRow[] }>(ctx, '/chapi/api/getCoursetable_v2');
+          }
+        }
         if (res.code === CODE_SMS_CHECK || res.code === CODE_COURSE_TOKEN) {
           const kind: Pending = res.code === CODE_SMS_CHECK ? 'login' : 'course';
           await ctx.kv.set('pending', kind);

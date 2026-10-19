@@ -106,6 +106,26 @@
       "verified": true
     },
     {
+      "id": "authenticator",
+      "name": "手机令牌",
+      "description": "把本 App 绑定为统一身份认证的手机令牌，自动完成二次验证。",
+      "author": "pkuinfo",
+      "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/authenticator",
+      "kind": "builtin",
+      "icon": "key",
+      "requires": [
+        "campus-session",
+        "network"
+      ],
+      "scopes": [
+        "iaaa.pku.edu.cn"
+      ],
+      "tags": [
+        "official"
+      ],
+      "verified": true
+    },
+    {
       "id": "schedule",
       "name": "日程",
       "description": "日程页：今天的课、待办、提醒，以及课表周视图和相关表单。",
