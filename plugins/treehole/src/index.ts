@@ -2,7 +2,7 @@ import { definePlugin, defineTool } from '@pku-harness/sdk';
 import { z } from 'zod';
 
 import { guarded, sendCode, v3 } from './api';
-import { parseHoleDetail, parseHoleList, parseHoles, postedPid, type Comment, type Hole } from './parse';
+import { parseCommentPage, parseHoleDetail, parseHoleList, parseHoles, postedPid, type Comment, type Hole } from './parse';
 import { HoleScreen, TreeholeScreen } from './screen';
 import { LatestWidget } from './widget';
 
@@ -30,7 +30,8 @@ const hole = (h: Hole, max = 2000) => ({
 });
 const comment = (c: Comment, max = 1000) => ({
   cid: c.cid,
-  name: c.isOp ? `${c.name || '洞主'}（洞主）` : c.name,
+  // The API already names the poster "洞主"; only tag a different display name.
+  name: c.isOp ? (c.name && c.name !== '洞主' ? `${c.name}（洞主）` : '洞主') : c.name,
   text: clip(c.text, max),
   time: fmt(c.time),
   ...(c.quote ? { replyTo: { name: c.quote.name, text: clip(c.quote.text, 80) } } : {}),
@@ -40,6 +41,9 @@ const comment = (c: Comment, max = 1000) => ({
 const code = z.string().trim().min(4).max(8).optional().describe('SMS code, only when a previous call returned verification_required');
 const page = z.number().int().min(1).max(50).optional().describe('default 1');
 const limit = (def: number, max: number) => z.number().int().min(1).max(max).optional().describe(`default ${def}`);
+/** comment/list page size (the web app uses 10) and the most pages one read fetches. */
+const COMMENT_PAGE = 50;
+const COMMENT_PAGES = 10;
 const pid = z.number().int().positive().describe('hole id (the number after #)');
 
 /** List feeds (api.rs list_holes / list_follow): `hole/list_comments` with 3 comment previews. */
@@ -117,13 +121,25 @@ export const treeholePlugin = definePlugin({
         guarded(ctx, code, async () => {
           const { data } = await v3(ctx, `/hole/one?pid=${pid}&comment_stream=1`);
           const d = parseHoleDetail(data);
+          // hole/one carries only the first 10 comments; the web app pages the rest through
+          // comment/list (treehole.pku.edu.cn/ch/web bundle: getReplyList {pid, page, limit, sort}).
+          const all = [...d.comments];
+          if (all.length < commentLimit && all.length < d.hole.replies) {
+            all.length = 0;
+            for (let page = 1; page <= COMMENT_PAGES && all.length < commentLimit; page++) {
+              const r = await v3(ctx, `/comment/list?pid=${pid}&page=${page}&limit=${COMMENT_PAGE}&sort=0&comment_stream=1`);
+              const batch = parseCommentPage(r.data);
+              all.push(...batch);
+              if (batch.length < COMMENT_PAGE) break;
+            }
+          }
           return {
             status: 'ok' as const,
             note: UNTRUSTED,
             hole: hole(d.hole),
-            totalComments: d.total ?? d.comments.length,
-            comments: d.comments.slice(0, commentLimit).map((c) => comment(c)),
-            ...(d.comments.length > commentLimit ? { truncated: true } : {}),
+            totalComments: Math.max(d.hole.replies, all.length),
+            comments: all.slice(0, commentLimit).map((c) => comment(c)),
+            ...(all.length > commentLimit || d.hole.replies > all.length ? { truncated: true } : {}),
           };
         }),
     }),

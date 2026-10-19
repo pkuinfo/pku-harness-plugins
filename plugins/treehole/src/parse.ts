@@ -126,6 +126,11 @@ export function parseHoleDetail(data: unknown): HoleDetail {
   return { hole: parseHole(d.hole), comments: comments(d, 'list'), total: typeof d.total === 'number' ? d.total : null };
 }
 
+/** `comment/list` data: `{ list: Comment[] }` (same comment shape as hole/one). */
+export function parseCommentPage(data: unknown): Comment[] {
+  return comments(obj(data), 'list');
+}
+
 /** `hole/post` data: `{ pid }` (commands.rs cmd_post). */
 export function postedPid(data: unknown): number | null {
   const pid = num(obj(data), 'pid');
