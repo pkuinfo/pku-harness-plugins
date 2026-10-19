@@ -1,0 +1,20 @@
+{
+  "name": "@pku-harness/plugin-courses",
+  "version": "0.1.0",
+  "description": "Blackboard (教学网) courses, announcements and assignments, read-only",
+  "type": "module",
+  "main": "src/index.ts",
+  "license": "MIT",
+  "pkuHarness": {
+    "builtin": true
+  },
+  "dependencies": {
+    "node-html-parser": "^9.0.4"
+  },
+  "peerDependencies": {
+    "@pku-harness/sdk": "*",
+    "zod": "^4.0.0",
+    "react": "*",
+    "react-native": "*"
+  }
+}

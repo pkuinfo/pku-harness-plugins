@@ -179,6 +179,27 @@
       "verified": true
     },
     {
+      "id": "courses",
+      "name": "教学网",
+      "description": "教学网课程公告和作业截止时间（只读）。",
+      "author": "pkuinfo",
+      "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/courses",
+      "kind": "builtin",
+      "icon": "book",
+      "requires": [
+        "campus-session",
+        "network"
+      ],
+      "scopes": [
+        "course.pku.edu.cn"
+      ],
+      "tags": [
+        "official",
+        "campus"
+      ],
+      "verified": true
+    },
+    {
       "id": "memory",
       "name": "AI 记忆",
       "description": "记住你的偏好、习惯和长期信息，让 AI 越用越懂你。只保存在本机，可随时查看和删除。",
