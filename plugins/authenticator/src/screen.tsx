@@ -14,7 +14,7 @@ const WARNINGS = [
 
 /** Bind / show / remove the harness's 手机令牌. All steps are explicit button presses. */
 export function AuthenticatorScreen({ host, services }: PluginScreenProps) {
-  const { Screen, Text, Button, ListGroup, ListRow, Field, Checkbox, EmptyState, Glass, Hourglass } = host.components;
+  const { Screen, Text, Button, ListGroup, ListRow, Field, Checkbox, EmptyState, Glass, Hourglass, Pressable } = host.components;
   const t = host.useTheme();
   const now = host.useNow(1000);
   const { otp, refresh } = useOtp(services);
@@ -146,7 +146,13 @@ export function AuthenticatorScreen({ host, services }: PluginScreenProps) {
 
         {sentTo === undefined ? (
           <View style={{ gap: t.spacing.md }}>
-            <Checkbox value={agreed} onValueChange={setAgreed} label="我已了解，旧的手机令牌会失效" />
+            {/* The host Checkbox's label is for accessibility only; the visible text toggles it too. */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.spacing.sm }}>
+              <Checkbox value={agreed} onValueChange={setAgreed} label="我已了解，旧的手机令牌会失效" />
+              <Pressable accessibilityRole="button" accessibilityLabel={agreed ? "取消勾选：我已了解" : "勾选：我已了解"} haptic={false} onPress={() => setAgreed((v) => !v)} style={{ flex: 1, paddingVertical: t.spacing.sm }}>
+                <Text variant="body">我已了解，之前绑定的手机令牌会失效</Text>
+              </Pressable>
+            </View>
             <Button title="发送绑定验证码" icon="send" disabled={!agreed || status == null} loading={busy === 'send'} onPress={() => void send()} />
           </View>
         ) : (
