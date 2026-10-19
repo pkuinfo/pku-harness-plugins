@@ -43,7 +43,12 @@ function Live({ host, size }: PluginWidgetProps) {
           网费
         </Text>
       ) : null}
-      <Text variant={size === 'sm' ? 'numberM' : 'numberL'}>{s.balance == null ? '—' : `¥${s.balance.toFixed(2)}`}</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: t.spacing.xs }}>
+        <Text variant="callout" tone="muted">
+          ¥
+        </Text>
+        <Text variant={size === 'lg' ? 'numberXL' : 'numberL'}>{s.balance == null ? '—' : s.balance.toFixed(2)}</Text>
+      </View>
       {size !== 'sm' && (s.monthlyUsage || s.monthlyFee != null) ? (
         <Text variant="caption" tone="muted">
           本月 {s.monthlyUsage ?? ''}

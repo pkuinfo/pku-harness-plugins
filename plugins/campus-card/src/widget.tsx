@@ -55,7 +55,7 @@ function Live({ host, size, config }: PluginWidgetProps) {
         <Text variant="callout" tone={low ? 'warn' : 'muted'}>
           ¥
         </Text>
-        <Text variant={size === 'lg' ? 'numberXL' : size === 'md' ? 'numberL' : 'numberM'} tone={low ? 'warn' : 'default'}>
+        <Text variant={size === 'lg' ? 'numberXL' : 'numberL'} tone={low ? 'warn' : 'default'}>
           {b.balance == null ? '—' : b.balance.toFixed(2)}
         </Text>
       </View>
