@@ -26,7 +26,7 @@ export const courseSyncPlugin = definePlugin({
   },
   instructions: `用户想导入/同步/更新课表时调用 course-sync__sync。
 - 返回 status "verification_required" 时：kind "login" 只能用短信；kind "course" 可用手机令牌（OTP）或短信。用 ui__render 给用户一个输入验证码的表单（发短信前先调用 course-sync__sendCode），拿到验证码后再调用 sync 并传 code 和 method。
-- 同步结果里 info 是教务原文（常含周次和地点），地点没有单独解析；需要时用 timetable__updateCourse 补上。`,
+- 同步结果里 location 是从教务原文 info 解析出的教室；解析不到时为 null，可用 timetable__updateCourse 补上。`,
   tools: {
     sync: defineTool({
       title: '同步教务课表',
@@ -76,7 +76,7 @@ export const courseSyncPlugin = definePlugin({
             weekday: m.weekday,
             start,
             end,
-            location: null,
+            location: m.location,
             teacher: null,
             weeks: m.weeks,
             color: (base + names.indexOf(m.name)) % 8,
@@ -89,7 +89,7 @@ export const courseSyncPlugin = definePlugin({
         return {
           status: 'synced',
           count: added.length,
-          courses: meetings.map((m) => ({ name: m.name, day: WEEKDAY[m.weekday], periods: `${m.firstPeriod}-${m.lastPeriod}`, info: m.info })),
+          courses: meetings.map((m) => ({ name: m.name, day: WEEKDAY[m.weekday], periods: `${m.firstPeriod}-${m.lastPeriod}`, location: m.location, info: m.info })),
         };
       },
     }),

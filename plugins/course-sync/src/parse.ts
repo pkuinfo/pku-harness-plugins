@@ -18,6 +18,7 @@ export type Meeting = {
   /** "上课信息" text with tags stripped, as the server wrote it. */
   info: string | null;
   weeks: number[] | null;
+  location: string | null;
 };
 
 const DAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const;
@@ -54,6 +55,18 @@ export function weeksOf(info: string | null, total = 20): number[] | null {
   }
 }
 
+/**
+ * The room in a class-info string. Real sample (2026-10): "每周 备注：与本科生合上，物理楼北547";
+ * a room is a short building name followed by its number ("理教107", "物理楼北547", "二教 203").
+ * Text without a number ("上课地点见本科生课表") has no room.
+ */
+export function locationOf(info: string | null): string | null {
+  if (!info) return null;
+  const rooms = [...info.matchAll(/([\u4e00-\u9fa5A-Za-z]{1,8}?)\s?(\d{2,4})(?![\d周节])/g)].filter((m) => !/^(第|共|周|每)/.test(m[1]));
+  const m = rooms.at(-1);
+  return m ? `${m[1]}${m[2]}` : null;
+}
+
 function cell(raw: string) {
   const parts = raw.split(/<br\s*\/?>/i);
   const name = strip(parts[0] ?? '');
@@ -75,7 +88,7 @@ export function parseCourseTable(rows: RawRow[], totalWeeks = 20): Meeting[] {
         return;
       }
       if (open) out.push(open);
-      open = c?.name ? { name: c.name, weekday: JS_DAY[d], firstPeriod: period, lastPeriod: period, info: c.info, weeks: weeksOf(c.info, totalWeeks) } : null;
+      open = c?.name ? { name: c.name, weekday: JS_DAY[d], firstPeriod: period, lastPeriod: period, info: c.info, weeks: weeksOf(c.info, totalWeeks), location: locationOf(c.info) } : null;
     });
     if (open) out.push(open);
   });

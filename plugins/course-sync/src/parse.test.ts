@@ -1,7 +1,7 @@
 /// <reference types="bun" />
 import { describe, expect, test } from 'bun:test';
 
-import { parseCourseTable, periodOf, periodTimes, weeksOf } from './parse';
+import { locationOf, parseCourseTable, periodOf, periodTimes, weeksOf } from './parse';
 
 describe('periodOf', () => {
   test('chinese and digit labels', () => {
@@ -56,5 +56,16 @@ describe('periodTimes', () => {
     const t = periodTimes([{ name: '第一节', time_period: '8:00-8:50' }, { name: '第二节', time_period: 'bad' }]);
     expect(t[1]).toEqual(['08:00', '08:50']);
     expect(t[2]).toEqual(['09:00', '09:50']);
+  });
+});
+
+describe('locationOf', () => {
+  test('real course-table notes', () => {
+    expect(locationOf('每周 备注：与本科生合上，物理楼北547')).toBe('物理楼北547');
+    expect(locationOf('1-16周 理教107')).toBe('理教107');
+    expect(locationOf('1-15周(单) 二教 203')).toBe('二教203');
+    expect(locationOf('每周 备注：本研合上，上课地点见本科生课表')).toBeNull();
+    expect(locationOf('每周 备注：与本科生合上，物理楼北547，一学年的课，本学期选课，下学期登成绩。')).toBe('物理楼北547');
+    expect(locationOf(null)).toBeNull();
   });
 });
