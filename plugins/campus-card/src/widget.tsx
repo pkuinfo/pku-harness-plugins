@@ -70,7 +70,12 @@ function Live({ host, size, config }: PluginWidgetProps) {
         <Text variant="micro" tone={data.error ? 'warn' : 'faint'} style={{ flex: 1 }}>
           {data.fetching ? '刷新中…' : `${data.error ? '刷新失败 · ' : ''}${data.updatedAt ? host.formatAgo(data.updatedAt, now.getTime()) : ''}`}
         </Text>
-        {size !== 'sm' ? <Button title="付款码" size="sm" icon="qr" onPress={() => host.navigate('/m/campus-card/pay')} /> : null}
+        {size !== 'sm' ? (
+          <View style={{ flexDirection: 'row', gap: t.spacing.xs }}>
+            <Button title="充值" size="sm" variant="secondary" onPress={() => host.navigate('/m/campus-card/recharge')} />
+            <Button title="付款码" size="sm" icon="qr" onPress={() => host.navigate('/m/campus-card/pay')} />
+          </View>
+        ) : null}
       </View>
     </View>
   );

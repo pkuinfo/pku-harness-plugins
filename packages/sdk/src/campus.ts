@@ -25,6 +25,24 @@ export type CampusRequest = {
   body?: string;
   contentType?: string;
   responseType?: 'text' | 'base64';
+  /**
+   * Form fields, sent url-encoded (instead of `body`). Lets the host add the session's auth to
+   * the form (`authIn`) and the plugin `sign` the final field set.
+   */
+  form?: Record<string, string>;
+  /**
+   * Where the service's session credential goes. Default: headers (as the service expects).
+   * 'form' puts it into `form` too, for APIs that read and sign the token from the body (the
+   * campus card's order API). Only services whose adapter supports it accept 'form'.
+   */
+  authIn?: 'headers' | 'form';
+  /**
+   * Last step before sending a `form`: add a signature (or anything derived from the final
+   * fields, auth included). Runs inside the harness; bundled plugins only.
+   */
+  sign?: (fields: Record<string, string>) => Record<string, string> | Promise<Record<string, string>>;
+  /** Follow 3xx redirects (default: the service's own choice). false = read `location` yourself. */
+  followRedirects?: boolean;
 };
 
 export type CampusResponse = { status: number; url: string; headers: Record<string, string>; body: string };

@@ -71,6 +71,21 @@ export interface WidgetCatalogEntry {
 }
 
 export interface HostServices {
+  /**
+   * Hand the user to a web page in the system browser tab (Custom Tabs / SFSafariViewController),
+   * outside the app: a payment cashier, a login the harness can't do, a document. App links on
+   * that page (weixin://, alipays://, …) open those apps, so a checkout can end in WeChat Pay or
+   * Alipay. Resolves once the page is open (it doesn't wait for the user, and can't tell whether
+   * a payment went through), so re-read the result (e.g. a balance) when the user is back.
+   */
+  browser: {
+    open(url: string): Promise<{ opened: true }>;
+  };
+  /** Hashing for request signatures (plugins have no crypto of their own). */
+  crypto: {
+    /** SHA-256 of the UTF-8 text, lowercase hex. */
+    sha256(text: string): Promise<string>;
+  };
   /** Introspection of installed plugins and tools (read-only). */
   registry: {
     plugins(): PluginInfo[];

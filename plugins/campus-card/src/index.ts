@@ -5,6 +5,8 @@ import { BalanceWidget } from './widget';
 
 import { cardMode, INCOME_ICONS, setDigitalCard, unwrap, yuan, type CardInfo, type Turnover } from './api';
 import { PayScreen } from './pay';
+import { createRechargeOrder, RECHARGE_MAX } from './recharge';
+import { RechargeScreen } from './recharge-screen';
 import { currentMonth, monthRange, statsUrls, summarizeMonth, type DailyStats, type TurnoverCategory, type TurnoverCount } from './stats';
 
 /** Campus card: balance, transactions, monthly statistics, payment code (pkucli crates/campuscard). */
@@ -12,13 +14,19 @@ export const campusCardPlugin = definePlugin({
   id: 'campus-card',
   name: '校园卡',
   description: '查询校园卡余额、消费记录和月度消费统计。',
-  version: '0.3.0',
+  version: '0.4.0',
   icon: 'card',
   requires: ['campus-session', 'network'],
   scopes: ['bdcard.pku.edu.cn', 'portal.pku.edu.cn（登录）'],
   contributes: {
-    screens: { pay: { title: '付款码', component: PayScreen, presentation: 'modal' } },
-    settings: [{ screen: 'pay', title: '校园卡付款码', subtitle: '食堂、超市扫码付款', icon: 'qr' }],
+    screens: {
+      pay: { title: '付款码', component: PayScreen, presentation: 'modal' },
+      recharge: { title: '充值', component: RechargeScreen, presentation: 'modal' },
+    },
+    settings: [
+      { screen: 'pay', title: '校园卡付款码', subtitle: '食堂、超市扫码付款', icon: 'qr' },
+      { screen: 'recharge', title: '校园卡充值', subtitle: '微信 / 支付宝付款', icon: 'card' },
+    ],
     widgets: {
       balance: {
         title: '校园卡余额',
@@ -30,7 +38,7 @@ export const campusCardPlugin = definePlugin({
       },
     },
   },
-  instructions: '校园卡金额单位是元。用户问余额用 campus-card__getBalance；问最近花了多少、在哪消费用 campus-card__listTransactions；问某个月一共花了多少、钱主要花在哪类（餐费、超市等）、哪天花得最多，用 campus-card__getMonthlyStats（一次返回整月汇总，比翻流水省事）。充值暂不支持：请用户在北大 App 或校园卡网页里自行充值，充值后需在 POS 机上刷一次卡才能到账。付款码不经过你：让用户点看板校园卡组件上的「付款码」，或在 设置 →「校园卡付款码」打开。',
+  instructions: '校园卡金额单位是元。用户问余额用 campus-card__getBalance；问最近花了多少、在哪消费用 campus-card__listTransactions；问某个月一共花了多少、钱主要花在哪类（餐费、超市等）、哪天花得最多，用 campus-card__getMonthlyStats（一次返回整月汇总，比翻流水省事）。用户要充值时用 campus-card__recharge（金额单位元，整数）：它创建学校的充值订单并在系统浏览器打开收银台，用户在里面选微信或支付宝、在那个 App 里自己付款；你不能也不需要代付，收银台链接也不会给你。调用后告诉用户去收银台完成付款，付完后在 POS 机上刷一次卡才能到账，之后可以再查余额确认。付款码不经过你：让用户点看板校园卡组件上的「付款码」，或在 设置 →「校园卡付款码」打开。',
   dataSources: {
     balance: { title: '校园卡余额', tool: 'getBalance', ttlMs: 5 * 60_000 },
   },
@@ -65,6 +73,18 @@ export const campusCardPlugin = definePlugin({
         if (before.digital) return { changed: false, mode: before.name };
         await setDigitalCard(ctx.services);
         return { changed: true, from: before.name, mode: '数字卡' };
+      },
+    }),
+    recharge: defineTool({
+      title: '校园卡充值',
+      description: 'Top up the campus card: creates the school\'s recharge order for `amount` yuan and opens its cashier page in the system browser, where the user picks WeChat Pay or Alipay and pays in that app. Does not pay and cannot confirm payment; check getBalance later (the money shows after one tap on a canteen POS).',
+      input: z.object({ amount: z.number().int().min(1).max(RECHARGE_MAX).describe('yuan, whole number; the cashier suggests 10 / 50 / 100 / 200 / 500 / 800') }),
+      effect: 'money',
+      execute: async ({ amount }, ctx) => {
+        const cashier = await createRechargeOrder(ctx.services, amount);
+        await ctx.services.browser.open(cashier);
+        // The cashier URL carries an order token: never part of the result (it reaches the model).
+        return { amount, cashierOpened: true, next: '用户在收银台选择微信或支付宝并在该 App 内付款；付款后需在 POS 机刷一次卡才到账' };
       },
     }),
     getMonthlyStats: defineTool({
