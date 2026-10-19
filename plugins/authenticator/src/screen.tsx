@@ -14,7 +14,7 @@ const WARNINGS = [
 
 /** Bind / show / remove the harness's 手机令牌. All steps are explicit button presses. */
 export function AuthenticatorScreen({ host, services }: PluginScreenProps) {
-  const { Screen, Text, Button, ListGroup, ListRow, Field, Checkbox, EmptyState, Glass, Hourglass, Pressable } = host.components;
+  const { Screen, Text, Button, ListGroup, ListRow, Field, Checkbox, EmptyState, Glass, Hourglass, Pressable, FadeIn, Chip } = host.components;
   const t = host.useTheme();
   const now = host.useNow(1000);
   const { otp, refresh } = useOtp(services);
@@ -23,6 +23,8 @@ export function AuthenticatorScreen({ host, services }: PluginScreenProps) {
   const [sentTo, setSentTo] = useState<string | null | undefined>(undefined); // undefined = not sent
   const [sms, setSms] = useState('');
   const [busy, setBusy] = useState<'send' | 'bind' | 'remove' | null>(null);
+  /** Set on a successful bind so the bound view arrives as a moment, not a silent swap. */
+  const [justBound, setJustBound] = useState(false);
   const [notice, setNotice] = useState<{ tone: 'up' | 'down' | 'muted'; text: string } | null>(null);
   const signedIn = services.campus.status().signedIn;
 
@@ -69,7 +71,8 @@ export function AuthenticatorScreen({ host, services }: PluginScreenProps) {
       setSentTo(undefined);
       setSms('');
       setAgreed(false);
-      setNotice({ tone: 'up', text: '绑定成功，本 App 现在就是你的手机令牌' });
+      setJustBound(true);
+      setNotice({ tone: 'up', text: '本 App 现在就是你的手机令牌，登录时会自动填写验证码' });
     } catch (e) {
       fail(e);
     } finally {
@@ -113,17 +116,20 @@ export function AuthenticatorScreen({ host, services }: PluginScreenProps) {
     return (
       <Screen title="手机令牌" subtitle="IAAA 动态验证码" back>
         <View style={{ gap: t.spacing.xl }}>
-          <Glass radius={t.radius.xl}>
-            <View style={{ padding: t.spacing.xl, alignItems: 'center', gap: t.spacing.lg }}>
-              <Hourglass period={30} size={72} tone={left <= 5 ? 'warn' : 'accent'} />
-              <CopyArea host={host} code={otp?.code ?? null}>
-                <View style={{ alignItems: 'center', gap: t.spacing.xs }}>{otp ? <CodeDigits host={host} code={otp.code} variant="numberXL" /> : <Text variant="numberXL">——</Text>}</View>
-              </CopyArea>
-              <Text variant="caption" tone={left <= 5 ? 'warn' : 'muted'}>
-                {left} 秒后更新
-              </Text>
-            </View>
-          </Glass>
+          <FadeIn key={justBound ? 'bound-now' : 'bound'}>
+            <Glass radius={t.radius.xl}>
+              <View style={{ padding: t.spacing.xl, alignItems: 'center', gap: t.spacing.lg }}>
+                {justBound ? <Chip label="绑定成功" tone="up" icon="check" /> : null}
+                <Hourglass period={30} size={72} tone={left <= 5 ? 'warn' : 'accent'} />
+                <CopyArea host={host} code={otp?.code ?? null}>
+                  <View style={{ alignItems: 'center', gap: t.spacing.xs }}>{otp ? <CodeDigits host={host} code={otp.code} variant="numberXL" /> : <Text variant="numberXL">——</Text>}</View>
+                </CopyArea>
+                <Text variant="caption" tone={left <= 5 ? 'warn' : 'muted'}>
+                  {left} 秒后更新
+                </Text>
+              </View>
+            </Glass>
+          </FadeIn>
           {noticeView}
           <ListGroup footer="本 App 登录学校系统、树洞课表和成绩的二次验证会自动使用这里的验证码。在别的设备登录时，打开这里看验证码即可。">
             <ListRow icon="person" title="账号" value={status.userName ? `${status.userName}（${status.userId ?? ''}）` : (status.userId ?? '')} />
