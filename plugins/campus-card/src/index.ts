@@ -5,13 +5,14 @@ import { BalanceWidget } from './widget';
 
 import { cardMode, INCOME_ICONS, setDigitalCard, unwrap, yuan, type CardInfo, type Turnover } from './api';
 import { PayScreen } from './pay';
+import { currentMonth, monthRange, statsUrls, summarizeMonth, type DailyStats, type TurnoverCategory, type TurnoverCount } from './stats';
 
-/** Campus card: balance and transactions (pkucli crates/campuscard). Read-only for now. */
+/** Campus card: balance, transactions, monthly statistics, payment code (pkucli crates/campuscard). */
 export const campusCardPlugin = definePlugin({
   id: 'campus-card',
   name: '校园卡',
-  description: '查询校园卡余额和消费记录。',
-  version: '0.2.0',
+  description: '查询校园卡余额、消费记录和月度消费统计。',
+  version: '0.3.0',
   icon: 'card',
   requires: ['campus-session', 'network'],
   scopes: ['bdcard.pku.edu.cn', 'portal.pku.edu.cn（登录）'],
@@ -29,7 +30,7 @@ export const campusCardPlugin = definePlugin({
       },
     },
   },
-  instructions: '校园卡金额单位是元。用户问余额用 campus-card__getBalance；问最近花了多少、在哪消费用 campus-card__listTransactions。付款码不经过你：让用户点看板校园卡组件上的「付款码」，或在 设置 →「校园卡付款码」打开。',
+  instructions: '校园卡金额单位是元。用户问余额用 campus-card__getBalance；问最近花了多少、在哪消费用 campus-card__listTransactions；问某个月一共花了多少、钱主要花在哪类（餐费、超市等）、哪天花得最多，用 campus-card__getMonthlyStats（一次返回整月汇总，比翻流水省事）。充值暂不支持：请用户在北大 App 或校园卡网页里自行充值，充值后需在 POS 机上刷一次卡才能到账。付款码不经过你：让用户点看板校园卡组件上的「付款码」，或在 设置 →「校园卡付款码」打开。',
   dataSources: {
     balance: { title: '校园卡余额', tool: 'getBalance', ttlMs: 5 * 60_000 },
   },
@@ -64,6 +65,23 @@ export const campusCardPlugin = definePlugin({
         if (before.digital) return { changed: false, mode: before.name };
         await setDigitalCard(ctx.services);
         return { changed: true, from: before.name, mode: '数字卡' };
+      },
+    }),
+    getMonthlyStats: defineTool({
+      title: '查询月度消费统计',
+      description: 'One month of campus card statistics in yuan: total income (recharge, subsidy, refund) and spending, spending by category (sorted, with share), and per-day spending for days with any. Use for "how much did I spend in April", "where does my money go", monthly comparisons (call once per month).',
+      input: z.object({
+        month: z.string().regex(/^\d{4}-\d{2}$/).optional().describe('YYYY-MM; default current month'),
+      }),
+      effect: 'read',
+      execute: async ({ month }, ctx) => {
+        const m = month ?? currentMonth();
+        monthRange(m); // validate before any request
+        const urls = statsUrls(m);
+        const get = (url: string) => ctx.services.campus.request('card', { url });
+        // commands.rs cmd_stats fetches the three in parallel.
+        const [count, categories, daily] = await Promise.all([get(urls.count), get(urls.categories), get(urls.daily)]);
+        return summarizeMonth(m, unwrap<TurnoverCount>(count), unwrap<TurnoverCategory[]>(categories), unwrap<DailyStats>(daily));
       },
     }),
     listTransactions: defineTool({

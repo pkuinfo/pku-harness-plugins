@@ -1,0 +1,20 @@
+{
+  "name": "@pku-harness/plugin-elective",
+  "version": "0.1.0",
+  "description": "选课网 (elective.pku.edu.cn) election results, supplementary-election list and course search, read-only",
+  "type": "module",
+  "main": "src/index.ts",
+  "license": "MIT",
+  "pkuHarness": {
+    "builtin": true
+  },
+  "dependencies": {
+    "node-html-parser": "^9.0.4"
+  },
+  "peerDependencies": {
+    "@pku-harness/sdk": "*",
+    "zod": "^4.0.0",
+    "react": "*",
+    "react-native": "*"
+  }
+}

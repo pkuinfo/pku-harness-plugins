@@ -9,7 +9,17 @@ export const BB_BASE = 'https://course.pku.edu.cn';
 
 export type CourseInfo = { id: string; title: string; name: string; current: boolean };
 export type Announcement = { title: string; body: string; date: string; author: string };
-export type ContentItem = { id: string; title: string; type: 'assignment' | 'folder' | 'document'; url: string | null; description: string };
+export type Attachment = { name: string; url: string };
+export type ContentItem = {
+  id: string;
+  /** Blackboard content id (`_123_1`): the link's content_id, else the li id without its prefix. */
+  contentId: string;
+  title: string;
+  type: 'assignment' | 'folder' | 'document';
+  url: string | null;
+  description: string;
+  attachments: Attachment[];
+};
 
 const text = (el: HTMLElement | null | undefined) => (el?.text ?? '').replace(/ /g, ' ').replace(/[ \t]+/g, ' ').trim();
 const abs = (href: string) => (href.startsWith('http') ? href : `${BB_BASE}${href}`);
@@ -17,6 +27,15 @@ export const param = (url: string, name: string) => {
   const v = new RegExp(`[?&]${name}=([^&#]*)`).exec(url)?.[1];
   return v == null ? null : decodeURIComponent(v);
 };
+
+/** `ul.attachments li a` → name + absolute link (api.rs parse_content_items / get_assignment). */
+function attachments(root: HTMLElement): Attachment[] {
+  return root
+    .querySelectorAll('ul.attachments li a')
+    .map((a) => ({ name: text(a), url: a.getAttribute('href') ?? '' }))
+    .filter((a) => a.name && a.url)
+    .map((a) => ({ name: a.name, url: abs(a.url) }));
+}
 
 /** Homepage course portlets (api.rs list_courses): `key=_123_1,` in each course link. */
 export function parseCourses(html: string): CourseInfo[] {
@@ -81,12 +100,15 @@ export function parseContent(html: string): ContentItem[] {
     const url = href ? abs(href) : null;
     const alt = li.querySelector('img')?.getAttribute('alt') ?? '';
     const type = alt === '作业' || (url != null && /uploadAssignment|assignment/.test(url)) ? 'assignment' : url?.includes('listContent') ? 'folder' : 'document';
+    const id = li.getAttribute('id') ?? (url ? (param(url, 'content_id') ?? '') : '');
     out.push({
-      id: li.getAttribute('id') ?? (url ? (param(url, 'content_id') ?? '') : ''),
+      id,
+      contentId: (url ? param(url, 'content_id') : null) ?? id.replace(/^contentListItem:/, ''),
       title,
       type,
       url,
       description: text(li.querySelector('div.vtbegenerated') ?? li.querySelector('div.details')),
+      attachments: attachments(li),
     });
   }
   return out;
@@ -109,4 +131,64 @@ export function parseDeadline(raw: string | null): number | null {
   if (m[4] === '下午' && hour < 12) hour += 12;
   if (m[4] === '上午' && hour === 12) hour = 0;
   return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), hour, Number(m[6])).getTime();
+}
+
+export type AssignmentDetail = {
+  title: string;
+  deadlineText: string | null;
+  instructions: string;
+  attachments: Attachment[];
+  status: string | null;
+  attempt: string | null;
+  grade: string | null;
+};
+
+/**
+ * Full assignment page (api.rs get_assignment on `action=newAttempt`, get_assignment_attempt on
+ * `mode=view`). Works on either page; the caller merges both. The grade is not parsed by pkucli:
+ * best effort from Blackboard's review page ids (`currentAttempt_grade`, `aggregateGrade`).
+ */
+export function parseAssignmentDetail(html: string): AssignmentDetail {
+  const dom = parse(html);
+  const { deadlineText, attempt } = parseAssignment(html);
+  const gradeEl = dom.querySelector('#currentAttempt_grade') ?? dom.querySelector('#aggregateGrade');
+  const grade = (gradeEl?.getAttribute('value') ?? text(gradeEl)).trim();
+  const possible = text(dom.querySelector('#currentAttempt_pointsPossible') ?? dom.querySelector('#aggregateGrade_pointsPossible'));
+  // Grade not entered yet shows as "-" (or an empty input).
+  const graded = grade && grade !== '-' ? `${grade}${possible ? ` ${possible}` : ''}` : null;
+  return {
+    title: text(dom.querySelector('span.title') ?? dom.querySelector('#pageTitleText')),
+    deadlineText,
+    instructions: text(dom.querySelector('div.vtbegenerated')),
+    attachments: attachments(dom),
+    status: text(dom.querySelector('.status')) || null,
+    attempt,
+    grade: graded,
+  };
+}
+
+export type VideoInfo = { title: string; time: string; teacher: string; url: string };
+
+const VIDEO_BASE = `${BB_BASE}/webapps/bb-streammedia-hqy-BBLEARN/`;
+const resolve = (href: string, base: string) =>
+  /^https?:\/\//i.test(href) ? href : href.startsWith('/') ? `${BB_BASE}${href}` : base + href.replace(/^\.\//, '');
+
+/**
+ * Course recording list, `videoList.action` (api.rs list_videos): one row per recording; the
+ * first cell is the title, then `span.table-data-cell-value` cells = time, teacher, link.
+ */
+export function parseVideos(html: string): VideoInfo[] {
+  return parse(html)
+    .querySelectorAll('tbody#listContainer_databody > tr')
+    .map((tr) => {
+      const cells = tr.querySelectorAll('span.table-data-cell-value');
+      const href = cells[2]?.querySelector('a')?.getAttribute('href') ?? '';
+      return {
+        title: text(tr.children[0]),
+        time: text(cells[0]),
+        teacher: text(cells[1]),
+        url: href ? resolve(href, VIDEO_BASE) : '',
+      };
+    })
+    .filter((v) => v.title);
 }

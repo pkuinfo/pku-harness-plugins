@@ -1,0 +1,15 @@
+{
+  "name": "@pku-harness/plugin-finance",
+  "version": "0.1.0",
+  "description": "财务综合信息门户 (cwfw.pku.edu.cn): personal reward / income records, read-only, campus network only",
+  "type": "module",
+  "main": "src/index.ts",
+  "license": "MIT",
+  "pkuHarness": {
+    "builtin": true
+  },
+  "peerDependencies": {
+    "@pku-harness/sdk": "*",
+    "zod": "^4.0.0"
+  }
+}
