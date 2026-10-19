@@ -2,6 +2,7 @@ import type { PluginDef } from '@pku-harness/sdk';
 
 import { calendarPlugin } from './calendar/src';
 import { campusCardPlugin } from './campus-card/src';
+import { courseSyncPlugin } from './course-sync/src';
 import { dashboardPlugin } from './dashboard/src';
 import { deepseekPlugin } from './deepseek/src';
 import { memoryPlugin } from './memory/src';
@@ -26,6 +27,7 @@ export const builtinPlugins: PluginDef[] = [
   todoPlugin,
   schedulePlugin,
   timetablePlugin,
+  courseSyncPlugin,
   calendarPlugin,
   campusCardPlugin,
   netfeePlugin,

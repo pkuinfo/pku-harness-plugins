@@ -129,7 +129,7 @@ export function ScheduleTab({ host, services }: PluginScreenProps) {
               <WeekGrid host={host} courses={courses} semester={semester} selected={selected} now={now} />
             ) : (
               <Text variant="callout" tone="muted">
-                课表是空的。登录校园账号后会自动同步；也可以手动添加，或在对话里把课表发给 AI。
+                课表是空的。可以从学校同步、手动添加，或在对话里把课表发给 AI。
               </Text>
             )}
             <ListGroup title="课表设置">
@@ -140,6 +140,9 @@ export function ScheduleTab({ host, services }: PluginScreenProps) {
                 onPress={() => host.navigate(form('semester'))}
               />
               <ListRow icon="plus" title="添加课程" onPress={() => host.navigate(form('course', { id: 'new' }))} />
+              {services.registry.plugins().some((p) => p.id === 'course-sync' && p.enabled) ? (
+                <ListRow icon="refresh" title="从学校同步课表" subtitle="教务课表插件" onPress={() => host.navigate('/p/course-sync/home')} />
+              ) : null}
             </ListGroup>
             <View style={{ gap: t.spacing.sm }}>
               <View style={[styles.sectionHead, { paddingHorizontal: t.spacing.xs }]}>

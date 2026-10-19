@@ -26,8 +26,8 @@ const courseFields = {
 };
 
 /**
- * Class timetable. Courses are added by hand or by the agent today; the campus timetable sync
- * (pkucli treehole `get_coursetable`, T4.5) will fill the same store with source "campus".
+ * Class timetable. Courses are added by hand, by the agent, or synced from PKU by the
+ * course-sync plugin (source "campus").
  */
 export const timetablePlugin = definePlugin({
   id: 'timetable',
@@ -42,7 +42,7 @@ export const timetablePlugin = definePlugin({
       next: { title: '下一节课', description: '正在上或接下来的一节课，含地点、倒计时和进度，随时间自动更新。', sizes: ['sm', 'md'], defaultSize: 'md', component: NextClassWidget },
     },
   },
-  instructions: '课表用 timetable 工具。用户口述课程时，逐门调用 timetable__addCourse（时间用 HH:MM，星期 0=周日）。上课提醒用 timetable__setReminder 设置提前分钟数。',
+  instructions: '课表用 timetable 工具。用户口述课程时，逐门调用 timetable__addCourse（时间用 HH:MM，星期 0=周日）。上课提醒用 timetable__setReminder 设置提前分钟数。用户想从学校导入课表时用 course-sync 插件。',
   dataSources: {
     today: { title: '今天的课', tool: 'today', ttlMs: 60_000 },
   },

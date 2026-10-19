@@ -1,0 +1,17 @@
+{
+  "name": "@pku-harness/plugin-course-sync",
+  "version": "0.1.0",
+  "description": "Sync the class timetable from PKU (treehole course table)",
+  "type": "module",
+  "main": "src/index.ts",
+  "license": "MIT",
+  "pkuHarness": {
+    "builtin": true
+  },
+  "peerDependencies": {
+    "@pku-harness/sdk": "*",
+    "zod": "^4.0.0",
+    "react": "*",
+    "react-native": "*"
+  }
+}
