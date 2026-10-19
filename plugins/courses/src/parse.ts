@@ -192,3 +192,12 @@ export function parseVideos(html: string): VideoInfo[] {
     })
     .filter((v) => v.title);
 }
+
+/**
+ * Tool results go to the model provider: strip credential-like query parameters (Blackboard
+ * play links carry a session token) so no session secret leaves the device. The link still
+ * identifies the page; opening it needs the user's own 教学网 login.
+ */
+export function redactUrl(url: string) {
+  return url.replace(/([?&])(token|access_token|ticket|jsessionid|sid|session|sign|signature)=[^&#]*(&)?/gi, (_m, sep: string, _k: string, amp?: string) => (amp ? sep : '')).replace(/[?&]$/, '');
+}

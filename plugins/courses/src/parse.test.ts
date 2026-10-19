@@ -2,7 +2,7 @@
 import { describe, expect, test } from 'bun:test';
 
 import { crawl } from './api';
-import { parseAnnouncements, parseAssignment, parseAssignmentDetail, parseContent, parseCourses, parseDeadline, parseMenu, parseVideos } from './parse';
+import { parseAnnouncements, parseAssignment, parseAssignmentDetail, parseContent, parseCourses, parseDeadline, parseMenu, parseVideos, redactUrl } from './parse';
 
 describe('parseCourses', () => {
   test('current and past portlets', () => {
@@ -159,5 +159,14 @@ describe('crawl', () => {
     expect(one.truncated).toBe(true);
     expect(one.pages).toBe(1);
     expect(fetched).toEqual(['menu', '_1_1']);
+  });
+});
+
+describe('redactUrl', () => {
+  test('drops session tokens, keeps the rest', () => {
+    expect(redactUrl('https://course.pku.edu.cn/webapps/bb-streammedia-hqy-BBLEARN/playVideo.action?token=eyJabc.def&course_id=_1_1')).toBe('https://course.pku.edu.cn/webapps/bb-streammedia-hqy-BBLEARN/playVideo.action?course_id=_1_1');
+    expect(redactUrl('https://x/a?course_id=1&token=abc')).toBe('https://x/a?course_id=1');
+    expect(redactUrl('https://x/a?token=abc')).toBe('https://x/a');
+    expect(redactUrl('https://x/bbcswebdav/pid-1/xid-2')).toBe('https://x/bbcswebdav/pid-1/xid-2');
   });
 });

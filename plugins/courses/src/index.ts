@@ -1,6 +1,7 @@
 import { definePlugin, defineTool } from '@pku-harness/sdk';
 import { z } from 'zod';
 
+import { redactUrl } from './parse';
 import { announcements, assignmentDetail, assignments, crawl, listCourses, pool, videos } from './api';
 import { DueWidget } from './widget';
 
@@ -103,8 +104,8 @@ export const coursesPlugin = definePlugin({
             type: i.type,
             path: i.path,
             description: clip(i.description, 300),
-            url: i.url,
-            attachments: i.attachments,
+            url: i.url ? redactUrl(i.url) : i.url,
+            attachments: i.attachments.map((a) => ({ ...a, url: redactUrl(a.url) })),
           })),
         };
       },
@@ -119,7 +120,8 @@ export const coursesPlugin = definePlugin({
         const picked = courseId ? courses.filter((c) => c.id === courseId) : courses;
         if (courseId && !picked.length) throw new Error(`没有这门课：${courseId}`);
         // One course: surface its error; across courses, skip the ones that fail.
-        return (await pool(picked, 3, (c) => (courseId ? videos(ctx.services, c) : videos(ctx.services, c).catch(() => [])))).flat();
+        const list = (await pool(picked, 3, (c) => (courseId ? videos(ctx.services, c) : videos(ctx.services, c).catch(() => [])))).flat();
+        return list.map((v) => ({ ...v, url: redactUrl(v.url) }));
       },
     }),
   },
