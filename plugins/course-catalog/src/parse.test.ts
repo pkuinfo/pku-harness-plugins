@@ -79,6 +79,16 @@ describe('dean (教务部)', () => {
     expect(parseSelectOptions(html, 'nope')).toEqual([]);
   });
 
+  test('select options from the 2026 span dropdown', () => {
+    const html = `<span class="yearandseme" data="25-26-3">25-26学年 第3学期</span><span class="ctActive yearandseme" data="26-27-1">26-27学年 第1学期</span><input type="hidden" id="yearandseme" value="26-27-1"/>
+      <span class="ctActive yuanxi" data="0"><a href="javascript:">全部</a></span><span class="yuanxi" data="00004"><a href="javascript:">物理学院</a></span><span class="yuanxi" data="00048"><a href="javascript:">信息科学技术学院</a></span><input type="hidden" id="yuanxi" value="0"/>`;
+    expect(parseSelectOptions(html, 'yuanxi')).toEqual([
+      { value: '00004', label: '物理学院' },
+      { value: '00048', label: '信息科学技术学院' },
+    ]);
+    expect(parseSelectOptions(html, 'yearandseme').map((o) => o.value)).toEqual(['25-26-3', '26-27-1']);
+  });
+
   test('semester code', () => {
     expect(semesterCode(new Date(2026, 9, 18))).toBe('26-27-1');
     expect(semesterCode(new Date(2027, 0, 5))).toBe('26-27-1');

@@ -129,10 +129,12 @@ export function parseDeanResponse(text: string): { count: number; courses: Catal
 export function parseSelectOptions(html: string, name: string): { value: string; label: string }[] {
   const root = parse(html);
   const select = root.querySelectorAll('select').find((s) => s.getAttribute('name') === name || s.getAttribute('id') === name);
-  if (!select) return [];
-  return select
-    .querySelectorAll('option')
-    .map((o) => ({ value: (o.getAttribute('value') ?? '').trim(), label: o.text.trim() }))
+  // 2026 redesign: a custom dropdown of `<span class="<name>" data="<value>">label</span>` (+ hidden #<name>).
+  const items = select
+    ? select.querySelectorAll('option').map((o) => ({ value: o.getAttribute('value') ?? '', label: o.text }))
+    : root.querySelectorAll(`span.${name}`).map((o) => ({ value: o.getAttribute('data') ?? '', label: o.text }));
+  return items
+    .map((o) => ({ value: o.value.trim(), label: o.label.trim() }))
     .filter((o) => o.value && o.value !== '0' && o.label);
 }
 
