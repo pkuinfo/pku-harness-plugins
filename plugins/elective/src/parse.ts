@@ -128,3 +128,22 @@ export function parseQuota(status: string): Quota | null {
   const [limit, elected, waitlist] = parts;
   return { limit, elected, waitlist: Number.isFinite(waitlist) ? waitlist : null, remaining: Math.max(limit - elected, 0), full: elected >= limit };
 }
+
+/** Visible rows of every table on a page, as trimmed cell texts (empty rows dropped). */
+export function tableRows(html: string, limit = 60): string[][] {
+  const out: string[][] = [];
+  for (const tr of parse(html).querySelectorAll('tr')) {
+    if (tr.querySelector('tr')) continue; // layout tables nest rows; keep the innermost
+    const cells = tr.querySelectorAll('td, th').map((c) => text(c)).filter(Boolean);
+    if (cells.length) out.push(cells);
+    if (out.length >= limit) break;
+  }
+  return out;
+}
+
+/** Visible text of a page, whitespace-collapsed (scripts and styles dropped). */
+export function pageText(html: string, max = 600): string {
+  const dom = parse(html);
+  dom.querySelectorAll('script, style').forEach((n) => n.remove());
+  return text(dom.querySelector('body') ?? dom).slice(0, max);
+}

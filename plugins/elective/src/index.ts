@@ -1,7 +1,7 @@
 import { definePlugin, defineTool } from '@pku-harness/sdk';
 import { z } from 'zod';
 
-import { results, search, supplementPage, supplyCancel } from './api';
+import { results, schedule, search, supplementPage, supplyCancel } from './api';
 
 const program = z.enum(['major', 'minor']).optional().describe('dual-degree accounts only: major = 主修 (default), minor = 辅双/双学位; ignored otherwise');
 
@@ -24,6 +24,13 @@ export const electivePlugin = definePlugin({
 - 问"这学期课表 / 什么时候上课"不要用这里（用 timetable / course-sync），这里只看一个项目且不含完整时间表。
 - remaining = 限数 − 已选；full=true 表示已满（有候补时 waitlist 是候补人数）。`,
   tools: {
+    schedule: defineTool({
+      title: '选课阶段',
+      description: 'The 选课网 home page: the election schedule (预选 / 补退选 phases with dates) and any site notice. Use it to tell whether add/drop is open now.',
+      input: z.object({}),
+      effect: 'read',
+      execute: async (_input, ctx) => schedule(ctx.services),
+    }),
     results: defineTool({
       title: '选课结果',
       description: 'My election results this term (showResults): each course with class number, teacher, classroom/time info and result (e.g. 已选上, 未选上, 待抽签).',

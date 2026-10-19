@@ -1,6 +1,6 @@
 import type { HostServices } from '@pku-harness/sdk';
 
-import { parseElected, parseNotice, parseQuota, parseResults, parseSupplements, parseTotalPages, type CourseRow } from './parse';
+import { pageText, parseElected, parseNotice, tableRows, parseQuota, parseResults, parseSupplements, parseTotalPages, type CourseRow } from './parse';
 
 /**
  * 选课网 requests (pkucli crates/elective/src/api.rs), read-only. The harness `elective` adapter
@@ -54,6 +54,12 @@ const withQuota = (c: CourseRow) => {
   const q = parseQuota(c.status);
   return { ...base(c), info: c.info || undefined, quota: c.status, ...(q ? { limit: q.limit, elected: q.elected, waitlist: q.waitlist ?? undefined, remaining: q.remaining, full: q.full } : {}) };
 };
+
+/** 选课网首页 (HelpController.jpf): the election schedule table and any notice. */
+export async function schedule(services: Services) {
+  const res = await page(services, HELP_CONTROLLER, "https://elective.pku.edu.cn/elective2008/");
+  return { notice: parseNotice(res.body), rows: tableRows(res.body), text: pageText(res.body) };
+}
 
 /** 选课结果 (api.rs get_results). */
 export async function results(services: Services, program?: Program) {
