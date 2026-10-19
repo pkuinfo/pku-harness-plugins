@@ -1,7 +1,7 @@
 {
   "name": "@pku-harness/plugin-room-booking",
-  "version": "0.1.0",
-  "description": "北大空间 discussion-room booking (二教 / 四教 / 地学): rooms, taken slots, my reservations, reserve, cancel",
+  "version": "0.2.0",
+  "description": "北大空间 discussion-room booking (二教 / 四教 / 地学): rooms, free periods, my reservations, reserve, cancel",
   "type": "module",
   "main": "src/index.ts",
   "license": "MIT",

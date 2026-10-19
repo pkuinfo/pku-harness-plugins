@@ -2,20 +2,29 @@ import type { HostServices } from '@pku-harness/sdk';
 
 import {
   encodeForm,
+  isProfilePage,
   layerMsg,
   parseApplications,
-  parseHistory,
-  parseRooms,
+  parseLockStatus,
+  parseSchedule,
+  parseSpace,
   parseStudent,
   submitForm,
   submitOutcome,
   type Application,
   type BookedSlot,
+  type Building,
   type Room,
   type Student,
 } from './parse';
 
-/** 北大空间 requests (pkucli crates/bdkj/src/api.rs). The harness adapter 'bdkj' holds the session. */
+/**
+ * 北大空间 requests. Rooms / availability / my list follow the 2026-10 redesign (/space,
+ * /space/schedule, /classRoom); student check, submit and cancel are pkucli crates/bdkj/src/api.rs
+ * and are not yet verified against the new site. The harness adapter 'bdkj' holds the session.
+ */
+
+export const PROFILE_MSG = '首次预约前需要在北大空间「个人信息」页完善资料（请在浏览器打开 https://bdkj.pku.edu.cn/personal 完成）';
 
 type Services = Pick<HostServices, 'campus'>;
 
@@ -31,26 +40,41 @@ async function call(services: Services, url: string, init: { method?: 'GET' | 'P
     headers: { ...(init.xhr ? XHR : {}), ...(init.referer ? { referer: init.referer } : {}) },
   });
   if (res.status >= 400) throw new Error(`北大空间返回 HTTP ${res.status}`);
+  // Any page bounced to 个人信息 means the profile must be completed in a browser first.
+  if (isProfilePage(res.url)) throw new Error(PROFILE_MSG);
   return res;
 }
 
-export async function listRooms(services: Services, buildingId: string): Promise<Room[]> {
-  const res = await call(services, '/room/classRoom', {
-    xhr: true,
-    form: [
-      ['buildingId', buildingId],
-      ['roomId', ''],
-      ['beginTime', ''],
-      ['endTime', ''],
-    ],
-  });
-  return parseRooms(res.body);
+/** GET /space (buildings + room cards), with /space/lockStatus codes attached when available. */
+export async function space(services: Services): Promise<{ buildings: Building[]; rooms: Room[] }> {
+  const [page, locks] = await Promise.all([
+    call(services, '/space'),
+    call(services, '/space/lockStatus', { xhr: true, referer: 'https://bdkj.pku.edu.cn/space' }).then(
+      (r) => parseLockStatus(r.body),
+      () => ({}) as Record<string, number>,
+    ),
+  ]);
+  const parsed = parseSpace(page.body);
+  if (!parsed.rooms.length && !parsed.buildings.length) throw new Error('没有从北大空间读到教室列表（页面结构可能又改了）');
+  for (const r of parsed.rooms) if (r.id in locks) r.lockCode = locks[r.id];
+  return parsed;
 }
 
-/** Taken slots of a room from `startDate` ("YYYY-MM-DD HH:MM:SS") on. */
-export async function bookedSlots(services: Services, roomId: string, startDate: string): Promise<BookedSlot[]> {
-  const res = await call(services, `/classRoom/historyTime?id=&roomId=${encodeURIComponent(roomId)}`, { xhr: true, form: [['startDate', startDate]] });
-  return parseHistory(res.body);
+/** GET /space/schedule: taken slots of a room for the week starting `startDate` ("YYYY-MM-DD"). */
+export async function schedule(services: Services, roomId: string, startDate: string): Promise<BookedSlot[]> {
+  const q = `roomId=${encodeURIComponent(roomId)}&startDate=${encodeURIComponent(startDate)}`;
+  const res = await call(services, `/space/schedule?${q}`, { xhr: true, referer: 'https://bdkj.pku.edu.cn/space' });
+  return parseSchedule(res.body);
+}
+
+/**
+ * Open the room's 去申请 page the way the browser does. An incomplete profile is redirected to
+ * /personal, which no form submission can get past, so that is reported as PROFILE_MSG.
+ */
+export async function checkCanApply(services: Services, href: string | undefined) {
+  if (!href) return;
+  if (/^https?:\/\//i.test(href) && !/^https?:\/\/bdkj\.pku\.edu\.cn\//i.test(href)) return;
+  await call(services, /^https?:|^\//i.test(href) ? href : `/${href}`, { referer: 'https://bdkj.pku.edu.cn/space' });
 }
 
 export async function searchStudent(services: Services, serial: string, name: string): Promise<Student> {
@@ -68,6 +92,7 @@ export async function searchStudent(services: Services, serial: string, name: st
   }
 }
 
+/** GET /classRoom: my records (`div.cr-empty` → []). */
 export async function listApplications(services: Services): Promise<Application[]> {
   return parseApplications((await call(services, '/classRoom')).body);
 }

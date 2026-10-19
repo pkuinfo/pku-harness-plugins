@@ -1,29 +1,38 @@
 import { parse, type HTMLElement, type Node, TextNode } from 'node-html-parser';
 
 /**
- * 北大空间 (bdkj.pku.edu.cn) parsing, ported from pkucli crates/bdkj/src/api.rs. Pure: JSON / HTML
- * in, data out. Field names follow the site's JSON (`seatingCapacity`, `beginTime`, …).
+ * 北大空间 (bdkj.pku.edu.cn) parsing. Pure: JSON / HTML in, data out. The site was redesigned in
+ * 2026-10 (rooms now come from the /space page, availability from /space/schedule); the apply /
+ * cancel / student-check parts are still ported from pkucli crates/bdkj/src/api.rs.
  */
 
-/** Building ids hard-coded in the site's pages (api.rs BUILDING_*). */
-export const BUILDINGS = {
-  二教: '924128798427975680',
-  四教: '924128697978589184',
-  地学: '924129024664539136',
-} as const;
-export type Building = keyof typeof BUILDINGS;
+/** Pinyin / number aliases for the three buildings the site lists (api.rs building_id). */
+const BUILDING_ALIASES: Record<string, string[]> = {
+  二教: ['erjiao', '二教学楼', '第二教学楼'],
+  四教: ['sijiao', '四教学楼', '第四教学楼'],
+  地学: ['dixue', '地学楼'],
+};
 
-/** api.rs building_id: name, pinyin or building number. */
-export function buildingId(name: string): string | null {
-  const n = name.trim().toLowerCase();
-  if (['二教', 'erjiao', '02', '2'].includes(n)) return BUILDINGS.二教;
-  if (['四教', 'sijiao', '04', '4'].includes(n)) return BUILDINGS.四教;
-  if (['地学', 'dixue', '09', '9', '地学楼'].includes(n)) return BUILDINGS.地学;
-  return null;
-}
-
-export type Room = { id: string; code: string; name: string; capacity: number | null; popularity: string; bookable: boolean; locked: boolean };
-export type BookedSlot = { id: string; begin: string; end: string; intervals: string };
+export type Building = { id: string; name: string; code: string; bookable: number | null };
+export type Room = {
+  id: string;
+  name: string;
+  code: string;
+  buildingId: string;
+  building: string;
+  floor: number | null;
+  capacity: number | null;
+  minPeople: number | null;
+  /** Door state as printed on the card (关门 / 开门 / 常开 …); '' when the card has none. */
+  door: string;
+  /** Screen state as printed on the card (正常 …). */
+  screen: string;
+  /** Raw /space/lockStatus code (0 | 1 | 2), informative only: its mapping is unverified. */
+  lockCode?: number;
+  /** href of the card's 去申请 button, when the markup has one. */
+  applyHref?: string;
+};
+export type BookedSlot = { begin: string; end: string };
 export type Student = { id: string; serial: string; name: string };
 export type Application = {
   id: string;
@@ -47,34 +56,151 @@ function json<T>(body: string, what: string): T {
 }
 
 const str = (v: unknown) => (v == null ? '' : String(v));
+const clean = (s: string | undefined) => (s ?? '').replace(/\s+/g, ' ').trim();
+const int = (s: string | undefined) => {
+  const n = Number.parseInt(/\d+/.exec(s ?? '')?.[0] ?? '', 10);
+  return Number.isFinite(n) ? n : null;
+};
 
-/** POST /room/classRoom (api.rs list_rooms): a JSON array of rooms. */
-export function parseRooms(body: string): Room[] {
-  const list = json<unknown>(body, '教室列表');
-  if (!Array.isArray(list)) throw new Error('教室列表格式不对');
-  return list
-    .filter((r): r is Record<string, unknown> => !!r && typeof r === 'object' && r.id != null && r.name != null)
-    .map((r) => {
-      const cap = Number.parseInt(str(r.seatingCapacity), 10);
-      return {
-        id: str(r.id),
-        code: str(r.code),
-        name: str(r.name),
-        capacity: Number.isFinite(cap) ? cap : null,
-        popularity: str(r.popularity),
-        bookable: r.bookable === true,
-        locked: Number(r.locked ?? 0) !== 0,
-      };
+/**
+ * GET /space (2026 redesign): building panels `[data-building-id]` (title, "(02)" code,
+ * "共 <b>10</b> 间可预约") and room cards `.sp-card[data-room-id]` (name, 5-digit code, feature
+ * list 楼层 / 可容纳 N 人 / 至少 N 人起约, device chips with `data-dev-kind`).
+ */
+export function parseSpace(html: string): { buildings: Building[]; rooms: Room[] } {
+  const dom = parse(html);
+  const buildings: Building[] = [];
+  for (const el of dom.querySelectorAll('[data-building-id]') as HTMLElement[]) {
+    const id = el.getAttribute('data-building-id') ?? '';
+    const name = clean(el.querySelector('.cr-panel-title')?.text);
+    if (!id || !name || buildings.some((b) => b.id === id)) continue;
+    const code = /\d+/.exec(el.querySelector('.sp-building-code')?.text ?? '')?.[0] ?? '';
+    const count = el.querySelector('.cr-panel-count');
+    buildings.push({ id, name, code, bookable: int(count?.querySelector('b')?.text ?? count?.text) });
+  }
+
+  const rooms: Room[] = [];
+  for (const card of dom.querySelectorAll('.sp-card[data-room-id]') as HTMLElement[]) {
+    const id = card.getAttribute('data-room-id') ?? '';
+    if (!id || rooms.some((r) => r.id === id)) continue;
+    const name = clean(card.querySelector('.cr-room-name')?.text) || clean(card.getAttribute('data-room-name'));
+    const code = clean(card.querySelector('.sp-code')?.text);
+    // The card sits inside its building panel; else match the code prefix ("02514" → 02).
+    let el: HTMLElement | null = card;
+    while (el && !el.getAttribute?.('data-building-id')) el = el.parentNode as HTMLElement | null;
+    const building = buildings.find((b) => b.id === el?.getAttribute('data-building-id')) ?? buildings.find((b) => b.code && code.startsWith(b.code));
+
+    let floor: number | null = null;
+    let capacity: number | null = null;
+    let minPeople: number | null = null;
+    for (const li of card.querySelectorAll('.sp-features li') as HTMLElement[]) {
+      const t = clean(li.text);
+      if (/可容纳/.test(t)) capacity = int(t);
+      else if (/起约|至少/.test(t)) minPeople = int(t);
+      else if (/层|楼/.test(t)) floor = int(t);
+    }
+    const dev = (kind: string) => clean(card.querySelector(`[data-dev-kind="${kind}"] .sp-dev-state`)?.text);
+    const href = card.querySelector('a.sp-btn-apply')?.getAttribute('href');
+    rooms.push({
+      id,
+      name,
+      code,
+      buildingId: building?.id ?? '',
+      building: building?.name ?? '',
+      floor,
+      capacity,
+      minPeople,
+      door: dev('door'),
+      screen: dev('screen'),
+      ...(href && !/^(#|javascript:)/i.test(href) ? { applyHref: href } : {}),
     });
+  }
+  return { buildings, rooms };
 }
 
-/** POST /classRoom/historyTime (api.rs history_time): slots already taken. */
-export function parseHistory(body: string): BookedSlot[] {
+/** A building by name, code ("02" / "2") or pinyin. */
+export function matchBuilding(query: string, buildings: Building[]): Building | null {
+  const q = query.trim().toLowerCase().replace(/楼$/, '');
+  if (!q) return null;
+  return (
+    buildings.find((b) => {
+      const name = b.name.toLowerCase();
+      const aliases = Object.entries(BUILDING_ALIASES).find(([k]) => name.includes(k.toLowerCase()))?.[1] ?? [];
+      return name === q || name.replace(/楼$/, '') === q || (b.code && Number(b.code) === Number(q)) || aliases.includes(q) || aliases.includes(query.trim());
+    }) ?? null
+  );
+}
+
+/** GET /space/lockStatus: `{ "<roomId>": 0|1|2 }`. Anything malformed yields {}. */
+export function parseLockStatus(body: string): Record<string, number> {
+  try {
+    const map = JSON.parse(body) as unknown;
+    if (!map || typeof map !== 'object' || Array.isArray(map)) return {};
+    const out: Record<string, number> = {};
+    for (const [k, v] of Object.entries(map)) if (typeof v === 'number') out[k] = v;
+    return out;
+  } catch {
+    return {};
+  }
+}
+
+/** GET /space/schedule?roomId&startDate: taken slots for the week from startDate. */
+export function parseSchedule(body: string): BookedSlot[] {
   const list = json<unknown>(body, '已预约时段');
   if (!Array.isArray(list)) throw new Error('已预约时段格式不对');
   return list
     .filter((h): h is Record<string, unknown> => !!h && typeof h === 'object' && h.beginTime != null && h.endTime != null)
-    .map((h) => ({ id: str(h.id), begin: str(h.beginTime), end: str(h.endTime), intervals: str(h.intervals) }));
+    .map((h) => ({ begin: str(h.beginTime), end: str(h.endTime) }));
+}
+
+/**
+ * The bookable periods of a day: 13 periods of 50 minutes, 08:00–22:30 (the site's landing
+ * page). Periods 1–12 follow the PKU class timetable (a taken slot 20:40–21:30 = period 12),
+ * 13 is 21:40–22:30. Free/taken is decided by overlap, so a slightly off grid never shows a
+ * taken period as free.
+ */
+export const PERIODS: readonly [string, string][] = [
+  ['08:00', '08:50'],
+  ['09:00', '09:50'],
+  ['10:10', '11:00'],
+  ['11:10', '12:00'],
+  ['13:00', '13:50'],
+  ['14:00', '14:50'],
+  ['15:10', '16:00'],
+  ['16:10', '17:00'],
+  ['17:10', '18:00'],
+  ['18:40', '19:30'],
+  ['19:40', '20:30'],
+  ['20:40', '21:30'],
+  ['21:40', '22:30'],
+];
+
+export type DaySlots = { date: string; free: { period: number; begin: string; end: string }[]; taken: BookedSlot[] };
+
+/**
+ * Free periods per day for `dates` ("YYYY-MM-DD"), given the taken slots. Periods that already
+ * started before `now` ("YYYY-MM-DD HH:MM:SS", optional) are not offered.
+ */
+export function freeSlots(dates: string[], taken: BookedSlot[], now?: string): DaySlots[] {
+  return dates.map((date) => {
+    const dayTaken = taken.filter((s) => s.begin.startsWith(date));
+    const free = PERIODS.map(([b, e], i) => ({ period: i + 1, begin: `${date} ${b}:00`, end: `${date} ${e}:00` }))
+      .filter((p) => !(now && p.begin < now))
+      .filter((p) => !dayTaken.some((s) => overlaps(p.begin, p.end, s)))
+      .map((p) => ({ period: p.period, begin: p.begin.slice(11, 16), end: p.end.slice(11, 16) }));
+    return { date, free, taken: dayTaken };
+  });
+}
+
+/** Whether a final URL is bdkj's 个人信息 page (an incomplete profile is sent there before applying). */
+export function isProfilePage(finalUrl: string): boolean {
+  const path = /^https?:\/\/[^/]+([^?#]*)/.exec(finalUrl)?.[1] ?? '';
+  return path === '/personal' || (path.startsWith('/personal/') && !path.startsWith('/personal/user'));
+}
+
+/** True when the /classRoom page shows its empty state (暂无申请记录). */
+export function isEmptyApplications(html: string): boolean {
+  return /class="[^"]*\bcr-empty\b/.test(html) || html.includes('暂无申请记录');
 }
 
 /** POST /classRoom/seachStudent (api.rs search_student): `{ success, message, data }`. Contact fields are dropped. */
@@ -119,8 +245,13 @@ function normalizeStatus(raw: string) {
   return raw || '未知';
 }
 
-/** GET /classRoom (api.rs parse_applications): rows under `div#results > div.row`. */
+/**
+ * GET /classRoom: `div#results` holds the records, or `div.cr-empty` (暂无申请记录). The 2026 row
+ * markup is not known yet, so rows are still read the api.rs parse_applications way
+ * (`div#results > div.row`).
+ */
 export function parseApplications(html: string): Application[] {
+  if (isEmptyApplications(html)) return [];
   const dom = parse(html);
   const out: Application[] = [];
   for (const row of dom.querySelectorAll('div#results > div.row') as HTMLElement[]) {

@@ -1,12 +1,13 @@
 import { definePlugin, defineTool, type KV } from '@pku-harness/sdk';
 import { z } from 'zod';
 
-import { bookedSlots, cancel, listApplications, listRooms, searchStudent, submit } from './api';
-import { buildingId, normalizeTime, overlaps, type Student } from './parse';
+import { cancel, checkCanApply, listApplications, schedule, searchStudent, space, submit } from './api';
+import { freeSlots, matchBuilding, normalizeTime, overlaps, type Student } from './parse';
 
 /**
- * 北大空间 学术研讨教室预约 (pkucli crates/bdkj): rooms in 二教 / 四教 / 地学, taken slots, my
- * reservations, reserve and cancel. Participant groups (groups.rs) live in the plugin's kv.
+ * 北大空间 学术研讨教室预约 (bdkj.pku.edu.cn, redesigned 2026-10; pkucli crates/bdkj for the
+ * older flows): rooms in 二教 / 四教 / 地学, free periods, my reservations, reserve and cancel.
+ * Participant groups (groups.rs) live in the plugin's kv.
  */
 
 const member = z.object({
@@ -26,7 +27,9 @@ const time = z
   .describe('local time "YYYY-MM-DD HH:MM"');
 
 const pad = (n: number) => String(n).padStart(2, '0');
-const localStamp = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+const localDate = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const localStamp = (d: Date) => `${localDate(d)} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+const minutes = (stamp: string) => new Date(stamp.replace(' ', 'T')).getTime() / 60_000;
 
 const reserveInput = z
   .object({
@@ -47,38 +50,56 @@ export const roomBookingPlugin = definePlugin({
   id: 'room-booking',
   name: '研讨室预约',
   description: '北大空间：二教、四教、地学楼学术研讨教室的查询、预约和取消。',
-  version: '0.1.0',
+  version: '0.2.0',
   icon: 'calendar',
   requires: ['campus-session', 'network'],
   scopes: ['bdkj.pku.edu.cn'],
   instructions: `北大空间（bdkj.pku.edu.cn）学术研讨教室：用户说借教室、订研讨室、预约讨论间时用。
-- 流程：room-booking__rooms 按楼（二教 / 四教 / 地学）列出教室和 id → room-booking__availability 看某间教室已被占用的时段 → room-booking__reserve 提交。
-- 预约至少 3 人，参与人必须包含申请人（用户本人）；每人要学号和姓名。参与人必须由用户明确给出，不要编造或沿用别人的名单。用户固定的一组人可以用 room-booking__saveGroup 存成分组，之后 reserve 传 group。
+- 流程：room-booking__rooms 列出楼和教室（可按楼、人数筛选）→ room-booking__availability 看某间教室每天的空闲节次 → room-booking__reserve 提交。
+- 每天 13 节、每节 50 分钟（08:00–22:30），一次最多连续 2 节；预约时间用 availability 返回的节次起止时间。
+- 每间教室有「至少 N 人起约」和容量限制，预约至少 3 人，参与人必须包含申请人（用户本人）；每人要学号和姓名。参与人必须由用户明确给出，不要编造或沿用别人的名单。用户固定的一组人可以用 room-booking__saveGroup 存成分组，之后 reserve 传 group。
 - reserve / cancel 会真的改动学校的预约记录：提交前把教室、时间、事由、参与人跟用户确认一遍。
-- room-booking__reservations 查看我的预约（含可取消的 id），cancel 传那里的 id。`,
+- room-booking__reservations 查看我的预约（含可取消的 id），cancel 传那里的 id。
+- 如果提示需要完善「个人信息」，原样告诉用户去浏览器打开 https://bdkj.pku.edu.cn/personal 完成，不要反复重试。`,
   tools: {
     rooms: defineTool({
       title: '研讨教室列表',
-      description: 'Discussion rooms of a building (二教, 四教 or 地学) with id, capacity, popularity and whether bookable.',
-      input: z.object({ building: z.string().describe('二教, 四教 or 地学') }),
+      description:
+        'Buildings and discussion rooms on 北大空间 (二教, 四教, 地学): room id, name, code, floor, capacity, minimum party size, door and screen state. Optional filters: building (name or number) and minCapacity.',
+      input: z.object({
+        building: z.string().trim().min(1).optional().describe('二教, 四教 or 地学 (or 02 / 04 / 09)'),
+        minCapacity: z.number().int().min(1).max(200).optional().describe('only rooms that hold at least this many people'),
+      }),
       effect: 'read',
-      execute: async ({ building }, ctx) => {
-        const id = buildingId(building);
-        if (!id) throw new Error(`没有这栋楼：${building}。可选：二教、四教、地学`);
-        return listRooms(ctx.services, id);
+      execute: async ({ building, minCapacity }, ctx) => {
+        const { buildings, rooms } = await space(ctx.services);
+        let list = rooms;
+        if (building) {
+          const b = matchBuilding(building, buildings);
+          if (!b) throw new Error(`没有这栋楼：${building}。可选：${buildings.map((x) => x.name).join('、') || '二教、四教、地学'}`);
+          list = list.filter((r) => r.buildingId === b.id);
+        }
+        if (minCapacity) list = list.filter((r) => r.capacity == null || r.capacity >= minCapacity);
+        return { buildings, rooms: list.map(({ applyHref: _href, ...r }) => r) };
       },
     }),
     availability: defineTool({
-      title: '教室已约时段',
-      description: 'Time slots of one room that are already taken, from now (or from the given date). Anything not listed is free.',
+      title: '教室空闲时段',
+      description:
+        'Free 50-minute periods of one room per day (13 periods 08:00–22:30; at most 2 consecutive per booking), plus the taken slots. Starts today or at `date`, for `days` days (max 7). Periods that already started are omitted.',
       input: z.object({
         roomId: z.string().trim().regex(/^\d+$/).describe('room id from room-booking__rooms'),
-        date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().describe('YYYY-MM-DD; only slots on this day'),
+        date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().describe('YYYY-MM-DD, default today'),
+        days: z.number().int().min(1).max(7).optional().describe('number of days from date, default 1'),
       }),
       effect: 'read',
-      execute: async ({ roomId, date }, ctx) => {
-        const slots = await bookedSlots(ctx.services, roomId, date ? `${date} 00:00:00` : localStamp(new Date()));
-        return (date ? slots.filter((s) => s.begin.startsWith(date)) : slots).slice(0, 60);
+      execute: async ({ roomId, date, days }, ctx) => {
+        const now = new Date();
+        const start = date ?? localDate(now);
+        const [y, m, d] = start.split('-').map(Number);
+        const dates = Array.from({ length: days ?? 1 }, (_, i) => localDate(new Date(y, m - 1, d + i)));
+        const taken = await schedule(ctx.services, roomId, start);
+        return freeSlots(dates, taken, localStamp(now));
       },
     }),
     reservations: defineTool({
@@ -91,7 +112,7 @@ export const roomBookingPlugin = definePlugin({
     reserve: defineTool({
       title: '预约研讨教室',
       description:
-        'Book a discussion room. Needs ≥3 participants including the user, given explicitly (participants) or as a saved group. Each participant is verified by student id + name before submitting. Confirm details with the user first.',
+        'Book a discussion room for one or two consecutive periods (times from room-booking__availability). Needs ≥3 participants (and at least the room\'s minimum party size) including the user, given explicitly (participants) or as a saved group. Each participant is verified by student id + name before submitting. Confirm details with the user first. NOTE: the submit step is the pre-2026 flow and is not yet verified against the redesigned site; if the user\'s 北大空间 profile is incomplete it fails with a message telling them to complete it in a browser.',
       input: reserveInput,
       effect: 'write',
       execute: async ({ roomId, reason, participants, group, ...times }, ctx) => {
@@ -110,7 +131,15 @@ export const roomBookingPlugin = definePlugin({
         const me = ctx.services.campus.status().username;
         if (me && !seen.has(me)) throw new Error('参与人里要包含申请人本人（你的学号和姓名）');
 
-        const taken = await bookedSlots(ctx.services, roomId, `${begin.slice(0, 10)} 00:00:00`).catch(() => []);
+        if (minutes(end) - minutes(begin) > 120) throw new Error('一次最多预约连续 2 节（约 2 小时以内）');
+
+        const room = (await space(ctx.services)).rooms.find((r) => r.id === roomId);
+        if (!room) throw new Error('北大空间没有这个教室 id，先用 room-booking__rooms 查');
+        if (room.minPeople && members.length < room.minPeople) throw new Error(`${room.building}${room.name} 至少 ${room.minPeople} 人起约，当前 ${members.length} 人`);
+        if (room.capacity && members.length > room.capacity) throw new Error(`${room.building}${room.name} 最多容纳 ${room.capacity} 人，当前 ${members.length} 人`);
+        await checkCanApply(ctx.services, room.applyHref);
+
+        const taken = await schedule(ctx.services, roomId, begin.slice(0, 10)).catch(() => []);
         const clash = taken.find((s) => overlaps(begin, end, s));
         if (clash) throw new Error(`这个时段已被占用：${clash.begin} ~ ${clash.end}`);
 
@@ -118,7 +147,7 @@ export const roomBookingPlugin = definePlugin({
         for (const m of members) verified.push(await searchStudent(ctx.services, m.serial, m.name));
         const result = await submit(ctx.services, { roomId, begin, end, reason, participants: verified });
         if (!result.success) throw new Error(`预约失败：${result.message}`);
-        return { ...result, roomId, begin, end, participants: verified.map((p) => `${p.serial} ${p.name}`) };
+        return { ...result, room: `${room.building}${room.name}`, roomId, begin, end, participants: verified.map((p) => `${p.serial} ${p.name}`) };
       },
     }),
     cancel: defineTool({

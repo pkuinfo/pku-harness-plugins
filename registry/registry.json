@@ -353,7 +353,7 @@
     {
       "id": "room-booking",
       "name": "研讨室预约",
-      "description": "北大空间：二教、四教、地学楼学术研讨教室的查询、预约和取消。",
+      "description": "北大空间：二教、四教、地学楼研讨教室的查询、空闲时段、预约和取消。",
       "author": "pkuinfo",
       "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/room-booking",
       "kind": "builtin",
