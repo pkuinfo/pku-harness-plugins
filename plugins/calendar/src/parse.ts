@@ -29,13 +29,15 @@ const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 /** `js/ccSchoolCalendar.<hash>.js` from the entry page, or null (simso changed). */
 export function bundlePath(html: string): string | null {
-  return /(js\/ccSchoolCalendar\.[0-9a-f]+\.js)/.exec(html)?.[1] ?? null;
+  // webpack builds used hex hashes; the Vite build (2026) uses mixed case with - and _. The
+  // `-legacy` copy is skipped (the name must be followed directly by ".").
+  return /(js\/ccSchoolCalendar\.[A-Za-z0-9_-]+\.js)/.exec(html)?.[1] ?? null;
 }
 
 /** Every academic year in the bundle with its semester lines. Throws if nothing was found. */
 export function parseBundle(js: string): CalendarYear[] {
   const tabs = new Map<string, string>();
-  for (const m of js.matchAll(/\{attrs:\{label:"(\d{4}-\d{4})学年",name:"(\d+)"\}\}/g)) tabs.set(`${m[1]}|${m[2]}`, m[2]);
+  for (const m of js.matchAll(/label:"(\d{4}-\d{4})学年",name:"(\d+)"/g)) tabs.set(`${m[1]}|${m[2]}`, m[2]);
   if (!tabs.size) throw new Error('校历页面里没找到学年，simso 可能已改版');
 
   const out: CalendarYear[] = [];
@@ -45,10 +47,12 @@ export function parseBundle(js: string): CalendarYear[] {
     const seg = locateRender(js, tag);
     if (!seg) continue;
     const segment = js.slice(seg[0], seg[1]);
-    const s1 = endOf(/"第一学期"===t\.xq\?\[/.exec(segment));
-    const s2 = endOf(/"第二学期"===t\.xq\?\[/.exec(segment));
+    const s1 = endOf(branch('第一学期').exec(segment));
+    const s2 = endOf(branch('第二学期').exec(segment));
+    // The Vite build adds a 上课时间 tab after the two semesters; it ends the second slice.
+    const s3 = endOf(branch('上课时间').exec(segment));
     const firstSlice = s1 == null ? null : s2 != null && s2 > s1 ? segment.slice(s1, s2) : segment.slice(s1);
-    const secondSlice = s2 == null ? null : segment.slice(s2);
+    const secondSlice = s2 == null ? null : s3 != null && s3 > s2 ? segment.slice(s2, s3) : segment.slice(s2);
     const first = firstSlice ? extractText(firstSlice) : [];
     const second = secondSlice ? extractText(secondSlice) : [];
     if (!first.length && !second.length) continue;
@@ -60,6 +64,9 @@ export function parseBundle(js: string): CalendarYear[] {
 
 const endOf = (m: RegExpExecArray | null) => (m ? m.index + m[0].length : null);
 
+/** A semester branch in either build: `"第一学期"===t.xq?[` (webpack) or `e.xq==="第一学期"?[` (Vite). */
+const branch = (sem: string) => new RegExp(`(?:"${sem}"===${ID}\\.xq|${ID}\\.xq==="${sem}")\\?\\[`);
+
 /** `[start, end)` of the render function bound to a tab tag (see the file comment), or null. */
 export function locateRender(js: string, tag: string): [number, number] | null {
   const exportVar = new RegExp(`Calendar${esc(tag)}:(${ID})`).exec(js)?.[1];
@@ -69,24 +76,30 @@ export function locateRender(js: string, tag: string): [number, number] | null {
   const wrap =
     new RegExp(`${B}${esc(modVar)}=\\([^)]*\\),?\\s*Object\\(o\\["a"\\]\\)\\(\\s*(${ID})\\s*,\\s*(${ID})\\s*,`).exec(js) ??
     // Fallback: webpack output without the leading `(i("…"),…)` comma expression.
-    new RegExp(`${B}${esc(modVar)}=Object\\(o\\["a"\\]\\)\\(\\s*(${ID})\\s*,\\s*(${ID})\\s*,`).exec(js);
+    new RegExp(`${B}${esc(modVar)}=Object\\(o\\["a"\\]\\)\\(\\s*(${ID})\\s*,\\s*(${ID})\\s*,`).exec(js) ??
+    // Vite (2026): Vue's normalizeComponent under any name, `m=s(data,render,staticFns,!1,…)`.
+    new RegExp(`${B}${esc(modVar)}=${ID}\\(\\s*(${ID})\\s*,\\s*(${ID})\\s*,`).exec(js);
   const renderVar = wrap?.[2];
   if (!renderVar) return null;
-  const startRe = new RegExp(`${B}(${esc(renderVar)}=function\\(\\)\\{var t=this,e=t\\.\\$createElement)`);
+  // `var t=this,e=t.$createElement` (webpack) or `var e=this,t=e._self._c` (Vite).
+  const startRe = new RegExp(`${B}(${esc(renderVar)}=function\\(\\)\\{var ${ID}=this)`);
   const sm = startRe.exec(js);
   if (!sm) return null;
   const start = sm.index + sm[0].length - sm[1].length;
   // End: the next render function definition (any name), or EOF.
-  const next = new RegExp(`${B}${ID}=function\\(\\)\\{var t=this,e=t\\.\\$createElement`, 'g');
+  const next = new RegExp(`${B}${ID}=function\\(\\)\\{var ${ID}=this`, 'g');
   next.lastIndex = start + sm[1].length;
   const nm = next.exec(js);
   return [start, nm ? nm.index : js.length];
 }
 
-/** `t._v("…")` text nodes, unescaped, trimmed, empty dropped, consecutive duplicates merged. */
+/**
+ * Text nodes (`<self>._v("…")`) and section titles (`label:"…"` on descriptions items), in
+ * source order: unescaped, trimmed, empty dropped, consecutive duplicates merged.
+ */
 export function extractText(s: string): string[] {
   const out: string[] = [];
-  for (const m of s.matchAll(/t\._v\("((?:\\.|[^"\\])*)"\)/g)) {
+  for (const m of s.matchAll(/(?:[A-Za-z_$][A-Za-z0-9_$]*\._v\(|label:)"((?:\\.|[^"\\])*)"/g)) {
     const v = unescapeJs(m[1]).trim();
     if (v && out[out.length - 1] !== v) out.push(v);
   }
@@ -223,10 +236,20 @@ export function interpretSemester(year: string, semester: SemesterKey, lines: st
     if (dates.length) items.push({ text, dates });
   }
 
-  // Start: the "上课/开学" line; else the Monday after registration (报到/注册).
+  // Section-aware pass (simso 2026 layout): "六、上课" then "校本部：9月7日" on the next line;
+  // "十二、停课复习考试" then "校本部、医学部：12月28日至1月10日". Prefer the 校本部 line.
+  const sections = sectionsOf(lines);
+  const datedLine = (body: string[]) => body.find((l) => /^校本部/.test(l) && datesIn(l, year, semester).length) ?? body.find((l) => datesIn(l, year, semester).length);
+  const classSection = sections.find((sec) => /上课/.test(sec.title) && !/停课/.test(sec.title));
+  const classLine = classSection ? datedLine(classSection.body) : undefined;
+  const examSection = sections.find((sec) => /考试/.test(sec.title));
+  const examLine = examSection ? datedLine(examSection.body) : undefined;
+
+  // Start: the 上课 section; else the "上课/开学" line; else the Monday after registration (报到/注册).
   let start: string | null = null;
-  const startItem = items.find((it) => START.test(it.text) && !NOT_START.test(it.text));
-  if (startItem) start = startItem.dates[0][0];
+  const startItem = items.find((it) => START.test(it.text) && !NOT_START.test(it.text) && !/典礼/.test(it.text));
+  if (classLine) start = datesIn(classLine, year, semester)[0][0];
+  else if (startItem) start = startItem.dates[0][0];
   else {
     const reg = items.find((it) => /报到|注册/.test(it.text));
     if (reg) {
@@ -239,6 +262,10 @@ export function interpretSemester(year: string, semester: SemesterKey, lines: st
   const holidays: DatedItem[] = [];
   const exams: DatedItem[] = [];
   const events: DatedItem[] = [];
+  if (examSection && examLine) {
+    const d = datesIn(examLine, year, semester);
+    exams.push({ name: examSection.title, start: d[0][0], end: d.reduce((a, x) => (x[1] > a ? x[1] : a), d[0][1]), text: `${examSection.title} ${examLine}` });
+  }
   for (const it of items) {
     // Several separate dates in one line ("10月1日、10月8日"): span them all.
     const s = it.dates[0][0];
@@ -282,6 +309,17 @@ export function interpretSemester(year: string, semester: SemesterKey, lines: st
   }
 
   return { name, year, semester, start, weeks, weeksFrom, holidays, exams, events, lines };
+}
+
+/** Numbered sections ("六、上课") with the lines under each, for the heading-then-date layout. */
+function sectionsOf(lines: string[]) {
+  const out: { title: string; body: string[] }[] = [];
+  for (const line of lines) {
+    const h = /^[一二三四五六七八九十]+、\s*(.+)$/.exec(line);
+    if (h) out.push({ title: h[1].trim(), body: [] });
+    else out.at(-1)?.body.push(line);
+  }
+  return out;
 }
 
 /** Event name without its dates: "国庆节放假：10月1日-10月8日" → "国庆节放假". */

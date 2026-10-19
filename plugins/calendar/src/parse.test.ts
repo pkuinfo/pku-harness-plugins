@@ -111,3 +111,30 @@ describe('interpretation', () => {
     expect(currentSemester(list, '2026-08-20')?.name).toBe('2025-2026学年第二学期'); // most recent
   });
 });
+
+describe('simso Vite build (2026)', () => {
+  // Shape of the real bundle (simso.pku.edu.cn/js/ccSchoolCalendar.<vitehash>.js, 2026-10).
+  const js = [
+    'label:"2026-2027学年",name:"2627"',
+    'components:{Calendar2627:S}',
+    'h=function(){var e=this,t=e._self._c;return t("div",[e.xq==="第一学期"?[t("el-descriptions-item",{attrs:{label:"六、上课"}},[t("li",[e._v("校本部：9月7日")]),t("li",[e._v("医学部：")])]),',
+    't("el-descriptions-item",{attrs:{label:"十二、停课复习考试"}},[t("li",[e._v("校本部、医学部：12月28日至1月10日")])])]:e._e(),',
+    'e.xq==="第二学期"?[t("el-descriptions-item",{attrs:{label:"一、上课"}},[t("li",[e._v("校本部：2月22日")])])]:e._e(),',
+    'e.xq==="上课时间"?[e._v("第一节 8:00")]:e._e()])},f=[],k=s(u,h,f,!1,null,"b2890cff");const S=k.exports,',
+    'x=function(){var e=this,t=e._self._c;return t("div")}',
+  ].join('');
+
+  test('bundle path accepts Vite hashes and skips legacy', () => {
+    expect(bundlePath('<script src="../js/ccSchoolCalendar-legacy.D2anCUWM.js"></script><script src="../js/ccSchoolCalendar.DP5SXWAy.js">')).toBe('js/ccSchoolCalendar.DP5SXWAy.js');
+  });
+
+  test('section headings with dates on the next line', () => {
+    const [y] = parseBundle(js);
+    expect(y.year).toBe('2026-2027');
+    expect(y.first).toContain('六、上课');
+    expect(y.second).not.toContain('第一节 8:00');
+    const sem = semesters([y]).find((s) => s.semester === 'first');
+    expect(sem?.start).toBe('2026-09-07');
+    expect(sem?.weeks).toBe(18);
+  });
+});
