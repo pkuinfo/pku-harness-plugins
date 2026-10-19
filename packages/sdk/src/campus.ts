@@ -13,8 +13,9 @@
  *   (`/chapi/api/jwt_send_msg`, `/chapi/api/jwt_msg_verify`), 40077 = course-data token
  *   (`/chapi/api/course/…`), so the plugin can ask the user for the code.
  * - `blackboard`: course.pku.edu.cn (教学网, HTML pages; SSO session, redirects followed)
+ * - more registered by the harness (src/core/campus/adapters): see the plugin's `requires`.
  */
-export type CampusService = 'card' | 'its' | 'treehole' | 'blackboard';
+export type CampusService = 'card' | 'its' | 'treehole' | 'blackboard' | (string & {});
 
 export type CampusRequest = {
   /** Absolute URL, or a path on the service's host (e.g. "/berserker-app/…"). */
