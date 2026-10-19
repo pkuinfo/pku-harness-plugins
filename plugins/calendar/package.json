@@ -1,7 +1,7 @@
 {
   "name": "@pku-harness/plugin-calendar",
-  "version": "0.2.0",
-  "description": "Today and the teaching week",
+  "version": "0.3.0",
+  "description": "Today, the teaching week and the official PKU school calendar",
   "type": "module",
   "main": "src/index.ts",
   "license": "MIT",

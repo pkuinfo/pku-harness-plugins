@@ -124,13 +124,15 @@
     {
       "id": "calendar",
       "name": "日期与校历",
-      "description": "今天的日期、星期，以及当前是本学期第几周。",
+      "description": "今天的日期、星期、第几教学周，以及北大官方校历（开学、节假日、考试周），可一键设置课表学期。",
       "author": "pkuinfo",
       "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/calendar",
       "kind": "builtin",
       "icon": "schedule",
       "requires": [],
-      "scopes": [],
+      "scopes": [
+        "simso.pku.edu.cn"
+      ],
       "tags": [
         "official"
       ],
@@ -192,6 +194,27 @@
       ],
       "scopes": [
         "course.pku.edu.cn"
+      ],
+      "tags": [
+        "official",
+        "campus"
+      ],
+      "verified": true
+    },
+    {
+      "id": "course-catalog",
+      "name": "全校课程目录",
+      "description": "按课程名、教师、院系搜索全校开课，含上课时间（选课网查询含教室）。只读。",
+      "author": "pkuinfo",
+      "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/course-catalog",
+      "kind": "builtin",
+      "icon": "book",
+      "requires": [
+        "network"
+      ],
+      "scopes": [
+        "dean.pku.edu.cn",
+        "elective.pku.edu.cn"
       ],
       "tags": [
         "official",

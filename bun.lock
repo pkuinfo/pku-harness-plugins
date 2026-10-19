@@ -41,7 +41,7 @@
     },
     "plugins/calendar": {
       "name": "@pku-harness/plugin-calendar",
-      "version": "0.2.0",
+      "version": "0.3.0",
       "peerDependencies": {
         "@pku-harness/sdk": "*",
         "zod": "^4.0.0",
@@ -49,7 +49,7 @@
     },
     "plugins/campus-card": {
       "name": "@pku-harness/plugin-campus-card",
-      "version": "0.2.0",
+      "version": "0.3.0",
       "peerDependencies": {
         "@pku-harness/sdk": "*",
         "react": "*",
@@ -57,9 +57,41 @@
         "zod": "^4.0.0",
       },
     },
+    "plugins/campus-events": {
+      "name": "@pku-harness/plugin-campus-events",
+      "version": "0.1.0",
+      "peerDependencies": {
+        "@pku-harness/sdk": "*",
+        "zod": "^4.0.0",
+      },
+    },
+    "plugins/course-catalog": {
+      "name": "@pku-harness/plugin-course-catalog",
+      "version": "0.1.0",
+      "dependencies": {
+        "node-html-parser": "^9.0.4",
+      },
+      "peerDependencies": {
+        "@pku-harness/sdk": "*",
+        "zod": "^4.0.0",
+      },
+    },
     "plugins/course-sync": {
       "name": "@pku-harness/plugin-course-sync",
       "version": "0.1.0",
+      "peerDependencies": {
+        "@pku-harness/sdk": "*",
+        "react": "*",
+        "react-native": "*",
+        "zod": "^4.0.0",
+      },
+    },
+    "plugins/courses": {
+      "name": "@pku-harness/plugin-courses",
+      "version": "0.1.0",
+      "dependencies": {
+        "node-html-parser": "^9.0.4",
+      },
       "peerDependencies": {
         "@pku-harness/sdk": "*",
         "react": "*",
@@ -83,6 +115,37 @@
       "peerDependencies": {
         "@ai-sdk/openai-compatible": "^3.0.0",
         "@pku-harness/sdk": "*",
+        "zod": "^4.0.0",
+      },
+    },
+    "plugins/elective": {
+      "name": "@pku-harness/plugin-elective",
+      "version": "0.1.0",
+      "dependencies": {
+        "node-html-parser": "^9.0.4",
+      },
+      "peerDependencies": {
+        "@pku-harness/sdk": "*",
+        "react": "*",
+        "react-native": "*",
+        "zod": "^4.0.0",
+      },
+    },
+    "plugins/finance": {
+      "name": "@pku-harness/plugin-finance",
+      "version": "0.1.0",
+      "peerDependencies": {
+        "@pku-harness/sdk": "*",
+        "zod": "^4.0.0",
+      },
+    },
+    "plugins/grades": {
+      "name": "@pku-harness/plugin-grades",
+      "version": "0.1.0",
+      "peerDependencies": {
+        "@pku-harness/sdk": "*",
+        "react": "*",
+        "react-native": "*",
         "zod": "^4.0.0",
       },
     },
@@ -121,6 +184,17 @@
         "zod": "^4.0.0",
       },
     },
+    "plugins/room-booking": {
+      "name": "@pku-harness/plugin-room-booking",
+      "version": "0.1.0",
+      "dependencies": {
+        "node-html-parser": "^9.0.4",
+      },
+      "peerDependencies": {
+        "@pku-harness/sdk": "*",
+        "zod": "^4.0.0",
+      },
+    },
     "plugins/schedule": {
       "name": "@pku-harness/plugin-schedule",
       "version": "0.1.0",
@@ -153,6 +227,16 @@
       "version": "0.2.0",
       "peerDependencies": {
         "@pku-harness/sdk": "*",
+        "zod": "^4.0.0",
+      },
+    },
+    "plugins/treehole": {
+      "name": "@pku-harness/plugin-treehole",
+      "version": "0.1.0",
+      "peerDependencies": {
+        "@pku-harness/sdk": "*",
+        "react": "*",
+        "react-native": "*",
         "zod": "^4.0.0",
       },
     },
@@ -245,11 +329,23 @@
 
     "@pku-harness/plugin-campus-card": ["@pku-harness/plugin-campus-card@workspace:plugins/campus-card"],
 
+    "@pku-harness/plugin-campus-events": ["@pku-harness/plugin-campus-events@workspace:plugins/campus-events"],
+
+    "@pku-harness/plugin-course-catalog": ["@pku-harness/plugin-course-catalog@workspace:plugins/course-catalog"],
+
     "@pku-harness/plugin-course-sync": ["@pku-harness/plugin-course-sync@workspace:plugins/course-sync"],
+
+    "@pku-harness/plugin-courses": ["@pku-harness/plugin-courses@workspace:plugins/courses"],
 
     "@pku-harness/plugin-dashboard": ["@pku-harness/plugin-dashboard@workspace:plugins/dashboard"],
 
     "@pku-harness/plugin-deepseek": ["@pku-harness/plugin-deepseek@workspace:plugins/deepseek"],
+
+    "@pku-harness/plugin-elective": ["@pku-harness/plugin-elective@workspace:plugins/elective"],
+
+    "@pku-harness/plugin-finance": ["@pku-harness/plugin-finance@workspace:plugins/finance"],
+
+    "@pku-harness/plugin-grades": ["@pku-harness/plugin-grades@workspace:plugins/grades"],
 
     "@pku-harness/plugin-memory": ["@pku-harness/plugin-memory@workspace:plugins/memory"],
 
@@ -259,6 +355,8 @@
 
     "@pku-harness/plugin-plugins": ["@pku-harness/plugin-plugins@workspace:plugins/plugins"],
 
+    "@pku-harness/plugin-room-booking": ["@pku-harness/plugin-room-booking@workspace:plugins/room-booking"],
+
     "@pku-harness/plugin-schedule": ["@pku-harness/plugin-schedule@workspace:plugins/schedule"],
 
     "@pku-harness/plugin-scheduler": ["@pku-harness/plugin-scheduler@workspace:plugins/scheduler"],
@@ -266,6 +364,8 @@
     "@pku-harness/plugin-timetable": ["@pku-harness/plugin-timetable@workspace:plugins/timetable"],
 
     "@pku-harness/plugin-todo": ["@pku-harness/plugin-todo@workspace:plugins/todo"],
+
+    "@pku-harness/plugin-treehole": ["@pku-harness/plugin-treehole@workspace:plugins/treehole"],
 
     "@pku-harness/plugin-ui": ["@pku-harness/plugin-ui@workspace:plugins/ui"],
 

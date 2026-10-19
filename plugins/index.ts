@@ -3,6 +3,7 @@ import type { PluginDef } from '@pku-harness/sdk';
 import { calendarPlugin } from './calendar/src';
 import { campusCardPlugin } from './campus-card/src';
 import { campusEventsPlugin } from './campus-events/src';
+import { courseCatalogPlugin } from './course-catalog/src';
 import { courseSyncPlugin } from './course-sync/src';
 import { coursesPlugin } from './courses/src';
 import { dashboardPlugin } from './dashboard/src';
@@ -39,6 +40,7 @@ export const builtinPlugins: PluginDef[] = [
   campusCardPlugin,
   netfeePlugin,
   coursesPlugin,
+  courseCatalogPlugin,
   gradesPlugin,
   treeholePlugin,
   campusEventsPlugin,
