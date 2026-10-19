@@ -29,7 +29,7 @@ export function WeekStrip({ host, selected, onSelect, hasClasses }: { host: Host
                 host.haptics.select();
                 onSelect(day);
               }}
-              style={[styles.day, { gap: t.spacing.xxs, paddingVertical: t.spacing.sm, borderRadius: t.radius.md }, isSel && { backgroundColor: t.colors.accent }]}>
+              style={[styles.day, { gap: t.spacing.xxs, paddingVertical: t.spacing.sm, borderRadius: t.radius.md }, isSel && { backgroundColor: t.colors.brand, boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.2)' }]}>
               <Text variant="micro" tone={isSel ? 'onAccent' : 'faint'}>
                 {label}
               </Text>

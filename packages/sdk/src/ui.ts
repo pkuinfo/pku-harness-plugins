@@ -53,6 +53,13 @@ export interface HostComponents {
   SortableList: ComponentType<{ ids: string[]; rowHeight: number; onReorder: (ids: string[]) => void; renderRow: (id: string, handle: ReactNode) => ReactNode }>;
   /** Mount a plugin-contributed dashboard widget (error-isolated; shows a notice if the plugin is off). */
   PluginWidget: ComponentType<{ source: { plugin: string; widget: string; config?: Record<string, unknown> }; size: WidgetSize }>;
+  /**
+   * The app's panel material: nearly transparent glass with a hairline edge and a top light
+   * (iOS 26: system liquid glass). Pressable when given onPress. Use it for cards and tiles.
+   */
+  Glass: ComponentType<{ children?: ReactNode; style?: Style; radius?: number; tone?: 'regular' | 'strong' | 'brand'; onPress?: () => void; onLongPress?: () => void; accessibilityLabel?: string; accessibilityRole?: 'button' | 'summary' | 'none'; haptic?: boolean }>;
+  /** Edge + top light for a container that paints its own `colors.surface*` fill (first child). */
+  GlassEdges: ComponentType<{ radius?: number }>;
   /** Scannable QR code (dark on white in every theme). */
   QRCode: ComponentType<{ value: string; size?: number; ecl?: 'L' | 'M' | 'Q' | 'H' }>;
 }
@@ -80,14 +87,14 @@ export interface LiveData<T = unknown> {
 /** Design tokens and helpers for plugin layouts (styles are plain React Native styles). */
 export interface HostTheme {
   name: 'light' | 'dark';
-  colors: Record<'bg' | 'surface' | 'surface2' | 'surface3' | 'border' | 'text' | 'textMuted' | 'textFaint' | 'accent' | 'accentMuted' | 'onAccent' | 'up' | 'upMuted' | 'down' | 'downMuted' | 'warn' | 'warnMuted' | 'info' | 'infoMuted', string>;
+  colors: Record<'bg' | 'surface' | 'surface2' | 'surface3' | 'border' | 'text' | 'textMuted' | 'textFaint' | 'accent' | 'accentMuted' | 'onAccent' | 'up' | 'upMuted' | 'down' | 'downMuted' | 'warn' | 'warnMuted' | 'info' | 'infoMuted' | 'elevated' | 'brand' | 'onBrand', string>;
   spacing: Record<'xxs' | 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'xxl' | 'xxxl', number>;
   radius: Record<'sm' | 'md' | 'lg' | 'xl' | 'full', number>;
   /** Text styles by variant (font family, size, line height). */
   typography: Record<TextVariant, Record<string, unknown>>;
   /** Timetable colour pair for a palette index. */
   courseColor(index: number): { fill: string; ink: string };
-  /** Translucent "glass" surface: background, rim and sheen gradient for CSS backgroundImage. */
+  /** Glass material: fill, hairline edge colour, and the top-edge light (CSS backgroundImage for a 1px line). */
   glass: { surface: string; rim: string; sheen: string };
   /** Layout width available to content (max-width aware). */
   contentWidth: number;

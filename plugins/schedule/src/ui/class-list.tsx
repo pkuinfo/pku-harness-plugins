@@ -13,6 +13,7 @@ function untilText(min: number) {
 function ClassCard({ host, course, now, isToday, isNext }: { host: HostUI; course: Course; now: Date; isToday: boolean; isNext: boolean }) {
   const { Text, Chip, Pressable } = host.components;
   const t = host.useTheme();
+  const { GlassEdges } = host.components;
   const color = t.courseColor(course.color);
   const status = isToday ? classStatus(course, now) : null;
   const done = status?.state === 'after';
@@ -28,6 +29,7 @@ function ClassCard({ host, course, now, isToday, isNext }: { host: HostUI; cours
         { backgroundColor: t.colors.surface, opacity: done ? 0.55 : 1, gap: t.spacing.md, padding: t.spacing.md, borderRadius: t.radius.lg },
         ongoing && { borderColor: color.ink },
       ]}>
+      <GlassEdges radius={t.radius.lg} />
       <View style={styles.time}>
         <Text variant="bodyStrong" style={{ fontVariant: ['tabular-nums'] }}>
           {course.start}

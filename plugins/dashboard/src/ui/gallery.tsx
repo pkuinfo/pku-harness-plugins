@@ -6,6 +6,7 @@ import { StyleSheet, View } from 'react-native';
 export function Gallery({ host, services, invoke }: PluginScreenProps) {
   const { SheetScreen, Text, Button, Chip, PluginWidget, EmptyState } = host.components;
   const t = host.useTheme();
+  const { GlassEdges } = host.components;
   host.useStoreVersion();
   const catalog = services.widgets.catalog();
   const placed = new Set(services.widgets.list().map((w) => (w.source ? `${w.source.plugin}/${w.source.widget}` : '')));
@@ -49,6 +50,7 @@ export function Gallery({ host, services, invoke }: PluginScreenProps) {
                   )}
                 </View>
                 <View style={[styles.preview, { backgroundColor: t.colors.surface, borderRadius: t.radius.lg, padding: t.spacing.lg, gap: t.spacing.sm, borderColor: t.colors.border }]}>
+                  <GlassEdges radius={t.radius.lg} />
                   <Text variant="micro" tone="faint">
                     {e.pluginName}
                   </Text>

@@ -41,6 +41,7 @@ function Section({ host, title, meta, children }: { host: HostUI; title: string;
 export function ScheduleTab({ host, services }: PluginScreenProps) {
   const { Screen, Text, Icon, Pressable, Segmented, FadeIn, ListGroup, ListRow, Chip } = host.components;
   const t = host.useTheme();
+  const { GlassEdges } = host.components;
   host.useStoreVersion();
   const now = host.useNow();
   const { courses, semester, reminderMinutes } = services.timetable.get();
@@ -66,6 +67,7 @@ export function ScheduleTab({ host, services }: PluginScreenProps) {
       accessibilityLabel={label}
       onPress={() => host.navigate(href)}
       style={[styles.quick, { backgroundColor: t.colors.surface, gap: t.spacing.xs, paddingVertical: t.spacing.md, borderRadius: t.radius.lg }]}>
+      <GlassEdges radius={t.radius.lg} />
       <Icon name={icon} size={16} color={t.colors.accent} />
       <Text variant="callout">{label}</Text>
     </Pressable>

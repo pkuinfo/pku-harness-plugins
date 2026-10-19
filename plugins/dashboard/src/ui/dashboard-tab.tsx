@@ -13,6 +13,7 @@ const ROW = 64;
 export function DashboardTab({ host, services }: PluginScreenProps) {
   const { Screen, Text, Button, IconButton, EmptyState, Pressable, FadeIn, Chip, SortableList } = host.components;
   const t = host.useTheme();
+  const { GlassEdges } = host.components;
   host.useStoreVersion();
   const widgets = services.widgets.list();
   const [editing, setEditing] = useState(false);
@@ -81,6 +82,7 @@ export function DashboardTab({ host, services }: PluginScreenProps) {
                   accessibilityLabel={idea}
                   onPress={() => host.ask(idea)}
                   style={[styles.idea, { backgroundColor: t.colors.surface, padding: t.spacing.lg, borderRadius: t.radius.lg, gap: t.spacing.md }]}>
+                  <GlassEdges radius={t.radius.lg} />
                   <Text variant="callout" style={{ flex: 1 }}>
                     {idea}
                   </Text>
@@ -108,6 +110,7 @@ export function DashboardTab({ host, services }: PluginScreenProps) {
                 if (!w) return null;
                 return (
                   <View style={[styles.row, { backgroundColor: t.colors.surface, borderRadius: t.radius.lg, gap: t.spacing.md, paddingRight: t.spacing.md, height: ROW }]}>
+                    <GlassEdges radius={t.radius.lg} />
                     {handle}
                     <Text variant="bodyStrong" numberOfLines={1} style={{ flex: 1 }}>
                       {w.title}

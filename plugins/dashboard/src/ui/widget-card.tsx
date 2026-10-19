@@ -51,6 +51,7 @@ function Freshness({ host, widget }: { host: HostUI; widget: Widget }) {
 export function WidgetCard({ host, widget, onLongPress }: { host: HostUI; widget: Widget; onLongPress: () => void }) {
   const { Text, Pressable, PluginWidget } = host.components;
   const t = host.useTheme();
+  const { GlassEdges } = host.components;
   const hero = widget.size === 'lg';
   const live = !widget.source && Object.keys(widget.bindings).length > 0;
   return (
@@ -63,6 +64,7 @@ export function WidgetCard({ host, widget, onLongPress }: { host: HostUI; widget
       scaleTo={0.98}
       haptic={false}
       style={[styles.card, { backgroundColor: t.colors.surface, borderRadius: t.radius.lg, padding: t.spacing.lg, gap: t.spacing.md }, hero && { paddingVertical: t.spacing.xl }]}>
+      <GlassEdges radius={t.radius.lg} />
       {widget.size === 'sm' ? null : (
         <View style={[styles.head, { gap: t.spacing.sm }]}>
           <Text variant="micro" tone="faint" numberOfLines={1} style={{ flex: 1 }}>

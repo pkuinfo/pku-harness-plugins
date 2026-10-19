@@ -53,6 +53,7 @@ function TodoRow({ host, services, todo, now }: { host: HostUI; services: HostSe
 export function TodoList({ host, services, todos, now }: { host: HostUI; services: HostServices; todos: Todo[]; now: Date }) {
   const { Text, Icon, Pressable } = host.components;
   const t = host.useTheme();
+  const { GlassEdges } = host.components;
   const [draft, setDraft] = useState('');
   const [showDone, setShowDone] = useState(false);
   const open = todos.filter((x) => !x.doneAt);
@@ -68,6 +69,7 @@ export function TodoList({ host, services, todos, now }: { host: HostUI; service
 
   return (
     <View style={[styles.group, { backgroundColor: t.colors.surface, borderRadius: t.radius.lg }]}>
+      <GlassEdges radius={t.radius.lg} />
       {open.map((x) => (
         <TodoRow key={x.id} host={host} services={services} todo={x} now={now} />
       ))}

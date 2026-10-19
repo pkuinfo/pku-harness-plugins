@@ -30,6 +30,7 @@ const toDate = (hhmm: string) => {
 export function ReminderForm({ host, services, params }: PluginScreenProps) {
   const { SheetScreen, Field, DateTimeField, Segmented, Stepper, WeekdayPicker, Text, Chip, Icon, IconButton, Button, Surface } = host.components;
   const t = host.useTheme();
+  const { GlassEdges } = host.components;
   const id = params.id ?? 'new';
   const existing = id === 'new' ? undefined : services.scheduler.get(id);
   const tr = existing?.trigger;
@@ -172,6 +173,7 @@ export function ReminderForm({ host, services, params }: PluginScreenProps) {
         </>
       )}
       <View style={[styles.preview, { backgroundColor: t.colors.surface, borderColor: preview.finished ? t.colors.warn : t.colors.border, gap: t.spacing.xs, padding: t.spacing.md, borderRadius: t.radius.md }]}>
+        <GlassEdges radius={t.radius.lg} />
         <View style={[styles.line, { gap: t.spacing.sm }]}>
           <Icon name="calendarClock" size={16} color={t.colors.textMuted} />
           <Text variant="bodyStrong" style={{ flex: 1 }}>
