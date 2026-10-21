@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 安全问题 / Security vulnerability
+    url: https://github.com/pkuinfo/pku-harness-plugins/security/advisories/new
+    about: 请私下报告，不要公开提交（见 SECURITY.md）
+  - name: App 本体的问题 / App issues
+    url: https://github.com/pkuinfo/pku-harness/issues/new/choose
+    about: 对话、看板、日程、设置等 App 本身的问题

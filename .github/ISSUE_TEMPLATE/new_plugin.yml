@@ -1,0 +1,37 @@
+name: 新插件提案 / New plugin proposal
+description: 接入一个新的校园服务，或新增一项能力
+labels: [plugin-proposal]
+body:
+  - type: input
+    id: service
+    attributes:
+      label: 服务
+      placeholder: 例如 图书馆座位预约（seat.lib.pku.edu.cn）
+    validations:
+      required: true
+  - type: textarea
+    id: scenarios
+    attributes:
+      label: 使用场景
+      description: 用户会怎么问 AI、希望看板或日程上出现什么
+    validations:
+      required: true
+  - type: textarea
+    id: tools
+    attributes:
+      label: 打算提供的工具
+      description: 每个工具的作用和效果类型（read / write / money / public）
+  - type: dropdown
+    id: kind
+    attributes:
+      label: 形式
+      options: [远程插件（MCP）, 内置插件（需要设备能力，请说明理由）, 还不确定]
+  - type: checkboxes
+    id: rules
+    attributes:
+      label: 确认
+      options:
+        - label: 不需要用户把校园密码交给插件（凭据只留在手机上）
+          required: true
+        - label: 我读过 CONTRIBUTING.md 里的插件规则
+          required: true

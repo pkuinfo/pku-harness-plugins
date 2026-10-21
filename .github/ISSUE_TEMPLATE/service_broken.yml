@@ -1,0 +1,36 @@
+name: 校园服务失效 / A campus service broke
+description: 某个插件连不上、数据不对、学校网站改版
+labels: [service-broken]
+body:
+  - type: markdown
+    attributes:
+      value: "**请勿粘贴真实的账号、密码、Cookie、令牌、学号或个人数据**，截图请打码。"
+  - type: dropdown
+    id: plugin
+    attributes:
+      label: 插件
+      options: [校园卡, 网费, 树洞, 教学网（courses）, 课表同步, 成绩, 选课网, 财务门户, 空间预约, 讲座与活动, 课程目录, 校历, 手机令牌, 其他]
+    validations:
+      required: true
+  - type: input
+    id: tool
+    attributes:
+      label: 工具 / 功能
+      placeholder: 例如 treehole.read、campus-card.recharge
+  - type: textarea
+    id: what
+    attributes:
+      label: 现象
+      description: 报错原文（App 里显示的那句）、什么时候开始的、是否在校园网内
+    validations:
+      required: true
+  - type: dropdown
+    id: network
+    attributes:
+      label: 网络
+      options: [校园网, 校外网络, 不确定]
+  - type: textarea
+    id: notes
+    attributes:
+      label: 其他线索
+      description: 学校网站是否改版、浏览器里能否正常访问、pkucli 是否也坏了
