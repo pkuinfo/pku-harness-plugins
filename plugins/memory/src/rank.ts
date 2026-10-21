@@ -51,13 +51,13 @@ export function score(m: Memory, query: string, now: number): number {
 }
 
 /**
- * Memories to show the model for a query: pinned ones always, then the most related, capped by
- * count and characters so context stays cheap.
+ * Memories to show the model for a query: pinned ones always, then the most related above
+ * `minScore`, capped by count and characters so context stays cheap.
  */
-export function selectForContext(memories: Memory[], query: string, now: number, limit = 8, maxChars = 900): Memory[] {
+export function selectForContext(memories: Memory[], query: string, now: number, limit = 8, maxChars = 900, minScore = 0.12): Memory[] {
   const ranked = memories
     .map((m) => ({ m, s: score(m, query, now) }))
-    .filter((x) => x.m.pinned || x.s > 0.12)
+    .filter((x) => x.m.pinned || x.s > minScore)
     .sort((a, b) => b.s - a.s);
   const out: Memory[] = [];
   let chars = 0;

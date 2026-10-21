@@ -41,6 +41,12 @@ describe('ranking', () => {
     expect(picked).not.toContain('c');
   });
 
+  test('session snapshot (minScore -1): unrelated or cross-language queries still get every memory, best first', () => {
+    const picked = selectForContext(list, 'And a snack', now, 20, 1500, -1).map((m) => m.id);
+    expect([...picked].sort()).toEqual(list.map((m) => m.id).sort());
+    expect(picked[0]).toBe('d');
+  });
+
   test('respects the character budget', () => {
     const many = Array.from({ length: 30 }, (_, i) => mem(String(i), `食堂偏好 ${i} ${'很长的描述'.repeat(10)}`));
     const picked = selectForContext(many, '食堂', now, 20, 200);
