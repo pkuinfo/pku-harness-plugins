@@ -1,0 +1,15 @@
+{
+  "_note": "Shape of getProjectTypeAndProjectInfoListInit/10001 as read by the mobile bundle (chunk-3f0f2878): categories with children; type \"1\" = folder. Synthetic values (no live session available when written).",
+  "messageCode": "0",
+  "message": "成功",
+  "data": [
+    { "id": "t1", "name": "学生缴费", "children": [
+      { "id": "p-tuition", "projectName": "学费住宿费", "proModelUrl": "tuitionAndDorm", "type": "0" },
+      { "id": "p-bath", "projectName": "浴卡充值", "proModelUrl": "bathRecharge", "type": "0" },
+      { "id": "f-more", "name": "其他", "type": "1" }
+    ] },
+    { "id": "t2", "name": "生活服务", "children": [
+      { "id": "p-net", "projectName": "网费充值", "proModelUrl": "net", "type": "0" }
+    ] }
+  ]
+}

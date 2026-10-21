@@ -41,6 +41,9 @@ export const timetablePlugin = definePlugin({
     widgets: {
       next: { title: '下一节课', description: '正在上或接下来的一节课，含地点、倒计时和进度，随时间自动更新。', sizes: ['sm', 'md'], defaultSize: 'md', component: NextClassWidget },
     },
+    commands: {
+      today: { description: '今天有什么课', aliases: ['今天', '课表'], prompt: '今天有什么课？' },
+    },
   },
   instructions: '课表用 timetable 工具。用户口述课程时，逐门调用 timetable__addCourse（时间用 HH:MM，星期 0=周日）。上课提醒用 timetable__setReminder 设置提前分钟数。用户想从学校导入课表时用 course-sync 插件。',
   dataSources: {

@@ -1,6 +1,8 @@
-import type { HostServices } from '@pku-harness/sdk';
+import type { HostServices, KV } from '@pku-harness/sdk';
 
+import { gradesPath, parseGrades } from './grades';
 import {
+  BB_BASE,
   param,
   parseAnnouncements,
   parseAssignment,
@@ -9,10 +11,16 @@ import {
   parseCourses,
   parseDeadline,
   parseMenu,
+  parsePlaybackParams,
+  parseSubInfo,
+  parseVideoIframe,
   parseVideos,
+  subInfoUrl,
   type ContentItem,
   type CourseInfo,
 } from './parse';
+import { planSync, type SyncAssignment } from './sync';
+import { buildSubmission, parseSubmitForm, parseSubmitResult, SUBMIT_PATH, type SubmitFile } from './submit';
 
 type Services = Pick<HostServices, 'campus'>;
 
@@ -161,3 +169,109 @@ export async function videos(services: Services, course: CourseInfo) {
   return parseVideos(html).map((v) => ({ course: course.name, courseId: course.id, ...v }));
 }
 
+
+/** "我的成绩" of one course (see grades.ts). */
+export async function grades(services: Services, course: CourseInfo) {
+  return parseGrades(await page(services, gradesPath(course.id)));
+}
+
+export type SubmitReceipt = {
+  courseId: string;
+  contentId: string;
+  /** Blackboard shows a new attempt on the review page afterwards. */
+  verified: boolean;
+  attempt: string | null;
+  message: string | null;
+  files: string[];
+  textLength: number;
+  at: number;
+};
+
+/**
+ * Submit files and/or text to an assignment (api.rs submit_assignment): read the newAttempt form
+ * (fresh nonce), POST the multipart body, then re-read the review page to confirm the attempt.
+ * Only call after the user confirmed exactly this content (see index.ts submitAssignment).
+ */
+export async function submitAssignment(
+  services: Services,
+  input: { courseId: string; contentId: string; text?: string; comment?: string; files: SubmitFile[] },
+): Promise<SubmitReceipt> {
+  const formUrl = assignmentUrl(input.courseId, input.contentId, false);
+  const form = parseSubmitForm(await page(services, formUrl));
+  if (!form.open) throw new Error(form.message ? `教学网不接受提交：${form.message}` : '这个作业现在不能提交（可能已截止，或没有剩余的提交次数）');
+  if ((form.fields.course_id && form.fields.course_id !== input.courseId) || (form.fields.content_id && form.fields.content_id !== input.contentId))
+    throw new Error('教学网返回的提交表单与这个作业不一致，已停止提交');
+  const multipart = buildSubmission(form.fields, input);
+  const res = await services.campus.request('blackboard', {
+    url: SUBMIT_PATH,
+    method: 'POST',
+    headers: { origin: BB_BASE, referer: `${BB_BASE}${formUrl}`, accept: '*/*' },
+    multipart,
+  });
+  const result = parseSubmitResult(res.status, res.body);
+  if (!result.ok) throw new Error(`提交失败：${result.message ?? '未知原因'}`);
+  const view = await page(services, assignmentUrl(input.courseId, input.contentId, true))
+    .then(parseAssignmentDetail)
+    .catch(() => null);
+  return {
+    courseId: input.courseId,
+    contentId: input.contentId,
+    verified: view?.attempt != null,
+    attempt: view?.attempt ?? null,
+    message: result.message,
+    files: input.files.map((f) => f.name),
+    textLength: input.text?.trim().length ?? 0,
+    at: Date.now(),
+  };
+}
+
+/**
+ * HLS playlist of one recording (api.rs get_video_detail): play page → player iframe (its
+ * redirects end on a URL with 智云 ids + auth_data) → yjapise sub-info → m3u8. The URL is signed:
+ * hand it to the player/browser only, never to the model.
+ */
+export async function playbackUrl(services: Services, videoPageUrl: string): Promise<string> {
+  if (!videoPageUrl.startsWith(`${BB_BASE}/`)) throw new Error('不是教学网的回放链接');
+  const iframe = parseVideoIframe(await page(services, videoPageUrl));
+  if (!iframe) throw new Error('回放页面里没有找到播放器');
+  const player = await services.campus.request('blackboard', { url: iframe });
+  const params = parsePlaybackParams(player.url);
+  if (!params) throw new Error('回放播放器没有返回播放参数');
+  const info = await services.campus.request('blackboard', { url: subInfoUrl(params), headers: { accept: 'application/json, text/plain, */*' } });
+  if (info.status >= 400) throw new Error(`获取回放信息失败（HTTP ${info.status}）`);
+  return parseSubInfo(info.body);
+}
+
+const SYNC_KEY = 'sync.todos';
+
+/**
+ * Apply planSync with the host's to-dos. Idempotent: the store maps each assignment to its to-do,
+ * so a re-sync updates (deadline moved), completes (submitted) or keeps, and never duplicates.
+ */
+export async function syncDeadlines(
+  services: Pick<HostServices, 'todos'>,
+  kv: KV,
+  list: SyncAssignment[],
+  opts: { now: number; remindHours: number },
+) {
+  const synced = (await kv.get<Record<string, string | null>>(SYNC_KEY)) ?? {};
+  // A to-do the user deleted: remember it as null so it isn't recreated.
+  for (const [key, id] of Object.entries(synced)) if (id && !services.todos.get(id)) synced[key] = null;
+  const steps = planSync(list, synced, (id) => services.todos.get(id), opts);
+  const out = { added: [] as string[], updated: [] as string[], completed: [] as string[], kept: 0 };
+  for (const step of steps) {
+    if (step.kind === 'add') {
+      const todo = await services.todos.add({ title: step.title, notes: step.notes, dueAt: step.dueAt, remind: step.remindAt ? { type: 'at', at: step.remindAt } : null }, 'plugin');
+      synced[step.key] = todo.id;
+      out.added.push(step.title);
+    } else if (step.kind === 'update') {
+      await services.todos.update(step.todoId, { title: step.title, notes: step.notes, dueAt: step.dueAt, remind: step.remindAt ? { type: 'at', at: step.remindAt } : null }, 'plugin');
+      out.updated.push(step.title);
+    } else if (step.kind === 'done') {
+      await services.todos.setDone(step.todoId, true);
+      out.completed.push(services.todos.get(step.todoId)?.title ?? step.key);
+    } else out.kept++;
+  }
+  await kv.set(SYNC_KEY, synced);
+  return out;
+}

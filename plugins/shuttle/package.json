@@ -1,0 +1,17 @@
+{
+  "name": "@pku-harness/plugin-shuttle",
+  "version": "0.1.0",
+  "description": "PKU inter-campus commuter bus (燕园 ⇄ 新燕园 ⇄ 200号) and 新燕园 ⇄ 地铁北安河 express bus timetables, next departure in Beijing time; static data with source and date",
+  "type": "module",
+  "main": "src/index.ts",
+  "license": "MIT",
+  "pkuHarness": {
+    "builtin": true
+  },
+  "peerDependencies": {
+    "@pku-harness/sdk": "*",
+    "zod": "^4.0.0",
+    "react": "*",
+    "react-native": "*"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "name": "@pku-harness/plugin-library",
+  "version": "0.1.0",
+  "description": "PKU Library: catalog search and holdings, my loans / renewals / holds, discussion-room booking, study-carrel availability, opening hours, due-date reminders",
+  "type": "module",
+  "main": "src/index.ts",
+  "license": "MIT",
+  "pkuHarness": {
+    "builtin": true
+  },
+  "peerDependencies": {
+    "@pku-harness/sdk": "*",
+    "react": "*",
+    "react-native": "*",
+    "zod": "^4.0.0"
+  }
+}

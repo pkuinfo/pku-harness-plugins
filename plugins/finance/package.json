@@ -1,7 +1,7 @@
 {
   "name": "@pku-harness/plugin-finance",
-  "version": "0.1.0",
-  "description": "财务综合信息门户 (cwfw.pku.edu.cn): personal reward / income records, read-only, campus network only",
+  "version": "0.2.0",
+  "description": "财务: 个人酬金 (cwfw.pku.edu.cn, campus network only), 学费住宿费 and payment orders (cwpay.pku.edu.cn); read-only",
   "type": "module",
   "main": "src/index.ts",
   "license": "MIT",
@@ -10,6 +10,8 @@
   },
   "peerDependencies": {
     "@pku-harness/sdk": "*",
-    "zod": "^4.0.0"
+    "zod": "^4.0.0",
+    "react": "*",
+    "react-native": "*"
   }
 }

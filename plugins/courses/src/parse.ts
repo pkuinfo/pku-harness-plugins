@@ -201,3 +201,39 @@ export function parseVideos(html: string): VideoInfo[] {
 export function redactUrl(url: string) {
   return url.replace(/([?&])(token|access_token|ticket|jsessionid|sid|session|sign|signature)=[^&#]*(&)?/gi, (_m, sep: string, _k: string, amp?: string) => (amp ? sep : '')).replace(/[?&]$/, '');
 }
+
+// ── Recording playback (api.rs get_video_redirect_url / get_video_m3u8_url) ─────────────────────
+
+/** The play page embeds the player in `#content iframe`; its src (absolute) or null. */
+export function parseVideoIframe(html: string): string | null {
+  const src = parse(html).querySelector('#content iframe')?.getAttribute('src');
+  if (!src) return null;
+  return /^https?:\/\//i.test(src) ? src : `${BB_BASE}${src.startsWith('/') ? '' : '/'}${src}`;
+}
+
+export type PlaybackParams = { courseId: string; subId: string; appId: string; authData: string };
+
+/** The iframe's final URL (after its redirects) carries the 智云 ids and a signed auth_data. */
+export function parsePlaybackParams(url: string): PlaybackParams | null {
+  const courseId = param(url, 'course_id');
+  const subId = param(url, 'sub_id');
+  const appId = param(url, 'app_id');
+  const authData = param(url, 'auth_data');
+  return courseId && subId && appId && authData ? { courseId, subId, appId, authData } : null;
+}
+
+/** yjapise sub-info endpoint for those params (api.rs get_video_m3u8_url). */
+export const subInfoUrl = (p: PlaybackParams) =>
+  `https://yjapise.pku.edu.cn/courseapi/v2/schedule/get-sub-info-by-auth-data?all=1&course_id=${encodeURIComponent(p.courseId)}&sub_id=${encodeURIComponent(p.subId)}&with_sub_data=1&app_id=${encodeURIComponent(p.appId)}&auth_data=${encodeURIComponent(p.authData)}`;
+
+/** sub-info JSON → the HLS playlist URL: `list[0].sub_content` is itself JSON with `save_playback`. */
+export function parseSubInfo(json: string): string {
+  const info = JSON.parse(json) as { list?: { sub_content?: string }[] };
+  const raw = info.list?.[0]?.sub_content;
+  if (!raw) throw new Error('这节课没有回放数据');
+  const content = JSON.parse(raw) as { save_playback?: { is_m3u8?: string; contents?: string } };
+  const pb = content.save_playback;
+  if (!pb?.contents) throw new Error('这节课的回放还没有生成');
+  if (pb.is_m3u8 !== 'yes') throw new Error('不支持的回放格式');
+  return pb.contents;
+}

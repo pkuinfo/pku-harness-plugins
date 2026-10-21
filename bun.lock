@@ -39,6 +39,16 @@
         "zod": "^4.0.0",
       },
     },
+    "plugins/authenticator": {
+      "name": "@pku-harness/plugin-authenticator",
+      "version": "0.1.0",
+      "peerDependencies": {
+        "@pku-harness/sdk": "*",
+        "react": "*",
+        "react-native": "*",
+        "zod": "^4.0.0",
+      },
+    },
     "plugins/calendar": {
       "name": "@pku-harness/plugin-calendar",
       "version": "0.3.0",
@@ -65,6 +75,29 @@
         "zod": "^4.0.0",
       },
     },
+    "plugins/canteen": {
+      "name": "@pku-harness/plugin-canteen",
+      "version": "0.1.0",
+      "dependencies": {
+        "node-html-parser": "^9.0.4",
+      },
+      "peerDependencies": {
+        "@pku-harness/sdk": "*",
+        "react": "*",
+        "react-native": "*",
+        "zod": "^4.0.0",
+      },
+    },
+    "plugins/classrooms": {
+      "name": "@pku-harness/plugin-classrooms",
+      "version": "0.1.0",
+      "peerDependencies": {
+        "@pku-harness/sdk": "*",
+        "react": "*",
+        "react-native": "*",
+        "zod": "^4.0.0",
+      },
+    },
     "plugins/course-catalog": {
       "name": "@pku-harness/plugin-course-catalog",
       "version": "0.1.0",
@@ -88,7 +121,7 @@
     },
     "plugins/courses": {
       "name": "@pku-harness/plugin-courses",
-      "version": "0.1.0",
+      "version": "0.3.0",
       "dependencies": {
         "node-html-parser": "^9.0.4",
       },
@@ -133,14 +166,26 @@
     },
     "plugins/finance": {
       "name": "@pku-harness/plugin-finance",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "peerDependencies": {
         "@pku-harness/sdk": "*",
+        "react": "*",
+        "react-native": "*",
         "zod": "^4.0.0",
       },
     },
     "plugins/grades": {
       "name": "@pku-harness/plugin-grades",
+      "version": "0.1.0",
+      "peerDependencies": {
+        "@pku-harness/sdk": "*",
+        "react": "*",
+        "react-native": "*",
+        "zod": "^4.0.0",
+      },
+    },
+    "plugins/library": {
+      "name": "@pku-harness/plugin-library",
       "version": "0.1.0",
       "peerDependencies": {
         "@pku-harness/sdk": "*",
@@ -167,6 +212,19 @@
         "zod": "^4.0.0",
       },
     },
+    "plugins/notices": {
+      "name": "@pku-harness/plugin-notices",
+      "version": "0.1.0",
+      "dependencies": {
+        "node-html-parser": "^9.0.4",
+      },
+      "peerDependencies": {
+        "@pku-harness/sdk": "*",
+        "react": "*",
+        "react-native": "*",
+        "zod": "^4.0.0",
+      },
+    },
     "plugins/openai-compatible": {
       "name": "@pku-harness/plugin-openai-compatible",
       "version": "0.2.0",
@@ -186,7 +244,7 @@
     },
     "plugins/room-booking": {
       "name": "@pku-harness/plugin-room-booking",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "dependencies": {
         "node-html-parser": "^9.0.4",
       },
@@ -209,6 +267,16 @@
       "version": "0.2.0",
       "peerDependencies": {
         "@pku-harness/sdk": "*",
+        "zod": "^4.0.0",
+      },
+    },
+    "plugins/shuttle": {
+      "name": "@pku-harness/plugin-shuttle",
+      "version": "0.1.0",
+      "peerDependencies": {
+        "@pku-harness/sdk": "*",
+        "react": "*",
+        "react-native": "*",
         "zod": "^4.0.0",
       },
     },
@@ -245,6 +313,16 @@
       "version": "0.2.0",
       "peerDependencies": {
         "@pku-harness/sdk": "*",
+        "zod": "^4.0.0",
+      },
+    },
+    "plugins/utilities": {
+      "name": "@pku-harness/plugin-utilities",
+      "version": "0.1.0",
+      "peerDependencies": {
+        "@pku-harness/sdk": "*",
+        "react": "*",
+        "react-native": "*",
         "zod": "^4.0.0",
       },
     },
@@ -325,11 +403,17 @@
 
     "@pku-harness/example-mock-llm": ["@pku-harness/example-mock-llm@workspace:examples/mock-llm"],
 
+    "@pku-harness/plugin-authenticator": ["@pku-harness/plugin-authenticator@workspace:plugins/authenticator"],
+
     "@pku-harness/plugin-calendar": ["@pku-harness/plugin-calendar@workspace:plugins/calendar"],
 
     "@pku-harness/plugin-campus-card": ["@pku-harness/plugin-campus-card@workspace:plugins/campus-card"],
 
     "@pku-harness/plugin-campus-events": ["@pku-harness/plugin-campus-events@workspace:plugins/campus-events"],
+
+    "@pku-harness/plugin-canteen": ["@pku-harness/plugin-canteen@workspace:plugins/canteen"],
+
+    "@pku-harness/plugin-classrooms": ["@pku-harness/plugin-classrooms@workspace:plugins/classrooms"],
 
     "@pku-harness/plugin-course-catalog": ["@pku-harness/plugin-course-catalog@workspace:plugins/course-catalog"],
 
@@ -347,9 +431,13 @@
 
     "@pku-harness/plugin-grades": ["@pku-harness/plugin-grades@workspace:plugins/grades"],
 
+    "@pku-harness/plugin-library": ["@pku-harness/plugin-library@workspace:plugins/library"],
+
     "@pku-harness/plugin-memory": ["@pku-harness/plugin-memory@workspace:plugins/memory"],
 
     "@pku-harness/plugin-netfee": ["@pku-harness/plugin-netfee@workspace:plugins/netfee"],
+
+    "@pku-harness/plugin-notices": ["@pku-harness/plugin-notices@workspace:plugins/notices"],
 
     "@pku-harness/plugin-openai-compatible": ["@pku-harness/plugin-openai-compatible@workspace:plugins/openai-compatible"],
 
@@ -361,6 +449,8 @@
 
     "@pku-harness/plugin-scheduler": ["@pku-harness/plugin-scheduler@workspace:plugins/scheduler"],
 
+    "@pku-harness/plugin-shuttle": ["@pku-harness/plugin-shuttle@workspace:plugins/shuttle"],
+
     "@pku-harness/plugin-timetable": ["@pku-harness/plugin-timetable@workspace:plugins/timetable"],
 
     "@pku-harness/plugin-todo": ["@pku-harness/plugin-todo@workspace:plugins/todo"],
@@ -368,6 +458,8 @@
     "@pku-harness/plugin-treehole": ["@pku-harness/plugin-treehole@workspace:plugins/treehole"],
 
     "@pku-harness/plugin-ui": ["@pku-harness/plugin-ui@workspace:plugins/ui"],
+
+    "@pku-harness/plugin-utilities": ["@pku-harness/plugin-utilities@workspace:plugins/utilities"],
 
     "@pku-harness/sdk": ["@pku-harness/sdk@workspace:packages/sdk"],
 

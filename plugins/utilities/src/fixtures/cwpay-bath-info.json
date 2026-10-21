@@ -1,0 +1,6 @@
+{
+  "_note": "Shape of pay/web/bath/queryBathFeeInfo/<idserial>/<projectId> as read by chunk-09728569 (data.idserial = 卡号, data.username = 姓名). Synthetic values.",
+  "messageCode": "0",
+  "message": "成功",
+  "data": { "idserial": "2000012345", "username": "张三" }
+}

@@ -1,6 +1,6 @@
 import type { z } from 'zod';
 
-import type { CampusRequest, CampusResponse, CampusService, CampusStatus, OtpCode, OtpStatus } from './campus';
+import type { CampusRequest, CampusResponse, CampusService, CampusStatus, OtpCode, OtpStatus, PickedFile } from './campus';
 import type { Binding, Widget, WidgetSize } from './dashboard';
 import type { SpecCheck, UISpec } from './genui';
 import type { Action, Job, JobSource, Trigger } from './scheduler/types';
@@ -81,6 +81,15 @@ export interface HostServices {
   browser: {
     open(url: string): Promise<{ opened: true }>;
   };
+  /**
+   * Let the user choose local files with the system picker (for uploads such as Blackboard
+   * submissions). Only the user can pick: call it from a screen in response to a tap, never from
+   * an agent tool. Resolves [] when the user cancels. Files are copied into the app's cache, so
+   * the URIs stay readable for this app session; the plugin gets references, not bytes.
+   */
+  files: {
+    pick(opts?: { /** MIME types, wildcards allowed (e.g. ['application/pdf', 'image/*']); default any. */ types?: string[]; multiple?: boolean }): Promise<PickedFile[]>;
+  };
   /** Hashing for request signatures (plugins have no crypto of their own). */
   crypto: {
     /** SHA-256 of the UTF-8 text, lowercase hex. */
@@ -151,6 +160,12 @@ export interface HostServices {
     otpBindFinish(smsCode: string): Promise<OtpStatus>;
     /** Forget the secret on this device (IAAA keeps the binding). */
     otpUnbindLocal(): Promise<void>;
+    /**
+     * Open a campus site in the system browser already signed in (the service's own hand-off),
+     * e.g. to pay an order the plugin created. The harness builds the URL; the plugin never sees
+     * the session token. Rejects when the service has no hand-off.
+     */
+    openSignedIn(service: CampusService): Promise<{ opened: true }>;
   };
   timetable: {
     get(): { courses: Course[]; semester: Semester | null; reminderMinutes: number | null };
@@ -202,6 +217,10 @@ export interface ProviderModel {
   id: string;
   name?: string;
   description?: string;
+  /** Context window in tokens (drives the context meter and auto-compaction). Unknown: 128k assumed. */
+  contextWindow?: number;
+  /** What the model accepts besides text; image attachments are only offered when 'image' is listed. */
+  inputModalities?: ('text' | 'image')[];
 }
 
 export interface ProviderConfig {

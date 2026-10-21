@@ -43,6 +43,45 @@ export type CampusRequest = {
   sign?: (fields: Record<string, string>) => Record<string, string> | Promise<Record<string, string>>;
   /** Follow 3xx redirects (default: the service's own choice). false = read `location` yourself. */
   followRedirects?: boolean;
+  /**
+   * A multipart/form-data body (file uploads), instead of `body` / `form`. The host streams each
+   * file from its local URI (from `services.files.pick`); file bytes never pass through the
+   * plugin. Method defaults to POST. Uploads get a longer timeout.
+   */
+  multipart?: CampusMultipart;
+  /** Request timeout in ms (default 20 s; 120 s for multipart). */
+  timeoutMs?: number;
+};
+
+/** A local file to upload as one multipart part. */
+export type CampusFilePart = {
+  /** Form field name of the part, e.g. "newFile_LocalFile0". */
+  field: string;
+  /** File name sent to the server. */
+  name: string;
+  /** MIME type, e.g. "application/pdf". */
+  mime: string;
+  /** Local URI from `services.files.pick` (content:// or file:// in the app's cache). */
+  uri: string;
+};
+
+export type CampusMultipart = {
+  /**
+   * Text fields. An array of [name, value] pairs keeps order and allows repeated names; a record
+   * is sent in its key order. Text fields are written first, then the files.
+   */
+  fields: Record<string, string> | [string, string][];
+  files: CampusFilePart[];
+};
+
+/** A file the user picked with `services.files.pick`. */
+export type PickedFile = {
+  name: string;
+  mime: string;
+  /** Bytes, when the system reports it. */
+  size: number | null;
+  /** Local URI, valid for this app session; pass it to `CampusRequest.multipart.files`. */
+  uri: string;
 };
 
 export type CampusResponse = { status: number; url: string; headers: Record<string, string>; body: string };

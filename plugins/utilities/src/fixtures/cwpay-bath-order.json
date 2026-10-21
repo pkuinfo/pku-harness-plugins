@@ -1,0 +1,6 @@
+{
+  "_note": "Shape of pay/web/bath/createOrder as read by chunk-09728569 (data.PayOrderTrade.id → /person?orderId). Synthetic values.",
+  "messageCode": "0",
+  "message": "成功",
+  "data": { "PayOrderTrade": { "id": "ord-0001", "orderNo": "PAY2026102100000009" } }
+}

@@ -206,4 +206,29 @@ export interface Contributions {
   tabs?: TabContribution[];
   /** Native dashboard widgets, keyed by id. */
   widgets?: Record<string, WidgetContribution>;
+  /** Slash commands for the chat composer, keyed by name (lowercase, /^[a-z][a-z0-9-]*$/). */
+  commands?: Record<string, CommandContribution>;
 }
+
+/**
+ * A `/command` a plugin adds to the composer (docs/AGENT-HARNESS.md §3). Either a prompt
+ * template sent to the agent as the user's message, or a local action that never reaches the
+ * model. Names are namespaced by the harness only on collision (`/plugin:name`).
+ */
+export type CommandContribution = {
+  /** One line, shown in the / menu. */
+  description: string;
+  /** Extra names matched by the menu, e.g. Chinese ('余额'). */
+  aliases?: string[];
+  /** Placeholder for the argument, e.g. '关键词'. Present = the command takes input. */
+  argHint?: string;
+} & (
+  | {
+      /** Sent as the user message; `{{input}}` is replaced by what follows the command. */
+      prompt: string;
+    }
+  | {
+      /** Runs locally; the returned text is shown as a notice in the chat (never sent to the model). */
+      run: (input: string, ctx: { services: HostServices; navigate: (href: string) => void }) => Promise<string | void> | string | void;
+    }
+);

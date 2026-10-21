@@ -1,0 +1,17 @@
+{
+  "name": "@pku-harness/plugin-utilities",
+  "version": "0.1.0",
+  "description": "水电浴: bath card (浴卡) info, top-ups and recharge hand-off via 北京大学收费平台 (cwpay.pku.edu.cn); dorm electricity guidance",
+  "type": "module",
+  "main": "src/index.ts",
+  "license": "MIT",
+  "pkuHarness": {
+    "builtin": true
+  },
+  "peerDependencies": {
+    "@pku-harness/sdk": "*",
+    "zod": "^4.0.0",
+    "react": "*",
+    "react-native": "*"
+  }
+}

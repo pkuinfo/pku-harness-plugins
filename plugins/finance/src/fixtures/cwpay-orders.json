@@ -1,0 +1,13 @@
+{
+  "_note": "Shape of /pay/web/order/pageOrderlist as read by chunk-8158cdf6 (records[], total; amount in fen; displayStatus 101/103). Synthetic values.",
+  "messageCode": "0",
+  "message": "成功",
+  "data": {
+    "total": 3,
+    "records": [
+      { "id": "1", "orderNo": "PAY2026102000000001", "projectName": "浴卡充值", "amount": 5000, "createDate": "2026-10-20 08:12:00", "displayStatus": "103", "billNo": null },
+      { "id": "2", "orderNo": "PAY2026101900000002", "projectName": "学费住宿费", "amount": 500000, "createDate": "2026-10-19 21:00:00", "displayStatus": "101", "billNo": null },
+      { "id": "3", "orderNo": "PAY2026090100000003", "projectName": "网费充值", "amount": 3000, "createDate": "2026-09-01 10:00:00", "displayStatus": "105", "billNo": "B001" }
+    ]
+  }
+}

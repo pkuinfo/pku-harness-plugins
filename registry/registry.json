@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-18",
+  "updatedAt": "2026-10-21",
   "plugins": [
     {
       "id": "ui",
@@ -329,8 +329,8 @@
     },
     {
       "id": "finance",
-      "name": "财务门户",
-      "description": "财务综合信息门户的个人酬金/收入记录查询（只读，仅限校园网）。",
+      "name": "财务",
+      "description": "个人酬金/收入（财务门户，仅校园网）、学费住宿费欠费和缴费记录（收费平台）。只读。",
       "author": "pkuinfo",
       "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/finance",
       "kind": "builtin",
@@ -341,7 +341,8 @@
         "network"
       ],
       "scopes": [
-        "cwfw.pku.edu.cn"
+        "cwfw.pku.edu.cn",
+        "cwpay.pku.edu.cn"
       ],
       "tags": [
         "official",
@@ -455,6 +456,139 @@
       ],
       "tags": [
         "example"
+      ],
+      "verified": true
+    },
+    {
+      "id": "utilities",
+      "name": "水电浴",
+      "description": "浴卡信息、充值记录和充值（收费平台）；宿舍电费的缴费方式。",
+      "author": "pkuinfo",
+      "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/utilities",
+      "kind": "builtin",
+      "icon": "bolt",
+      "requires": [
+        "campus-session",
+        "network"
+      ],
+      "scopes": [
+        "cwpay.pku.edu.cn"
+      ],
+      "tags": [
+        "official",
+        "campus",
+        "finance"
+      ],
+      "verified": true
+    },
+    {
+      "id": "library",
+      "name": "图书馆",
+      "description": "馆藏检索、我的借阅与续借、预约取书、研讨室预约、研修专座余量和开馆时间。",
+      "author": "pkuinfo",
+      "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/library",
+      "kind": "builtin",
+      "icon": "book",
+      "requires": [
+        "campus-session",
+        "network"
+      ],
+      "scopes": [
+        "opac.lib.pku.edu.cn",
+        "a.lib.pku.edu.cn",
+        "kjyy.lib.pku.edu.cn",
+        "www.lib.pku.edu.cn",
+        "sso.lib.pku.edu.cn"
+      ],
+      "tags": [
+        "official",
+        "campus",
+        "library"
+      ],
+      "verified": true
+    },
+    {
+      "id": "classrooms",
+      "name": "空闲教室",
+      "description": "各教学楼今天到后天每节课的空闲教室。",
+      "author": "pkuinfo",
+      "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/classrooms",
+      "kind": "builtin",
+      "icon": "search",
+      "requires": [
+        "network"
+      ],
+      "scopes": [
+        "portal.pku.edu.cn"
+      ],
+      "tags": [
+        "official",
+        "campus"
+      ],
+      "verified": true
+    },
+    {
+      "id": "canteen",
+      "name": "食堂",
+      "description": "各食堂实时就餐人数、开闭餐时间和餐饮中心通知。",
+      "author": "pkuinfo",
+      "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/canteen",
+      "kind": "builtin",
+      "icon": "store",
+      "requires": [
+        "network"
+      ],
+      "scopes": [
+        "portal.pku.edu.cn",
+        "cyzx.pku.edu.cn"
+      ],
+      "tags": [
+        "official",
+        "campus",
+        "food"
+      ],
+      "verified": true
+    },
+    {
+      "id": "shuttle",
+      "name": "校车",
+      "description": "燕园—新燕园通勤班车和快速公交时刻表，算出下一班车。",
+      "author": "pkuinfo",
+      "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/shuttle",
+      "kind": "builtin",
+      "icon": "location",
+      "requires": [],
+      "scopes": [],
+      "tags": [
+        "campus",
+        "transport"
+      ],
+      "verified": true
+    },
+    {
+      "id": "notices",
+      "name": "校园通知",
+      "description": "教务部、研究生院、学工部、总务部通知和北大新闻，可搜索、读全文。",
+      "author": "pkuinfo",
+      "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/notices",
+      "kind": "builtin",
+      "icon": "bell",
+      "requires": [
+        "network"
+      ],
+      "scopes": [
+        "dean.pku.edu.cn",
+        "grs.pku.edu.cn",
+        "xgb.pku.edu.cn",
+        "zwb.pku.edu.cn",
+        "news.pku.edu.cn",
+        "www.pku.edu.cn",
+        "mp.weixin.qq.com"
+      ],
+      "tags": [
+        "official",
+        "campus",
+        "news"
       ],
       "verified": true
     }

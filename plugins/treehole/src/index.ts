@@ -90,6 +90,9 @@ export const treeholePlugin = definePlugin({
     widgets: {
       latest: { title: '树洞最新', description: '北大树洞最新的 3 条帖子（大尺寸 5 条），点按打开。', sizes: ['md', 'lg'], defaultSize: 'md', component: LatestWidget },
     },
+    commands: {
+      treehole: { description: '在树洞搜索并总结', aliases: ['树洞'], argHint: '关键词', prompt: '在树洞搜索「{{input}}」并总结' },
+    },
   },
   instructions: `北大树洞（匿名论坛）：
 - 浏览：treehole__latest 最新帖子，treehole__followed 关注的帖子，treehole__search 关键词搜索，treehole__read 读一个帖子的全部评论（用户说"#1234567"就是 pid），treehole__mine 我发过的帖子。

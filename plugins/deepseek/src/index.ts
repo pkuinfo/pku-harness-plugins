@@ -23,8 +23,9 @@ export const deepseekPlugin = definePlugin({
       auth: 'apiKey',
       defaultBaseURL: 'https://api.deepseek.com',
       models: [
-        { id: 'deepseek-flash', name: 'DeepSeek-V4.1-Flash', description: '快速、经济，日常任务' },
-        { id: 'deepseek-v4-pro', name: 'DeepSeek-V4-Pro', description: '更强的推理与复杂任务' },
+        // contextWindow / inputModalities from DeepSeek Harness llm-deepseek models.ts + defaults.ts.
+        { id: 'deepseek-flash', name: 'DeepSeek-V4.1-Flash', description: '快速、经济，日常任务', contextWindow: 1_000_000, inputModalities: ['text', 'image'] },
+        { id: 'deepseek-v4-pro', name: 'DeepSeek-V4-Pro', description: '更强的推理与复杂任务', contextWindow: 1_000_000, inputModalities: ['text'] },
       ],
       defaultModel: 'deepseek-flash',
       credentialHint: '在 platform.deepseek.com 的 API Keys 页面创建',

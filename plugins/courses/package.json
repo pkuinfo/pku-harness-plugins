@@ -1,7 +1,7 @@
 {
   "name": "@pku-harness/plugin-courses",
-  "version": "0.1.0",
-  "description": "Blackboard (教学网) courses, announcements and assignments, read-only",
+  "version": "0.3.0",
+  "description": "Blackboard (教学网): courses, announcements, assignments, submission, grades, deadline sync, content and recordings",
   "type": "module",
   "main": "src/index.ts",
   "license": "MIT",

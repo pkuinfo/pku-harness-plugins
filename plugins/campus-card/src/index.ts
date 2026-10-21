@@ -37,6 +37,9 @@ export const campusCardPlugin = definePlugin({
         component: BalanceWidget,
       },
     },
+    commands: {
+      balance: { description: '查校园卡余额', aliases: ['余额'], prompt: '校园卡还剩多少钱？' },
+    },
   },
   instructions: '校园卡金额单位是元。用户问余额用 campus-card__getBalance；问最近花了多少、在哪消费用 campus-card__listTransactions；问某个月一共花了多少、钱主要花在哪类（餐费、超市等）、哪天花得最多，用 campus-card__getMonthlyStats（一次返回整月汇总，比翻流水省事）。用户要充值时用 campus-card__recharge（金额单位元，整数）：它创建学校的充值订单并在系统浏览器打开收银台，用户在里面选微信或支付宝、在那个 App 里自己付款；你不能也不需要代付，收银台链接也不会给你。调用后告诉用户去收银台完成付款，付完后在 POS 机上刷一次卡才能到账，之后可以再查余额确认。付款码不经过你：让用户点看板校园卡组件上的「付款码」，或在 设置 →「校园卡付款码」打开。',
   dataSources: {

@@ -125,3 +125,22 @@ export function rewardRecords(rows: QueryRow[]): { records: RewardRecord[]; tota
   const totals = hasTotal ? { gross: amount(c(last, 3)), tax: amount(c(last, 4)), net: amount(c(last, 5)) } : records.length ? { gross: sum('gross'), tax: sum('tax'), net: sum('net') } : null;
   return { records, totals };
 }
+
+export type MonthTotal = { month: string; count: number; gross: number; tax: number; net: number };
+
+/** 酬金按月汇总: group by the 发放时间 month (falls back to 录入时间), oldest first. */
+export function rewardsByMonth(records: RewardRecord[]): MonthTotal[] {
+  const map = new Map<string, MonthTotal>();
+  const r2 = (n: number) => Math.round(n * 100) / 100;
+  for (const r of records) {
+    const month = /^(\d{4})[-/.年](\d{1,2})/.exec(r.paidAt || r.enteredAt);
+    const key = month ? `${month[1]}-${month[2].padStart(2, '0')}` : '未知';
+    const m = map.get(key) ?? { month: key, count: 0, gross: 0, tax: 0, net: 0 };
+    m.count += 1;
+    m.gross = r2(m.gross + (r.gross ?? 0));
+    m.tax = r2(m.tax + (r.tax ?? 0));
+    m.net = r2(m.net + (r.net ?? 0));
+    map.set(key, m);
+  }
+  return [...map.values()].sort((a, b) => a.month.localeCompare(b.month));
+}

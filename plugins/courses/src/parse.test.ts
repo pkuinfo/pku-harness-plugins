@@ -2,7 +2,7 @@
 import { describe, expect, test } from 'bun:test';
 
 import { crawl } from './api';
-import { parseAnnouncements, parseAssignment, parseAssignmentDetail, parseContent, parseCourses, parseDeadline, parseMenu, parseVideos, redactUrl } from './parse';
+import { parseAnnouncements, parseAssignment, parseAssignmentDetail, parseContent, parseCourses, parseDeadline, parseMenu, parsePlaybackParams, parseSubInfo, parseVideoIframe, parseVideos, redactUrl, subInfoUrl } from './parse';
 
 describe('parseCourses', () => {
   test('current and past portlets', () => {
@@ -168,5 +168,22 @@ describe('redactUrl', () => {
     expect(redactUrl('https://x/a?course_id=1&token=abc')).toBe('https://x/a?course_id=1');
     expect(redactUrl('https://x/a?token=abc')).toBe('https://x/a');
     expect(redactUrl('https://x/bbcswebdav/pid-1/xid-2')).toBe('https://x/bbcswebdav/pid-1/xid-2');
+  });
+});
+
+describe('recording playback', () => {
+  test('iframe, params, sub-info', () => {
+    expect(parseVideoIframe('<div id="content"><iframe src="/webapps/bb-streammedia-hqy-BBLEARN/iframe.action?x=1"></iframe></div>')).toBe(
+      'https://course.pku.edu.cn/webapps/bb-streammedia-hqy-BBLEARN/iframe.action?x=1',
+    );
+    expect(parseVideoIframe('<div id="content"></div>')).toBeNull();
+    const p = parsePlaybackParams('https://onlineroomse.pku.edu.cn/player?course_id=123&sub_id=456&app_id=7&auth_data=a%2Bb');
+    expect(p).toEqual({ courseId: '123', subId: '456', appId: '7', authData: 'a+b' });
+    expect(subInfoUrl(p!)).toContain('auth_data=a%2Bb');
+    expect(parsePlaybackParams('https://x/?course_id=1')).toBeNull();
+    const json = JSON.stringify({ list: [{ sub_content: JSON.stringify({ save_playback: { is_m3u8: 'yes', contents: 'https://v.example/1.m3u8' } }) }] });
+    expect(parseSubInfo(json)).toBe('https://v.example/1.m3u8');
+    expect(() => parseSubInfo(JSON.stringify({ list: [] }))).toThrow('没有回放');
+    expect(() => parseSubInfo(JSON.stringify({ list: [{ sub_content: JSON.stringify({ save_playback: { is_m3u8: 'no', contents: 'x.mp4' } }) }] }))).toThrow('格式');
   });
 });

@@ -4,6 +4,8 @@ import { authenticatorPlugin } from './authenticator/src';
 import { calendarPlugin } from './calendar/src';
 import { campusCardPlugin } from './campus-card/src';
 import { campusEventsPlugin } from './campus-events/src';
+import { canteenPlugin } from './canteen/src';
+import { classroomsPlugin } from './classrooms/src';
 import { courseCatalogPlugin } from './course-catalog/src';
 import { courseSyncPlugin } from './course-sync/src';
 import { coursesPlugin } from './courses/src';
@@ -12,17 +14,21 @@ import { deepseekPlugin } from './deepseek/src';
 import { electivePlugin } from './elective/src';
 import { financePlugin } from './finance/src';
 import { gradesPlugin } from './grades/src';
+import { libraryPlugin } from './library/src';
 import { memoryPlugin } from './memory/src';
 import { netfeePlugin } from './netfee/src';
+import { noticesPlugin } from './notices/src';
 import { openAICompatiblePlugin } from './openai-compatible/src';
 import { pluginsPlugin } from './plugins/src';
 import { roomBookingPlugin } from './room-booking/src';
 import { schedulePlugin } from './schedule/src';
 import { schedulerPlugin } from './scheduler/src';
+import { shuttlePlugin } from './shuttle/src';
 import { timetablePlugin } from './timetable/src';
 import { todoPlugin } from './todo/src';
 import { treeholePlugin } from './treehole/src';
 import { uiPlugin } from './ui/src';
+import { utilitiesPlugin } from './utilities/src';
 
 /**
  * Plugins bundled with the app. They are ordinary plugins — same SDK, same permissions as
@@ -48,7 +54,13 @@ export const builtinPlugins: PluginDef[] = [
   campusEventsPlugin,
   electivePlugin,
   financePlugin,
+  utilitiesPlugin,
+  libraryPlugin,
   roomBookingPlugin,
+  classroomsPlugin,
+  canteenPlugin,
+  shuttlePlugin,
+  noticesPlugin,
   memoryPlugin,
   pluginsPlugin,
   deepseekPlugin,
