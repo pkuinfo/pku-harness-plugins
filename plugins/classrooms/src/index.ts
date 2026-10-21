@@ -36,7 +36,7 @@ export const classroomsPlugin = definePlugin({
       description: 'Free classrooms in each teaching building (First to Fourth, Science Teaching Building and more) for every period from today to the day after tomorrow. Find somewhere to study.',
       tools: { free: { title: 'Free classrooms' }, overview: { title: 'Free rooms by building' } },
       widgets: { overview: { title: 'Free classrooms', description: 'How many classrooms are free in each teaching building right now (from the portal); tap a building to have the AI list them.' } },
-      commands: { classrooms: { prompt: 'Find me an empty classroom I can study in now{{input}}', description: 'Find a free classroom to study in', argHint: 'Building and time', aliases: ['study', 'free-rooms'] } },
+      commands: { classrooms: { prompt: 'Find me a free classroom to study in{{input}}', description: 'Find a free classroom to study in', argHint: 'Building and time', aliases: ['study', 'free-rooms'] } },
       dataSources: { overview: { title: 'Free rooms by building' } },
     },
   },
@@ -54,7 +54,7 @@ export const classroomsPlugin = definePlugin({
       },
     },
     commands: {
-      classrooms: { description: '找空闲教室自习', aliases: ['空教室', '自习'], argHint: '如 二教 下午', prompt: '帮我找现在能自习的空闲教室{{input}}' },
+      classrooms: { description: '找空闲教室自习', aliases: ['空教室', '自习'], argHint: '如 二教 下午', prompt: '帮我找能自习的空闲教室{{input}}' },
     },
   },
   instructions: `空闲教室（公开数据，无需登录）：
