@@ -184,6 +184,17 @@ function formatDateTime(ms: number, now: number) {
 }
 
 /** Short description in the app language, e.g. "每 3 天 08:00 · 共 16 次" / "Every 3 days at 08:00 · 16 times". */
+/**
+ * "from …" only when it tells something the next run doesn't: a future start whose first
+ * occurrence falls on a later day (e.g. "every Monday from Nov 3"). Starting tomorrow 08:00
+ * with the first run tomorrow 08:00 says the same thing twice.
+ */
+function startWorthSaying(trigger: Extract<Trigger, { type: 'every' }>, now: number): boolean {
+  if (trigger.startAt <= now) return false;
+  const first = nextOccurrence(trigger, now)?.at;
+  return first == null || new Date(first).toDateString() !== new Date(trigger.startAt).toDateString();
+}
+
 export function describeTrigger(trigger: Trigger, now = Date.now(), locale: 'zh-Hans' | 'en' = 'zh-Hans'): string {
   if (locale === 'en') return describeTriggerEn(trigger, now);
   if (trigger.type === 'at') return formatDateTime(trigger.at, now);
@@ -210,7 +221,7 @@ export function describeTrigger(trigger: Trigger, now = Date.now(), locale: 'zh-
     }
   }
   const parts = [head];
-  if (trigger.startAt > now) parts.push(`${formatDateTime(trigger.startAt, now)}起`);
+  if (startWorthSaying(trigger, now)) parts.push(`${formatDateTime(trigger.startAt, now)}起`);
   if (trigger.count != null) parts.push(`共 ${trigger.count} 次`);
   if (trigger.until != null) parts.push(`至 ${formatDateTime(trigger.until, now)}`);
   return parts.join(' · ');
@@ -259,7 +270,7 @@ function describeTriggerEn(trigger: Trigger, now: number): string {
     }
   }
   const parts = [head];
-  if (trigger.startAt > now) parts.push(`from ${formatDateTimeEn(trigger.startAt, now, true)}`);
+  if (startWorthSaying(trigger, now)) parts.push(`from ${formatDateTimeEn(trigger.startAt, now, true)}`);
   if (trigger.count != null) parts.push(trigger.count === 1 ? 'once' : `${trigger.count} times`);
   if (trigger.until != null) parts.push(`until ${formatDateTimeEn(trigger.until, now, true)}`);
   return parts.join(' · ');

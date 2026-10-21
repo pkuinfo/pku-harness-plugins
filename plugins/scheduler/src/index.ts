@@ -30,10 +30,20 @@ const checkAction = z.object({
   url: z.string().optional(),
 });
 
-const actionInput = z.discriminatedUnion('type', [notifyAction, checkAction]);
+const agentAction = z.object({
+  type: z.literal('agent'),
+  prompt: z
+    .string()
+    .min(4)
+    .max(1000)
+    .describe('self-contained task for an unattended, read-only run with no chat history, in the user’s language; e.g. "总结树洞上最热的 3 个帖子"'),
+});
+
+const actionInput = z.discriminatedUnion('type', [notifyAction, checkAction, agentAction]);
 
 function toAction(services: HostServices, a: z.infer<typeof actionInput>, title: string): Action {
   if (a.type === 'notify') return { type: 'notify', title: a.title || title, body: a.body, url: a.url };
+  if (a.type === 'agent') return { type: 'agent', prompt: a.prompt };
   const entry = services.registry.tool(a.tool);
   if (!entry) throw new Error(`没有这个工具：${a.tool}`);
   if (entry.effect !== 'read') throw new Error(`定时检查只能调用只读工具，${a.tool} 会产生修改`);
@@ -55,7 +65,7 @@ export function jobView(job: Job) {
     finished: s.finished,
     lastRunAt: job.lastRunAt ? formatLocal(job.lastRunAt) : null,
     lastError: job.lastError ?? null,
-    ...(job.action.type === 'check'
+    ...(job.action.type === 'check' || job.action.type === 'agent'
       ? {
           failures: job.failures ?? 0,
           // Recent unattended runs, newest first: when it ran vs was due, outcome, checked value.
@@ -65,6 +75,7 @@ export function jobView(job: Job) {
             result: r.missed ? 'missed (too late)' : r.ok ? (r.notified ? 'notified' : 'ok, no alert') : 'failed',
             ...(r.error ? { error: r.error } : {}),
             ...(r.value !== undefined ? { value: r.value } : {}),
+            ...(r.output ? { output: r.output } : {}),
             ...(r.manual ? { manual: true } : {}),
           })),
         }
@@ -99,11 +110,12 @@ export const schedulerPlugin = definePlugin({
 - 一次性：schedule { type: "once", at }。
 - 重复：schedule { type: "repeat", unit: minute|hour|day|week, interval, times?: ["08:00"], weekdays?: [1,3,5], start?, count?, until? }。"每 3 天，共 16 次" = unit day, interval 3, count 16。
 - 只是到点提醒用 action { type: "notify" }；需要先查数据再决定是否提醒（如"余额低于 100 提醒我"）用 action { type: "check", tool, condition: { path, op, value }, title }，tool 必须是只读工具。
+- 需要理解、总结或综合多处信息、又写不成一个条件的（如"每天早上总结树洞热帖""每周一告诉我本周要交的作业"）用 action { type: "agent", prompt }：到点时在一个全新的会话里（看不到这段对话）只用只读工具执行 prompt，没有值得说的就不打扰，有结果就发通知。prompt 要自包含、写清楚要查什么和怎么判断；最频繁每小时一次，最多 10 个。能用 check 的不要用 agent（check 不调用模型，更省更快）。定时任务不能付款、发帖或修改任何东西。
 - 创建后把返回的 schedule 和 next（接下来几次的时间）简短告诉用户，便于确认。不确定时间时先用 scheduler__preview 试算。`,
   tools: {
     create: defineTool({
       title: '创建提醒或定时任务',
-      description: 'Create a reminder (notify) or a recurring data check (check). Returns the schedule and the next occurrences.',
+      description: 'Create a reminder (notify), a recurring data check (check, no model call), or an AI-run task (agent: an unattended read-only run of a prompt that notifies only when there is something to say). Returns the schedule and the next occurrences.',
       input: z.object({
         title: z.string().min(1).describe('short name shown in the Schedule tab'),
         schedule: scheduleInputSchema,

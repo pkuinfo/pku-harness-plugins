@@ -11,6 +11,7 @@ function ReminderRow({ host, services, job }: { host: HostUI; services: HostServ
   const s = strings[locale];
   const finished = job.nextRunAt == null;
   const check = job.action.type === 'check';
+  const agent = job.action.type === 'agent';
   const when = (ms: number) => (locale === 'en' ? formatLocalDateTime(ms, locale) : formatLocal(ms).slice(5, 16));
   const next = job.enabled && job.nextRunAt ? s.nextRun(when(job.nextRunAt)) : finished ? s.finished(job.runs) : s.paused;
   return (
@@ -21,8 +22,8 @@ function ReminderRow({ host, services, job }: { host: HostUI; services: HostServ
       haptic={false}
       onPress={() => host.navigate(form('reminder', { id: job.id }))}
       style={[styles.row, { gap: t.spacing.md, paddingHorizontal: t.spacing.lg, paddingVertical: t.spacing.md }]}>
-      <View style={[styles.icon, { backgroundColor: check ? t.colors.infoMuted : t.colors.accentMuted, borderRadius: t.radius.sm }]}>
-        <Icon name={check ? 'refresh' : 'bell'} size={16} color={check ? t.colors.info : t.colors.accent} />
+      <View style={[styles.icon, { backgroundColor: check || agent ? t.colors.infoMuted : t.colors.accentMuted, borderRadius: t.radius.sm }]}>
+        <Icon name={agent ? 'sparkles' : check ? 'refresh' : 'bell'} size={16} color={check || agent ? t.colors.info : t.colors.accent} />
       </View>
       <View style={{ flex: 1, gap: t.spacing.xxs }}>
         <Text variant="body" numberOfLines={1} tone={job.enabled && !finished ? 'default' : 'faint'}>

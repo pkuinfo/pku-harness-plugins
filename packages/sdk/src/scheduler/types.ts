@@ -62,6 +62,15 @@ export const actionSchema = z.discriminatedUnion('type', [
     body: z.string().optional(),
     url: z.string().optional(),
   }),
+  z.object({
+    type: z.literal('agent'),
+    /**
+     * A self-contained task the agent runs unattended in a fresh session (no chat history), with
+     * read-only tools. It replies NO_REPLY when there is nothing worth telling the user; otherwise
+     * its short answer becomes the notification.
+     */
+    prompt: z.string().min(4).max(1000),
+  }),
 ]);
 
 export type Action = z.infer<typeof actionSchema>;
@@ -80,6 +89,8 @@ export type JobRun = {
   error?: string;
   ms: number;
   manual?: boolean;
+  /** `agent` jobs: the reply (empty when it stayed silent). */
+  output?: string;
   /** Not run: it was more than MAX_LATE_MS late (the phone was off or asleep). */
   missed?: boolean;
 };
@@ -111,3 +122,7 @@ export type Job = {
   createdAt: number;
   updatedAt: number;
 };
+
+/** Jobs whose runs execute in JS (a check or an agent run) rather than as a pre-armed notification. */
+export const runsInJs = (action: Action) => action.type === 'check' || action.type === 'agent';
+

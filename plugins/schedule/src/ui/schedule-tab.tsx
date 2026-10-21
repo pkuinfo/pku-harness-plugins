@@ -3,6 +3,7 @@ import { useState, type ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { ClassList } from './class-list';
+import { DeliveryBanner } from './delivery-banner';
 import { ReminderList } from './reminder-list';
 import { strings } from './strings';
 import { TodoList } from './todo-list';
@@ -87,6 +88,9 @@ export function ScheduleTab({ host, services }: PluginScreenProps) {
           )}
         </View>
       </FadeIn>
+
+      {/* Course and to-do reminders are jobs too: anything with a next run counts. */}
+      <DeliveryBanner host={host} services={services} active={jobs.some((j) => j.nextRunAt != null)} />
 
       {view === 'day' ? (
         <>

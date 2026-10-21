@@ -16,6 +16,10 @@ import type { Job, JobRun, Trigger } from './types';
 
 export const MAX_ACTIVE_JOBS = 50;
 export const MIN_CHECK_GAP_MS = 15 * 60_000;
+/** Agent runs cost model calls: at most every hour, at most MAX_AGENT_JOBS, AGENT_MAX_STEPS steps each (a list + three reads + the answer fits). */
+export const MIN_AGENT_GAP_MS = 60 * 60_000;
+export const MAX_AGENT_JOBS = 10;
+export const AGENT_MAX_STEPS = 8;
 export const HISTORY_LIMIT = 20;
 export const FAIL_ALERT_AFTER = 2;
 export const DISABLE_AFTER = 10;
@@ -53,3 +57,15 @@ export function recordRun(job: Job, run: JobRun): { patch: Pick<Job, 'history' |
 
 /** Whether a run happened noticeably after its scheduled time. */
 export const isLate = (run: Pick<JobRun, 'at' | 'scheduledAt'>) => run.scheduledAt != null && run.at - run.scheduledAt > LATE_MS;
+
+/** The reply an unattended agent run gives when there is nothing worth telling the user. */
+export const NO_REPLY = 'NO_REPLY';
+
+/** Whether an agent run's reply means "stay silent" (no notification). */
+export const isSilentReply = (text: string) => !text.trim() || text.trim().toUpperCase().startsWith(NO_REPLY);
+
+/** First message of every run of an agent job: the same bytes each run, so runs share the cache. */
+export function agentJobHeader(job: { id: string; title: string; prompt: string }): string {
+  return `[定时任务]\n这是用户事先安排、现在自动运行的任务，用户此刻不在场，无法回答问题或确认操作。\n${JSON.stringify({ id: job.id, title: job.title, task: job.prompt })}`;
+}
+

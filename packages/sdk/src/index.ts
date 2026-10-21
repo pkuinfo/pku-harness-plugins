@@ -2,6 +2,7 @@ export * from './campus';
 export * from './dashboard';
 export * from './format';
 export * from './genui';
+export * from './notify';
 export * from './plugin';
 export * from './pointer';
 export * from './scheduler/check';

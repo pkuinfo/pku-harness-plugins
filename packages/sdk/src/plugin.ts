@@ -3,6 +3,7 @@ import type { z } from 'zod';
 import type { CampusRequest, CampusResponse, CampusService, CampusStatus, OtpCode, OtpStatus, PickedFile } from './campus';
 import type { Binding, Widget, WidgetSize } from './dashboard';
 import type { SpecCheck, UISpec } from './genui';
+import type { NotifyFixKind, NotifyReadiness } from './notify';
 import type { Action, Job, JobSource, Trigger } from './scheduler/types';
 import type { Course, Semester } from './timetable';
 import type { Todo, TodoInput } from './todo';
@@ -127,6 +128,17 @@ export interface HostServices {
   genui: {
     describeCatalog(): string;
     checkSpec(spec: unknown): SpecCheck;
+  };
+  /**
+   * Whether reminders and checks can fire and notify on the minute (notification permission,
+   * exact alarms, battery optimisation), so a screen can warn and offer a fix. `fix` shows the
+   * system prompt or opens the system screen for that item; call it only in response to a tap.
+   * It resolves with the readiness re-read afterwards (system screens may return before the
+   * user changes anything: re-read when the app is back in the foreground too).
+   */
+  notify: {
+    readiness(): Promise<NotifyReadiness>;
+    fix(kind: NotifyFixKind): Promise<NotifyReadiness>;
   };
   /** Exact notifications and scheduled checks. */
   scheduler: {

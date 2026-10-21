@@ -70,6 +70,7 @@ export function ReminderForm({ host, services, params }: PluginScreenProps) {
         }
       : summary;
   const check = existing?.action.type === 'check' ? existing.action : null;
+  const agent = existing?.action.type === 'agent' ? existing.action : null;
 
   const save = async () => {
     const name = title.trim();
@@ -95,7 +96,7 @@ export function ReminderForm({ host, services, params }: PluginScreenProps) {
 
   return (
     <SheetScreen
-      title={existing ? (check ? s.editCheck : s.editReminderTitle) : s.newReminder}
+      title={existing ? (check ? s.editCheck : agent ? s.editAgentTask : s.editReminderTitle) : s.newReminder}
       primary={s.save}
       onPrimary={save}
       primaryDisabled={!title.trim() || preview.finished}
@@ -116,8 +117,16 @@ export function ReminderForm({ host, services, params }: PluginScreenProps) {
           </Text>
         </Surface>
       ) : null}
-      {check && existing ? <RunLog host={host} services={services} job={existing} /> : null}
-      {check ? null : (
+      {agent ? (
+        <Surface level={2} style={{ gap: t.spacing.xs }}>
+          <Text variant="callout">{agent.prompt}</Text>
+          <Text variant="caption" tone="muted">
+            {s.agentByAI}
+          </Text>
+        </Surface>
+      ) : null}
+      {(check || agent) && existing ? <RunLog host={host} services={services} job={existing} /> : null}
+      {check || agent ? null : (
         <Field label={s.body} value={body} onChangeText={setBody} placeholder={s.bodyPlaceholder} />
       )}
       <Segmented
@@ -206,7 +215,8 @@ function RunLog({ host, services, job: initial }: Pick<PluginScreenProps, 'host'
   // The form reads the job once; re-read it after a run so the log shows the new result.
   const [job, setJob] = useState(initial);
   const runs = (job.history ?? []).slice(0, 5);
-  const result = (r: JobRun) => (r.missed ? 'missed' : !r.ok ? 'failed' : r.notified ? 'notified' : 'quiet') as 'notified' | 'quiet' | 'failed' | 'missed';
+  const isAgent = job.action.type === 'agent';
+  const result = (r: JobRun) => (r.missed ? 'missed' : !r.ok ? 'failed' : r.notified ? 'notified' : isAgent ? 'silent' : 'quiet') as 'notified' | 'quiet' | 'silent' | 'failed' | 'missed';
   const tone = (r: JobRun) => (r.missed ? 'warn' : !r.ok ? 'down' : r.notified ? 'accent' : 'muted') as 'warn' | 'down' | 'accent' | 'muted';
   return (
     <Surface level={2} style={{ gap: t.spacing.sm }}>
@@ -215,7 +225,7 @@ function RunLog({ host, services, job: initial }: Pick<PluginScreenProps, 'host'
           {s.recentRuns}
         </Text>
         <Button
-          title={s.runNow}
+          title={isAgent ? s.runAgentNow : s.runNow}
           size="sm"
           variant="secondary"
           icon="refresh"
@@ -250,9 +260,9 @@ function RunLog({ host, services, job: initial }: Pick<PluginScreenProps, 'host'
                 {r.ok && r.value !== undefined && typeof r.value !== 'object' ? ` · ${String(r.value)}` : ''}
               </Text>
             </View>
-            {r.error ? (
-              <Text variant="caption" tone="faint" numberOfLines={2}>
-                {r.error}
+            {r.error || r.output ? (
+              <Text variant="caption" tone="faint" numberOfLines={3}>
+                {r.error ?? r.output}
               </Text>
             ) : null}
           </View>

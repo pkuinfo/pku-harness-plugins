@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 
-import { ALERT_COOLDOWN_MS, checkScheduleProblem, DISABLE_AFTER, HISTORY_LIMIT, isLate, minGap, recordRun } from './policy';
+import { agentJobHeader, isSilentReply, ALERT_COOLDOWN_MS, checkScheduleProblem, DISABLE_AFTER, HISTORY_LIMIT, isLate, minGap, recordRun } from './policy';
 import type { Job, JobRun } from './types';
 
 const T0 = new Date(2026, 9, 21, 8, 0).getTime();
@@ -53,3 +53,18 @@ describe('recordRun', () => {
     expect(isLate({ at: T0, scheduledAt: null })).toBe(false);
   });
 });
+
+describe('agent runs', () => {
+  test('NO_REPLY or nothing stays silent; a real answer notifies', () => {
+    expect(isSilentReply('NO_REPLY')).toBe(true);
+    expect(isSilentReply('  no_reply.')).toBe(true);
+    expect(isSilentReply('')).toBe(true);
+    expect(isSilentReply('树洞热帖：……')).toBe(false);
+  });
+  test('the job header is identical across runs (cache prefix) and escapes the prompt', () => {
+    const job = { id: 'j1', title: '树洞早报', prompt: '总结"热帖"\n三条' };
+    expect(agentJobHeader(job)).toBe(agentJobHeader({ ...job }));
+    expect(agentJobHeader(job).split('\n')).toHaveLength(3);
+  });
+});
+
