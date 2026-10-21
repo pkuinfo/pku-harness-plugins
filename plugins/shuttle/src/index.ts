@@ -47,7 +47,7 @@ export const shuttlePlugin = definePlugin({
       },
     },
     commands: {
-      shuttle: { description: '下一班校车（本地计算）', aliases: ['校车', '班车'], argHint: '如 燕园到新燕园', run: (input) => quickAnswer(input) },
+      shuttle: { description: '下一班校车（本地计算）', aliases: ['校车', '班车'], argHint: '如 燕园到新燕园', run: (input, { locale }) => quickAnswer(input, Date.now(), locale) },
     },
   },
   instructions: `校车（静态时刻表，来自学校公布的图片/通知，附来源和日期）：

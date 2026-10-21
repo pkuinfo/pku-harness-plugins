@@ -32,7 +32,7 @@ export const campusCardPlugin = definePlugin({
         pay: { title: 'Campus Card payment code', subtitle: 'Scan to pay in canteens and shops' },
         recharge: { title: 'Top up Campus Card', subtitle: 'Pay with WeChat or Alipay' },
       },
-      commands: { balance: { description: 'Check Campus Card balance', aliases: ['card'] } },
+      commands: { balance: { prompt: 'How much is left on my campus card?', description: 'Check Campus Card balance', aliases: ['card'] } },
       dataSources: { balance: { title: 'Campus Card balance' } },
     },
   },

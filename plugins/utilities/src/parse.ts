@@ -136,5 +136,9 @@ export function bathTopUps(data: { records?: RawOrder[] } | null | undefined, li
 export const ELECTRICITY_GUIDE =
   '宿舍电费目前只能在微信里交：关注公众号「动力中心收费服务号」→ 缴费服务 → 学生购电 → 用户绑定/解绑（首次绑定楼宇和房间）→ 充值；剩余电量也在那里看。也可以到学生宿舍 28 楼地下一层后勤服务大厅现场购电（每天 8:00–20:00，电话 62753157 / 62758015）。本 App 暂时查不到电量，也不能代缴。';
 
+/** English counterpart of ELECTRICITY_GUIDE (local /electricity answer). */
+export const ELECTRICITY_GUIDE_EN =
+  'Dorm electricity can only be paid in WeChat for now: follow the 动力中心收费服务号 account → 缴费服务 → 学生购电 → 用户绑定/解绑 (bind your building and room the first time) → top up; your remaining balance is shown there too. You can also buy electricity in person at the service hall in the basement of dorm building 28 (8:00–20:00 daily, tel. 62753157 / 62758015). This app can’t read your meter or pay for you yet.';
+
 export const BATH_GUIDE =
   '浴卡余额存在卡片芯片里，线上查不到。线上充值成功后要拿浴卡到浴卡转存机上贴卡激活，钱才写进卡里；也可以去 31 楼（大浴室）西侧地下的浴卡服务窗口（9:00–22:50）。洗浴中遇到问题可打 62753116。';

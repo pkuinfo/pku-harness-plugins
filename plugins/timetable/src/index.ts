@@ -47,7 +47,7 @@ export const timetablePlugin = definePlugin({
         setReminder: { title: 'Set class reminder' },
       },
       widgets: { next: { title: 'Next class', description: 'The class in progress or up next, with room, countdown and progress; updates on its own.' } },
-      commands: { today: { description: 'What classes do I have today', aliases: ['classes', 'timetable'] } },
+      commands: { today: { prompt: 'What classes do I have today?', description: 'What classes do I have today', aliases: ['classes', 'timetable'] } },
       dataSources: { today: { title: 'Today’s classes' } },
     },
   },

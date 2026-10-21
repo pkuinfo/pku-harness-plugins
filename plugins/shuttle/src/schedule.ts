@@ -61,6 +61,29 @@ export const AREA_NAMES: Record<Area, string> = {
   beianhe: '地铁北安河站',
 };
 
+/** English station names (official / pinyin), for the local /shuttle answer in English. */
+export const AREA_NAMES_EN: Record<Area, string> = {
+  yanyuan: 'Yanyuan (main campus)',
+  xinyanyuan: 'Xinyanyuan (Changping)',
+  lab200: 'Campus 200',
+  xiaojiahe: 'Xiaojiahe',
+  xierqi: 'Xi’erqi',
+  yangfang: 'Yangfang',
+  beianhe: 'Bei’anhe metro station',
+};
+
+const WEEKDAY_EN: Record<string, string> = { 周日: 'Sun', 周一: 'Mon', 周二: 'Tue', 周三: 'Wed', 周四: 'Thu', 周五: 'Fri', 周六: 'Sat' };
+
+/** "in 12 min" / "in 1 h 5 min" / "Mon 08:00": the English counterpart of formatIn. */
+export function formatInEn(dep: Departure, today: string): string {
+  if (dep.date !== today) return `${WEEKDAY_EN[dep.weekday] ?? dep.weekday} ${dep.time}`;
+  if (dep.inMinutes < 1) return 'leaving now';
+  if (dep.inMinutes < 60) return `in ${dep.inMinutes} min`;
+  const h = Math.floor(dep.inMinutes / 60);
+  const m = dep.inMinutes % 60;
+  return m ? `in ${h} h ${m} min` : `in ${h} h`;
+}
+
 export type Departure = {
   date: string;
   weekday: string;
@@ -176,17 +199,26 @@ export function parseRoute(input: string): { from: Area | null; to: Area | null 
 }
 
 /** Local `/校车` answer: computed on the phone, never sent to the model. */
-export function quickAnswer(input: string, nowMs = Date.now()): string {
+export function quickAnswer(input: string, nowMs = Date.now(), locale: 'zh-Hans' | 'en' = 'zh-Hans'): string {
   const now = beijing(nowMs);
   const asked = parseRoute(input);
   const pairs: { from: Area | null; to: Area | null }[] =
     asked.from || asked.to ? [asked] : [{ from: 'yanyuan', to: 'xinyanyuan' }, { from: 'xinyanyuan', to: 'yanyuan' }];
+  const en = locale === 'en';
   const lines = pairs.map(({ from, to }) => {
     const deps = nextDepartures({ from, to, nowMs, count: 3 });
+    if (en) {
+      const title = `${from ? AREA_NAMES_EN[from] : 'Any stop'} → ${to ? AREA_NAMES_EN[to] : 'any stop'}`;
+      if (!deps.length) return `${title}: no buses today or tomorrow`;
+      return `${title}: ${deps.map((d) => `${d.date === now.date ? '' : `${WEEKDAY_EN[d.weekday] ?? d.weekday} `}${d.time}${d.approx ? ' (departs)' : ''}`).join(', ')} (${formatInEn(deps[0], now.date)})`;
+    }
     const title = `${from ? AREA_NAMES[from] : '任意站'} → ${to ? AREA_NAMES[to] : '任意站'}`;
     if (!deps.length) return `${title}：今明两天没有班次`;
     return `${title}：${deps.map((d) => `${d.date === now.date ? '' : `${d.weekday} `}${d.time}${d.approx ? '（始发）' : ''}`).join('、')}（${formatIn(deps[0], now.date)}）`;
   });
-  const table = dayTypeOf(now.weekday) === 'weekday' ? '工作日' : '周末及节假日';
-  return `${lines.join('\n')}\n按${table}时刻表；法定节假日、寒暑假按周末及节假日表。通勤班车需在门户「新校区班车预约」预约。`;
+  const weekday = dayTypeOf(now.weekday) === 'weekday';
+  if (en) {
+    return `${lines.join('\n')}\nUsing the ${weekday ? 'weekday' : 'weekend and holiday'} timetable; public holidays and vacations follow the weekend table. Commuter buses must be booked in the portal (新校区班车预约).`;
+  }
+  return `${lines.join('\n')}\n按${weekday ? '工作日' : '周末及节假日'}时刻表；法定节假日、寒暑假按周末及节假日表。通勤班车需在门户「新校区班车预约」预约。`;
 }

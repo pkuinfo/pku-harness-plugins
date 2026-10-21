@@ -97,7 +97,7 @@ export const treeholePlugin = definePlugin({
       widgets: { latest: { title: 'Latest on Treehole', description: 'The 3 newest Treehole posts (5 when large); tap one to open it.' } },
       screens: { home: { title: 'Treehole' }, hole: { title: 'Treehole post' } },
       settings: { home: { title: 'Treehole', subtitle: 'Browse the latest posts and verify by SMS' } },
-      commands: { treehole: { description: 'Search Treehole and summarise', argHint: 'Keywords', aliases: ['hole'] } },
+      commands: { treehole: { prompt: 'Search Treehole (树洞) for “{{input}}” and summarise what people are saying.', description: 'Search Treehole and summarise', argHint: 'Keywords', aliases: ['hole'] } },
     },
   },
   icon: 'chat',

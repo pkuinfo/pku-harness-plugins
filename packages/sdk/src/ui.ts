@@ -234,6 +234,7 @@ export type CommandContribution = {
     }
   | {
       /** Runs locally; the returned text is shown as a notice in the chat (never sent to the model). */
-      run: (input: string, ctx: { services: HostServices; navigate: (href: string) => void }) => Promise<string | void> | string | void;
+      /** `locale`: the app language, for the returned notice text. */
+      run: (input: string, ctx: { services: HostServices; navigate: (href: string) => void; locale: AppLocale }) => Promise<string | void> | string | void;
     }
 );

@@ -51,7 +51,7 @@ export const noticesPlugin = definePlugin({
       description: 'The latest notices from the Office of Educational Administration, Graduate School, Student Affairs and General Services, plus PKU News. Search by keyword and read in full (WeChat article links included).',
       tools: { latest: { title: 'Latest notices' }, search: { title: 'Search notices' }, read: { title: 'Read notice' } },
       widgets: { latest: { title: 'Latest notices', description: 'The newest notices from Educational Administration, the Graduate School, Student Affairs, General Services and PKU News (3, or 6 when large). Tap to open the original; long-press to have the AI summarise it. config.source limits it to one source.' } },
-      commands: { notices: { description: 'Latest campus notices', argHint: 'Keywords (optional)', aliases: ['news'] } },
+      commands: { notices: { prompt: 'Check the latest Peking University notices{{input}} and point out the ones that matter to me.', description: 'Latest campus notices', argHint: 'Keywords (optional)', aliases: ['news'] } },
       dataSources: { latest: { title: 'Latest campus notices' } },
     },
   },

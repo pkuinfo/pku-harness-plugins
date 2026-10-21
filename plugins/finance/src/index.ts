@@ -30,8 +30,8 @@ export const financePlugin = definePlugin({
       },
       widgets: { fees: { title: 'Tuition and housing', description: 'Unpaid tuition and housing fees on the payment platform (shows “All paid” when nothing is due).' } },
       commands: {
-        fees: { description: 'Check for unpaid tuition or housing fees', aliases: ['tuition'] },
-        income: { description: 'This year’s stipends and other income', aliases: ['stipend', 'salary'] },
+        fees: { prompt: 'Have I paid my tuition and accommodation fees? How much is still due?', description: 'Check for unpaid tuition or housing fees', aliases: ['tuition'] },
+        income: { prompt: 'How much have I received in payments and stipends so far this year? Break it down by month.', description: 'This year’s stipends and other income', aliases: ['stipend', 'salary'] },
       },
       dataSources: { fees: { title: 'Unpaid tuition and housing' } },
     },

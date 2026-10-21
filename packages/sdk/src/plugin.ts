@@ -24,7 +24,10 @@ export type PluginTranslation = {
   screens?: Record<string, { title?: string }>;
   /** Settings rows, keyed by the screen they open. */
   settings?: Record<string, { title?: string; subtitle?: string }>;
-  commands?: Record<string, { description?: string; argHint?: string; aliases?: string[] }>;
+  /** `prompt`: the English template for prompt commands (sent as the user's message). */
+  commands?: Record<string, { description?: string; argHint?: string; aliases?: string[]; prompt?: string }>;
+  /** Provider plugins: display name, description, credential hint and model names/descriptions. */
+  providers?: Record<string, { name?: string; description?: string; credentialHint?: string; models?: Record<string, { name?: string; description?: string }> }>;
   dataSources?: Record<string, { title?: string }>;
 };
 

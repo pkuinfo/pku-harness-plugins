@@ -34,7 +34,7 @@ export const canteenPlugin = definePlugin({
         notices: { title: 'Dining Center notices' },
       },
       widgets: { crowd: { title: 'Canteen crowds', description: 'Live diner counts and crowding at each canteen (least busy first; 3 small, 4 medium, 8 large), refreshed every 2 minutes. config.names limits it to certain canteens (e.g. ["学五", "家园一层"]).' } },
-      commands: { canteen: { description: 'Where to eat right now', argHint: 'What or where (optional)', aliases: ['eat', 'food'] } },
+      commands: { canteen: { prompt: 'Which canteens are open and not crowded right now? Pick one for me{{input}}', description: 'Where to eat right now', argHint: 'What or where (optional)', aliases: ['eat', 'food'] } },
       dataSources: { crowd: { title: 'Canteen diner counts' } },
     },
   },

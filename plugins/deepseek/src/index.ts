@@ -12,7 +12,23 @@ export const deepseekPlugin = definePlugin({
   name: 'DeepSeek',
   description: 'DeepSeek 官方 API（默认 AI 服务）。',
   version: '0.2.0',
-  i18n: { en: { name: 'DeepSeek', description: 'The official DeepSeek API (the default AI service).' } },
+  i18n: {
+    en: {
+      name: 'DeepSeek',
+      description: 'The official DeepSeek API (the default AI service).',
+      providers: {
+        api: {
+          name: 'DeepSeek',
+          description: 'Use an API key from the DeepSeek platform',
+          credentialHint: 'Create one under API Keys at platform.deepseek.com',
+          models: {
+            'deepseek-flash': { description: 'Fast and affordable, for everyday tasks' },
+            'deepseek-v4-pro': { description: 'Stronger reasoning for complex tasks' },
+          },
+        },
+      },
+    },
+  },
   requires: ['network'],
   icon: 'sparkles',
   scopes: ['api.deepseek.com'],

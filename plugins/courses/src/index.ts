@@ -59,10 +59,10 @@ export const coursesPlugin = definePlugin({
       widgets: { due: { title: 'Assignments due', description: 'This semester’s unsubmitted assignments, soonest first, with countdowns.' } },
       screens: { submit: { title: 'Submit assignment' }, videos: { title: 'Lecture recordings' } },
       commands: {
-        homework: { description: 'Unsubmitted Blackboard assignments and when they’re due', argHint: 'Course (optional)', aliases: ['hw', 'assignments'] },
+        homework: { prompt: 'Which Course (教学网) assignments haven’t I submitted yet? Sort them by deadline.{{input}}', description: 'Unsubmitted Blackboard assignments and when they’re due', argHint: 'Course (optional)', aliases: ['hw', 'assignments'] },
         submit: { description: 'Submit an assignment: pick files, add text, review, then hand in', aliases: ['hand-in'] },
-        grades: { description: 'Your grades on Blackboard', argHint: 'Course (optional)', aliases: ['scores'] },
-        'ddl-sync': { description: 'Turn unsubmitted assignments into to-dos with early reminders', aliases: ['sync-deadlines'] },
+        grades: { prompt: 'Show my grades on Course (教学网).{{input}}', description: 'Your grades on Blackboard', argHint: 'Course (optional)', aliases: ['scores'] },
+        'ddl-sync': { prompt: 'Sync my unsubmitted Course (教学网) assignments to my to-dos and remind me before each deadline.{{input}}', description: 'Turn unsubmitted assignments into to-dos with early reminders', aliases: ['sync-deadlines'] },
         replay: { description: 'Open lecture recordings', aliases: ['recordings', 'videos'] },
       },
     },

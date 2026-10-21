@@ -2,7 +2,7 @@ import { definePlugin, defineTool } from '@pku-harness/sdk';
 import { z } from 'zod';
 
 import { bathCard, createBathOrder, listProjects, openPayCenter } from './api';
-import { BATH_GUIDE, BATH_MAX, BATH_MIN, checkBathAmount, ELECTRICITY_GUIDE, PROJECT_KINDS } from './parse';
+import { BATH_GUIDE, BATH_MAX, BATH_MIN, checkBathAmount, ELECTRICITY_GUIDE, ELECTRICITY_GUIDE_EN, PROJECT_KINDS } from './parse';
 import { BathRechargeScreen } from './recharge-screen';
 import { BathWidget } from './widget';
 
@@ -33,7 +33,7 @@ export const utilitiesPlugin = definePlugin({
       settings: { 'bath-recharge': { title: 'Top up bath card', subtitle: 'Order on the payment platform, pay with WeChat or Alipay' } },
       commands: {
         electricity: { description: 'How to check and pay for dorm electricity', aliases: ['power'] },
-        bath: { description: 'Bath card top-ups and history', aliases: ['shower'] },
+        bath: { prompt: 'Show my recent bath card top-ups.', description: 'Bath card top-ups and history', aliases: ['shower'] },
       },
       dataSources: { bath: { title: 'Bath card top-ups' } },
     },
@@ -59,7 +59,7 @@ export const utilitiesPlugin = definePlugin({
       electricity: {
         description: '宿舍电费怎么查、怎么交',
         aliases: ['电费', '电量', '购电'],
-        run: () => ELECTRICITY_GUIDE,
+        run: (_input, { locale }) => (locale === 'en' ? ELECTRICITY_GUIDE_EN : ELECTRICITY_GUIDE),
       },
       bath: { description: '浴卡充值记录 / 充值', aliases: ['浴卡', '洗澡', '浴室'], prompt: '看看我的浴卡最近的充值记录。' },
     },

@@ -72,9 +72,9 @@ export const libraryPlugin = definePlugin({
         mySpace: { title: 'My study room booking', description: 'Your next active Library study room (or study seat) booking: place, time and status, with a check-in reminder.' },
       },
       commands: {
-        library: { description: 'Library at a glance: hours, due dates, my holds' },
-        loans: { description: 'My loans and due dates', aliases: ['due'] },
-        book: { description: 'Find a book in the Library', argHint: 'Title, author or ISBN', aliases: ['find-book'] },
+        library: { prompt: 'When is the library open today? When are my books due, and do I have any discussion room bookings?', description: 'Library at a glance: hours, due dates, my holds' },
+        loans: { prompt: 'Which library books do I have out, and when are they due? List the ones I can renew.', description: 'My loans and due dates', aliases: ['due'] },
+        book: { prompt: 'Find “{{input}}” in the PKU Library: which reading room it’s in and whether a copy is on the shelf now.', description: 'Find a book in the Library', argHint: 'Title, author or ISBN', aliases: ['find-book'] },
       },
       dataSources: { loans: { title: 'My loans' }, hours: { title: 'Today’s opening hours' } },
     },
