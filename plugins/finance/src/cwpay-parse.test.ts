@@ -2,7 +2,7 @@
 import { describe, expect, test } from 'bun:test';
 
 import { clean, fenToYuan, flattenProjects, folderProjects, isBathProject, isTuitionProject, orderRecords, statusDict, tuitionItems, unwrapCwpay, type RawOrder, type RawProject, type RawTuition } from './cwpay-parse';
-import { rewardsByMonth, type RewardRecord } from './parse';
+import { rewardsBetween, rewardsByMonth, rewardTotals, type RewardRecord } from './parse';
 
 const read = (name: string) => Bun.file(new URL(`./fixtures/${name}`, import.meta.url)).text();
 
@@ -76,7 +76,10 @@ describe('helpers', () => {
 });
 
 describe('rewardsByMonth', () => {
-  const rec = (paidAt: string, net: number): RewardRecord => ({ item: 'x', projectCode: '', kind: '', gross: net, tax: 0, net, paidAt, enteredAt: '', handler: '', department: '' });
+  const rec = (paidAt: string, net: number, enteredAt = ''): RewardRecord => ({
+    item: 'x', projectCode: '', payoutMethod: '', gross: net, tax: 0, net,
+    status: paidAt ? 'paid' : 'pending', paidAt: paidAt || null, enteredAt, submittedBy: '', payingUnit: '',
+  });
   test('groups by paid month, sorted', () => {
     expect(rewardsByMonth([rec('2026-03-10', 100), rec('2026-01-05', 50.5), rec('2026-03-20', 0.25), rec('', 1)])).toEqual([
       { month: '2026-01', count: 1, gross: 50.5, tax: 0, net: 50.5 },
@@ -85,3 +88,17 @@ describe('rewardsByMonth', () => {
     ]);
   });
 });
+
+describe('rewardsBetween', () => {
+  const rec = (paidAt: string | null, enteredAt: string): RewardRecord => ({
+    item: 'x', projectCode: '', payoutMethod: '', gross: 1, tax: 0, net: 1,
+    status: paidAt ? 'paid' : 'pending', paidAt, enteredAt, submittedBy: '', payingUnit: '',
+  });
+  test('cuts by paid date, or entered date while pending (this week = Mon..today)', () => {
+    const list = [rec('2026-10-12', '2026-10-09'), rec(null, '2026-10-21'), rec('2026-10-19', '2026-10-15')];
+    expect(rewardsBetween(list, '2026-10-19', '2026-10-21').map((r) => r.paidAt ?? r.enteredAt)).toEqual(['2026-10-21', '2026-10-19']);
+    expect(rewardTotals(rewardsBetween(list, '2026-10-19'))).toEqual({ gross: 2, tax: 0, net: 2 });
+    expect(rewardTotals([])).toBeNull();
+  });
+});
+

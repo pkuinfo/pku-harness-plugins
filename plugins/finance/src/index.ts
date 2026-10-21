@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 import { queryRewards } from './api';
 import { queryOrders, queryTuition } from './cwpay';
-import { rewardsByMonth } from './parse';
+import { rewardsBetween, rewardsByMonth, rewardTotals, type RewardRecord, type RewardTotals } from './parse';
 import { FeesWidget } from './widget';
 
 const DATE = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
@@ -55,7 +55,7 @@ export const financePlugin = definePlugin({
     },
   },
   instructions: `财务相关，全部只读：
-- finance__rewards：财务门户（cwfw.pku.edu.cn）的个人酬金（助教/助研/劳务费、奖助学金等发到个人的款项），按年份和月份范围筛选，返回每笔明细、合计和按月汇总（byMonth）。只能在校园网内访问；报“只能在校园网内访问”时请用户连校园网，不要反复重试。一次查一个自然年，跨年分年调用；“今年”= 1 月到当前月。
+- finance__rewards：财务门户（cwfw.pku.edu.cn）的个人酬金（助教/助研/劳务费、奖助学金等发到个人的款项），每笔有款项名称、发放部门（payingUnit）、经办人（submittedBy）、金额和状态（pending = 已录入未发放）。问“这周/最近谁给我打了钱”时用 since/until 日期范围（本周 = 周一到今天），按年月问时用 year + monthFrom/monthTo；返回合计和按月汇总（byMonth）。只能在校园网内访问；报“只能在校园网内访问”时请用户连校园网，不要反复重试。用 year 时一次查一个自然年，跨年分年调用（since/until 可以跨年）；“今年”= 1 月到当前月。
 - finance__tuitionFees：收费平台（cwpay.pku.edu.cn）的学费、住宿费，按学年列出应缴、已缴、未缴，以及未缴合计。
 - finance__paymentOrders：收费平台上的缴费订单记录（学费、浴卡、网费、校园卡充值等通过收费平台付的款），含订单状态（待支付/已付款）。
 - 这里不能缴费：用户要交学费等，告诉他到收费平台（cwpay.pku.edu.cn，统一身份认证登录）缴费，浴卡充值可以用 utilities 插件。
@@ -69,24 +69,48 @@ export const financePlugin = definePlugin({
     rewards: defineTool({
       title: '个人酬金查询',
       description:
-        'Personal reward / income payments recorded by the PKU finance office (TA/RA pay, labour fees, stipends, scholarships paid to the user) for one calendar year, optionally limited to a month range. Returns each payment (item, project code, kind, gross, tax, net, paid date, department), totals and per-month totals (byMonth). Sensitive personal data: call only when the user asks. Works only on the PKU campus network.',
+        'Money paid to the user by PKU through the finance office: TA/RA pay (助教/助研/助管费), labour fees (劳务费), stipends, scholarships. Each record: item (what it is for), payingUnit (发放部门, the unit paying), submittedBy (经办人, who filed it), gross / tax / net (yuan), status (paid, or pending = entered but not paid out yet), paidAt, enteredAt, payoutMethod (usually the bank). Use for "who paid me / what money came in this week / this month". Pass since/until (YYYY-MM-DD) for exact ranges such as this week; otherwise year + months. Returns totals and byMonth too. Sensitive personal data: call only when the user asks. Works only on the PKU campus network.',
       input: z.object({
-        year: z.number().int().min(2000).max(2100).optional().describe('calendar year; default this year'),
+        since: DATE.optional().describe('YYYY-MM-DD: records paid (or, if pending, entered) on/after this date; e.g. Monday of this week'),
+        until: DATE.optional().describe('YYYY-MM-DD: on/before this date; default today'),
+        year: z.number().int().min(2000).max(2100).optional().describe('calendar year when not using since/until; default this year'),
         monthFrom: z.number().int().min(1).max(12).optional().describe('first month (1-12); default 1'),
         monthTo: z.number().int().min(1).max(12).optional().describe('last month (1-12); default the current month this year, 12 for past years'),
         summaryOnly: z.boolean().optional().describe('true: totals and byMonth only, without the per-payment records'),
       }),
       effect: 'read',
-      execute: async ({ year, monthFrom, monthTo, summaryOnly }, ctx) => {
+      execute: async ({ since, until, year, monthFrom, monthTo, summaryOnly }, ctx) => {
         const now = new Date();
-        const y = year ?? now.getFullYear();
-        if (y > now.getFullYear()) throw new Error(`${y} 年还没有到，没有记录`);
-        const from = monthFrom ?? 1;
-        const to = monthTo ?? (y === now.getFullYear() ? now.getMonth() + 1 : 12);
-        if (from > to) throw new Error(`起始月份 ${from} 不能大于结束月份 ${to}`);
-        const { records, totals } = await queryRewards(ctx.services, y, from, to);
+        const thisYear = now.getFullYear();
+        let records: RewardRecord[] = [];
+        let totals: RewardTotals | null = null;
+        let range: string;
+        if (since || until) {
+          // The portal queries by year and month; fetch the months the range touches, then cut by date.
+          const end = until ?? `${thisYear}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+          const start = since ?? `${end.slice(0, 4)}-01-01`;
+          if (start > end) throw new Error(`起始日期 ${start} 不能晚于结束日期 ${end}`);
+          for (let y = Number(start.slice(0, 4)); y <= Math.min(Number(end.slice(0, 4)), thisYear); y++) {
+            const from = y === Number(start.slice(0, 4)) ? Number(start.slice(5, 7)) : 1;
+            const to = y === Number(end.slice(0, 4)) ? Number(end.slice(5, 7)) : 12;
+            records = records.concat((await queryRewards(ctx.services, y, from, to)).records);
+          }
+          records = rewardsBetween(records, start, end);
+          totals = rewardTotals(records);
+          range = `${start}..${end}`;
+        } else {
+          const y = year ?? thisYear;
+          if (y > thisYear) throw new Error(`${y} 年还没有到，没有记录`);
+          const from = monthFrom ?? 1;
+          const to = monthTo ?? (y === thisYear ? now.getMonth() + 1 : 12);
+          if (from > to) throw new Error(`起始月份 ${from} 不能大于结束月份 ${to}`);
+          ({ records, totals } = await queryRewards(ctx.services, y, from, to));
+          range = `${y}-${String(from).padStart(2, '0')}..${y}-${String(to).padStart(2, '0')}`;
+        }
         const byMonth = rewardsByMonth(records);
-        return summaryOnly ? { year: y, months: `${from}-${to}`, count: records.length, totals, byMonth } : { year: y, months: `${from}-${to}`, count: records.length, totals, byMonth, records };
+        const pending = records.filter((r) => r.status === 'pending').length;
+        const base = { range, count: records.length, pending, totals, byMonth };
+        return summaryOnly ? base : { ...base, records };
       },
     }),
     tuitionFees: defineTool({

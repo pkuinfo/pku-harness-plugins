@@ -84,14 +84,19 @@ export function amount(s: string | undefined): number | null {
 export type RewardRecord = {
   item: string;
   projectCode: string;
-  kind: string;
+  /** 发放类型: how it is paid out, usually the bank (e.g. 农业银行). */
+  payoutMethod: string;
   gross: number | null;
   tax: number | null;
   net: number | null;
-  paidAt: string;
+  /** paid = 已发放 (paidAt is its date); pending = entered but not paid out yet (未发布). */
+  status: 'paid' | 'pending';
+  paidAt: string | null;
   enteredAt: string;
-  handler: string;
-  department: string;
+  /** 经办人: who filed the payment (often a teacher or office staff). */
+  submittedBy: string;
+  /** 发放部门: the unit paying it. */
+  payingUnit: string;
 };
 
 export type RewardTotals = { gross: number | null; tax: number | null; net: number | null };
@@ -106,23 +111,24 @@ export function rewardRecords(rows: QueryRow[]): { records: RewardRecord[]; tota
   const last = rows[rows.length - 1];
   const hasTotal = !!last && c(last, 0).includes('总计');
   const data = hasTotal ? rows.slice(0, -1) : rows;
-  const records = data.map((r) => ({
-    item: c(r, 0),
-    projectCode: c(r, 1),
-    kind: c(r, 2),
-    gross: amount(c(r, 3)),
-    tax: amount(c(r, 4)),
-    net: amount(c(r, 5)),
-    paidAt: c(r, 7),
-    enteredAt: c(r, 6),
-    handler: c(r, 8),
-    department: c(r, 10),
-  }));
-  const sum = (k: 'gross' | 'tax' | 'net') => {
-    const vals = records.map((r) => r[k]).filter((v): v is number => v != null);
-    return vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) * 100) / 100 : null;
-  };
-  const totals = hasTotal ? { gross: amount(c(last, 3)), tax: amount(c(last, 4)), net: amount(c(last, 5)) } : records.length ? { gross: sum('gross'), tax: sum('tax'), net: sum('net') } : null;
+  const records = data.map((r): RewardRecord => {
+    const paid = c(r, 7);
+    const isDate = /^\d{4}[-/.年]\d{1,2}/.test(paid);
+    return {
+      item: c(r, 0),
+      projectCode: c(r, 1),
+      payoutMethod: c(r, 2),
+      gross: amount(c(r, 3)),
+      tax: amount(c(r, 4)),
+      net: amount(c(r, 5)),
+      status: isDate ? 'paid' : 'pending',
+      paidAt: isDate ? paid : null,
+      enteredAt: c(r, 6),
+      submittedBy: c(r, 8),
+      payingUnit: c(r, 10),
+    };
+  });
+  const totals = hasTotal ? { gross: amount(c(last, 3)), tax: amount(c(last, 4)), net: amount(c(last, 5)) } : rewardTotals(records);
   return { records, totals };
 }
 
@@ -133,7 +139,7 @@ export function rewardsByMonth(records: RewardRecord[]): MonthTotal[] {
   const map = new Map<string, MonthTotal>();
   const r2 = (n: number) => Math.round(n * 100) / 100;
   for (const r of records) {
-    const month = /^(\d{4})[-/.年](\d{1,2})/.exec(r.paidAt || r.enteredAt);
+    const month = /^(\d{4})[-/.年](\d{1,2})/.exec(r.paidAt ?? r.enteredAt);
     const key = month ? `${month[1]}-${month[2].padStart(2, '0')}` : '未知';
     const m = map.get(key) ?? { month: key, count: 0, gross: 0, tax: 0, net: 0 };
     m.count += 1;
@@ -144,3 +150,25 @@ export function rewardsByMonth(records: RewardRecord[]): MonthTotal[] {
   }
   return [...map.values()].sort((a, b) => a.month.localeCompare(b.month));
 }
+
+/** The date a record counts on: when it was paid, or when it was entered if not paid yet. */
+export const rewardDate = (r: RewardRecord) => (r.paidAt ?? r.enteredAt).replace(/[/.年月]/g, '-').replace(/日$/, '');
+
+/** Records whose date falls in [since, until] (YYYY-MM-DD, inclusive; either may be omitted). */
+export function rewardsBetween(records: RewardRecord[], since?: string, until?: string): RewardRecord[] {
+  return records.filter((r) => {
+    const d = rewardDate(r).slice(0, 10);
+    return (!since || d >= since) && (!until || d <= until);
+  });
+}
+
+/** Gross / tax / net sums of some records (null when there are none). */
+export function rewardTotals(records: RewardRecord[]): RewardTotals | null {
+  if (!records.length) return null;
+  const sum = (k: 'gross' | 'tax' | 'net') => {
+    const vals = records.map((r) => r[k]).filter((v): v is number => v != null);
+    return vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) * 100) / 100 : null;
+  };
+  return { gross: sum('gross'), tax: sum('tax'), net: sum('net') };
+}
+

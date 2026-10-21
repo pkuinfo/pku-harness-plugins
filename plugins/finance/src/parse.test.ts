@@ -98,14 +98,15 @@ describe('reward rows (display.rs)', () => {
     expect(records[0]).toEqual({
       item: '助教酬金',
       projectCode: '2026001234',
-      kind: '劳务',
+      payoutMethod: '劳务',
       gross: 1200,
       tax: 40,
       net: 1160,
+      status: 'paid',
       paidAt: '2026-03-10',
       enteredAt: '2026-03-02',
-      handler: '李老师',
-      department: '物理学院',
+      submittedBy: '李老师',
+      payingUnit: '物理学院',
     });
     expect(totals).toEqual({ gross: 2000, tax: 40, net: 1960 });
   });
