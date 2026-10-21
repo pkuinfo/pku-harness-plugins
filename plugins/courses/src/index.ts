@@ -117,6 +117,7 @@ export const coursesPlugin = definePlugin({
       description: 'Latest announcements of current courses (or one course), newest first per course.',
       input: z.object({ courseId: z.string().optional().describe('from courses__list; default all current courses') }),
       effect: 'read',
+      untrusted: true,
       execute: async ({ courseId }, ctx) => {
         return announcements(ctx.services, await pick(ctx.services, courseId));
       },
@@ -141,6 +142,7 @@ export const coursesPlugin = definePlugin({
         'One assignment in full: instructions, attached files (names + links), deadline, submission status, current attempt and grade if graded. Get courseId/contentId from courses__assignments or courses__content.',
       input: z.object({ courseId: z.string().describe('e.g. _8001_1'), contentId: z.string().describe('e.g. _11_1') }),
       effect: 'read',
+      untrusted: true,
       execute: async ({ courseId, contentId }, ctx) => {
         const a = await assignmentDetail(ctx.services, courseId, contentId);
         return { ...a, instructions: clip(a.instructions, 4000), due: fmt(a.deadline) };
@@ -156,6 +158,7 @@ export const coursesPlugin = definePlugin({
         maxPages: z.number().int().min(1).max(40).optional().describe('folder listings to fetch, default 15'),
       }),
       effect: 'read',
+      untrusted: true,
       execute: async ({ courseId, folderId, maxPages }, ctx) => {
         const { items, pages, truncated } = await crawl(ctx.services, courseId, { roots: folderId ? [{ id: folderId, path: '' }] : undefined, maxPages: maxPages ?? 15 });
         if (!pages) throw new Error('这门课没有可浏览的内容目录');

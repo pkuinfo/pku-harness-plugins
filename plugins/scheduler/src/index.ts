@@ -3,6 +3,7 @@ import {
   definePlugin,
   defineTool,
   formatLocal,
+  isLate,
   scheduleInputSchema,
   summarize,
   toTrigger,
@@ -54,6 +55,20 @@ export function jobView(job: Job) {
     finished: s.finished,
     lastRunAt: job.lastRunAt ? formatLocal(job.lastRunAt) : null,
     lastError: job.lastError ?? null,
+    ...(job.action.type === 'check'
+      ? {
+          failures: job.failures ?? 0,
+          // Recent unattended runs, newest first: when it ran vs was due, outcome, checked value.
+          recentRuns: (job.history ?? []).slice(0, 5).map((r) => ({
+            at: formatLocal(r.at),
+            ...(r.scheduledAt != null && isLate(r) ? { dueAt: formatLocal(r.scheduledAt) } : {}),
+            result: r.missed ? 'missed (too late)' : r.ok ? (r.notified ? 'notified' : 'ok, no alert') : 'failed',
+            ...(r.error ? { error: r.error } : {}),
+            ...(r.value !== undefined ? { value: r.value } : {}),
+            ...(r.manual ? { manual: true } : {}),
+          })),
+        }
+      : {}),
   };
 }
 

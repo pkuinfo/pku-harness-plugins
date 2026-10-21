@@ -1,4 +1,4 @@
-import { describeTrigger, formatLocalDateTime, formatTime, formatWeekday, occurrencesAfter, summarize, type PluginScreenProps, type Trigger } from '@pku-harness/sdk';
+import { describeTrigger, formatClock, formatLocalDateTime, formatTime, formatWeekday, isLate, occurrencesAfter, summarize, type Job, type JobRun, type PluginScreenProps, type Trigger } from '@pku-harness/sdk';
 import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -109,13 +109,15 @@ export function ReminderForm({ host, services, params }: PluginScreenProps) {
       {check ? (
         <Surface level={2} style={{ gap: t.spacing.xs }}>
           <Text variant="callout">
-            {s.checkSummary(check.tool, check.condition.path, check.condition.op, check.condition.value != null ? String(check.condition.value) : null)}
+            {s.checkSummary(services.registry.tool(check.tool)?.title ?? check.tool, check.condition.path, check.condition.op, check.condition.value != null ? String(check.condition.value) : null)}
           </Text>
           <Text variant="caption" tone="muted">
             {s.checkByAI}
           </Text>
         </Surface>
-      ) : (
+      ) : null}
+      {check && existing ? <RunLog host={host} services={services} job={existing} /> : null}
+      {check ? null : (
         <Field label={s.body} value={body} onChangeText={setBody} placeholder={s.bodyPlaceholder} />
       )}
       <Segmented
@@ -191,6 +193,76 @@ export function ReminderForm({ host, services, params }: PluginScreenProps) {
         )}
       </View>
     </SheetScreen>
+  );
+}
+
+/** A check job's recent unattended runs (newest first) and a manual "check now". */
+function RunLog({ host, services, job: initial }: Pick<PluginScreenProps, 'host' | 'services'> & { job: Job }) {
+  const { Text, Button, Surface } = host.components;
+  const t = host.useTheme();
+  const locale = host.useLocale();
+  const s = strings[locale];
+  const [busy, setBusy] = useState(false);
+  // The form reads the job once; re-read it after a run so the log shows the new result.
+  const [job, setJob] = useState(initial);
+  const runs = (job.history ?? []).slice(0, 5);
+  const result = (r: JobRun) => (r.missed ? 'missed' : !r.ok ? 'failed' : r.notified ? 'notified' : 'quiet') as 'notified' | 'quiet' | 'failed' | 'missed';
+  const tone = (r: JobRun) => (r.missed ? 'warn' : !r.ok ? 'down' : r.notified ? 'accent' : 'muted') as 'warn' | 'down' | 'accent' | 'muted';
+  return (
+    <Surface level={2} style={{ gap: t.spacing.sm }}>
+      <View style={[styles.line, { gap: t.spacing.sm }]}>
+        <Text variant="callout" style={{ flex: 1 }}>
+          {s.recentRuns}
+        </Text>
+        <Button
+          title={s.runNow}
+          size="sm"
+          variant="secondary"
+          icon="refresh"
+          disabled={busy}
+          onPress={async () => {
+            setBusy(true);
+            host.haptics.tap();
+            try {
+              await services.scheduler.runCheck(job.id);
+            } finally {
+              setJob(services.scheduler.get(job.id) ?? job);
+              setBusy(false);
+            }
+          }}
+        />
+      </View>
+      {(job.failures ?? 0) >= 2 ? (
+        <Text variant="caption" tone="down">
+          {s.failingNote(job.failures ?? 0)}
+        </Text>
+      ) : null}
+      {runs.length ? (
+        runs.map((r) => (
+          <View key={`${r.at}-${r.scheduledAt}`} style={{ gap: 2 }}>
+            <View style={[styles.line, { gap: t.spacing.sm }]}>
+              <Text variant="caption" style={{ flex: 1, fontVariant: ['tabular-nums'] }}>
+                {formatLocalDateTime(r.at, locale)}
+                {r.manual ? ` · ${s.runManual}` : r.scheduledAt != null && isLate(r) ? ` · ${s.runLate(formatClock(r.scheduledAt))}` : ''}
+              </Text>
+              <Text variant="caption" tone={tone(r)}>
+                {s.runResult(result(r))}
+                {r.ok && r.value !== undefined && typeof r.value !== 'object' ? ` · ${String(r.value)}` : ''}
+              </Text>
+            </View>
+            {r.error ? (
+              <Text variant="caption" tone="faint" numberOfLines={2}>
+                {r.error}
+              </Text>
+            ) : null}
+          </View>
+        ))
+      ) : (
+        <Text variant="caption" tone="faint">
+          {s.noRuns}
+        </Text>
+      )}
+    </Surface>
   );
 }
 

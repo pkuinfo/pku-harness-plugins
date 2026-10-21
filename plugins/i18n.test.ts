@@ -10,7 +10,7 @@ const anything: any = new Proxy(function () {}, { get: (_t, k) => (k === Symbol.
 mock.module('react-native', () => ({
   StyleSheet: { create: (s: unknown) => s, hairlineWidth: 1, absoluteFill: {}, absoluteFillObject: {}, flatten: (s: unknown) => s },
   Platform: { OS: 'android', select: (o: Record<string, unknown>) => o.android ?? o.default },
-  Animated: anything, Easing: anything, AccessibilityInfo: anything, Alert: anything, AppState: anything, RefreshControl: anything, TextInput: anything, View: anything,
+  Animated: anything, Easing: anything, AccessibilityInfo: anything, Alert: anything, AppState: anything, RefreshControl: anything, Share: anything, TextInput: anything, View: anything,
 }));
 
 const { builtinPlugins } = await import('./index');

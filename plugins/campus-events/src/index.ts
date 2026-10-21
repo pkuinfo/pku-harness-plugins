@@ -44,6 +44,7 @@ export const campusEventsPlugin = definePlugin({
         code: smsCode,
       }),
       effect: 'read',
+      untrusted: true,
       execute: async ({ from, to, keyword, code }, ctx) => {
         const r = dateRange(from, to, 30, 92);
         const data = await getV3<{ events?: RawLabEvent[] }>(ctx, `/lab_events?startDate=${r.start}&endDate=${r.end}`, code, '学术日历');
@@ -71,6 +72,7 @@ export const campusEventsPlugin = definePlugin({
         code: smsCode,
       }),
       effect: 'read',
+      untrusted: true,
       execute: async ({ from, to, page = 1, limit = 20, code }, ctx) => {
         const r = dateRange(from, to, 1, 31);
         const data = await getV3<{ list?: RawActivity[] }>(ctx, `/events/list?startTime=${r.start}&endTime=${r.end}&page=${page}&limit=${limit}`, code, '活动日历');

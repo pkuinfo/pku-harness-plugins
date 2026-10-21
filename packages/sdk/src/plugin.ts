@@ -202,9 +202,28 @@ export function resolveDynamic<T>(value: Dynamic<T>, services: HostServices): T 
   return typeof value === 'function' ? (value as (s: HostServices) => T)(services) : value;
 }
 
+/**
+ * The agent turn a tool call belongs to (only for `actor: 'agent'` calls made in a chat turn).
+ * `tainted`: earlier in this turn the agent called a tool that returns third-party content
+ * (`ToolDef.untrusted`, any remote plugin), so its next actions may be steered by text the user
+ * never wrote (prompt injection). Durable writes such as memory should then wait for the user.
+ */
+export interface TurnInfo {
+  sessionId?: string;
+  tainted: boolean;
+  /**
+   * The user's own message in this turn asks to remember something ("记住…", "remember…").
+   * Third-party content can't write the user's message, so such a write is the user's intent
+   * even when the turn is tainted.
+   */
+  userAsked?: boolean;
+}
+
 export interface ToolContext {
   pluginId: string;
   actor: Actor;
+  /** Set for agent calls inside a chat turn. */
+  turn?: TurnInfo;
   /** This plugin's private store. */
   kv: KV;
   services: HostServices;
@@ -217,6 +236,16 @@ export interface ToolDef<I extends z.ZodType = z.ZodType, O = unknown> {
   description: Dynamic<string>;
   input: I;
   effect: ToolEffect;
+  /**
+   * Returns content written by third parties (forum posts, notices, event blurbs). Calling it
+   * taints the agent's turn (`ToolContext.turn.tainted`). Remote plugins' tools always count.
+   */
+  untrusted?: boolean;
+  /**
+   * Only the user can run it, from a screen: it is not offered to the model, and agent or
+   * scheduler calls are refused. For gates the agent must not open itself (approving a memory).
+   */
+  userOnly?: boolean;
   execute: (input: z.infer<I>, ctx: ToolContext) => Promise<O>;
 }
 
@@ -341,6 +370,13 @@ export interface ContextInput {
   kv: KV;
   services: HostServices;
 }
+
+/**
+ * Markers for context lines that retract a fact shown earlier (docs/AGENT-HARNESS.md §5.1).
+ * `- [已删除] old` and `- [更正] old → new`: the host appends them only to chats whose history
+ * still shows `old`, once. Fact texts must not contain the arrow.
+ */
+export const CONTEXT_MARK = { deleted: '[已删除]', corrected: '[更正]', arrow: ' → ' } as const;
 
 export function definePlugin(def: PluginDef): PluginDef {
   return def;

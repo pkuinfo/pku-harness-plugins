@@ -1,10 +1,15 @@
 /**
- * Memory relevance without embeddings (none on the phone): overlap of CJK character bigrams and
- * Latin/number words between the query and each memory, plus small boosts for pinned, recently
- * updated and frequently used memories. Pure, unit-tested.
+ * Memory ordering and relevance without embeddings (none on the phone). The per-chat snapshot
+ * uses a fixed order (pinned, kind, age, id) so the same memories always render the same way;
+ * `recall` ranks by overlap of CJK character bigrams and Latin/number words with the query,
+ * plus small boosts for pinned, recently updated and frequently used memories. Pure, unit-tested.
  */
 
 export type MemoryKind = 'preference' | 'fact' | 'routine' | 'person' | 'other';
+export const KINDS: readonly MemoryKind[] = ['preference', 'fact', 'routine', 'person', 'other'];
+
+/** Who a memory came from: the user's own words in chat, the memory screen, or the AI's guess. */
+export type SourceKind = 'user_said' | 'ui' | 'inferred';
 
 export type Memory = {
   id: string;
@@ -14,7 +19,17 @@ export type Memory = {
   uses: number;
   createdAt: number;
   updatedAt: number;
+  /** 'pending' memories wait for the user's approval and are never shown to the model. */
+  status: 'active' | 'pending';
+  source: { kind: SourceKind; sessionId?: string };
+  /** A pending memory that, once approved, updates this one instead of adding a new one. */
+  replaces?: string;
 };
+
+/** A memory as tools return it (index.ts `view`). */
+export type MemoryView = Pick<Memory, 'id' | 'text' | 'kind' | 'pinned' | 'status' | 'createdAt' | 'updatedAt' | 'replaces'> & { source: SourceKind };
+
+type Ordered = Pick<Memory, 'id' | 'kind' | 'pinned' | 'createdAt'>;
 
 /** Tokens: CJK bigrams (and single chars for 1-char runs) + lowercase words of 2+ chars. */
 export function tokens(text: string): Set<string> {
@@ -50,18 +65,23 @@ export function score(m: Memory, query: string, now: number): number {
   return overlap + recency + usage + (m.pinned ? 0.25 : 0);
 }
 
+/** Snapshot order: pinned first, then by kind (KINDS order), then oldest first, then id. */
+export function bySnapshotOrder(a: Ordered, b: Ordered): number {
+  if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
+  const k = KINDS.indexOf(a.kind) - KINDS.indexOf(b.kind);
+  if (k) return k;
+  if (a.createdAt !== b.createdAt) return a.createdAt - b.createdAt;
+  return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+}
+
 /**
- * Memories to show the model for a query: pinned ones always, then the most related above
- * `minScore`, capped by count and characters so context stays cheap.
+ * The once-per-chat snapshot: active memories in snapshot order, cut where the count or the
+ * character budget runs out (a prefix of the order, so it never depends on the query).
  */
-export function selectForContext(memories: Memory[], query: string, now: number, limit = 8, maxChars = 900, minScore = 0.12): Memory[] {
-  const ranked = memories
-    .map((m) => ({ m, s: score(m, query, now) }))
-    .filter((x) => x.m.pinned || x.s > minScore)
-    .sort((a, b) => b.s - a.s);
+export function selectSnapshot(memories: Memory[], limit = 30, maxChars = 1500): Memory[] {
   const out: Memory[] = [];
   let chars = 0;
-  for (const { m } of ranked) {
+  for (const m of memories.filter((x) => x.status === 'active').sort(bySnapshotOrder)) {
     if (out.length >= limit || chars + m.text.length > maxChars) break;
     out.push(m);
     chars += m.text.length;
@@ -69,16 +89,23 @@ export function selectForContext(memories: Memory[], query: string, now: number,
   return out;
 }
 
-/** An existing memory that says nearly the same thing (to update instead of duplicating). */
-export function findDuplicate(memories: Memory[], text: string, threshold = 0.6): Memory | undefined {
-  let best: Memory | undefined;
-  let bestSim = threshold;
-  for (const m of memories) {
-    const s = similarity(m.text, text);
-    if (s >= bestSim) {
-      best = m;
-      bestSim = s;
-    }
-  }
-  return best;
+/** Active memories most related to a query (the long tail the snapshot leaves out). */
+export function rankForQuery(memories: Memory[], query: string, now: number, limit = 8, minScore = 0.1): Memory[] {
+  return memories
+    .filter((m) => m.status === 'active')
+    .map((m) => ({ m, s: score(m, query, now) }))
+    .filter((x) => x.s > minScore)
+    .sort((a, b) => b.s - a.s)
+    .slice(0, limit)
+    .map((x) => x.m);
+}
+
+/** Existing memories that say nearly the same thing, most similar first. */
+export function findSimilar(memories: Memory[], text: string, threshold = 0.5, limit = 3): Memory[] {
+  return memories
+    .map((m) => ({ m, s: similarity(m.text, text) }))
+    .filter((x) => x.s >= threshold)
+    .sort((a, b) => b.s - a.s)
+    .slice(0, limit)
+    .map((x) => x.m);
 }

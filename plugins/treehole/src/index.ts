@@ -55,6 +55,7 @@ const feed = (follow: boolean) =>
       : 'Latest holes on the PKU Treehole forum, newest first, each with up to 3 comment previews. Use treehole__read for the full thread.',
     input: z.object({ page, limit: limit(10, 30), code }),
     effect: 'read',
+    untrusted: true,
     execute: async ({ page = 1, limit = 10, code }, ctx) =>
       guarded(ctx, code, async () => {
         const { data } = await v3(ctx, `/hole/list_comments?page=${page}&limit=${limit}&comment_limit=3&comment_stream=1${follow ? '&is_follow=1' : ''}`);
@@ -131,6 +132,7 @@ export const treeholePlugin = definePlugin({
       description: 'Search holes by keyword (api.rs search: hole/list?keyword=). Returns holes without comments; read one with treehole__read.',
       input: z.object({ keyword: z.string().trim().min(1).max(50), page, limit: limit(10, 30), code }),
       effect: 'read',
+      untrusted: true,
       execute: async ({ keyword, page = 1, limit = 10, code }, ctx) =>
         guarded(ctx, code, async () => {
           const { data } = await v3(ctx, `/hole/list?keyword=${encodeURIComponent(keyword)}&page=${page}&limit=${limit}`);
@@ -142,6 +144,7 @@ export const treeholePlugin = definePlugin({
       description: 'One hole with its comments, oldest first (api.rs get_hole: hole/one). commentLimit caps how many comments are returned.',
       input: z.object({ pid, commentLimit: limit(100, 500), code }),
       effect: 'read',
+      untrusted: true,
       execute: async ({ pid, commentLimit = 100, code }, ctx) =>
         guarded(ctx, code, async () => {
           const { data } = await v3(ctx, `/hole/one?pid=${pid}&comment_stream=1`);

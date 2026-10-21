@@ -68,6 +68,22 @@ export type Action = z.infer<typeof actionSchema>;
 
 export type JobSource = 'user' | 'agent' | 'plugin';
 
+/** One unattended run of a `check` job. */
+export type JobRun = {
+  at: number;
+  /** The occurrence it ran for (null for a manual run). */
+  scheduledAt: number | null;
+  ok: boolean;
+  notified: boolean;
+  /** The checked value (the condition's path into the tool result). */
+  value?: unknown;
+  error?: string;
+  ms: number;
+  manual?: boolean;
+  /** Not run: it was more than MAX_LATE_MS late (the phone was off or asleep). */
+  missed?: boolean;
+};
+
 export type Job = {
   id: string;
   title: string;
@@ -84,6 +100,12 @@ export type Job = {
   lastValue?: unknown;
   /** Last failure of a `check` job, cleared on success. */
   lastError?: string;
+  /** Recent check runs, newest first (scheduler/policy.ts HISTORY_LIMIT). */
+  history?: JobRun[];
+  /** Consecutive failed check runs (reset by a success). */
+  failures?: number;
+  /** When the user was last told this check keeps failing. */
+  alertedAt?: number | null;
   /** Free-form link back to the owner, e.g. { todoId }. */
   meta?: Record<string, unknown>;
   createdAt: number;

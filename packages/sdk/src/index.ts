@@ -5,6 +5,7 @@ export * from './genui';
 export * from './plugin';
 export * from './pointer';
 export * from './scheduler/check';
+export * from './scheduler/policy';
 export * from './scheduler/recurrence';
 export * from './scheduler/schedule-input';
 export * from './scheduler/types';

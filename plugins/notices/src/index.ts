@@ -93,6 +93,7 @@ export const noticesPlugin = definePlugin({
         refresh: z.boolean().optional().describe('ignore the 20-minute cache'),
       }),
       effect: 'read',
+      untrusted: true,
       execute: async ({ source, page = 1, limit = 10, refresh }, ctx) => {
         if (source) {
           const items = await fetchPage(ctx.kv, source, page, ctx.signal, refresh);
@@ -114,6 +115,7 @@ export const noticesPlugin = definePlugin({
         limit: z.number().int().min(1).max(40).optional().describe('max items, default 15'),
       }),
       effect: 'read',
+      untrusted: true,
       execute: async ({ keyword, source, pages = 2, limit = 15 }, ctx) => {
         const ids = source ? [source] : SOURCE_IDS;
         const { items, failed } = await gather(ctx.kv, ids, pages, ctx.signal);
@@ -139,6 +141,7 @@ export const noticesPlugin = definePlugin({
         maxChars: z.number().int().min(500).max(20000).optional().describe('default 6000'),
       }),
       effect: 'read',
+      untrusted: true,
       execute: async ({ url, maxChars = 6000 }, ctx) => {
         if (!allowedArticleUrl(url)) throw new Error('只能读取北大网站（*.pku.edu.cn）或微信公众号文章（mp.weixin.qq.com）的链接');
         const wechat = /mp\.weixin\.qq\.com/i.test(url);
