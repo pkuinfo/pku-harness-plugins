@@ -238,6 +238,37 @@ export interface ProviderModel {
   contextWindow?: number;
   /** What the model accepts besides text; image attachments are only offered when 'image' is listed. */
   inputModalities?: ('text' | 'image')[];
+  /** Published prices, for the host's local cost ledger (usage board). Omitted = cost unknown. */
+  pricing?: ModelPricing;
+}
+
+/**
+ * Prices per 1M tokens in `currency`. The base prices are the flat (or off-peak) ones; `peak`
+ * multiplies them inside its windows. Input is split by prefix-cache hit vs miss.
+ */
+export interface ModelPricing {
+  currency: 'CNY' | 'USD';
+  inputCacheHit: number;
+  inputCacheMiss: number;
+  output: number;
+  /** Peak windows in the provider's time zone: weekdays (0 = Sunday) and [startHour, endHour) ranges. */
+  peak?: { multiplier: number; utcOffsetMinutes: number; weekdays: number[]; hours: [number, number][] };
+  /** Where the numbers come from (URL + date checked), shown next to estimates. */
+  source?: string;
+}
+
+/** Account balance as the provider reports it (one entry per currency). */
+export interface ProviderBalance {
+  currency: string;
+  total: number;
+  granted?: number;
+  toppedUp?: number;
+}
+
+export interface ProviderAccount {
+  /** The provider says the balance is enough to make calls. */
+  available: boolean;
+  balances: ProviderBalance[];
 }
 
 export interface ProviderConfig {
@@ -261,6 +292,8 @@ export interface ProviderDef {
   credentialHint?: string;
   listModels?: (config: ProviderConfig) => Promise<ProviderModel[]>;
   signIn?: () => Promise<string>;
+  /** Read the account balance with the user's own credential (e.g. DeepSeek GET /user/balance). */
+  balance?: (config: ProviderConfig) => Promise<ProviderAccount>;
   createModel: (config: ProviderConfig) => unknown;
 }
 

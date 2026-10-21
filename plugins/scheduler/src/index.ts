@@ -80,7 +80,7 @@ export const schedulerPlugin = definePlugin({
   icon: 'alarm',
   core: true,
   scopes: [],
-  instructions: `创建提醒或定时检查用 scheduler 工具。时间一律用本地时间字符串 "YYYY-MM-DD HH:mm"，根据系统提示里的当前时间换算"明天""两天后"等说法。
+  instructions: `创建提醒或定时检查用 scheduler 工具。时间一律用本地时间字符串 "YYYY-MM-DD HH:mm"，根据最近一条用户消息 <context> 里的当前时间换算"明天""两天后"等说法。
 - 一次性：schedule { type: "once", at }。
 - 重复：schedule { type: "repeat", unit: minute|hour|day|week, interval, times?: ["08:00"], weekdays?: [1,3,5], start?, count?, until? }。"每 3 天，共 16 次" = unit day, interval 3, count 16。
 - 只是到点提醒用 action { type: "notify" }；需要先查数据再决定是否提醒（如"余额低于 100 提醒我"）用 action { type: "check", tool, condition: { path, op, value }, title }，tool 必须是只读工具。

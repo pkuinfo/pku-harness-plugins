@@ -1,5 +1,6 @@
 import { definePlugin } from '@pku-harness/sdk';
 
+import { fetchBalance, PRICING } from './balance';
 import { listOpenAIModels, openAICompatibleModel } from './model';
 
 /**
@@ -11,7 +12,7 @@ export const deepseekPlugin = definePlugin({
   id: 'deepseek',
   name: 'DeepSeek',
   description: 'DeepSeek 官方 API（默认 AI 服务）。',
-  version: '0.2.0',
+  version: '0.3.0',
   i18n: {
     en: {
       name: 'DeepSeek',
@@ -40,13 +41,14 @@ export const deepseekPlugin = definePlugin({
       auth: 'apiKey',
       defaultBaseURL: 'https://api.deepseek.com',
       models: [
-        // contextWindow / inputModalities from DeepSeek Harness llm-deepseek models.ts + defaults.ts.
-        { id: 'deepseek-flash', name: 'DeepSeek-V4.1-Flash', description: '快速、经济，日常任务', contextWindow: 1_000_000, inputModalities: ['text', 'image'] },
-        { id: 'deepseek-v4-pro', name: 'DeepSeek-V4-Pro', description: '更强的推理与复杂任务', contextWindow: 1_000_000, inputModalities: ['text'] },
+        // pricing: ./balance.ts (official price page). contextWindow / inputModalities from DeepSeek Harness llm-deepseek models.ts + defaults.ts.
+        { id: 'deepseek-flash', name: 'DeepSeek-V4.1-Flash', description: '快速、经济，日常任务', contextWindow: 1_000_000, inputModalities: ['text', 'image'], pricing: PRICING['deepseek-flash'] },
+        { id: 'deepseek-v4-pro', name: 'DeepSeek-V4-Pro', description: '更强的推理与复杂任务', contextWindow: 1_000_000, inputModalities: ['text'], pricing: PRICING['deepseek-v4-pro'] },
       ],
       defaultModel: 'deepseek-flash',
       credentialHint: '在 platform.deepseek.com 的 API Keys 页面创建',
       listModels: listOpenAIModels,
+      balance: fetchBalance,
       createModel: (config) => openAICompatibleModel('deepseek', config),
     },
   },
