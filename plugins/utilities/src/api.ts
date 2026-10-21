@@ -33,7 +33,8 @@ export async function listProjects(services: Services): Promise<PayProject[]> {
   const cats = await call<RawProject[]>(services, `pay/pay/cos/merchant/getProjectTypeAndProjectInfoListInit/${SCHOOL_CODE}`, '缴费项目');
   const { projects, folders } = flattenProjects(cats ?? []);
   const nested = await Promise.all(
-    folders.slice(0, 12).map((f) =>
+    // Every folder (the platform has dozens; a cap hid 浴卡充值 when it sat in a later folder).
+    folders.slice(0, 60).map((f) =>
       call<RawProject[]>(services, `pay/pay/cos/merchant/getProjectTypeAndProjectInfoList/${f.id}`, '缴费项目').then(
         (c) => flattenProjects([{ children: c ?? [] }], f.category).projects,
         () => [] as PayProject[],
@@ -45,7 +46,8 @@ export async function listProjects(services: Services): Promise<PayProject[]> {
 
 async function bathProject(services: Services) {
   const p = (await listProjects(services)).find(isBathProject);
-  if (!p) throw new Error('收费平台目前没有开放浴卡充值');
+  // The list is per account: the platform only offers 浴卡充值 to some students (or seasonally).
+  if (!p) throw new Error('收费平台目前没有为你的账号开放浴卡充值（项目列表里没有这一项）');
   return p;
 }
 
