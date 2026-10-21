@@ -1,18 +1,13 @@
 import { classStatus, type Course, type HostUI } from '@pku-harness/sdk';
 import { StyleSheet, View } from 'react-native';
 
+import { strings } from './strings';
 import { form } from './util';
-
-function untilText(min: number) {
-  if (min < 60) return `${min} 分钟后`;
-  const h = Math.floor(min / 60);
-  const m = min % 60;
-  return m ? `${h} 小时 ${m} 分后` : `${h} 小时后`;
-}
 
 function ClassCard({ host, course, now, isToday, isNext }: { host: HostUI; course: Course; now: Date; isToday: boolean; isNext: boolean }) {
   const { Text, Chip, Pressable } = host.components;
   const t = host.useTheme();
+  const s = strings[host.useLocale()];
   const { GlassEdges } = host.components;
   const color = t.courseColor(course.color);
   const status = isToday ? classStatus(course, now) : null;
@@ -21,7 +16,7 @@ function ClassCard({ host, course, now, isToday, isNext }: { host: HostUI; cours
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${course.name}，${course.start} 到 ${course.end}${course.location ? `，${course.location}` : ''}`}
+      accessibilityLabel={s.classA11y(course.name, course.start, course.end, course.location ?? '')}
       onPress={() => host.navigate(form('course', { id: course.id }))}
       scaleTo={0.98}
       style={[
@@ -54,7 +49,7 @@ function ClassCard({ host, course, now, isToday, isNext }: { host: HostUI; cours
           </View>
         ) : null}
       </View>
-      {ongoing ? <Chip label="进行中" tone="up" /> : isNext && status?.state === 'before' ? <Chip label={untilText(status.minutesToStart)} tone="accent" /> : null}
+      {ongoing ? <Chip label={s.ongoing} tone="up" /> : isNext && status?.state === 'before' ? <Chip label={s.until(status.minutesToStart)} tone="accent" /> : null}
     </Pressable>
   );
 }
@@ -63,13 +58,14 @@ function ClassCard({ host, course, now, isToday, isNext }: { host: HostUI; cours
 export function ClassList({ host, classes, isToday, now }: { host: HostUI; classes: Course[]; isToday: boolean; now: Date }) {
   const { Text, Button } = host.components;
   const t = host.useTheme();
+  const s = strings[host.useLocale()];
   if (!classes.length) {
     return (
       <View style={[styles.empty, { paddingVertical: t.spacing.sm }]}>
         <Text variant="callout" tone="muted">
-          这天没有课
+          {s.noClassesThatDay}
         </Text>
-        <Button title="添加课程" size="sm" variant="secondary" icon="plus" onPress={() => host.navigate(form('course', { id: 'new' }))} />
+        <Button title={s.addClass} size="sm" variant="secondary" icon="plus" onPress={() => host.navigate(form('course', { id: 'new' }))} />
       </View>
     );
   }

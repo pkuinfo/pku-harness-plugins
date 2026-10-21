@@ -51,6 +51,22 @@ export const roomBookingPlugin = definePlugin({
   name: '研讨室预约',
   description: '北大空间：二教、四教、地学楼学术研讨教室的查询、预约和取消。',
   version: '0.2.0',
+  i18n: {
+    en: {
+      name: 'Seminar rooms',
+      description: 'PKU Space: find, book and cancel seminar rooms in the Second and Fourth Teaching Buildings and the Geoscience Building.',
+      tools: {
+        rooms: { title: 'Seminar rooms' },
+        availability: { title: 'Free time slots' },
+        reservations: { title: 'My seminar room bookings' },
+        reserve: { title: 'Book seminar room' },
+        cancel: { title: 'Cancel seminar room booking' },
+        groups: { title: 'Attendee groups' },
+        saveGroup: { title: 'Save attendee group' },
+        deleteGroup: { title: 'Delete attendee group' },
+      },
+    },
+  },
   icon: 'calendar',
   requires: ['campus-session', 'network'],
   scopes: ['bdkj.pku.edu.cn'],

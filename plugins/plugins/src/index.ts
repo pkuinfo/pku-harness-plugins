@@ -10,6 +10,13 @@ export const pluginsPlugin = definePlugin({
   name: '插件管理',
   description: '查看已安装的插件，安装或移除远程（MCP）插件。',
   version: '0.2.0',
+  i18n: {
+    en: {
+      name: 'Plugins',
+      description: 'See installed plugins, and install or remove remote (MCP) plugins.',
+      tools: { list: { title: 'View plugins' }, installRemote: { title: 'Install remote plugin' }, uninstall: { title: 'Remove remote plugin' } },
+    },
+  },
   icon: 'puzzle',
   core: true,
   scopes: [],

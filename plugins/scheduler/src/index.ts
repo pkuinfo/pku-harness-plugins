@@ -62,6 +62,20 @@ export const schedulerPlugin = definePlugin({
   name: '提醒与定时任务',
   description: '准时的本地提醒，以及定期检查数据（如余额）并在满足条件时通知。',
   version: '0.2.0',
+  i18n: {
+    en: {
+      name: 'Reminders and scheduled tasks',
+      description: 'On-time local reminders, plus scheduled checks on your data (like a balance) that notify you when a condition is met.',
+      tools: {
+        create: { title: 'Create reminder or task' },
+        update: { title: 'Edit scheduled task' },
+        delete: { title: 'Delete scheduled task' },
+        list: { title: 'View scheduled tasks' },
+        preview: { title: 'Preview times' },
+        runCheck: { title: 'Run check now' },
+      },
+    },
+  },
   requires: ['notifications'],
   icon: 'alarm',
   core: true,

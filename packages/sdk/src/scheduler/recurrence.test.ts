@@ -203,4 +203,17 @@ describe('describeTrigger', () => {
       '每周一、五 07:50',
     );
   });
+  test('English', () => {
+    expect(describeTrigger({ type: 'at', at: at(2026, 10, 18, 20) }, now, 'en')).toBe('Today 20:00');
+    expect(describeTrigger({ type: 'at', at: at(2026, 10, 19, 8) }, now, 'en')).toBe('Tomorrow 08:00');
+    expect(describeTrigger({ type: 'at', at: at(2027, 1, 2, 8) }, now, 'en')).toBe('Jan 2, 2027, 08:00');
+    expect(
+      describeTrigger({ type: 'every', unit: 'day', interval: 3, times: ['08:00'], startAt: at(2026, 10, 19), count: 16 }, now, 'en'),
+    ).toBe('Every 3 days at 08:00 · from tomorrow 00:00 · 16 times');
+    expect(describeTrigger({ type: 'every', unit: 'week', interval: 1, weekdays: [5, 1], times: ['07:50', '19:00'], startAt: now }, now, 'en')).toBe(
+      'Weekly on Mon, Fri at 07:50, 19:00',
+    );
+    expect(describeTrigger({ type: 'every', unit: 'hour', interval: 1, startAt: now, until: at(2026, 10, 25, 18) }, now, 'en')).toBe('Every hour · until Oct 25, 18:00');
+    expect(describeTrigger({ type: 'every', unit: 'day', interval: 1, times: ['21:00'], startAt: now }, now, 'en')).toBe('Daily at 21:00');
+  });
 });

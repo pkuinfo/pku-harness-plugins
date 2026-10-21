@@ -19,6 +19,23 @@ export const financePlugin = definePlugin({
   name: '财务',
   description: '个人酬金/收入（财务门户，仅校园网）、学费住宿费欠费和缴费记录（收费平台）。只读。',
   version: '0.2.0',
+  i18n: {
+    en: {
+      name: 'Finance',
+      description: 'Your stipends and income (Finance portal, campus network only), plus unpaid tuition and housing fees and payment history (payment platform). Read-only.',
+      tools: {
+        rewards: { title: 'Stipends and income' },
+        tuitionFees: { title: 'Tuition and housing fees' },
+        paymentOrders: { title: 'Payment history' },
+      },
+      widgets: { fees: { title: 'Tuition and housing', description: 'Unpaid tuition and housing fees on the payment platform (shows “All paid” when nothing is due).' } },
+      commands: {
+        fees: { description: 'Check for unpaid tuition or housing fees', aliases: ['tuition'] },
+        income: { description: 'This year’s stipends and other income', aliases: ['stipend', 'salary'] },
+      },
+      dataSources: { fees: { title: 'Unpaid tuition and housing' } },
+    },
+  },
   icon: 'card',
   requires: ['campus-session', 'campus-network', 'network'],
   scopes: ['cwfw.pku.edu.cn', 'cwpay.pku.edu.cn'],

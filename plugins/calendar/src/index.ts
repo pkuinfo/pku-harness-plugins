@@ -52,6 +52,19 @@ export const calendarPlugin = definePlugin({
   name: '日期与校历',
   description: '今天的日期、星期、第几教学周，以及北大官方校历（开学、节假日、考试周），可一键设置课表学期。',
   version: '0.3.0',
+  i18n: {
+    en: {
+      name: 'Date and academic calendar',
+      description: 'Today’s date, weekday and teaching week, plus Peking University’s official academic calendar (term start, holidays, exam weeks). Sets your timetable’s semester in one tap.',
+      tools: {
+        today: { title: 'Today' },
+        setSemester: { title: 'Set semester' },
+        officialCalendar: { title: 'Official academic calendar' },
+        syncSemester: { title: 'Set semester from calendar' },
+      },
+      dataSources: { today: { title: 'Today and teaching week' } },
+    },
+  },
   icon: 'schedule',
   core: true,
   scopes: ['simso.pku.edu.cn'],

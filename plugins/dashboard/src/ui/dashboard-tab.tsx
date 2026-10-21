@@ -3,10 +3,9 @@ import { useState } from 'react';
 import { RefreshControl, StyleSheet, View } from 'react-native';
 
 import { Greeting } from './greeting';
+import { strings } from './strings';
 import { WidgetCard } from './widget-card';
 
-const IDEAS = ['把校园卡余额放到看板最上面', '加一个显示本学期第几周的卡片', '显示我接下来的三个提醒'];
-const SIZE_LABEL: Record<WidgetSize, string> = { sm: '小', md: '宽', lg: '大' };
 const NEXT_SIZE: Record<WidgetSize, WidgetSize> = { sm: 'md', md: 'lg', lg: 'sm' };
 const ROW = 64;
 
@@ -14,6 +13,7 @@ const ROW = 64;
 export function DashboardTab({ host, services }: PluginScreenProps) {
   const { Screen, Text, Button, IconButton, EmptyState, Pressable, FadeIn, Chip, SortableList } = host.components;
   const t = host.useTheme();
+  const s = strings[host.useLocale()];
   const { GlassEdges } = host.components;
   host.useStoreVersion();
   const widgets = services.widgets.list();
@@ -47,16 +47,16 @@ export function DashboardTab({ host, services }: PluginScreenProps) {
 
   return (
     <Screen
-      title="看板"
-      subtitle="Dashboard"
+      title={s.title}
+      subtitle={s.subtitle || undefined}
       trailing={
         widgets.length ? (
           editing ? (
-            <Button title="完成" size="sm" onPress={() => setEditing(false)} />
+            <Button title={s.done} size="sm" onPress={() => setEditing(false)} />
           ) : (
             <View style={{ flexDirection: 'row' }}>
-              {hasGallery ? <IconButton icon="plus" label="添加组件" variant="ghost" onPress={() => host.navigate('/m/dashboard/gallery')} /> : null}
-              <IconButton icon="edit" label="编辑看板" variant="ghost" onPress={enterEdit} />
+              {hasGallery ? <IconButton icon="plus" label={s.addWidget} variant="ghost" onPress={() => host.navigate('/m/dashboard/gallery')} /> : null}
+              <IconButton icon="edit" label={s.editDashboard} variant="ghost" onPress={enterEdit} />
             </View>
           )
         ) : null
@@ -72,12 +72,12 @@ export function DashboardTab({ host, services }: PluginScreenProps) {
           <View style={{ gap: t.spacing.lg }}>
             <EmptyState
               icon="sparkles"
-              title="让 AI 帮你搭建看板"
-              message="告诉它你想随时看到哪些数字，它会生成卡片并保持更新。"
-              action={hasGallery ? <Button title="从插件添加组件" variant="secondary" icon="plus" onPress={() => host.navigate('/m/dashboard/gallery')} /> : undefined}
+              title={s.emptyTitle}
+              message={s.emptyMessage}
+              action={hasGallery ? <Button title={s.addFromPlugins} variant="secondary" icon="plus" onPress={() => host.navigate('/m/dashboard/gallery')} /> : undefined}
             />
             <View style={{ gap: t.spacing.sm }}>
-              {IDEAS.map((idea) => (
+              {s.ideas.map((idea) => (
                 <Pressable
                   key={idea}
                   accessibilityRole="button"
@@ -89,7 +89,7 @@ export function DashboardTab({ host, services }: PluginScreenProps) {
                     {idea}
                   </Text>
                   <Text variant="callout" tone="accent">
-                    问 AI
+                    {s.askAI}
                   </Text>
                 </Pressable>
               ))}
@@ -100,7 +100,7 @@ export function DashboardTab({ host, services }: PluginScreenProps) {
         <FadeIn>
           <View style={{ gap: t.spacing.lg }}>
             <Text variant="callout" tone="muted">
-              按住左侧把手拖动排序，点大小标签切换尺寸。想改内容，直接在对话里告诉 AI。
+              {s.editHint}
             </Text>
             <SortableList
               key={widgets.map((w) => w.id).sort().join()}
@@ -117,10 +117,10 @@ export function DashboardTab({ host, services }: PluginScreenProps) {
                     <Text variant="bodyStrong" numberOfLines={1} style={{ flex: 1 }}>
                       {w.title}
                     </Text>
-                    <Pressable accessibilityRole="button" accessibilityLabel={`切换大小，当前${SIZE_LABEL[w.size]}`} onPress={() => resize(w)}>
-                      <Chip label={SIZE_LABEL[w.size]} />
+                    <Pressable accessibilityRole="button" accessibilityLabel={s.resizeA11y(s.sizes[w.size])} onPress={() => resize(w)}>
+                      <Chip label={s.sizes[w.size]} />
                     </Pressable>
-                    <IconButton icon="trash" label={`移除 ${w.title}`} variant="danger" size={36} onPress={() => remove(w)} />
+                    <IconButton icon="trash" label={s.remove(w.title)} variant="danger" size={36} onPress={() => remove(w)} />
                   </View>
                 );
               }}
@@ -136,11 +136,11 @@ export function DashboardTab({ host, services }: PluginScreenProps) {
           ))}
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="让 AI 添加组件"
+            accessibilityLabel={s.askToAdd}
             onPress={() => host.navigate('/')}
             style={[styles.add, { borderColor: t.colors.border, width: gridWidth, padding: t.spacing.lg, borderRadius: t.radius.lg }]}>
             <Text variant="callout" tone="muted">
-              ＋ 在对话里让 AI 添加或修改组件
+              {s.askToAddLong}
             </Text>
           </Pressable>
         </View>

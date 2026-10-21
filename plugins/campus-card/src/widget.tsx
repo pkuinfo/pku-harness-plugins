@@ -1,5 +1,7 @@
-import type { LiveData, PluginWidgetProps } from '@pku-harness/sdk';
+import { formatRelative, type LiveData, type PluginWidgetProps } from '@pku-harness/sdk';
 import { View } from 'react-native';
+
+import { strings } from './strings';
 
 type Balance = { balance: number | null; status: 'normal' | 'lost' | 'frozen'; todaySpent: number | null; dailyLimit: number | null };
 
@@ -8,13 +10,14 @@ export function BalanceWidget(props: PluginWidgetProps) {
   const { host, services } = props;
   const { Text, Button } = host.components;
   const t = host.useTheme();
+  const s = strings[host.useLocale()];
   if (!services.campus.status().signedIn)
     return (
       <View style={{ gap: t.spacing.sm }}>
         <Text variant="caption" tone="muted">
-          登录校园账号后显示余额
+          {s.signedOut}
         </Text>
-        <Button title="登录" size="sm" variant="secondary" icon="person" onPress={() => host.navigate('/campus')} style={{ alignSelf: 'flex-start' }} />
+        <Button title={s.signIn} size="sm" variant="secondary" icon="person" onPress={() => host.navigate('/campus')} style={{ alignSelf: 'flex-start' }} />
       </View>
     );
   return <Live {...props} />;
@@ -23,6 +26,8 @@ export function BalanceWidget(props: PluginWidgetProps) {
 function Live({ host, size, config }: PluginWidgetProps) {
   const { Text, Skeleton, Chip, Button } = host.components;
   const t = host.useTheme();
+  const locale = host.useLocale();
+  const s = strings[locale];
   const now = host.useNow(30_000);
   const data: LiveData<Balance> = host.useToolData<Balance>('campus-card.getBalance', {}, { ttlMinutes: 10 });
   const warnBelow = typeof config.warnBelow === 'number' ? config.warnBelow : 50;
@@ -37,9 +42,9 @@ function Live({ host, size, config }: PluginWidgetProps) {
     return (
       <View style={{ gap: t.spacing.sm }}>
         <Text variant="caption" tone="muted" numberOfLines={3}>
-          {data.error ?? '没有数据'}
+          {data.error ?? s.noData}
         </Text>
-        <Button title="重试" size="sm" variant="secondary" icon="refresh" loading={data.fetching} onPress={() => void data.refresh()} style={{ alignSelf: 'flex-start' }} />
+        <Button title={s.retry} size="sm" variant="secondary" icon="refresh" loading={data.fetching} onPress={() => void data.refresh()} style={{ alignSelf: 'flex-start' }} />
       </View>
     );
   const b = data.value;
@@ -48,7 +53,7 @@ function Live({ host, size, config }: PluginWidgetProps) {
     <View style={{ gap: t.spacing.xs }}>
       {size === 'sm' ? (
         <Text variant="micro" tone="faint">
-          校园卡
+          {s.label}
         </Text>
       ) : null}
       <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: t.spacing.xs }}>
@@ -59,21 +64,21 @@ function Live({ host, size, config }: PluginWidgetProps) {
           {b.balance == null ? '—' : b.balance.toFixed(2)}
         </Text>
       </View>
-      {b.status !== 'normal' ? <Chip label={b.status === 'lost' ? '已挂失' : '已冻结'} tone="down" icon="warning" /> : null}
+      {b.status !== 'normal' ? <Chip label={b.status === 'lost' ? s.lost : s.frozen} tone="down" icon="warning" /> : null}
       {size !== 'sm' && b.todaySpent != null ? (
         <Text variant="caption" tone="muted">
-          今日消费 ¥{b.todaySpent.toFixed(2)}
-          {b.dailyLimit ? ` / 限额 ¥${b.dailyLimit.toFixed(0)}` : ''}
+          {s.todaySpent(b.todaySpent.toFixed(2))}
+          {b.dailyLimit ? s.dailyLimit(b.dailyLimit.toFixed(0)) : ''}
         </Text>
       ) : null}
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: t.spacing.sm }}>
         <Text variant="micro" tone={data.error ? 'warn' : 'faint'} style={{ flex: 1 }}>
-          {data.fetching ? '刷新中…' : `${data.error ? '刷新失败 · ' : ''}${data.updatedAt ? host.formatAgo(data.updatedAt, now.getTime()) : ''}`}
+          {data.fetching ? s.refreshing : `${data.error ? s.refreshFailed : ''}${data.updatedAt ? formatRelative(data.updatedAt, locale, now.getTime()) : ''}`}
         </Text>
         {size !== 'sm' ? (
           <View style={{ flexDirection: 'row', gap: t.spacing.xs }}>
-            <Button title="充值" size="sm" variant="secondary" onPress={() => host.navigate('/m/campus-card/recharge')} />
-            <Button title="付款码" size="sm" icon="qr" onPress={() => host.navigate('/m/campus-card/pay')} />
+            <Button title={s.topUp} size="sm" variant="secondary" onPress={() => host.navigate('/m/campus-card/recharge')} />
+            <Button title={s.payCode} size="sm" icon="qr" onPress={() => host.navigate('/m/campus-card/pay')} />
           </View>
         ) : null}
       </View>

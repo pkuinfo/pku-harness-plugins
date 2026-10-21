@@ -28,6 +28,21 @@ export const memoryPlugin = definePlugin({
   name: 'AI 记忆',
   description: '记住你的偏好、习惯和长期信息，让 AI 越用越懂你。只保存在本机，可随时查看和删除。',
   version: '0.2.0',
+  i18n: {
+    en: {
+      name: 'AI memory',
+      description: 'Remembers your preferences, habits and long-term details, so the AI gets to know you over time. Stored only on this device; view or delete it any time.',
+      tools: {
+        remember: { title: 'Remember something' },
+        recall: { title: 'Recall' },
+        list: { title: 'View all memories' },
+        forget: { title: 'Forget' },
+        pin: { title: 'Pin memory' },
+      },
+      screens: { memory: { title: 'AI memory' } },
+      settings: { memory: { title: 'AI memory', subtitle: 'What it remembers about you' } },
+    },
+  },
   icon: 'sparkles',
   core: true,
   scopes: [],

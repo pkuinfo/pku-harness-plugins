@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { View } from 'react-native';
 
 import { RECHARGE_MAX, RECHARGE_PRESETS } from './recharge';
+import { strings } from './strings';
 
 /**
  * 充值: pick an amount, then the same `campus-card.recharge` tool the agent uses creates the order
@@ -11,6 +12,7 @@ import { RECHARGE_MAX, RECHARGE_PRESETS } from './recharge';
 export function RechargeScreen({ host, invoke }: PluginScreenProps) {
   const { SheetScreen, Text, Pressable, Field } = host.components;
   const t = host.useTheme();
+  const s = strings[host.useLocale()];
   const [amount, setAmount] = useState<number | null>(100);
   const [custom, setCustom] = useState('');
   const [busy, setBusy] = useState(false);
@@ -26,7 +28,7 @@ export function RechargeScreen({ host, invoke }: PluginScreenProps) {
     try {
       await invoke('campus-card.recharge', { amount: value });
       host.haptics.success();
-      setNotice({ tone: 'up', text: '已打开收银台：选择微信或支付宝付款。付完回到这里，在 POS 机上刷一次卡余额才会更新。' });
+      setNotice({ tone: 'up', text: s.opened });
     } catch (e) {
       host.haptics.warning();
       setNotice({ tone: 'down', text: e instanceof Error ? e.message : String(e) });
@@ -36,7 +38,7 @@ export function RechargeScreen({ host, invoke }: PluginScreenProps) {
   };
 
   return (
-    <SheetScreen title="校园卡充值" primary={valid ? `充值 ¥${value}` : '充值'} onPrimary={() => void go()} primaryDisabled={!valid} loading={busy}>
+    <SheetScreen title={s.rechargeTitle} primary={valid ? s.rechargeAmount(value) : s.topUp} onPrimary={() => void go()} primaryDisabled={!valid} loading={busy}>
       <View style={{ gap: t.spacing.lg }}>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: t.spacing.sm }}>
           {RECHARGE_PRESETS.map((n) => {
@@ -45,7 +47,7 @@ export function RechargeScreen({ host, invoke }: PluginScreenProps) {
               <Pressable
                 key={n}
                 accessibilityRole="button"
-                accessibilityLabel={`${n} 元`}
+                accessibilityLabel={s.yuan(n)}
                 onPress={() => {
                   setCustom('');
                   setAmount(n);
@@ -68,9 +70,9 @@ export function RechargeScreen({ host, invoke }: PluginScreenProps) {
             );
           })}
         </View>
-        <Field label="其他金额（元）" value={custom} onChangeText={(v) => setCustom(v.replace(/\D/g, ''))} placeholder={`1–${RECHARGE_MAX} 的整数`} keyboardType="number-pad" />
+        <Field label={s.otherAmount} value={custom} onChangeText={(v) => setCustom(v.replace(/\D/g, ''))} placeholder={s.amountHint(RECHARGE_MAX)} keyboardType="number-pad" />
         <Text variant="caption" tone="muted">
-          在学校收银台里用微信或支付宝付款，本 App 不经手钱款。充值成功后需在食堂 POS 机上刷一次卡才能到账。
+          {s.rechargeNote}
         </Text>
         {notice ? (
           <Text variant="callout" tone={notice.tone}>

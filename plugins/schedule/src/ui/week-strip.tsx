@@ -1,21 +1,21 @@
 import type { HostUI } from '@pku-harness/sdk';
 import { StyleSheet, View } from 'react-native';
 
+import { strings } from './strings';
 import { addDays, mondayOf, sameDay } from './util';
-
-const LABELS = ['一', '二', '三', '四', '五', '六', '日'];
 
 /** Monday-first week of the selected day; dots mark days with classes. */
 export function WeekStrip({ host, selected, onSelect, hasClasses }: { host: HostUI; selected: Date; onSelect: (d: Date) => void; hasClasses: (d: Date) => boolean }) {
   const { Text, IconButton, Pressable } = host.components;
   const t = host.useTheme();
+  const s = strings[host.useLocale()];
   const monday = mondayOf(selected);
   const today = new Date();
   return (
     <View style={[styles.wrap, { gap: t.spacing.xs }]}>
-      <IconButton icon="back" label="上一周" variant="ghost" size={32} onPress={() => onSelect(addDays(selected, -7))} />
+      <IconButton icon="back" label={s.prevWeek} variant="ghost" size={32} onPress={() => onSelect(addDays(selected, -7))} />
       <View style={styles.days}>
-        {LABELS.map((label, i) => {
+        {s.weekdayShort.map((label, i) => {
           const day = addDays(monday, i);
           const isSel = sameDay(day, selected);
           const isToday = sameDay(day, today);
@@ -23,7 +23,7 @@ export function WeekStrip({ host, selected, onSelect, hasClasses }: { host: Host
             <Pressable
               key={label}
               accessibilityRole="button"
-              accessibilityLabel={`周${label} ${day.getMonth() + 1}月${day.getDate()}日`}
+              accessibilityLabel={s.dayA11y(label, day.getMonth() + 1, day.getDate())}
               haptic={false}
               onPress={() => {
                 host.haptics.select();
@@ -41,7 +41,7 @@ export function WeekStrip({ host, selected, onSelect, hasClasses }: { host: Host
           );
         })}
       </View>
-      <IconButton icon="chevronRight" label="下一周" variant="ghost" size={32} onPress={() => onSelect(addDays(selected, 7))} />
+      <IconButton icon="chevronRight" label={s.nextWeek} variant="ghost" size={32} onPress={() => onSelect(addDays(selected, 7))} />
     </View>
   );
 }
@@ -52,16 +52,17 @@ export function WeekNav({ host, selected, onSelect, week }: { host: HostUI; sele
   const t = host.useTheme();
   const monday = mondayOf(selected);
   const sunday = addDays(monday, 6);
+  const s = strings[host.useLocale()];
   return (
     <View style={[styles.wrap, { gap: t.spacing.xs }]}>
-      <IconButton icon="back" label="上一周" variant="ghost" size={32} onPress={() => onSelect(addDays(selected, -7))} />
-      <Pressable accessibilityRole="button" accessibilityLabel="回到本周" style={[styles.nav, { gap: t.spacing.xxs }]} onPress={() => onSelect(new Date())}>
-        <Text variant="bodyStrong">{week != null && week >= 1 ? `第 ${week} 周` : '本周'}</Text>
+      <IconButton icon="back" label={s.prevWeek} variant="ghost" size={32} onPress={() => onSelect(addDays(selected, -7))} />
+      <Pressable accessibilityRole="button" accessibilityLabel={s.thisWeekA11y} style={[styles.nav, { gap: t.spacing.xxs }]} onPress={() => onSelect(new Date())}>
+        <Text variant="bodyStrong">{week != null && week >= 1 ? s.week(week) : s.thisWeek}</Text>
         <Text variant="caption" tone="muted">
-          {`${monday.getMonth() + 1}月${monday.getDate()}日 – ${sunday.getMonth() + 1}月${sunday.getDate()}日`}
+          {s.range(monday.getMonth() + 1, monday.getDate(), sunday.getMonth() + 1, sunday.getDate())}
         </Text>
       </Pressable>
-      <IconButton icon="chevronRight" label="下一周" variant="ghost" size={32} onPress={() => onSelect(addDays(selected, 7))} />
+      <IconButton icon="chevronRight" label={s.nextWeek} variant="ghost" size={32} onPress={() => onSelect(addDays(selected, 7))} />
     </View>
   );
 }

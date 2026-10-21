@@ -1,10 +1,13 @@
 import { classesOn, classStatus, weekOf, type PluginWidgetProps } from '@pku-harness/sdk';
 import { View } from 'react-native';
 
+import { strings } from './strings';
+
 /** The ongoing or next class today (local data, so it updates with the clock, no fetching). */
 export function NextClassWidget({ host, services, size }: PluginWidgetProps) {
   const { Text, Button } = host.components;
   const t = host.useTheme();
+  const str = strings[host.useLocale()];
   host.useStoreVersion();
   const now = host.useNow(30_000);
   const { courses, semester } = services.timetable.get();
@@ -18,25 +21,25 @@ export function NextClassWidget({ host, services, size }: PluginWidgetProps) {
     return (
       <View style={{ gap: t.spacing.sm }}>
         <Text variant="caption" tone="muted">
-          课表还是空的
+          {str.empty}
         </Text>
-        <Button title="添加课程" size="sm" variant="secondary" icon="plus" onPress={() => host.navigate('/schedule')} style={{ alignSelf: 'flex-start' }} />
+        <Button title={str.addClass} size="sm" variant="secondary" icon="plus" onPress={() => host.navigate('/schedule')} style={{ alignSelf: 'flex-start' }} />
       </View>
     );
   if (!current)
     return (
       <View style={{ gap: t.spacing.xxs }}>
-        <Text variant={size === 'sm' ? 'bodyStrong' : 'headline'}>{today.length ? '今天的课上完了' : '今天没有课'}</Text>
+        <Text variant={size === 'sm' ? 'bodyStrong' : 'headline'}>{today.length ? str.doneToday : str.noneToday}</Text>
         <Text variant="caption" tone="muted">
-          {week ? `第 ${week} 周 · ` : ''}
-          {today.length ? `共 ${today.length} 节` : '好好休息'}
+          {week ? str.week(week) : ''}
+          {today.length ? str.total(today.length) : str.rest}
         </Text>
       </View>
     );
 
   const { c, s } = current;
   const color = t.courseColor(c.color);
-  const label = s.state === 'ongoing' ? '上课中' : s.minutesToStart <= 60 ? `${s.minutesToStart} 分钟后` : `${c.start} 开始`;
+  const label = s.state === 'ongoing' ? str.inClass : s.minutesToStart <= 60 ? str.inMinutes(s.minutesToStart) : str.startsAt(c.start);
   return (
     <View style={{ flexDirection: 'row', gap: t.spacing.md }}>
       <View style={{ width: 4, borderRadius: t.radius.full, backgroundColor: color.ink }} />
@@ -59,8 +62,8 @@ export function NextClassWidget({ host, services, size }: PluginWidgetProps) {
               </View>
             ) : null}
             <Text variant="micro" tone="faint">
-              {week ? `第 ${week} 周 · ` : ''}
-              {left > 0 ? `今天还有 ${left} 节` : '今天最后一节'}
+              {week ? str.week(week) : ''}
+              {left > 0 ? str.left(left) : str.last}
             </Text>
           </View>
         ) : null}

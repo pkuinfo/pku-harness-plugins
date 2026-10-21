@@ -45,6 +45,16 @@ export const noticesPlugin = definePlugin({
   name: '校园通知',
   description: '教务部、研究生院、学工部、总务部的最新通知和北大新闻，可按关键词搜索、读全文（含公众号文章链接）。',
   version: '0.1.0',
+  i18n: {
+    en: {
+      name: 'Campus notices',
+      description: 'The latest notices from the Office of Educational Administration, Graduate School, Student Affairs and General Services, plus PKU News. Search by keyword and read in full (WeChat article links included).',
+      tools: { latest: { title: 'Latest notices' }, search: { title: 'Search notices' }, read: { title: 'Read notice' } },
+      widgets: { latest: { title: 'Latest notices', description: 'The newest notices from Educational Administration, the Graduate School, Student Affairs, General Services and PKU News (3, or 6 when large). Tap to open the original; long-press to have the AI summarise it. config.source limits it to one source.' } },
+      commands: { notices: { description: 'Latest campus notices', argHint: 'Keywords (optional)', aliases: ['news'] } },
+      dataSources: { latest: { title: 'Latest campus notices' } },
+    },
+  },
   icon: 'bell',
   requires: ['network'],
   scopes: ['dean.pku.edu.cn', 'grs.pku.edu.cn', 'xgb.pku.edu.cn', 'zwb.pku.edu.cn', 'news.pku.edu.cn', 'www.pku.edu.cn', 'mp.weixin.qq.com（只读单篇文章）'],

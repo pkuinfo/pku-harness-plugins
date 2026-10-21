@@ -27,6 +27,12 @@ service or adds a capability; the agent and the user use it through the same typ
    a shell or filesystem on the phone.
 6. **Port campus protocols from [pkucli](https://github.com/pkuinfo/pkucli)** where it already
    implements them, and credit the source file.
+7. **Be bilingual** (bundled plugins). Add `i18n: { en: {...} }` to `definePlugin` for every
+   user-facing manifest string (name, description, tool titles, widgets, screens, settings rows,
+   commands, data sources), and keep screen/widget text in a `src/strings.ts` table
+   (`defineStrings({ 'zh-Hans': {...}, en: {...} })`) picked with `host.useLocale()`. Format dates
+   with the SDK helpers (`formatLocalDate`, `formatRelative`, …). `plugins/i18n.test.ts` checks
+   coverage. Tool descriptions, instructions and results are for the model: don't translate them.
 
 ## Register
 

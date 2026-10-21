@@ -33,6 +33,22 @@ export const dashboardPlugin = definePlugin({
   name: '看板',
   description: '由 AI 搭建、可随时修改的数据看板。',
   version: '0.3.0',
+  i18n: {
+    en: {
+      name: 'Dashboard',
+      description: 'A dashboard the AI builds for you and you can change any time.',
+      tools: {
+        list: { title: 'View dashboard' },
+        sources: { title: 'Available data sources' },
+        catalog: { title: 'Plugin widgets' },
+        addPluginWidget: { title: 'Add plugin widget' },
+        upsertWidget: { title: 'Add or edit widget' },
+        removeWidget: { title: 'Remove widget' },
+        reorder: { title: 'Reorder dashboard' },
+      },
+      screens: { home: { title: 'Dashboard' }, gallery: { title: 'Add widget' } },
+    },
+  },
   icon: 'dashboard',
   core: true,
   scopes: [],

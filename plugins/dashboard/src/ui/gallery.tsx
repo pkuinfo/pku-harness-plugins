@@ -2,10 +2,13 @@ import type { PluginScreenProps, WidgetCatalogEntry } from '@pku-harness/sdk';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { strings } from './strings';
+
 /** Widgets that plugins ship, each previewed live; "添加" calls the same tool the agent uses. */
 export function Gallery({ host, services, invoke }: PluginScreenProps) {
   const { SheetScreen, Text, Button, Chip, PluginWidget, EmptyState } = host.components;
   const t = host.useTheme();
+  const s = strings[host.useLocale()];
   const { GlassEdges } = host.components;
   host.useStoreVersion();
   const catalog = services.widgets.catalog();
@@ -24,13 +27,13 @@ export function Gallery({ host, services, invoke }: PluginScreenProps) {
   };
 
   return (
-    <SheetScreen title="添加组件" primary="完成" onPrimary={() => host.dismiss('/dashboard')}>
+    <SheetScreen title={s.galleryTitle} primary={s.done} onPrimary={() => host.dismiss('/dashboard')}>
       {catalog.length === 0 ? (
-        <EmptyState icon="puzzle" title="还没有插件提供组件" message="安装或开启带看板组件的插件后，会出现在这里。" />
+        <EmptyState icon="puzzle" title={s.galleryEmpty} message={s.galleryEmptyHint} />
       ) : (
         <View style={{ gap: t.spacing.lg }}>
           <Text variant="callout" tone="muted">
-            插件自带的原生组件。想要别的数字，直接在对话里让 AI 搭一个。
+            {s.galleryIntro}
           </Text>
           {catalog.map((e) => {
             const key = `${e.plugin}/${e.widget}`;
@@ -44,9 +47,9 @@ export function Gallery({ host, services, invoke }: PluginScreenProps) {
                     </Text>
                   </View>
                   {placed.has(key) ? (
-                    <Chip label="已添加" tone="up" icon="check" />
+                    <Chip label={s.added} tone="up" icon="check" />
                   ) : (
-                    <Button title="添加" size="sm" icon="plus" loading={busy === key} onPress={() => void add(e)} />
+                    <Button title={s.add} size="sm" icon="plus" loading={busy === key} onPress={() => void add(e)} />
                   )}
                 </View>
                 <View style={[styles.preview, { backgroundColor: t.colors.surface, borderRadius: t.radius.lg, padding: t.spacing.lg, gap: t.spacing.sm, borderColor: t.colors.border }]}>

@@ -17,6 +17,15 @@ export const courseSyncPlugin = definePlugin({
   name: '教务课表',
   description: '从学校同步本学期课表到日程。',
   version: '0.1.0',
+  i18n: {
+    en: {
+      name: 'Official timetable',
+      description: 'Syncs this semester’s timetable from the university into Schedule.',
+      tools: { sync: { title: 'Sync official timetable' }, sendCode: { title: 'Send verification code' } },
+      screens: { home: { title: 'Official timetable' } },
+      settings: { home: { title: 'Official timetable', subtitle: 'Sync your classes from the university' } },
+    },
+  },
   icon: 'book',
   requires: ['campus-session', 'network'],
   scopes: ['treehole.pku.edu.cn（课表）'],

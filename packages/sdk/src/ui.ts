@@ -105,6 +105,9 @@ export interface HostTheme {
   contentWidth: number;
 }
 
+/** The app's languages: Simplified Chinese (source) and English. */
+export type AppLocale = 'zh-Hans' | 'en';
+
 export interface HostUI {
   components: HostComponents;
   /** Haptic feedback that respects the user's settings. */
@@ -134,6 +137,8 @@ export interface HostUI {
   formatAgo(ms: number, now?: number): string;
   /** While the calling screen is mounted: block screenshots/recording; `brightness` raises it for scanners. */
   useSecureDisplay(opts?: { brightness?: boolean }): void;
+  /** App language (re-renders on change). Plugins keep their own strings per locale. */
+  useLocale(): AppLocale;
   /** Copy text to the system clipboard; undefined when this build has no clipboard module. */
   clipboard?: { setString(text: string): Promise<void> };
 }

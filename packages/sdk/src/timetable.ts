@@ -23,12 +23,18 @@ export type Semester = { name: string; start: string; weeks: number };
 const DAY = 86_400_000;
 
 /**
- * Parse a weeks expression: "1-16", "1-16单", "2-16双", "1,3,5-8", "单周", "双周", "全部".
+ * Parse a weeks expression: "1-16", "1-16单", "2-16双", "1,3,5-8", "单周", "双周", "全部"; English
+ * forms work too ("1-15 odd", "2-16 even", "odd weeks", "every week").
  * Returns null for "every week". Throws on garbage.
  */
 export function parseWeeks(expr: string, total = 20): number[] | null {
-  const s = expr.replace(/\s|周/g, '').replace(/，/g, ',');
-  if (!s || s === '全部' || s === '每') return null;
+  const s = expr
+    .toLowerCase()
+    .replace(/\s|周|weeks?/g, '')
+    .replace(/，/g, ',')
+    .replace(/odd/g, '单')
+    .replace(/even/g, '双');
+  if (!s || s === '全部' || s === '每' || s === 'all' || s === 'every') return null;
   if (s === '单') return range(1, total).filter((w) => w % 2 === 1);
   if (s === '双') return range(1, total).filter((w) => w % 2 === 0);
   const out = new Set<number>();
@@ -48,13 +54,23 @@ export function parseWeeks(expr: string, total = 20): number[] | null {
 
 const range = (a: number, b: number) => Array.from({ length: b - a + 1 }, (_, i) => a + i);
 
-/** "1-16", "1-15单", "2,5,9" — compact text for a weeks list. */
-export function formatWeeks(weeks: number[] | null): string {
+/** "1-16周", "1-15单周", "2,5,9周" (English: "Weeks 1-16", "Weeks 1-15 odd") — compact text for a weeks list. */
+export function formatWeeks(weeks: number[] | null, locale: 'zh-Hans' | 'en' = 'zh-Hans'): string {
+  if (locale === 'en') return formatWeeksEn(weeks);
   if (!weeks || !weeks.length) return '每周';
   const p = weekPattern(weeks);
   if (p && p.step === 1) return `${p.first}-${p.last}周`;
   if (p && p.step === 2) return `${p.first}-${p.last}${p.first % 2 ? '单' : '双'}周`;
   return `${weeks.join(',')}周`;
+}
+
+function formatWeeksEn(weeks: number[] | null): string {
+  if (!weeks || !weeks.length) return 'Every week';
+  if (weeks.length === 1) return `Week ${weeks[0]}`;
+  const p = weekPattern(weeks);
+  if (p && p.step === 1) return `Weeks ${p.first}-${p.last}`;
+  if (p && p.step === 2) return `Weeks ${p.first}-${p.last} ${p.first % 2 ? 'odd' : 'even'}`;
+  return `Weeks ${weeks.join(',')}`;
 }
 
 /** Arithmetic pattern of a weeks list (contiguous = step 1, odd/even = step 2), else null. */

@@ -1,11 +1,11 @@
 import { classesOn, type Course, type HostUI, type Semester } from '@pku-harness/sdk';
 import { StyleSheet, View } from 'react-native';
 
+import { strings } from './strings';
 import { addDays, form, mondayOf, sameDay } from './util';
 
 const HOUR = 52;
 const GUTTER = 34;
-const LABELS = ['一', '二', '三', '四', '五', '六', '日'];
 const mins = (s: string) => {
   const [h, m] = s.split(':').map(Number);
   return h * 60 + m;
@@ -15,8 +15,9 @@ const mins = (s: string) => {
 export function WeekGrid({ host, courses, semester, selected, now }: { host: HostUI; courses: Course[]; semester: Semester | null; selected: Date; now: Date }) {
   const { Text, Pressable } = host.components;
   const t = host.useTheme();
+  const s = strings[host.useLocale()];
   const monday = mondayOf(selected);
-  const days = LABELS.map((_, i) => addDays(monday, i));
+  const days = s.weekdayShort.map((_, i) => addDays(monday, i));
   const perDay = days.map((d) => classesOn(courses, d, semester));
   const shown = perDay[5].length + perDay[6].length > 0 ? 7 : 5;
   const all = perDay.flat();
@@ -33,7 +34,7 @@ export function WeekGrid({ host, courses, semester, selected, now }: { host: Hos
         {days.slice(0, shown).map((d, i) => (
           <View key={i} style={[styles.head, { width: colWidth, gap: t.spacing.xxs }]}>
             <Text variant="micro" tone={i === todayIndex ? 'accent' : 'faint'}>
-              周{LABELS[i]}
+              {s.weekdayHead(s.weekdayShort[i])}
             </Text>
             <Text variant="callout" tone={i === todayIndex ? 'accent' : 'default'}>
               {d.getDate()}

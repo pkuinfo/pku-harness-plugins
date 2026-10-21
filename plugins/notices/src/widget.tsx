@@ -1,5 +1,7 @@
-import type { PluginWidgetProps } from '@pku-harness/sdk';
+import { formatRelative, type PluginWidgetProps } from '@pku-harness/sdk';
 import { View } from 'react-native';
+
+import { strings } from './strings';
 
 type Latest = { notices: { title: string; url: string; date: string | null; source: string }[]; failed?: { source: string; error: string }[] };
 
@@ -7,6 +9,9 @@ type Latest = { notices: { title: string; url: string; date: string | null; sour
 export function LatestNoticesWidget({ host, services, size, config }: PluginWidgetProps) {
   const { Text, Skeleton, Button, Pressable } = host.components;
   const t = host.useTheme();
+  const locale = host.useLocale();
+  const s = strings[locale];
+  const sourceName = (name: string) => s.sources[name] ?? name;
   const n = size === 'lg' ? 6 : 3;
   const source = typeof config.source === 'string' ? config.source : undefined;
   const data = host.useToolData<Latest>('notices.latest', { limit: n, ...(source ? { source } : {}) }, { ttlMinutes: 30 });
@@ -23,9 +28,9 @@ export function LatestNoticesWidget({ host, services, size, config }: PluginWidg
     return (
       <View style={{ gap: t.spacing.sm }}>
         <Text variant="caption" tone="muted" numberOfLines={3}>
-          {data.error ?? '暂时没有读到通知'}
+          {data.error ?? s.noData}
         </Text>
-        <Button title="重试" size="sm" variant="secondary" icon="refresh" loading={data.fetching} onPress={() => void data.refresh()} style={{ alignSelf: 'flex-start' }} />
+        <Button title={s.retry} size="sm" variant="secondary" icon="refresh" loading={data.fetching} onPress={() => void data.refresh()} style={{ alignSelf: 'flex-start' }} />
       </View>
     );
   return (
@@ -34,24 +39,24 @@ export function LatestNoticesWidget({ host, services, size, config }: PluginWidg
         <Pressable
           key={it.url}
           onPress={() => void services.browser.open(it.url)}
-          onLongPress={() => host.ask(`帮我读一下这条通知并总结要点：${it.title} ${it.url}`)}
-          accessibilityLabel={`${it.source}：${it.title}`}
+          onLongPress={() => host.ask(s.summarise(it.title, it.url))}
+          accessibilityLabel={`${sourceName(it.source)}: ${it.title}`}
           accessibilityRole="button"
-          accessibilityHint="打开原文，长按让 AI 总结"
+          accessibilityHint={s.hint}
         >
           <View style={{ gap: t.spacing.xxs }}>
             <Text variant="callout" numberOfLines={2}>
               {it.title}
             </Text>
             <Text variant="micro" tone="faint">
-              {it.source}
+              {sourceName(it.source)}
               {it.date ? ` · ${it.date.slice(5)}` : ''}
             </Text>
           </View>
         </Pressable>
       ))}
       <Text variant="micro" tone={data.error ? 'warn' : 'faint'}>
-        {data.fetching ? '刷新中…' : `${data.error ? '刷新失败 · ' : ''}${data.updatedAt ? host.formatAgo(data.updatedAt) : ''}`}
+        {data.fetching ? s.refreshing : `${data.error ? s.refreshFailed : ''}${data.updatedAt ? formatRelative(data.updatedAt, locale) : ''}`}
       </Text>
     </View>
   );

@@ -2,6 +2,7 @@ import type { PluginWidgetProps } from '@pku-harness/sdk';
 import { View } from 'react-native';
 
 import { CodeDigits, CopyArea, secondsLeft, useOtp } from './code';
+import { strings } from './strings';
 
 const SCREEN = '/p/authenticator/home';
 
@@ -9,6 +10,7 @@ const SCREEN = '/p/authenticator/home';
 export function CodeWidget({ host, services, size }: PluginWidgetProps) {
   const { Text, Button, Skeleton, Hourglass } = host.components;
   const t = host.useTheme();
+  const s = strings[host.useLocale()];
   const now = host.useNow(1000);
   const { otp } = useOtp(services);
 
@@ -16,10 +18,10 @@ export function CodeWidget({ host, services, size }: PluginWidgetProps) {
     return (
       <View style={{ gap: t.spacing.sm }}>
         <Text variant="caption" tone="muted">
-          {services.campus.status().signedIn ? '还没有绑定手机令牌' : '登录校园账号后可绑定手机令牌'}
+          {services.campus.status().signedIn ? s.notBound : s.signedOut}
         </Text>
         <Button
-          title={services.campus.status().signedIn ? '去绑定' : '登录'}
+          title={services.campus.status().signedIn ? s.bindNow : s.signIn}
           size="sm"
           variant="secondary"
           icon="key"
@@ -44,7 +46,7 @@ export function CodeWidget({ host, services, size }: PluginWidgetProps) {
       <View style={{ flex: 1, gap: t.spacing.xxs }}>
         {size === 'sm' ? (
           <Text variant="micro" tone="faint">
-            手机令牌
+            {s.title}
           </Text>
         ) : null}
         <CopyArea host={host} code={otp.code}>
@@ -52,7 +54,7 @@ export function CodeWidget({ host, services, size }: PluginWidgetProps) {
         </CopyArea>
         {size !== 'sm' ? (
           <Text variant="caption" tone={soon ? 'warn' : 'muted'}>
-            {left} 秒后更新
+            {s.updatesIn(left)}
           </Text>
         ) : null}
       </View>

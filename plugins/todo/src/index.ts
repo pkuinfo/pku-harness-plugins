@@ -36,6 +36,20 @@ export const todoPlugin = definePlugin({
   name: '待办',
   description: '待办事项，可设截止时间和准时提醒。',
   version: '0.2.0',
+  i18n: {
+    en: {
+      name: 'To-dos',
+      description: 'To-dos with due dates and on-time reminders.',
+      tools: {
+        list: { title: 'View to-dos' },
+        add: { title: 'Add to-do' },
+        update: { title: 'Edit to-do' },
+        complete: { title: 'Complete to-do' },
+        delete: { title: 'Delete to-do' },
+      },
+      dataSources: { open: { title: 'Open to-dos' } },
+    },
+  },
   icon: 'todo',
   core: true,
   scopes: [],

@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 
 import { cardAccount, conflictNotice, paymentCode, cardMode } from './api';
+import { strings } from './strings';
 
 /** The code is short-lived; fetch a fresh one this often while the screen is open. */
 const REFRESH_S = 30;
@@ -21,6 +22,7 @@ type State =
 export function PayScreen({ host, services, invoke }: PluginScreenProps) {
   const { SheetScreen, Text, Button, QRCode, Skeleton, Chip } = host.components;
   const t = host.useTheme();
+  const s = strings[host.useLocale()];
   host.useSecureDisplay({ brightness: true });
   const now = host.useNow(1000);
   const [state, setState] = useState<State>({ step: 'loading' });
@@ -68,15 +70,15 @@ export function PayScreen({ host, services, invoke }: PluginScreenProps) {
 
   if (!services.campus.status().signedIn)
     return (
-      <SheetScreen title="付款码" primary="登录校园账号" onPrimary={() => host.navigate('/campus')}>
+      <SheetScreen title={s.payTitle} primary={s.signInCampus} onPrimary={() => host.navigate('/campus')}>
         <Text variant="callout" tone="muted">
-          付款码来自校园卡系统，需要先登录校园账号。
+          {s.paySignedOut}
         </Text>
       </SheetScreen>
     );
 
   return (
-    <SheetScreen title="付款码" primary="完成" onPrimary={() => host.dismiss('/dashboard')}>
+    <SheetScreen title={s.payTitle} primary={s.done} onPrimary={() => host.dismiss('/dashboard')}>
       <View style={{ gap: t.spacing.xl, alignItems: 'center', paddingVertical: t.spacing.lg }}>
         {state.step === 'loading' ? (
           <Skeleton width={252} height={252} rounded={t.radius.lg} />
@@ -85,20 +87,20 @@ export function PayScreen({ host, services, invoke }: PluginScreenProps) {
             <Text variant="callout" tone="muted" align="center">
               {state.message}
             </Text>
-            <Button title="重试" variant="secondary" icon="refresh" onPress={() => void load()} />
+            <Button title={s.retry} variant="secondary" icon="refresh" onPress={() => void load()} />
           </View>
         ) : state.step === 'switch' ? (
           <View style={{ gap: t.spacing.md, alignSelf: 'stretch' }}>
-            <Text variant="headline">需要切换到「数字卡」</Text>
+            <Text variant="headline">{s.switchTitle}</Text>
             <Text variant="callout" tone="muted">
-              付款码只能在「数字卡」用卡方式下使用，你现在是「{state.current}」。切换后实体卡或手机 NFC 刷卡可能无法使用，之后可以在校园卡应用里改回来。
+              {s.switchBody(state.current)}
             </Text>
             {state.notice ? (
               <Text variant="caption" tone="warn">
                 {state.notice}
               </Text>
             ) : null}
-            <Button title="切换到数字卡" icon="card" loading={busy} onPress={() => void switchCard()} />
+            <Button title={s.switchButton} icon="card" loading={busy} onPress={() => void switchCard()} />
           </View>
         ) : (
           <>
@@ -106,10 +108,10 @@ export function PayScreen({ host, services, invoke }: PluginScreenProps) {
             <View style={{ alignItems: 'center', gap: t.spacing.xs }}>
               <Text variant="numberL">{state.balance == null ? '—' : `¥${state.balance.toFixed(2)}`}</Text>
               <Text variant="caption" tone="muted">
-                {state.name} · 向收银员出示
+                {s.showCashier(state.name)}
               </Text>
             </View>
-            <Chip label={`${Math.max(0, REFRESH_S - age)} 秒后自动刷新`} icon="refresh" />
+            <Chip label={s.refreshIn(Math.max(0, REFRESH_S - age))} icon="refresh" />
           </>
         )}
       </View>

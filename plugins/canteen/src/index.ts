@@ -23,6 +23,21 @@ export const canteenPlugin = definePlugin({
   name: '食堂',
   description: '各食堂实时就餐人数（拥挤程度）、开闭餐时间、现在还开着的食堂和餐饮中心通知。',
   version: '0.1.0',
+  i18n: {
+    en: {
+      name: 'Canteens',
+      description: 'Live diner counts (how crowded), opening hours, which canteens are open now, and Dining Center notices.',
+      tools: {
+        crowd: { title: 'Canteen crowds' },
+        openNow: { title: 'Open now' },
+        hours: { title: 'Opening hours' },
+        notices: { title: 'Dining Center notices' },
+      },
+      widgets: { crowd: { title: 'Canteen crowds', description: 'Live diner counts and crowding at each canteen (least busy first; 3 small, 4 medium, 8 large), refreshed every 2 minutes. config.names limits it to certain canteens (e.g. ["学五", "家园一层"]).' } },
+      commands: { canteen: { description: 'Where to eat right now', argHint: 'What or where (optional)', aliases: ['eat', 'food'] } },
+      dataSources: { crowd: { title: 'Canteen diner counts' } },
+    },
+  },
   icon: 'store',
   requires: ['network'],
   scopes: ['portal.pku.edu.cn（公开查询：食堂就餐人数）', 'cyzx.pku.edu.cn（餐饮中心）'],

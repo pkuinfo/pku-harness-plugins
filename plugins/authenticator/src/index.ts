@@ -16,6 +16,16 @@ export const authenticatorPlugin = definePlugin({
   name: '手机令牌',
   description: '把本 App 绑定为统一身份认证的手机令牌，自动完成二次验证。',
   version: '0.1.0',
+  i18n: {
+    en: {
+      name: 'Authenticator',
+      description: 'Makes this app your IAAA mobile authenticator (手机令牌), so two-step verification happens on its own.',
+      tools: { status: { title: 'Authenticator status' } },
+      widgets: { code: { title: 'Authenticator', description: 'Your current 6-digit IAAA code, shown large, with an hourglass counting down to the next one (30 s). Tap to copy.' } },
+      screens: { home: { title: 'Authenticator' } },
+      settings: { home: { title: 'Authenticator', subtitle: 'One-time codes for automatic two-step verification' } },
+    },
+  },
   icon: 'key',
   requires: ['campus-session', 'network'],
   scopes: ['iaaa.pku.edu.cn（手机令牌绑定）'],

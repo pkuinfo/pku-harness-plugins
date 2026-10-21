@@ -32,16 +32,16 @@ export const dayTypeOf = (weekday: number): DayType => (weekday === 0 || weekday
 
 const DAY_NAMES = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
 
-type Area = Stop['area'];
+export type Area = Stop['area'];
 
 const ALIASES: [RegExp, Area][] = [
   [/200\s*号|二百号|昌平200|200/, 'lab200'],
-  [/新燕园|昌平|新校区|马池口/, 'xinyanyuan'],
-  [/北安河|16号线|十六号线/, 'beianhe'],
-  [/阳坊/, 'yangfang'],
-  [/肖家河|农大南路/, 'xiaojiahe'],
-  [/西二旗|上地/, 'xierqi'],
-  [/燕园|本部|校本部|海淀|主校区|金光/, 'yanyuan'],
+  [/新燕园|昌平|新校区|马池口|xinyanyuan|changping|new\s*campus/i, 'xinyanyuan'],
+  [/北安河|16号线|十六号线|bei[’']?anhe|line\s*16/i, 'beianhe'],
+  [/阳坊|yangfang/i, 'yangfang'],
+  [/肖家河|农大南路|xiaojiahe/i, 'xiaojiahe'],
+  [/西二旗|上地|xi[’']?erqi|shangdi/i, 'xierqi'],
+  [/燕园|本部|校本部|海淀|主校区|金光|yanyuan|main\s*campus|haidian/i, 'yanyuan'],
 ];
 
 /** User wording → stop area ("本部", "昌平", "北安河地铁"…); null when unknown. */
@@ -162,10 +162,13 @@ export function formatIn(dep: Departure, today: string): string {
   return m ? `${h} 小时 ${m} 分钟后` : `${h} 小时后`;
 }
 
-/** Split "燕园到新燕园" / "从昌平回本部" / "新燕园 北安河" into from / to. */
+/** Split "燕园到新燕园" / "从昌平回本部" / "新燕园 北安河" / "Yanyuan to Changping" into from / to. */
 export function parseRoute(input: string): { from: Area | null; to: Area | null } {
   const s = input.trim();
   if (!s) return { from: null, to: null };
+  const en = /^(?:from\s+)?(.+?)\s+to\s+(.+)$/i.exec(s);
+  if (en) return { from: resolvePlace(en[1]), to: resolvePlace(en[2]) };
+  if (/^to\s+/i.test(s)) return { from: null, to: resolvePlace(s.replace(/^to\s+/i, '')) };
   const m = /^(?:从)?(.+?)\s*(?:到|去|至|回|→|->|—|-|\s)\s*(.+)$/.exec(s);
   if (m) return { from: resolvePlace(m[1]), to: resolvePlace(m[2]) };
   if (/^(?:去|到|回)/.test(s)) return { from: null, to: resolvePlace(s.slice(1)) };

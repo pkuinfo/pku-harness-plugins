@@ -14,6 +14,20 @@ import type { Contributions } from './ui';
  * plugins use exactly this contract; none can import app internals.
  */
 
+/** English (etc.) overlay for a plugin's user-facing manifest strings (see PluginDef.i18n). */
+export type PluginTranslation = {
+  name?: string;
+  description?: string;
+  /** Tool titles shown in chat chips, approvals and Settings, keyed by tool name. */
+  tools?: Record<string, { title?: string }>;
+  widgets?: Record<string, { title?: string; description?: string }>;
+  screens?: Record<string, { title?: string }>;
+  /** Settings rows, keyed by the screen they open. */
+  settings?: Record<string, { title?: string; subtitle?: string }>;
+  commands?: Record<string, { description?: string; argHint?: string; aliases?: string[] }>;
+  dataSources?: Record<string, { title?: string }>;
+};
+
 /** What a tool changes. Drives per-plugin permission modes in the app. */
 export type ToolEffect = 'read' | 'write' | 'money' | 'public';
 
@@ -277,6 +291,12 @@ export interface PluginDef {
   context?: (input: ContextInput) => Promise<string | undefined>;
   /** UI the plugin adds to the harness (screens, Settings rows), built from `HostUI`. */
   contributes?: Contributions;
+  /**
+   * Translations of this manifest's user-facing strings (the Chinese fields above are the
+   * source). The host shows them when the app language matches; anything missing falls back
+   * to Chinese. Tool descriptions and `instructions` are for the model and stay as they are.
+   */
+  i18n?: { en?: PluginTranslation };
 }
 
 export interface ContextInput {

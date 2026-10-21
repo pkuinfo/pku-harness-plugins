@@ -15,6 +15,19 @@ export const schedulePlugin = definePlugin({
   name: '日程',
   description: '日程页：今天的课、待办、提醒，以及课表周视图和相关表单。',
   version: '0.1.0',
+  i18n: {
+    en: {
+      name: 'Schedule',
+      description: 'The Schedule tab: today’s classes, to-dos and reminders, plus a weekly timetable and the forms behind them.',
+      screens: {
+        home: { title: 'Schedule' },
+        todo: { title: 'To-do' },
+        reminder: { title: 'Reminder' },
+        course: { title: 'Class' },
+        semester: { title: 'Semester' },
+      },
+    },
+  },
   icon: 'schedule',
   core: true,
   scopes: [],

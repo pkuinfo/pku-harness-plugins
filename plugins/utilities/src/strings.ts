@@ -1,0 +1,43 @@
+import { defineStrings } from '@pku-harness/sdk';
+
+export const strings = defineStrings({
+  'zh-Hans': {
+    signedOut: '登录校园账号后显示浴卡',
+    signIn: '登录',
+    noData: '没有数据',
+    retry: '重试',
+    label: '浴卡 · 最近充值',
+    /** Order status from the payment platform (see ORDER_STATUS) → display text. */
+    status: {} as Record<string, string>,
+    noTopUps: '还没有线上充值记录',
+    activate: '余额在卡里，需转存机激活',
+    refreshing: '刷新中…',
+    refreshFailed: '刷新失败 · ',
+    topUp: '充值',
+    rechargeTitle: '浴卡充值',
+    rechargeAmount: (n: number) => `充值 ¥${n}`,
+    yuan: (n: number) => `${n} 元`,
+    otherAmount: '其他金额（元）',
+    rechargeNote: '在学校收费平台里用微信或支付宝付款，本 App 不经手钱款。线上充值后要拿浴卡到浴卡转存机贴卡激活，钱才写进卡里。浴卡余额线上查不到。',
+    opened: '已在浏览器打开收费平台：到「我的订单」里付这笔待支付订单。付完拿浴卡到转存机上贴一下才到账。',
+  },
+  en: {
+    signedOut: 'Sign in to your campus account to see your bath card',
+    signIn: 'Sign in',
+    noData: 'No data',
+    retry: 'Retry',
+    label: 'Bath card · Latest top-up',
+    status: { 待支付: 'Unpaid', 已付款: 'Paid', 未知: 'Unknown' } as Record<string, string>,
+    noTopUps: 'No online top-ups yet',
+    activate: 'Credit goes on the card at a top-up kiosk',
+    refreshing: 'Refreshing…',
+    refreshFailed: 'Couldn’t refresh · ',
+    topUp: 'Top up',
+    rechargeTitle: 'Top up bath card',
+    rechargeAmount: (n: number) => `Top up ¥${n}`,
+    yuan: (n: number) => `¥${n}`,
+    otherAmount: 'Other amount (¥)',
+    rechargeNote: 'You pay with WeChat or Alipay on the university’s payment platform; this app never handles the money. After topping up online, tap your bath card on a top-up kiosk to load the credit onto it. The balance can’t be checked online.',
+    opened: 'The payment platform is open in your browser: pay the unpaid order under My orders (我的订单). Then tap your bath card on a top-up kiosk to load the credit.',
+  },
+});

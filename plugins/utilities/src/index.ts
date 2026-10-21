@@ -18,6 +18,26 @@ export const utilitiesPlugin = definePlugin({
   name: '水电浴',
   description: '浴卡信息、充值记录和充值（收费平台）；宿舍电费的缴费方式。',
   version: '0.1.0',
+  i18n: {
+    en: {
+      name: 'Utilities',
+      description: 'Bath card details, top-up history and top-ups (payment platform), and how to pay for dorm electricity.',
+      tools: {
+        bathCard: { title: 'Bath card' },
+        rechargeBath: { title: 'Top up bath card' },
+        payProjects: { title: 'Payment platform items' },
+        openPayCenter: { title: 'Open payment platform' },
+      },
+      widgets: { bath: { title: 'Bath card', description: 'Your latest bath card top-up (amount, time, status) and a way to top up. The balance lives on the card’s chip and can’t be checked online.' } },
+      screens: { 'bath-recharge': { title: 'Top up bath card' } },
+      settings: { 'bath-recharge': { title: 'Top up bath card', subtitle: 'Order on the payment platform, pay with WeChat or Alipay' } },
+      commands: {
+        electricity: { description: 'How to check and pay for dorm electricity', aliases: ['power'] },
+        bath: { description: 'Bath card top-ups and history', aliases: ['shower'] },
+      },
+      dataSources: { bath: { title: 'Bath card top-ups' } },
+    },
+  },
   icon: 'bolt',
   requires: ['campus-session', 'network'],
   scopes: ['cwpay.pku.edu.cn（收费平台）', 'iaaa.pku.edu.cn（登录）'],

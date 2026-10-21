@@ -1,27 +1,31 @@
-import type { HostServices, HostUI, Todo } from '@pku-harness/sdk';
+import { formatLocalDate, type AppLocale, type HostServices, type HostUI, type Todo } from '@pku-harness/sdk';
 import { useState } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 
+import { strings } from './strings';
 import { clock, form, sameDay } from './util';
 
-function dueLabel(todo: Todo, now: Date): { text: string; tone: 'down' | 'warn' | 'neutral' } | null {
+function dueLabel(todo: Todo, now: Date, locale: AppLocale): { text: string; tone: 'down' | 'warn' | 'neutral' } | null {
   if (todo.dueAt == null) return null;
   const d = new Date(todo.dueAt);
   const overdue = !todo.doneAt && todo.dueAt < now.getTime();
   const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-  const day = sameDay(d, now) ? '今天' : sameDay(d, tomorrow) ? '明天' : `${d.getMonth() + 1}月${d.getDate()}日`;
-  return { text: `${overdue ? '已逾期 · ' : ''}${day} ${clock(d)}`, tone: overdue ? 'down' : sameDay(d, now) ? 'warn' : 'neutral' };
+  const s = strings[locale];
+  const day = sameDay(d, now) ? s.today : sameDay(d, tomorrow) ? s.tomorrow : formatLocalDate(d, locale, now);
+  return { text: `${overdue ? s.overdue : ''}${day}${locale === 'en' && !sameDay(d, now) && !sameDay(d, tomorrow) ? ',' : ''} ${clock(d)}`, tone: overdue ? 'down' : sameDay(d, now) ? 'warn' : 'neutral' };
 }
 
 function TodoRow({ host, services, todo, now }: { host: HostUI; services: HostServices; todo: Todo; now: Date }) {
   const { Text, Chip, Icon, Checkbox, Pressable } = host.components;
   const t = host.useTheme();
-  const due = dueLabel(todo, now);
+  const locale = host.useLocale();
+  const s = strings[locale];
+  const due = dueLabel(todo, now, locale);
   const done = !!todo.doneAt;
   return (
     <View style={[styles.row, { gap: t.spacing.sm, paddingLeft: t.spacing.sm, paddingRight: t.spacing.lg }]}>
       <Checkbox
-        label={`完成 ${todo.title}`}
+        label={s.complete(todo.title)}
         value={done}
         onValueChange={(v) => {
           if (v) host.haptics.success();
@@ -30,7 +34,7 @@ function TodoRow({ host, services, todo, now }: { host: HostUI; services: HostSe
       />
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={`编辑 ${todo.title}`}
+        accessibilityLabel={s.edit(todo.title)}
         haptic={false}
         scaleTo={0.99}
         onPress={() => host.navigate(form('todo', { id: todo.id }))}
@@ -54,6 +58,7 @@ export function TodoList({ host, services, todos, now }: { host: HostUI; service
   const { Text, Icon, Pressable } = host.components;
   const t = host.useTheme();
   const { GlassEdges } = host.components;
+  const s = strings[host.useLocale()];
   const [draft, setDraft] = useState('');
   const [showDone, setShowDone] = useState(false);
   const open = todos.filter((x) => !x.doneAt);
@@ -79,17 +84,17 @@ export function TodoList({ host, services, todos, now }: { host: HostUI; service
           value={draft}
           onChangeText={setDraft}
           onSubmitEditing={submit}
-          placeholder="添加待办，回车保存"
+          placeholder={s.addTodoPlaceholder}
           placeholderTextColor={t.colors.textFaint}
           returnKeyType="done"
           submitBehavior="submit"
-          accessibilityLabel="添加待办"
+          accessibilityLabel={s.addTodo}
           style={[t.typography.body, styles.input, { color: t.colors.text, paddingVertical: t.spacing.sm }]}
         />
         {draft ? (
-          <Pressable accessibilityRole="button" accessibilityLabel="更多选项" onPress={() => host.navigate(form('todo', { id: 'new', title: draft }))}>
+          <Pressable accessibilityRole="button" accessibilityLabel={s.moreOptions} onPress={() => host.navigate(form('todo', { id: 'new', title: draft }))}>
             <Text variant="callout" tone="accent">
-              详细
+              {s.details}
             </Text>
           </Pressable>
         ) : null}
@@ -98,12 +103,12 @@ export function TodoList({ host, services, todos, now }: { host: HostUI; service
         <>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={showDone ? '收起已完成' : '展开已完成'}
+            accessibilityLabel={showDone ? s.hideDone : s.showDone}
             haptic={false}
             onPress={() => setShowDone((v) => !v)}
             style={[styles.doneToggle, { gap: t.spacing.xs, paddingHorizontal: t.spacing.lg, paddingVertical: t.spacing.md, borderTopColor: t.colors.border }]}>
             <Text variant="caption" tone="faint">
-              已完成 {done.length}
+              {s.doneCount(done.length)}
             </Text>
             <Icon name={showDone ? 'chevronDown' : 'chevronRight'} size={14} color={t.colors.textFaint} />
           </Pressable>

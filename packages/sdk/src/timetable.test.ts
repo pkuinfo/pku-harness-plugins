@@ -32,9 +32,18 @@ describe('weeks', () => {
     expect(parseWeeks('单周', 6)).toEqual([1, 3, 5]);
     expect(parseWeeks('全部')).toBeNull();
     expect(() => parseWeeks('第一周')).toThrow();
+    expect(parseWeeks('1-7 odd')).toEqual([1, 3, 5, 7]);
+    expect(parseWeeks('Weeks 2-8 even')).toEqual([2, 4, 6, 8]);
+    expect(parseWeeks('odd weeks', 6)).toEqual([1, 3, 5]);
+    expect(parseWeeks('Every week')).toBeNull();
   });
   test('format', () => {
     expect(formatWeeks(null)).toBe('每周');
+    expect(formatWeeks(null, 'en')).toBe('Every week');
+    expect(formatWeeks([1, 2, 3], 'en')).toBe('Weeks 1-3');
+    expect(formatWeeks([1, 3, 5], 'en')).toBe('Weeks 1-5 odd');
+    expect(formatWeeks([4], 'en')).toBe('Week 4');
+    expect(parseWeeks(formatWeeks([2, 4, 6], 'en'))).toEqual([2, 4, 6]);
     expect(formatWeeks([1, 2, 3])).toBe('1-3周');
     expect(formatWeeks([2, 4, 6])).toBe('2-6双周');
     expect(formatWeeks([1, 4, 9])).toBe('1,4,9周');

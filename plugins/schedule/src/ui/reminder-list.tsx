@@ -1,18 +1,22 @@
-import { describeTrigger, formatLocal, type HostServices, type HostUI, type Job } from '@pku-harness/sdk';
+import { describeTrigger, formatLocal, formatLocalDateTime, type HostServices, type HostUI, type Job } from '@pku-harness/sdk';
 import { StyleSheet, View } from 'react-native';
 
+import { strings } from './strings';
 import { form } from './util';
 
 function ReminderRow({ host, services, job }: { host: HostUI; services: HostServices; job: Job }) {
   const { Text, Icon, Switch, Pressable } = host.components;
   const t = host.useTheme();
+  const locale = host.useLocale();
+  const s = strings[locale];
   const finished = job.nextRunAt == null;
   const check = job.action.type === 'check';
-  const next = job.enabled && job.nextRunAt ? `下次 ${formatLocal(job.nextRunAt).slice(5, 16)}` : finished ? `已结束 · 共 ${job.runs} 次` : '已暂停';
+  const when = (ms: number) => (locale === 'en' ? formatLocalDateTime(ms, locale) : formatLocal(ms).slice(5, 16));
+  const next = job.enabled && job.nextRunAt ? s.nextRun(when(job.nextRunAt)) : finished ? s.finished(job.runs) : s.paused;
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`编辑提醒 ${job.title}`}
+      accessibilityLabel={s.editReminder(job.title)}
       scaleTo={0.99}
       haptic={false}
       onPress={() => host.navigate(form('reminder', { id: job.id }))}
@@ -25,17 +29,17 @@ function ReminderRow({ host, services, job }: { host: HostUI; services: HostServ
           {job.title}
         </Text>
         <Text variant="caption" tone="muted" numberOfLines={1}>
-          {describeTrigger(job.trigger)} · {next}
+          {describeTrigger(job.trigger, Date.now(), locale)} · {next}
         </Text>
         {job.lastError ? (
           <Text variant="caption" tone="warn" numberOfLines={1}>
-            上次检查失败：{job.lastError}
+            {s.lastCheckFailed(job.lastError)}
           </Text>
         ) : null}
       </View>
       {finished ? null : (
         <Switch
-          label={`启用 ${job.title}`}
+          label={s.enable(job.title)}
           value={job.enabled}
           onValueChange={(v) => {
             host.haptics.tap();

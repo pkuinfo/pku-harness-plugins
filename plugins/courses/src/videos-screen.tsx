@@ -4,6 +4,7 @@ import { View } from 'react-native';
 
 import { playbackUrl, videos } from './api';
 import type { CourseInfo } from './parse';
+import { strings } from './strings';
 
 type Video = Awaited<ReturnType<typeof videos>>[number];
 
@@ -15,6 +16,7 @@ type Video = Awaited<ReturnType<typeof videos>>[number];
 export function VideosScreen({ host, services }: PluginScreenProps) {
   const { Screen, ListGroup, ListRow, Skeleton, Text, EmptyState, Button } = host.components;
   const t = host.useTheme();
+  const s = strings[host.useLocale()];
   const courses = host.useToolData<CourseInfo[]>('courses.list', {}, { ttlMinutes: 24 * 60 });
   const [course, setCourse] = useState<CourseInfo | null>(null);
   const [list, setList] = useState<Video[] | null>(null);
@@ -53,7 +55,7 @@ export function VideosScreen({ host, services }: PluginScreenProps) {
 
   if (!course)
     return (
-      <Screen title="课程回放" back>
+      <Screen title={s.videosTitle} back>
         <View style={{ gap: t.spacing.lg }}>
           {courses.status === 'loading' ? (
             <View style={{ gap: t.spacing.sm }}>
@@ -61,9 +63,9 @@ export function VideosScreen({ host, services }: PluginScreenProps) {
               <Skeleton height={48} />
             </View>
           ) : !courses.value?.length ? (
-            <EmptyState icon="play" title={courses.error ? '读取失败' : '本学期没有课程'} message={courses.error} />
+            <EmptyState icon="play" title={courses.error ? s.loadFailed : s.noCourses} message={courses.error} />
           ) : (
-            <ListGroup title="选择课程">
+            <ListGroup title={s.pickCourse}>
               {courses.value.map((c) => (
                 <ListRow key={c.id} icon="book" title={c.name} chevron onPress={() => setCourse(c)} />
               ))}
@@ -74,7 +76,7 @@ export function VideosScreen({ host, services }: PluginScreenProps) {
     );
 
   return (
-    <Screen title={course.name} subtitle="课程回放" back trailing={<Button title="换课程" size="sm" variant="ghost" onPress={() => setCourse(null)} />}>
+    <Screen title={course.name} subtitle={s.videosTitle} back trailing={<Button title={s.changeCourse} size="sm" variant="ghost" onPress={() => setCourse(null)} />}>
       <View style={{ gap: t.spacing.lg }}>
         {error ? (
           <Text variant="callout" tone="down">
@@ -88,9 +90,9 @@ export function VideosScreen({ host, services }: PluginScreenProps) {
             <Skeleton height={48} />
           </View>
         ) : list && !list.length ? (
-          <EmptyState icon="play" title="还没有回放" message="老师开启录播后，回放会出现在这里。" />
+          <EmptyState icon="play" title={s.noVideos} message={s.noVideosHint} />
         ) : list ? (
-          <ListGroup title={`${list.length} 个回放`} footer="点一下在浏览器里播放；链接只在本机生成，有效期较短。">
+          <ListGroup title={s.videoCount(list.length)} footer={s.videosFooter}>
             {[...list].reverse().map((v) => (
               <ListRow key={v.url || v.title} icon={opening === v.url ? 'clock' : 'play'} title={v.title} subtitle={[v.time, v.teacher].filter(Boolean).join(' · ')} titleLines={2} onPress={v.url && !opening ? () => void play(v) : undefined} />
             ))}

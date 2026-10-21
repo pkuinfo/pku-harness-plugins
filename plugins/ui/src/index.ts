@@ -7,6 +7,13 @@ export const uiPlugin = definePlugin({
   name: '界面生成',
   description: '让 AI 在对话里生成原生界面：表单、选择器、数据卡片。',
   version: '0.2.0',
+  i18n: {
+    en: {
+      name: 'Generative UI',
+      description: 'Lets the AI build native UI in the chat: forms, pickers and data cards.',
+      tools: { render: { title: 'Show UI in chat' } },
+    },
+  },
   icon: 'sparkles',
   core: true,
   scopes: [],

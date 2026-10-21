@@ -8,6 +8,7 @@ export const openAICompatiblePlugin = definePlugin({
   name: 'OpenAI 兼容服务',
   description: '接入任意兼容 OpenAI Chat Completions 接口的模型服务。',
   version: '0.2.0',
+  i18n: { en: { name: 'OpenAI-compatible', description: 'Connect any model service that supports the OpenAI Chat Completions API.' } },
   requires: ['network'],
   icon: 'server',
   scopes: ['用户填写的 Base URL'],

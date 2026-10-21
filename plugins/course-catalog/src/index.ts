@@ -24,6 +24,17 @@ export const courseCatalogPlugin = definePlugin({
   name: '全校课程目录',
   description: '按课程名、教师、院系搜索全校开课，含上课时间（选课网查询含教室）。只读。',
   version: '0.1.0',
+  i18n: {
+    en: {
+      name: 'Course catalogue',
+      description: 'Search every course at Peking University by name, teacher or department, with class times (Elective searches include rooms). Read-only.',
+      tools: {
+        search: { title: 'Search courses' },
+        departments: { title: 'Departments and semesters' },
+        searchElective: { title: 'Search Elective (with rooms)' },
+      },
+    },
+  },
   icon: 'book',
   requires: ['network'],
   scopes: ['dean.pku.edu.cn', 'elective.pku.edu.cn'],

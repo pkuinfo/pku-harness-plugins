@@ -183,8 +183,9 @@ function formatDateTime(ms: number, now: number) {
   return `${sameYear ? '' : `${d.getFullYear()}年`}${d.getMonth() + 1}月${d.getDate()}日 ${time}`;
 }
 
-/** Short Chinese description, e.g. "每 3 天 08:00 · 共 16 次". */
-export function describeTrigger(trigger: Trigger, now = Date.now()): string {
+/** Short description in the app language, e.g. "每 3 天 08:00 · 共 16 次" / "Every 3 days at 08:00 · 16 times". */
+export function describeTrigger(trigger: Trigger, now = Date.now(), locale: 'zh-Hans' | 'en' = 'zh-Hans'): string {
+  if (locale === 'en') return describeTriggerEn(trigger, now);
   if (trigger.type === 'at') return formatDateTime(trigger.at, now);
   const start = new Date(trigger.startAt);
   const times = (trigger.times ?? [formatTime(start.getHours(), start.getMinutes())]).join('、');
@@ -212,5 +213,54 @@ export function describeTrigger(trigger: Trigger, now = Date.now()): string {
   if (trigger.startAt > now) parts.push(`${formatDateTime(trigger.startAt, now)}起`);
   if (trigger.count != null) parts.push(`共 ${trigger.count} 次`);
   if (trigger.until != null) parts.push(`至 ${formatDateTime(trigger.until, now)}`);
+  return parts.join(' · ');
+}
+
+const WEEKDAY_EN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const MONTH_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/** "Today 20:00", "Tomorrow 08:00", "Nov 2, 08:00" ("Nov 2, 2027, 08:00" in another year); lowercase day words mid-sentence. */
+function formatDateTimeEn(ms: number, now: number, midSentence = false) {
+  const d = new Date(ms);
+  const n = new Date(now);
+  const time = formatTime(d.getHours(), d.getMinutes());
+  const dayDiff = Math.round(
+    (new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime() - new Date(n.getFullYear(), n.getMonth(), n.getDate()).getTime()) / DAY,
+  );
+  if (dayDiff === 0) return `${midSentence ? 'today' : 'Today'} ${time}`;
+  if (dayDiff === 1) return `${midSentence ? 'tomorrow' : 'Tomorrow'} ${time}`;
+  const year = d.getFullYear() === n.getFullYear() ? '' : `, ${d.getFullYear()}`;
+  return `${MONTH_EN[d.getMonth()]} ${d.getDate()}${year}, ${time}`;
+}
+
+function describeTriggerEn(trigger: Trigger, now: number): string {
+  if (trigger.type === 'at') return formatDateTimeEn(trigger.at, now);
+  const start = new Date(trigger.startAt);
+  const times = (trigger.times ?? [formatTime(start.getHours(), start.getMinutes())]).join(', ');
+  const n = trigger.interval;
+  let head: string;
+  switch (trigger.unit) {
+    case 'minute':
+      head = `Every ${n} min`;
+      break;
+    case 'hour':
+      head = n === 1 ? 'Every hour' : `Every ${n} hours`;
+      break;
+    case 'day':
+      head = `${n === 1 ? 'Daily' : `Every ${n} days`} at ${times}`;
+      break;
+    case 'week': {
+      const days = [...(trigger.weekdays ?? [start.getDay()])]
+        .sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7))
+        .map((w) => WEEKDAY_EN[w])
+        .join(', ');
+      head = `${n === 1 ? 'Weekly' : `Every ${n} weeks`} on ${days} at ${times}`;
+      break;
+    }
+  }
+  const parts = [head];
+  if (trigger.startAt > now) parts.push(`from ${formatDateTimeEn(trigger.startAt, now, true)}`);
+  if (trigger.count != null) parts.push(trigger.count === 1 ? 'once' : `${trigger.count} times`);
+  if (trigger.until != null) parts.push(`until ${formatDateTimeEn(trigger.until, now, true)}`);
   return parts.join(' · ');
 }

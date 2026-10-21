@@ -1,6 +1,8 @@
-import type { PluginScreenProps } from '@pku-harness/sdk';
+import { formatRelative, type PluginScreenProps } from '@pku-harness/sdk';
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
+
+import { strings } from './strings';
 
 type Result = { status: 'synced'; count: number } | { status: 'verification_required'; kind: 'login' | 'course'; methods: ('sms' | 'otp')[]; message: string };
 
@@ -8,6 +10,8 @@ type Result = { status: 'synced'; count: number } | { status: 'verification_requ
 export function CourseSyncScreen({ host, services, kv, invoke }: PluginScreenProps) {
   const { Screen, Text, Button, ListGroup, ListRow, Field, Segmented, EmptyState } = host.components;
   const t = host.useTheme();
+  const locale = host.useLocale();
+  const s = strings[locale];
   host.useStoreVersion();
   const [last, setLast] = useState<{ at: number; count: number } | null>(null);
   const [step, setStep] = useState<Extract<Result, { status: 'verification_required' }> | null>(null);
@@ -31,7 +35,7 @@ export function CourseSyncScreen({ host, services, kv, invoke }: PluginScreenPro
         setStep(null);
         setCode('');
         setLast({ at: Date.now(), count: r.count });
-        setNotice({ tone: 'up', text: `已同步 ${r.count} 节课到日程` });
+        setNotice({ tone: 'up', text: s.synced(r.count) });
       } else {
         setStep(r);
         setMethod(r.methods.includes('otp') ? 'otp' : 'sms');
@@ -48,7 +52,7 @@ export function CourseSyncScreen({ host, services, kv, invoke }: PluginScreenPro
     setBusy('send');
     try {
       const r = (await invoke('course-sync.sendCode')) as { sent: string };
-      setNotice({ tone: 'muted', text: r.sent });
+      setNotice({ tone: 'muted', text: s.sentText(r.sent) });
     } catch (e) {
       setNotice({ tone: 'down', text: e instanceof Error ? e.message : String(e) });
     } finally {
@@ -58,41 +62,41 @@ export function CourseSyncScreen({ host, services, kv, invoke }: PluginScreenPro
 
   if (!services.campus.status().signedIn)
     return (
-      <Screen title="教务课表" back>
-        <EmptyState icon="person" title="先登录校园账号" message="课表来自学校系统，需要用你的校园账号登录。" action={<Button title="去登录" onPress={() => host.navigate('/campus')} />} />
+      <Screen title={s.title} back>
+        <EmptyState icon="person" title={s.signInFirst} message={s.signInWhy} action={<Button title={s.goSignIn} onPress={() => host.navigate('/campus')} />} />
       </Screen>
     );
 
   return (
-    <Screen title="教务课表" subtitle="来自树洞课表" back>
+    <Screen title={s.title} subtitle={s.subtitle} back>
       <View style={{ gap: t.spacing.xl }}>
-        <ListGroup footer="同步会替换之前同步的课，你手动添加的课不受影响。">
-          <ListRow icon="book" title="已同步的课" value={`${campusCount} 节`} />
-          <ListRow icon="clock" title="上次同步" value={last ? host.formatAgo(last.at) : '从未'} />
+        <ListGroup footer={s.footer}>
+          <ListRow icon="book" title={s.syncedClasses} value={s.classes(campusCount)} />
+          <ListRow icon="clock" title={s.lastSync} value={last ? formatRelative(last.at, locale) : s.never} />
         </ListGroup>
 
         {step ? (
           <View style={{ gap: t.spacing.md }}>
-            <Text variant="headline">需要验证</Text>
+            <Text variant="headline">{s.verifyNeeded}</Text>
             <Text variant="callout" tone="muted">
               {step.message}
             </Text>
             {step.methods.length > 1 ? (
               <Segmented
                 options={[
-                  { label: '手机令牌', value: 'otp' },
-                  { label: '短信', value: 'sms' },
+                  { label: s.otp, value: 'otp' },
+                  { label: s.sms, value: 'sms' },
                 ]}
                 value={method}
                 onChange={(v) => setMethod(v as 'sms' | 'otp')}
               />
             ) : null}
-            {method === 'sms' ? <Button title="发送短信验证码" variant="secondary" icon="send" loading={busy === 'send'} onPress={() => void send()} /> : null}
-            <Field label={method === 'otp' ? '手机令牌验证码' : '短信验证码'} value={code} onChangeText={setCode} placeholder="6 位数字" keyboardType="number-pad" autoCapitalize="none" />
-            <Button title="验证并同步" icon="refresh" loading={busy === 'sync'} disabled={code.trim().length < 4} onPress={() => void run({ code: code.trim(), method })} />
+            {method === 'sms' ? <Button title={s.sendSms} variant="secondary" icon="send" loading={busy === 'send'} onPress={() => void send()} /> : null}
+            <Field label={method === 'otp' ? s.otpCode : s.smsCode} value={code} onChangeText={setCode} placeholder={s.codePlaceholder} keyboardType="number-pad" autoCapitalize="none" />
+            <Button title={s.verifyAndSync} icon="refresh" loading={busy === 'sync'} disabled={code.trim().length < 4} onPress={() => void run({ code: code.trim(), method })} />
           </View>
         ) : (
-          <Button title={campusCount ? '重新同步' : '同步课表'} icon="refresh" size="lg" loading={busy === 'sync'} onPress={() => void run({})} />
+          <Button title={campusCount ? s.resync : s.sync} icon="refresh" size="lg" loading={busy === 'sync'} onPress={() => void run({})} />
         )}
 
         {notice ? (

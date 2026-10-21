@@ -30,6 +30,16 @@ export const classroomsPlugin = definePlugin({
   name: '空闲教室',
   description: '查一教、二教、三教、四教、理教等教学楼今天到后天每节课的空闲教室，找自习室。',
   version: '0.1.0',
+  i18n: {
+    en: {
+      name: 'Free classrooms',
+      description: 'Free classrooms in each teaching building (First to Fourth, Science Teaching Building and more) for every period from today to the day after tomorrow. Find somewhere to study.',
+      tools: { free: { title: 'Free classrooms' }, overview: { title: 'Free rooms by building' } },
+      widgets: { overview: { title: 'Free classrooms', description: 'How many classrooms are free in each teaching building right now (from the portal); tap a building to have the AI list them.' } },
+      commands: { classrooms: { description: 'Find a free classroom to study in', argHint: 'Building and time', aliases: ['study', 'free-rooms'] } },
+      dataSources: { overview: { title: 'Free rooms by building' } },
+    },
+  },
   icon: 'search',
   requires: ['network'],
   scopes: ['portal.pku.edu.cn（公开查询：空闲教室）'],

@@ -1,11 +1,14 @@
-import type { HostUI, Widget } from '@pku-harness/sdk';
+import { formatRelative, type HostUI, type Widget } from '@pku-harness/sdk';
 import { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
+
+import { strings } from './strings';
 
 /** AI-built widget body: skeleton → live spec; a failed refresh keeps the last value. */
 function SpecBody({ host, widget, hero }: { host: HostUI; widget: Widget; hero: boolean }) {
   const { Text, Button, Icon, Skeleton, GenUI } = host.components;
   const t = host.useTheme();
+  const s = strings[host.useLocale()];
   const data = host.useWidgetData(widget);
   // Stable spec object so the renderer keeps its state between renders.
   const spec = useMemo(() => (data.value ? { ...widget.spec, state: data.value } : null), [data.value, widget.spec]);
@@ -22,10 +25,10 @@ function SpecBody({ host, widget, hero }: { host: HostUI; widget: Widget; hero: 
         <View style={{ flexDirection: 'row', gap: t.spacing.sm, alignItems: 'flex-start' }}>
           <Icon name="warning" size={16} color={t.colors.warn} />
           <Text variant="caption" tone="muted" numberOfLines={3} style={{ flex: 1 }}>
-            {data.error ?? '没有数据'}
+            {data.error ?? s.noData}
           </Text>
         </View>
-        <Button title="重试" size="sm" variant="secondary" icon="refresh" loading={data.fetching} onPress={() => void data.refresh()} style={{ alignSelf: 'flex-start' }} />
+        <Button title={s.retry} size="sm" variant="secondary" icon="refresh" loading={data.fetching} onPress={() => void data.refresh()} style={{ alignSelf: 'flex-start' }} />
       </View>
     );
   return <GenUI spec={spec} />;
@@ -35,14 +38,16 @@ function SpecBody({ host, widget, hero }: { host: HostUI; widget: Widget; hero: 
 function Freshness({ host, widget }: { host: HostUI; widget: Widget }) {
   const { Text } = host.components;
   const t = host.useTheme();
+  const locale = host.useLocale();
+  const s = strings[locale];
   const now = host.useNow(30_000);
   const data = host.useWidgetData(widget);
-  if (data.fetching) return <View accessibilityLabel="正在刷新" style={[styles.dot, { backgroundColor: t.colors.accent, borderRadius: t.radius.full }]} />;
+  if (data.fetching) return <View accessibilityLabel={s.refreshingA11y} style={[styles.dot, { backgroundColor: t.colors.accent, borderRadius: t.radius.full }]} />;
   if (data.status !== 'ready' || data.updatedAt == null) return null;
   return (
     <Text variant="micro" tone={data.error ? 'warn' : 'faint'} numberOfLines={1}>
-      {data.error ? '刷新失败 · ' : ''}
-      {host.formatAgo(data.updatedAt, now.getTime())}
+      {data.error ? s.refreshFailed : ''}
+      {formatRelative(data.updatedAt, locale, now.getTime())}
     </Text>
   );
 }
@@ -52,13 +57,14 @@ export function WidgetCard({ host, widget, onLongPress }: { host: HostUI; widget
   const { Text, Pressable, PluginWidget } = host.components;
   const t = host.useTheme();
   const { GlassEdges } = host.components;
+  const s = strings[host.useLocale()];
   const hero = widget.size === 'lg';
   const live = !widget.source && Object.keys(widget.bindings).length > 0;
   return (
     <Pressable
       accessibilityRole="summary"
       accessibilityLabel={widget.title}
-      accessibilityHint="长按编辑看板"
+      accessibilityHint={s.cardHint}
       onLongPress={onLongPress}
       delayLongPress={350}
       scaleTo={0.98}

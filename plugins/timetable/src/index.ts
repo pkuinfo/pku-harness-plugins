@@ -34,6 +34,23 @@ export const timetablePlugin = definePlugin({
   name: '课表',
   description: '课程表、今天的课和上课提醒。',
   version: '0.3.0',
+  i18n: {
+    en: {
+      name: 'Timetable',
+      description: 'Your class timetable, today’s classes and class reminders.',
+      tools: {
+        list: { title: 'View timetable' },
+        today: { title: 'Today’s classes' },
+        addCourse: { title: 'Add class' },
+        updateCourse: { title: 'Edit class' },
+        removeCourse: { title: 'Delete class' },
+        setReminder: { title: 'Set class reminder' },
+      },
+      widgets: { next: { title: 'Next class', description: 'The class in progress or up next, with room, countdown and progress; updates on its own.' } },
+      commands: { today: { description: 'What classes do I have today', aliases: ['classes', 'timetable'] } },
+      dataSources: { today: { title: 'Today’s classes' } },
+    },
+  },
   icon: 'book',
   core: true,
   scopes: [],

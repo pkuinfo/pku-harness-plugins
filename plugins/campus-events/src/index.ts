@@ -19,6 +19,13 @@ export const campusEventsPlugin = definePlugin({
   name: '校园活动',
   description: '学术讲座日历和校园活动日历。',
   version: '0.1.0',
+  i18n: {
+    en: {
+      name: 'Campus events',
+      description: 'Calendars of academic talks and campus activities.',
+      tools: { talks: { title: 'Academic talks' }, activities: { title: 'Campus activities' }, sendCode: { title: 'Send verification code' } },
+    },
+  },
   icon: 'globe',
   requires: ['campus-session', 'network'],
   scopes: ['treehole.pku.edu.cn（学术日历、活动日历）'],

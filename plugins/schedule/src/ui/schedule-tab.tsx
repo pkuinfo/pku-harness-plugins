@@ -1,21 +1,14 @@
-import { classesOn, weekOf, type HostUI, type PluginScreenProps } from '@pku-harness/sdk';
+import { classesOn, formatLocalDate, weekOf, type HostUI, type PluginScreenProps } from '@pku-harness/sdk';
 import { useState, type ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { ClassList } from './class-list';
 import { ReminderList } from './reminder-list';
+import { strings } from './strings';
 import { TodoList } from './todo-list';
 import { form, sameDay } from './util';
 import { WeekGrid } from './week-grid';
 import { WeekNav, WeekStrip } from './week-strip';
-
-const LEADS = [
-  { label: '关', value: 'off' },
-  { label: '5 分', value: '5' },
-  { label: '10 分', value: '10' },
-  { label: '15 分', value: '15' },
-  { label: '30 分', value: '30' },
-];
 
 function Section({ host, title, meta, children }: { host: HostUI; title: string; meta?: string; children: ReactNode }) {
   const { Text } = host.components;
@@ -41,6 +34,8 @@ function Section({ host, title, meta, children }: { host: HostUI; title: string;
 export function ScheduleTab({ host, services }: PluginScreenProps) {
   const { Screen, Text, Icon, Pressable, Segmented, FadeIn, ListGroup, ListRow, Chip } = host.components;
   const t = host.useTheme();
+  const locale = host.useLocale();
+  const s = strings[locale];
   const { GlassEdges } = host.components;
   host.useStoreVersion();
   const now = host.useNow();
@@ -58,7 +53,7 @@ export function ScheduleTab({ host, services }: PluginScreenProps) {
     .filter((j) => !j.meta?.todoId && !j.meta?.courseId)
     .filter((j) => j.nextRunAt != null || (j.lastRunAt != null && now.getTime() - j.lastRunAt < 86_400_000))
     .sort((a, b) => (a.nextRunAt ?? Infinity) - (b.nextRunAt ?? Infinity));
-  const subtitle = `${selected.getMonth() + 1}月${selected.getDate()}日${week && week >= 1 && semester && week <= semester.weeks ? ` · 第 ${week} 周` : ''}`;
+  const subtitle = `${formatLocalDate(selected, locale, now)}${week && week >= 1 && semester && week <= semester.weeks ? s.weekN(week) : ''}`;
 
   const quick = (icon: string, label: string, href: string) => (
     <Pressable
@@ -74,13 +69,13 @@ export function ScheduleTab({ host, services }: PluginScreenProps) {
   );
 
   return (
-    <Screen title="日程" subtitle={subtitle}>
+    <Screen title={s.title} subtitle={subtitle}>
       <FadeIn index={0}>
         <View style={{ gap: t.spacing.md }}>
           <Segmented
             options={[
-              { label: '日程', value: 'day' },
-              { label: '课表', value: 'week' },
+              { label: s.viewDay, value: 'day' },
+              { label: s.viewWeek, value: 'week' },
             ]}
             value={view}
             onChange={(v) => setView(v as 'day' | 'week')}
@@ -97,28 +92,28 @@ export function ScheduleTab({ host, services }: PluginScreenProps) {
         <>
           <FadeIn index={1}>
             <View style={[styles.quickRow, { gap: t.spacing.sm }]}>
-              {quick('todo', '待办', form('todo', { id: 'new' }))}
-              {quick('bell', '提醒', form('reminder', { id: 'new' }))}
-              {quick('book', '课程', form('course', { id: 'new' }))}
+              {quick('todo', s.todo, form('todo', { id: 'new' }))}
+              {quick('bell', s.reminder, form('reminder', { id: 'new' }))}
+              {quick('book', s.course, form('course', { id: 'new' }))}
             </View>
           </FadeIn>
           <FadeIn index={2}>
-            <Section host={host} title={isToday ? '今天的课' : '课程'} meta={dayClasses.length ? `${dayClasses.length} 节` : undefined}>
+            <Section host={host} title={isToday ? s.todayClasses : s.classes} meta={dayClasses.length ? s.classCount(dayClasses.length) : undefined}>
               <ClassList host={host} classes={dayClasses} isToday={isToday} now={now} />
             </Section>
           </FadeIn>
           <FadeIn index={3}>
-            <Section host={host} title="待办" meta={openTodos ? `${openTodos} 项` : undefined}>
+            <Section host={host} title={s.todo} meta={openTodos ? s.todoCount(openTodos) : undefined}>
               <TodoList host={host} services={services} todos={todos} now={now} />
             </Section>
           </FadeIn>
           <FadeIn index={4}>
-            <Section host={host} title="提醒与定时任务" meta={reminders.length ? `${reminders.length} 个` : undefined}>
+            <Section host={host} title={s.remindersTitle} meta={reminders.length ? s.reminderCount(reminders.length) : undefined}>
               {reminders.length ? (
                 <ReminderList host={host} services={services} jobs={reminders} />
               ) : (
                 <Text variant="callout" tone="muted">
-                  还没有提醒。可以点上面的「提醒」，或在对话里说「每 3 天提醒我交水费，共 16 次」。
+                  {s.noReminders}
                 </Text>
               )}
             </Section>
@@ -131,30 +126,30 @@ export function ScheduleTab({ host, services }: PluginScreenProps) {
               <WeekGrid host={host} courses={courses} semester={semester} selected={selected} now={now} />
             ) : (
               <Text variant="callout" tone="muted">
-                课表是空的。可以从学校同步、手动添加，或在对话里把课表发给 AI。
+                {s.emptyTimetable}
               </Text>
             )}
-            <ListGroup title="课表设置">
+            <ListGroup title={s.timetableSettings}>
               <ListRow
                 icon="schedule"
-                title="学期"
-                subtitle={semester ? `${semester.name} · ${semester.start} 起 · ${semester.weeks} 周` : '未设置，教学周和单双周无法计算'}
+                title={s.semester}
+                subtitle={semester ? s.semesterInfo(semester.name, semester.start, semester.weeks) : s.noSemester}
                 onPress={() => host.navigate(form('semester'))}
               />
-              <ListRow icon="plus" title="添加课程" onPress={() => host.navigate(form('course', { id: 'new' }))} />
+              <ListRow icon="plus" title={s.addClass} onPress={() => host.navigate(form('course', { id: 'new' }))} />
               {services.registry.plugins().some((p) => p.id === 'course-sync' && p.enabled) ? (
-                <ListRow icon="refresh" title="从学校同步课表" subtitle="教务课表插件" onPress={() => host.navigate('/p/course-sync/home')} />
+                <ListRow icon="refresh" title={s.syncFromSchool} subtitle={s.syncPlugin} onPress={() => host.navigate('/p/course-sync/home')} />
               ) : null}
             </ListGroup>
             <View style={{ gap: t.spacing.sm }}>
               <View style={[styles.sectionHead, { paddingHorizontal: t.spacing.xs }]}>
                 <Text variant="micro" tone="faint">
-                  上课提醒（提前）
+                  {s.classReminders}
                 </Text>
-                {reminderMinutes != null ? <Chip label={`已为 ${courses.length} 门课设置`} tone="up" /> : null}
+                {reminderMinutes != null ? <Chip label={s.remindersSet(courses.length)} tone="up" /> : null}
               </View>
               <Segmented
-                options={LEADS}
+                options={s.leads}
                 value={reminderMinutes == null ? 'off' : String(reminderMinutes)}
                 onChange={(v) => services.timetable.setReminderMinutes(v === 'off' ? null : Number(v))}
               />

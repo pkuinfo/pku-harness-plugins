@@ -15,6 +15,27 @@ export const campusCardPlugin = definePlugin({
   name: '校园卡',
   description: '查询校园卡余额、消费记录和月度消费统计。',
   version: '0.4.0',
+  i18n: {
+    en: {
+      name: 'Campus Card',
+      description: 'Your Campus Card (校园卡) balance, transactions and monthly spending.',
+      tools: {
+        getBalance: { title: 'Check Campus Card balance' },
+        setDigitalCard: { title: 'Switch to digital card' },
+        recharge: { title: 'Top up Campus Card' },
+        getMonthlyStats: { title: 'Monthly spending' },
+        listTransactions: { title: 'Transactions' },
+      },
+      widgets: { balance: { title: 'Campus Card balance', description: 'Your Campus Card balance, today’s spending and card status; changes colour when the balance runs low (below ¥50 by default).' } },
+      screens: { pay: { title: 'Payment code' }, recharge: { title: 'Top up' } },
+      settings: {
+        pay: { title: 'Campus Card payment code', subtitle: 'Scan to pay in canteens and shops' },
+        recharge: { title: 'Top up Campus Card', subtitle: 'Pay with WeChat or Alipay' },
+      },
+      commands: { balance: { description: 'Check Campus Card balance', aliases: ['card'] } },
+      dataSources: { balance: { title: 'Campus Card balance' } },
+    },
+  },
   icon: 'card',
   requires: ['campus-session', 'network'],
   scopes: ['bdcard.pku.edu.cn', 'portal.pku.edu.cn（登录）'],

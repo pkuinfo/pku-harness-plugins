@@ -14,6 +14,18 @@ export const electivePlugin = definePlugin({
   name: '选课网',
   description: '选课网选课结果、补退选课程余量和课程搜索（只读，选课请到官网）。',
   version: '0.1.0',
+  i18n: {
+    en: {
+      name: 'Elective (选课网)',
+      description: 'Elective (选课网): your enrolment results, open seats in add/drop courses, and course search. Read-only; enrol on the official site.',
+      tools: {
+        schedule: { title: 'Enrolment stages' },
+        results: { title: 'Enrolment results' },
+        supplements: { title: 'Add/drop courses' },
+        search: { title: 'Search add/drop courses' },
+      },
+    },
+  },
   icon: 'todo',
   requires: ['campus-session', 'network'],
   scopes: ['elective.pku.edu.cn'],

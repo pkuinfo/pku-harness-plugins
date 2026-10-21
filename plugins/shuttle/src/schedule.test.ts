@@ -60,6 +60,10 @@ describe('places', () => {
     expect(parseRoute('去200号')).toEqual({ from: null, to: 'lab200' });
     expect(parseRoute('燕园')).toEqual({ from: 'yanyuan', to: null });
     expect(parseRoute('')).toEqual({ from: null, to: null });
+    expect(parseRoute('Yanyuan to Xinyanyuan')).toEqual({ from: 'yanyuan', to: 'xinyanyuan' });
+    expect(parseRoute('from Changping to main campus')).toEqual({ from: 'xinyanyuan', to: 'yanyuan' });
+    expect(parseRoute('to Bei’anhe')).toEqual({ from: null, to: 'beianhe' });
+    expect(parseRoute('xinyanyuan beianhe')).toEqual({ from: 'xinyanyuan', to: 'beianhe' });
   });
 });
 

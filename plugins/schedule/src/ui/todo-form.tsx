@@ -2,18 +2,15 @@ import { describeTrigger, type PluginScreenProps, type Trigger } from '@pku-harn
 import { useState } from 'react';
 import { View } from 'react-native';
 
-type RemindMode = 'none' | 'atDue' | 'before15' | 'before60' | 'custom';
-const MODES: { label: string; value: RemindMode }[] = [
-  { label: '不提醒', value: 'none' },
-  { label: '到期时', value: 'atDue' },
-  { label: '提前15分', value: 'before15' },
-  { label: '提前1时', value: 'before60' },
-];
+import { strings } from './strings';
 
+type RemindMode = 'none' | 'atDue' | 'before15' | 'before60' | 'custom';
 /** Create or edit a to-do: title, notes, due time, reminder. */
 export function TodoForm({ host, services, params }: PluginScreenProps) {
   const { SheetScreen, Field, DateTimeField, Segmented, Text } = host.components;
   const t = host.useTheme();
+  const locale = host.useLocale();
+  const s = strings[locale];
   const id = params.id ?? 'new';
   const existing = id === 'new' ? undefined : services.todos.get(id);
   const job = existing?.jobId ? services.scheduler.get(existing.jobId) : undefined;
@@ -45,32 +42,32 @@ export function TodoForm({ host, services, params }: PluginScreenProps) {
 
   return (
     <SheetScreen
-      title={existing ? '编辑待办' : '新待办'}
-      primary="保存"
+      title={existing ? s.editTodo : s.newTodo}
+      primary={s.save}
       onPrimary={save}
       primaryDisabled={!title.trim()}
-      danger={existing ? '删除' : undefined}
+      danger={existing ? s.delete : undefined}
       onDanger={async () => {
         host.haptics.warning();
         if (existing) await services.todos.remove(existing.id);
         host.dismiss('/schedule');
       }}>
-      <Field label="内容" value={title} onChangeText={setTitle} placeholder="例如：交高数作业" autoFocus={!existing && !params.title} />
-      <Field label="备注" value={notes} onChangeText={setNotes} placeholder="可选" multiline />
-      <DateTimeField label="截止时间" value={due} onChange={setDue} onClear={() => setDue(null)} />
+      <Field label={s.todoTitle} value={title} onChangeText={setTitle} placeholder={s.todoPlaceholder} autoFocus={!existing && !params.title} />
+      <Field label={s.notes} value={notes} onChangeText={setNotes} placeholder={s.optional} multiline />
+      <DateTimeField label={s.due} value={due} onChange={setDue} onClear={() => setDue(null)} />
       <View style={{ gap: t.spacing.sm }}>
         <Text variant="callout" tone="muted">
-          提醒
+          {s.remind}
         </Text>
-        <Segmented options={hadCustom ? [...MODES, { label: '自定义', value: 'custom' }] : MODES} value={mode} onChange={(v) => setMode(v as RemindMode)} />
+        <Segmented options={hadCustom ? [...s.modes, { label: s.custom, value: 'custom' }] : s.modes} value={mode} onChange={(v) => setMode(v as RemindMode)} />
         {mode === 'custom' && job ? (
           <Text variant="caption" tone="muted">
-            {describeTrigger(job.trigger)}（可在对话里让 AI 修改）
+            {s.customHint(describeTrigger(job.trigger, Date.now(), locale))}
           </Text>
         ) : null}
         {mode !== 'none' && mode !== 'custom' && !due ? (
           <Text variant="caption" tone="warn">
-            先设置截止时间才能提醒
+            {s.needDue}
           </Text>
         ) : null}
       </View>

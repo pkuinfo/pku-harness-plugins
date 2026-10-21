@@ -2,6 +2,8 @@ import type { HostServices, HostUI, OtpCode } from '@pku-harness/sdk';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { AccessibilityInfo, Animated, AppState, Easing, View } from 'react-native';
 
+import { strings } from './strings';
+
 /** TOTP window (RFC 6238 default; IAAA uses 30 s, pkucli otp.rs TOTP_PERIOD). */
 export const PERIOD_MS = 30_000;
 
@@ -65,13 +67,14 @@ type Variant = 'numberXL' | 'numberL' | 'numberM';
  */
 export function CodeDigits({ host, code, variant = 'numberXL', tone = 'default' }: { host: HostUI; code: string; variant?: Variant; tone?: 'default' | 'muted' }) {
   const t = host.useTheme();
+  const s = strings[host.useLocale()];
   const reduced = useReducedMotion();
   const type = t.typography[variant] as { fontSize?: number; lineHeight?: number };
   const fontSize = type.fontSize ?? 28;
   const cell = { width: Math.round(fontSize * 0.64), height: type.lineHeight ?? fontSize * 1.2 };
   const chars = code.padEnd(6).slice(0, 6).split('');
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center' }} accessible accessibilityLabel={`验证码 ${code.split('').join(' ')}`}>
+    <View style={{ flexDirection: 'row', alignItems: 'center' }} accessible accessibilityLabel={s.codeA11y(code.split('').join(' '))}>
       {chars.map((ch, i) => (
         <View key={i} style={{ flexDirection: 'row' }}>
           {i === 3 ? <View style={{ width: Math.round(fontSize * 0.36) }} /> : null}
@@ -196,6 +199,7 @@ function Digit({
 /** Tap target that copies the code when the host has a clipboard; otherwise just shows it. */
 export function CopyArea({ host, code, children }: { host: HostUI; code: string | null; children: ReactNode }) {
   const { Pressable } = host.components;
+  const s = strings[host.useLocale()];
   const [copied, setCopied] = useState(false);
   useEffect(() => {
     if (!copied) return;
@@ -207,7 +211,7 @@ export function CopyArea({ host, code, children }: { host: HostUI; code: string 
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel="复制验证码"
+      accessibilityLabel={s.copy}
       haptic
       onPress={() => {
         void clip.setString(code).then(() => {
@@ -224,9 +228,10 @@ export function CopyArea({ host, code, children }: { host: HostUI; code: string 
 
 function CopiedHint({ host, show }: { host: HostUI; show: boolean }) {
   const { Text } = host.components;
+  const s = strings[host.useLocale()];
   return (
     <Text variant="micro" tone={show ? 'up' : 'faint'}>
-      {show ? '已复制' : '点按复制'}
+      {show ? s.copied : s.tapToCopy}
     </Text>
   );
 }

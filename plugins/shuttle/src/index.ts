@@ -19,6 +19,16 @@ export const shuttlePlugin = definePlugin({
   name: '校车',
   description: '燕园—新燕园（昌平）通勤班车和新燕园—地铁北安河快速公交时刻表，算出下一班车。',
   version: '0.1.0',
+  i18n: {
+    en: {
+      name: 'Shuttle bus',
+      description: 'Timetables for the Yanyuan–Xinyanyuan (Changping) commuter shuttle and the Xinyanyuan–Bei’anhe metro express bus, with the next departure worked out for you.',
+      tools: { next: { title: 'Next shuttle' }, timetable: { title: 'Shuttle timetable' } },
+      widgets: { next: { title: 'Next shuttle', description: 'The next Yanyuan ⇄ Xinyanyuan commuter shuttle with a countdown, worked out on the device (no network needed); config.from / config.to switch stops (e.g. 新燕园→北安河).' } },
+      commands: { shuttle: { description: 'Next shuttle (works offline)', argHint: 'e.g. Yanyuan to Xinyanyuan', aliases: ['bus'] } },
+      dataSources: { next: { title: 'Next shuttle' } },
+    },
+  },
   icon: 'location',
   requires: [],
   scopes: [],

@@ -11,6 +11,15 @@ export const netfeePlugin = definePlugin({
   name: '网费',
   description: '查询校园网账户余额和本月用量。',
   version: '0.2.0',
+  i18n: {
+    en: {
+      name: 'Network fee',
+      description: 'Your campus network balance and this month’s usage.',
+      tools: { getStatus: { title: 'Check network fee' } },
+      widgets: { balance: { title: 'Network fee', description: 'Campus network balance and this month’s usage.' } },
+      dataSources: { balance: { title: 'Network balance' } },
+    },
+  },
   icon: 'wifi',
   requires: ['campus-session', 'network'],
   scopes: ['its.pku.edu.cn'],

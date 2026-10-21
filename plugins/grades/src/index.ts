@@ -20,6 +20,14 @@ export const gradesPlugin = definePlugin({
   name: '成绩',
   description: '查询各学期成绩和绩点（GPA）。',
   version: '0.1.0',
+  i18n: {
+    en: {
+      name: 'Grades',
+      description: 'Your grades and GPA, semester by semester.',
+      tools: { listScores: { title: 'Check grades' }, gpa: { title: 'Check GPA' }, sendCode: { title: 'Send verification code' } },
+      widgets: { gpa: { title: 'Overall GPA', description: 'Your overall GPA and total credits; hidden until you tap, since grades are private.' } },
+    },
+  },
   icon: 'check',
   requires: ['campus-session', 'network'],
   scopes: ['treehole.pku.edu.cn（成绩）'],
