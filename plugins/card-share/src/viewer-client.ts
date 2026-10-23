@@ -73,12 +73,6 @@ export type ViewerOptions = {
   onState(state: ViewerState): void;
 };
 
-/**
- * Associated data for meta and frames. The share's channel id binds envelopes to this channel;
- * plain (no aad) is accepted too, and whichever opens the meta is used for frames as well.
- */
-const aadCandidates = (channelId: string): (string | undefined)[] => [undefined, channelId];
-
 type Saved = { peerId: string; token: string; priv: string; pub: string; verified: boolean };
 
 const WS_OPEN = 1;
@@ -103,7 +97,6 @@ export class ShareViewer {
   private chanPub: Uint8Array | null = null;
   private encKey: Uint8Array;
   private authKey: Uint8Array;
-  private aad: string | undefined;
   private peerKey: Uint8Array | null = null;
   private saved: Saved | null = null;
   private expiresAt = 0;
@@ -207,19 +200,13 @@ export class ShareViewer {
     await this.join();
   }
 
+  /** Meta and frames are sealed without associated data (the host's channel client does the same). */
   private openMeta(env: Envelope): ShareMeta | undefined {
-    for (const aad of aadCandidates(this.o.channelId)) {
-      try {
-        const meta = parseMeta(open(this.encKey, env, aad === undefined ? undefined : { aad }));
-        if (meta) {
-          this.aad = aad;
-          return meta;
-        }
-      } catch {
-        // try the next convention
-      }
+    try {
+      return parseMeta(open(this.encKey, env));
+    } catch {
+      return undefined;
     }
-    return undefined;
   }
 
   private gateState(busy: boolean, extra?: { remaining?: number; wrong?: GateKind[] }): ViewerState {
@@ -394,7 +381,7 @@ export class ShareViewer {
       this.queue.push(frame);
       return;
     }
-    const env = seal(this.peerKey, frame, { aad: this.aad, rand: this.o.rand });
+    const env = seal(this.peerKey, frame, { rand: this.o.rand });
     const out = { t: 'msg', env };
     if (this.ws && this.ws.readyState === WS_OPEN) this.ws.send(JSON.stringify(out));
     else if (this.sse)
@@ -445,7 +432,7 @@ export class ShareViewer {
         if (!env.success || !this.peerKey) return;
         let msg: unknown;
         try {
-          msg = open(this.peerKey, env.data, { aad: this.aad });
+          msg = open(this.peerKey, env.data);
         } catch {
           return; // not for us / tampered
         }

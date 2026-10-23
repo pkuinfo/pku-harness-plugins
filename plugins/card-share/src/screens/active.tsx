@@ -108,11 +108,9 @@ function ShareCard({ host, manager, record: r, now, s, onNotice }: { host: HostU
 
   const reset = () =>
     run('reset', async () => {
-      const next = await manager.resetViewer(r.id);
-      if (next && next.id !== r.id) {
-        onNotice({ tone: 'up', text: s.resetNewLink });
-        if (host.shareLink) await host.shareLink(next.link, { message: s.title });
-      }
+      await manager.resetViewer(r.id);
+      host.haptics.success();
+      onNotice({ tone: 'up', text: s.resetDone });
     });
 
   return (

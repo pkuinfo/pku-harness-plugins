@@ -69,6 +69,10 @@ export class FakeChannel implements Channel {
     if (this.closed || this.offline) throw new Error('offline');
     this.sent.push({ to, msg: JSON.parse(JSON.stringify(msg)) });
   }
+  async kick(peerId: string) {
+    this.kicked.push(peerId);
+    this.emit({ type: 'leave', peerId, at: this.clock.now() });
+  }
   async extend(ttlS: number) {
     this.expiresAt = this.clock.now() + ttlS * 1000;
   }
@@ -92,24 +96,17 @@ export class FakeChannel implements Channel {
   }
 }
 
-export class FakeKickChannel extends FakeChannel {
-  async kick(peerId: string) {
-    this.kicked.push(peerId);
-    this.emit({ type: 'leave', peerId, at: Date.now() });
-  }
-}
-
-export function fakeCloud(clock: FakeClock, opts: { kick?: boolean } = {}) {
+export function fakeCloud(clock: FakeClock, opts: { consent?: boolean } = {}) {
   const channels: FakeChannel[] = [];
   let n = 0;
   const cloud: PluginCloud = {
     available: true,
-    status: () => ({ provider: 'custom', baseURL: 'http://relay.test', consented: true, online: true }),
+    status: () => ({ provider: 'custom', baseURL: 'http://relay.test', consented: opts.consent ?? true, online: true }),
+    requestConsent: async () => opts.consent ?? true,
     store: { get: async () => undefined, put: async () => ({ version: 1 }), delete: async () => {}, list: async () => [] },
     channels: {
       open: async (o) => {
-        const C = opts.kick ? FakeKickChannel : FakeChannel;
-        const ch = new C(`chan${String(++n).padStart(6, '0')}`, clock.now() + o.ttlS * 1000, clock, o);
+        const ch = new FakeChannel(`chan${String(++n).padStart(6, '0')}`, clock.now() + o.ttlS * 1000, clock, o);
         channels.push(ch);
         return ch;
       },

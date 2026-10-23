@@ -108,9 +108,9 @@ export class ShareManager {
     this.emit();
   }
 
-  /** Active first (newest first), then history. Replaced shares are hidden. */
+  /** Active first (newest first), then history. */
   list(): ShareRecord[] {
-    const all = [...this.records.values()].filter((r) => !r.replacedBy);
+    const all = [...this.records.values()];
     return [...all.filter((r) => r.status === 'active').sort((a, b) => b.createdAt - a.createdAt), ...all.filter((r) => r.status === 'ended').sort((a, b) => (b.endedAt ?? 0) - (a.endedAt ?? 0))];
   }
 
@@ -149,28 +149,9 @@ export class ShareManager {
     await this.sessions.get(id)?.extend(ttlS);
   }
 
-  /**
-   * Let a different person open the share: drop the viewer in place when the channel supports
-   * it, otherwise replace the share with a new link (same settings, remaining time, spend so
-   * far). Returns the session to show (a new one when replaced).
-   */
-  async resetViewer(id: string): Promise<ShareSession | undefined> {
-    const old = this.sessions.get(id);
-    if (!old?.active) return old;
-    if (old.canKick) {
-      await old.kickViewer();
-      return old;
-    }
-    const secret = old.record.secret;
-    const now = (this.deps.clock ?? realClock).now();
-    const ttlS = Math.max(60, Math.round((old.record.expiresAt - now) / 1000));
-    const next = await ShareSession.start(this.sessionDeps(), { ttlS, capYuan: old.record.capYuan, pin: secret?.pin ?? null, name: secret?.name ?? null });
-    // Carry the spend so far (the cap covers the whole share) and the counters.
-    Object.assign(next.record, { createdAt: old.record.createdAt, spent: old.record.spent, payments: old.record.payments, codesIssued: old.record.codesIssued, failures: old.record.failures });
-    this.sessions.set(next.id, next);
-    await this.persist(next.record);
-    await old.end('revoked', { replacedBy: next.id });
-    return next;
+  /** Let a different person open the same link (the relay frees the viewer's seat). */
+  async resetViewer(id: string): Promise<void> {
+    await this.sessions.get(id)?.kickViewer();
   }
 }
 

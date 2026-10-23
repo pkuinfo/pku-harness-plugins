@@ -126,6 +126,10 @@ export function CreateScreen(props: PluginScreenProps) {
     setBusy(true);
     setProblem(null);
     try {
+      if (cloud && !cloud.status().consented && !(await cloud.requestConsent())) {
+        setProblem({ text: s.consent });
+        return;
+      }
       const share = await manager.start({
         ttlS: ttlSeconds(ttl),
         capYuan,

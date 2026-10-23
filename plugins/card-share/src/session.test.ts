@@ -8,7 +8,7 @@ import { fakeCloud, FakeClock, flush, memoryKV, type FakeChannel } from './test/
 
 const base: ShareConfig = { ttlS: 1800, capYuan: 50, pin: null, name: null };
 
-function setup(opts: { kick?: boolean } = {}) {
+function setup(opts: { consent?: boolean } = {}) {
   const clock = new FakeClock();
   const { cloud, channels } = fakeCloud(clock, opts);
   const source = new MockSource({ now: clock.now });
@@ -31,7 +31,7 @@ function setup(opts: { kick?: boolean } = {}) {
   return { clock, cloud, channels, source, saved, ongoing, deps };
 }
 
-async function started(config: Partial<ShareConfig> = {}, opts: { kick?: boolean } = {}) {
+async function started(config: Partial<ShareConfig> = {}, opts: { consent?: boolean } = {}) {
   const env = setup(opts);
   const session = await ShareSession.start(env.deps, { ...base, ...config });
   const ch = env.channels[0]!;
@@ -220,8 +220,8 @@ describe('ShareManager', () => {
     env = setup();
     kv = memoryKV();
   });
-  const make = (kick = false) => {
-    const e = kick ? setup({ kick: true }) : env;
+  const make = () => {
+    const e = env;
     return { m: new ShareManager({ kv, cloud: e.cloud, source: e.source, clock: e.clock }), e };
   };
 
@@ -259,27 +259,19 @@ describe('ShareManager', () => {
     expect(m.list().every((r) => r.status === 'ended')).toBe(true);
   });
 
-  test('reset viewer without kick: a new link carrying spend and settings', async () => {
-    const { m } = make();
-    const a = await m.start({ ...base, pin: '2468' });
-    a.record.spent = 7;
-    const b = await m.resetViewer(a.id);
-    expect(b!.id).not.toBe(a.id);
-    expect(b!.record).toMatchObject({ spent: 7, pin: true, createdAt: a.record.createdAt });
-    expect(a.record).toMatchObject({ status: 'ended', replacedBy: b!.id });
-    expect(m.list().map((r) => r.id)).toEqual([b!.id]);
-  });
-
-  test('reset viewer with kick: same link, viewer dropped', async () => {
-    const { m, e } = make(true);
+  test('reset viewer kicks: same link, seat freed, the next viewer gets codes', async () => {
+    const { m, e } = make();
     const a = await m.start(base);
     const ch = e.channels[0]!;
     ch.join();
     await flush();
-    const same = await m.resetViewer(a.id);
-    expect(same!.id).toBe(a.id);
+    await m.resetViewer(a.id);
     expect(ch.kicked).toEqual(['peer-1']);
     expect(a.record.viewer).toBeNull();
+    expect(a.active).toBe(true);
+    ch.join('peer-2');
+    await flush();
+    expect(ch.framesOf('code', 'peer-2')).toHaveLength(1);
   });
 
   test('without a cloud client, starting fails with not_configured', async () => {

@@ -59,6 +59,12 @@ export interface PluginCloud {
   /** Provider configured, consent given and reachable (offline-tolerant reads aside). */
   readonly available: boolean;
   status(): CloudStatus;
+  /**
+   * Ask the user to allow this plugin to use the cloud (the host's consent sheet; resolves at once
+   * when already allowed). False when they decline. Screens call it before opening a channel;
+   * agent tool calls never prompt and get `CloudError('consent_required')` instead.
+   */
+  requestConsent(): Promise<boolean>;
   /** Key-value store namespaced to (device, plugin) by the provider. Values are sealed when `e2e`. */
   store: {
     get<T>(key: string): Promise<{ value: T; version: number } | undefined>;
@@ -110,6 +116,8 @@ export interface Channel {
     put(slot: string, msg: unknown, ttlS: number): Promise<void>;
     clear(): Promise<void>;
   };
+  /** Drop a peer and free its seat (a new viewer can join with the same link). */
+  kick(peerId: string): Promise<void>;
   extend(ttlS: number): Promise<void>;
   close(): Promise<void>;
 }

@@ -57,8 +57,6 @@ export type ShareRecord = {
   status: 'active' | 'ended';
   endReason?: EndReason;
   endedAt?: number;
-  /** Set when "reset viewer" replaced this share with a new channel. */
-  replacedBy?: string;
   capYuan: number | null;
   /** Masked hint shown to the viewer, if the name gate is on. */
   nameHint?: string;
@@ -105,8 +103,6 @@ export function shareMetaOf(config: ShareConfig): ShareMeta {
 }
 
 const CLOSE_TO_END: Record<ChannelCloseReason, EndReason> = { owner: 'owner', expired: 'expired', revoked: 'revoked', locked: 'locked', server: 'server' };
-
-type Kickable = Channel & { kick?: (peerId: string) => Promise<void> };
 
 export class ShareSession {
   readonly record: ShareRecord;
@@ -438,31 +434,23 @@ export class ShareSession {
     if (this.record.viewer?.online) await this.send(this.statusFrame());
   }
 
-  /** Whether the channel can drop its viewer in place (else "reset" means a new link). */
-  get canKick(): boolean {
-    return typeof (this.channel as Kickable).kick === 'function';
-  }
-
-  /** Drop the current viewer so someone else can open the same link. Needs `canKick`. */
+  /** Drop the current viewer (重置查看者): its seat is freed and the same link works for someone else. */
   async kickViewer(): Promise<void> {
     const v = this.record.viewer;
-    const kick = (this.channel as Kickable).kick;
-    if (!v || !kick) return;
-    await this.send({ t: 'revoked', reason: 'revoked' }, v.peerId);
-    await kick.call(this.channel, v.peerId);
+    if (!v || !this.active) return;
     this.record.viewer = null;
     this.clearCodeTimer();
     this.lastFrame = null;
+    await this.channel.kick(v.peerId);
     await this.changed();
   }
 
   /** Stop sharing. `remote`: the relay already closed the channel. */
-  async end(reason: EndReason, opts: { remote?: boolean; replacedBy?: string } = {}): Promise<void> {
+  async end(reason: EndReason, opts: { remote?: boolean } = {}): Promise<void> {
     if (!this.active) return;
     this.record.status = 'ended';
     this.record.endReason = reason;
     this.record.endedAt = this.clock.now();
-    if (opts.replacedBy) this.record.replacedBy = opts.replacedBy;
     delete this.record.secret;
     delete this.record.paused;
     if (this.record.viewer) this.record.viewer.online = false;
