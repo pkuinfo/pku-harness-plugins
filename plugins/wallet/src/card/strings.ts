@@ -26,6 +26,7 @@ export const strings = defineStrings({
     switchButton: '切换到数字卡',
     showCashier: (name: string) => `${name} · 向收银员出示`,
     refreshIn: (s: number) => `${s} 秒后自动刷新`,
+    shareFriend: '分享给朋友',
     // Top-up
     rechargeTitle: '校园卡充值',
     rechargeAmount: (n: number) => `充值 ¥${n}`,
@@ -58,6 +59,7 @@ export const strings = defineStrings({
     switchButton: 'Switch to digital card',
     showCashier: (name: string) => `${name} · Show this to the cashier`,
     refreshIn: (s: number) => `Refreshes in ${s} s`,
+    shareFriend: 'Share with a friend',
     rechargeTitle: 'Top up Campus Card',
     rechargeAmount: (n: number) => `Top up ¥${n}`,
     yuan: (n: number) => `¥${n}`,

@@ -28,6 +28,8 @@ export function PayScreen({ host, services, invoke }: PluginScreenProps) {
   const [state, setState] = useState<State>({ step: 'loading' });
   const [busy, setBusy] = useState(false);
   const account = useRef<string | null>(null);
+  // 分享给朋友 lives in the card-share plugin (cloud relay); wallet itself never needs cloud consent.
+  const canShare = services.registry.plugins().some((p) => p.id === 'card-share' && p.enabled);
 
   const load = useCallback(async () => {
     try {
@@ -112,6 +114,7 @@ export function PayScreen({ host, services, invoke }: PluginScreenProps) {
               </Text>
             </View>
             <Chip label={s.refreshIn(Math.max(0, REFRESH_S - age))} icon="refresh" />
+            {canShare ? <Button title={s.shareFriend} variant="ghost" size="sm" icon="share" onPress={() => host.navigate('/m/card-share/create')} /> : null}
           </>
         )}
       </View>
