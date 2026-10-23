@@ -19,7 +19,7 @@
   },
   "peerDependencies": {
     "@ai-sdk/openai-compatible": "^3.0.0",
-    "@pku-harness/sdk": "workspace:^",
+    "@pku-harness/sdk": "^0.1.0",
     "react": ">=19",
     "react-native": "*",
     "zod": "^4.0.0"
