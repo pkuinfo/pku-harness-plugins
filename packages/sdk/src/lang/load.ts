@@ -2,7 +2,7 @@ import { parse as parseYaml } from 'yaml';
 
 import { ABILITIES, effectRank, type AbilityDef } from './abilities';
 import { compile, ExprError, templateExprs } from './expr';
-import { manifestSchema, testSchema, toolSchema, viewSchema, type Manifest, type StepDoc, type TestDoc, type ToolDoc, type ViewDoc } from './schema';
+import { manifestSchema, sharedSchema, testSchema, toolSchema, viewSchema, type Manifest, type StepDoc, type TestDoc, type ToolDoc, type ViewDoc } from './schema';
 
 /**
  * Load and validate a plugin document (docs/PLUGIN-LANGUAGE.md §3–§6): `PLUGIN.md` (YAML
@@ -234,6 +234,18 @@ export async function loadDocument(read: ReadFile): Promise<PluginDocument> {
   const manifest = parsed.data;
   const issues: string[] = [];
 
+  // Shared constants/functions: merged into every tool (the tool's own definitions win).
+  let shared: { constants?: Record<string, unknown>; functions?: Record<string, string> } = {};
+  if (manifest.shared) {
+    try {
+      const sh = sharedSchema.safeParse(yaml(await get(manifest.shared), manifest.shared));
+      if (sh.success) shared = sh.data;
+      else issues.push(...zodIssues(manifest.shared, sh.error));
+    } catch (e) {
+      issues.push(e instanceof PluginDocError ? e.message : `${manifest.shared}: ${(e as Error).message}`);
+    }
+  }
+
   const tools: Record<string, ToolDoc> = {};
   const toolNames = new Set(Object.keys(manifest.tools ?? {}));
   for (const [name, ref] of Object.entries(manifest.tools ?? {})) {
@@ -252,8 +264,13 @@ export async function loadDocument(read: ReadFile): Promise<PluginDocument> {
       issues.push(...zodIssues(file, t.error));
       continue;
     }
-    tools[name] = t.data;
-    issues.push(...validateTool(manifest, file, t.data, toolNames));
+    const tool: ToolDoc = {
+      ...t.data,
+      constants: shared.constants || t.data.constants ? { ...shared.constants, ...t.data.constants } : undefined,
+      functions: shared.functions || t.data.functions ? { ...shared.functions, ...t.data.functions } : undefined,
+    };
+    tools[name] = tool;
+    issues.push(...validateTool(manifest, file, tool, toolNames));
   }
 
   const views = async (kind: 'widgets' | 'screens') => {

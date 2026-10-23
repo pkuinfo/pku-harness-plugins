@@ -1,0 +1,35 @@
+# sort: site keeps the portal order.
+tool: crowd
+input:
+  name: 家园
+  sort: site
+now: 2026-10-21 09:53
+responses:
+  - match: retrCarteenInfos.do
+    file: crowd.json
+expect:
+  time: 2026-10-21 09:52
+  canteens:
+    - name: 家园一层
+      diners: 73
+      seats: 1260
+      percent: 6
+      level: 空闲
+    - name: 家园二层
+      diners: 43
+      seats: 1250
+      percent: 3
+      level: 空闲
+    - name: 家园三层
+      diners: 34
+      seats: 865
+      percent: 4
+      level: 空闲
+    - name: 家园四层
+      diners: 18
+      seats: 760
+      percent: 2
+      level: 空闲
+  source:
+    title: 校内信息门户·食堂就餐人数（公开查询）
+    url: https://portal.pku.edu.cn/publicQuery/#/canteen

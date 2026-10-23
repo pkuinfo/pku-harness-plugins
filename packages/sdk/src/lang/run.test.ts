@@ -217,6 +217,21 @@ return: data
   });
 });
 
+describe('shared file and trimmed input', () => {
+  test('tools see shared constants/functions; their own win; trim', async () => {
+    const d = await doc({
+      'PLUGIN.md': md('shared: shared.yaml\ntools:\n  a: tools/a.yaml\n  b: tools/b.yaml'),
+      'shared.yaml': 'constants:\n  N: 2\n  NAME: shared\nfunctions:\n  twice: "(x) => x * N"\n',
+      'tools/a.yaml': 'title: A\ndescription: Uses shared.\neffect: read\ninput:\n  s: { type: string, trim: true, max: 3 }\nreturn: "{ v: twice(3), name: NAME, s: input.s }"\n',
+      'tools/b.yaml': 'title: B\ndescription: Overrides.\neffect: read\nconstants:\n  NAME: own\nreturn: NAME\n',
+    });
+    const { env } = replayEnv(d, []);
+    const { inputZod } = await import('./compile');
+    expect(await runTool(env, 'a', inputZod(d.tools.a!.input).parse({ s: '  ab  ' }) as never)).toEqual({ v: 6, name: 'shared', s: 'ab' });
+    expect(await runTool(env, 'b', {})).toBe('own');
+  });
+});
+
 describe('host injection (cloud server)', () => {
   test('secrets only inside request templates; server abilities; no campus', async () => {
     const d = await doc({

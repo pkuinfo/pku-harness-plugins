@@ -1,0 +1,31 @@
+# Name filter (trimmed) plus the announced closure for 勺园; most crowded first.
+tool: crowd
+input:
+  name: " 勺园 "
+  sort: most
+now: 2026-10-21 09:53
+responses:
+  - match: retrCarteenInfos.do
+    file: crowd.json
+expect:
+  time: 2026-10-21 09:52
+  canteens:
+    - name: 勺园一层
+      diners: 1
+      seats: 542
+      percent: 0
+      level: 空闲
+    - name: 勺园二层
+      diners: 0
+      seats: 532
+      percent: 0
+      level: 空闲
+  updates:
+    - canteen: 勺园食堂
+      status: closed
+      detail: 后厨改造，2026 年秋季学期起暂停营业，工期预计半年，恢复时间另行通知；部分服务项目迁入艺园食堂一层。
+      date: 2026-08-17
+      source: https://cyzx.pku.edu.cn/tzgg/faff32055b2b47a4aa8b8d18c8acb3a5.htm
+  source:
+    title: 校内信息门户·食堂就餐人数（公开查询）
+    url: https://portal.pku.edu.cn/publicQuery/#/canteen

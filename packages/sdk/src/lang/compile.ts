@@ -49,7 +49,7 @@ function fieldZod(f: FieldDef): z.ZodType {
         t = z.record(z.string(), z.unknown());
         break;
       default: {
-        let s = z.string();
+        let s = f.trim ? z.string().trim() : z.string();
         if (f.min !== undefined) s = s.min(f.min);
         if (f.max !== undefined) s = s.max(f.max);
         if (f.pattern) s = s.regex(new RegExp(f.pattern));

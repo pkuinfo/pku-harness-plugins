@@ -1,0 +1,42 @@
+# Page without the table: snapshot, saying why.
+tool: hours
+input:
+  canteen: 勺园
+now: 2026-10-23 12:10
+responses:
+  - match: /fwzn/
+    body: <html><body>改版了</body></html>
+expect:
+  venues:
+    - canteen: 勺园食堂
+      area: 一层
+      meals:
+        breakfast: 6:45-8:30
+        lunch: 11:00-13:30（周六日闭餐时间为13:00）
+        dinner: 17:00-19:00
+    - canteen: 勺园食堂
+      area: 二层
+      meals:
+        breakfast: null
+        lunch: 11:00-13:30（周六日闭餐时间为13:00）
+        dinner: 17:00-19:00
+    - canteen: 勺园食堂
+      area: 教师餐厅
+      meals:
+        breakfast: null
+        lunch: 11:00-13:30
+        dinner: 17:00-19:00
+  updates:
+    - canteen: 勺园食堂
+      status: closed
+      detail: 后厨改造，2026 年秋季学期起暂停营业，工期预计半年，恢复时间另行通知；部分服务项目迁入艺园食堂一层。
+      date: 2026-08-17
+      source: https://cyzx.pku.edu.cn/tzgg/faff32055b2b47a4aa8b8d18c8acb3a5.htm
+  hoursUpdated: 2022-09-09
+  origin: snapshot
+  fetchError: 餐饮中心页面里没找到开闭餐时间表，网站可能已改版
+  source:
+    title: 食堂开闭餐时间（北京大学餐饮中心·服务指南）
+    url: https://cyzx.pku.edu.cn/fwzn/74317312d14a4988bc38eff6f5c8b851.htm
+    published: 2022-09-09
+    checked: 2026-10-21

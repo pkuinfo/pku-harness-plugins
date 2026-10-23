@@ -1,0 +1,18 @@
+# Constants and functions every tool of this plugin sees (PLUGIN.md shared:).
+constants:
+  UPDATES:
+    - canteen: 勺园食堂
+      status: closed
+      detail: 后厨改造，2026 年秋季学期起暂停营业，工期预计半年，恢复时间另行通知；部分服务项目迁入艺园食堂一层。
+      date: 2026-08-17
+      source: https://cyzx.pku.edu.cn/tzgg/faff32055b2b47a4aa8b8d18c8acb3a5.htm
+    - canteen: 艺园食堂
+      status: open
+      detail: 2026 年 9 月 10 日早餐起恢复营业（勺园部分服务迁入）。
+      hours: 早餐 7:00-9:00，午餐 11:00-13:00，晚餐 17:00-19:00
+      date: 2026-09-07
+      source: https://cyzx.pku.edu.cn/tzgg/9c8ea2435e134d4bad0a5f0f1b62eb8f.htm
+  DESKTOP_UA: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36
+functions:
+  updatesFor: (name) => UPDATES.filter(u => !name || u.canteen.includes(name) || name.includes(replace(u.canteen, '食堂$', '')))
+  httpMsg: (m) => replace(m, '^HTTP (\d+) from (\S+)$', '$2 返回 HTTP $1')

@@ -1,0 +1,150 @@
+# 餐饮中心「食堂开闭餐时间」table (cyzx.pku.edu.cn/fwzn/74317312….htm), rowspan/colspan layout:
+# 食堂 | 区域 | 早餐 | 午餐 | 晚餐; a cell spanning meals = one continuous opening, a cell spanning
+# all three meals that is not a time = a note. Cached a day in KV; on failure the last good copy,
+# then the bundled snapshot (HOURS_SNAPSHOT), saying which one was used.
+#
+# The grid is built here (not with tableRows) because the parser needs cell *identity*: two
+# adjacent cells with the same text are not one spanning cell.
+title: 开闭餐时间
+description: >-
+  Opening hours per canteen and counter (早餐/午餐/晚餐 as published; continuous = one opening spanning those meals), notes, announced closures, the page date and whether it came from the live page, the cache or the bundled snapshot.
+effect: read
+input:
+  canteen: { type: string, optional: true, max: 20, description: 'only canteens whose name contains this, e.g. "家园"' }
+constants:
+  HOURS_SOURCE: { "title": "食堂开闭餐时间（北京大学餐饮中心·服务指南）", "url": "https://cyzx.pku.edu.cn/fwzn/74317312d14a4988bc38eff6f5c8b851.htm", "published": "2022-09-09", "checked": "2026-10-21" }
+  DAY_MS: 86400000
+  MEALS: [ breakfast, lunch, dinner ]
+  TIME_RANGE: '(\d{1,2}):(\d{2})\s*[-–—~至]\s*(\d{1,2}):(\d{2})'
+  # Bundled copy of the table (page dated 2022-09-09, taken 2026-10-21): fallback when cyzx.pku.edu.cn can't be reached.
+  HOURS_SNAPSHOT:
+    - { "canteen": "学一食堂", "area": null, "meals": { "breakfast": "6:50-8:30（值班餐至9:00）", "lunch": "11:00-13:00（值班餐至13:30）", "dinner": "17:00-18:30（值班餐至19:00）" }, "notes": [ "值班餐均在中厅档口开放，不含节假日" ] }
+    - { "canteen": "家园食堂", "area": "一层", "meals": { "breakfast": "7:00-10:00", "lunch": "11:00-13:00（值班餐至13:30）", "dinner": "17:00-19:00" } }
+    - { "canteen": "家园食堂", "area": "二层", "meals": { "breakfast": null, "lunch": "11:00-13:30", "dinner": "17:00-19:00" } }
+    - { "canteen": "家园食堂", "area": "三层/四层（小北面包房）", "meals": { "breakfast": "10:00-22:00", "lunch": "10:00-22:00", "dinner": "10:00-22:00" }, "continuous": [ [ "breakfast", "lunch", "dinner" ] ] }
+    - { "canteen": "家园食堂", "area": "四层渝火锅", "meals": { "breakfast": null, "lunch": "11:00-22:00", "dinner": "11:00-22:00" }, "continuous": [ [ "lunch", "dinner" ] ] }
+    - { "canteen": "家园食堂", "area": "咖啡厅（地下一层）", "meals": { "breakfast": "7:00-23:00", "lunch": "7:00-23:00", "dinner": "7:00-23:00" }, "continuous": [ [ "breakfast", "lunch", "dinner" ] ] }
+    - { "canteen": "学五食堂", "area": "面食、西餐、米粉、二层快餐", "meals": { "breakfast": "7:00-21:30", "lunch": "7:00-21:30", "dinner": "7:00-21:30" }, "continuous": [ [ "breakfast", "lunch", "dinner" ] ] }
+    - { "canteen": "学五食堂", "area": "中式快餐 快餐小吃", "meals": { "breakfast": null, "lunch": "10:00-21:30", "dinner": "10:00-21:30" }, "continuous": [ [ "lunch", "dinner" ] ] }
+    - { "canteen": "学五食堂", "area": "麻辣烫", "meals": { "breakfast": null, "lunch": "10:00-22:30", "dinner": "10:00-22:30" }, "continuous": [ [ "lunch", "dinner" ] ] }
+    - { "canteen": "燕南美食", "area": "一层", "meals": { "breakfast": "6:50-9:00", "lunch": "11:00-13:00", "dinner": "17:00-19:00" } }
+    - { "canteen": "燕南美食", "area": "B1", "meals": { "breakfast": null, "lunch": "11:00-13:00", "dinner": "17:00-19:00" } }
+    - { "canteen": "燕南美食", "area": "咖啡厅", "meals": { "breakfast": "7:30-22:00", "lunch": "7:30-22:00", "dinner": "7:30-22:00" }, "continuous": [ [ "breakfast", "lunch", "dinner" ] ] }
+    - { "canteen": "艺园二楼", "area": null, "meals": { "breakfast": null, "lunch": "11:00-14:00", "dinner": "17:00-24:00" } }
+    - { "canteen": "勺园食堂", "area": "一层", "meals": { "breakfast": "6:45-8:30", "lunch": "11:00-13:30（周六日闭餐时间为13:00）", "dinner": "17:00-19:00" } }
+    - { "canteen": "勺园食堂", "area": "二层", "meals": { "breakfast": null, "lunch": "11:00-13:30（周六日闭餐时间为13:00）", "dinner": "17:00-19:00" } }
+    - { "canteen": "勺园食堂", "area": "教师餐厅", "meals": { "breakfast": null, "lunch": "11:00-13:30", "dinner": "17:00-19:00" } }
+    - { "canteen": "松林快餐", "area": null, "meals": { "breakfast": "6:30-14:00", "lunch": "6:30-14:00", "dinner": "16:00-21:30" }, "continuous": [ [ "breakfast", "lunch" ] ] }
+    - { "canteen": "农园食堂", "area": "一层", "meals": { "breakfast": null, "lunch": "11:00-13:00", "dinner": "17:00-19:00" } }
+    - { "canteen": "农园食堂", "area": "二层", "meals": { "breakfast": "7:00-8:30", "lunch": "11:00-13:00", "dinner": "17:00-19:00" } }
+    - { "canteen": "农园食堂", "area": "三层", "meals": { "breakfast": null, "lunch": "11:00-14:00", "dinner": "17:00-21:00" } }
+    - { "canteen": "佟园食堂", "area": null, "meals": { "breakfast": "7:00-9:00", "lunch": "11:00-13:00", "dinner": "17:00-22:00" }, "notes": [ "假期期间，晚餐时段为17:00-20:00" ] }
+    - { "canteen": "中关园食堂", "area": null, "meals": { "breakfast": "7:00-8:30", "lunch": "10:50-13:30", "dinner": "16:50-19:00" } }
+    - { "canteen": "畅春园食堂", "area": "一层", "meals": { "breakfast": "6:50-8:30", "lunch": "11:00-13:30", "dinner": "17:00-19:00" } }
+    - { "canteen": "畅春园食堂", "area": "三层", "meals": { "breakfast": null, "lunch": "11:00-14:00", "dinner": "17:00-21:00" } }
+    - { "canteen": "成府园食堂", "area": null, "meals": { "breakfast": "7:00-9:00", "lunch": "11:00-13:00", "dinner": "17:00-19:00" } }
+    - { "canteen": "馨园食堂", "area": null, "meals": { "breakfast": "7:00-9:00", "lunch": "11:00-13:00", "dinner": "17:00-19:00" } }
+    - { "canteen": "昌平200号食堂", "area": null, "meals": { "breakfast": "7:00-8:30", "lunch": "11:00-12:30", "dinner": "17:00-18:30" } }
+    - { "canteen": "移动餐车", "area": null, "meals": { "breakfast": null, "lunch": "11:00-13:00", "dinner": "17:00-19:00" } }
+functions:
+  # The TS plugin's squash: collapse whitespace, no space around full-width brackets.
+  tsquash: "(s) => replace(replace(squash(s), '\\s*（\\s*', '（'), '\\s*）', '）')"
+  cellsOf: |
+    (tr, r) => select(tr, 'td, th').map((td, k) => ({
+      text: tsquash(td.text),
+      id: r + '-' + k,
+      row: r,
+      rs: max(1, num(td.attr('rowspan')) || 1),
+      cs: max(1, num(td.attr('colspan')) || 1),
+    }))
+  # One grid column: inside the current cell's colspan, else a cell carried down by a rowspan,
+  # else the next cell of this row.
+  place: |
+    (a, c, tds, carry, r) =>
+      a.fill > c ? { ...a, cells: [...a.cells, a.cur] }
+      : carry[c] && carry[c].until >= r ? { ...a, cells: [...a.cells, carry[c].cell] }
+      : a.k < tds.length ? { k: a.k + 1, fill: c + tds[a.k].cs, cur: tds[a.k], cells: [...a.cells, tds[a.k]] }
+      : { ...a, cells: [...a.cells, null] }
+  placeRow: |
+    (st, tds, r) => withRow(st, r, trimRow(range(0, st.carry.length + sum(tds, t => t.cs)).reduce((a, c) => place(a, c, tds, st.carry, r), { k: 0, fill: 0, cur: null, cells: [] }).cells))
+  # Drop trailing empty columns (the TS grid's row length is its last filled column + 1).
+  trimRow: "(cells) => cells.slice(0, cells.reduce((n, x, i) => x ? i + 1 : n, 0))"
+  # Cells with rowspan > 1 are carried down into the rows they cover.
+  withRow: |
+    (st, r, cells) => {
+      carry: range(0, max(st.carry.length, cells.length)).map(c => cells[c] && cells[c].row == r && cells[c].rs > 1 ? { cell: cells[c], until: r + cells[c].rs - 1 } : st.carry[c] ?? null),
+      rows: [...st.rows, cells],
+    }
+  grid: "(table) => select(table, 'tr').reduce((st, tr, r) => placeRow(st, cellsOf(tr, r), r), { carry: [], rows: [] }).rows"
+  addNote: "(venues, text) => [...venues.slice(0, -1), { ...venues[venues.length - 1], notes: [...(venues[venues.length - 1].notes ?? []), text] }]"
+  meal: "(t) => !t || t == '/' ? null : t"
+  # Runs of one cell across meal columns → [['lunch', 'dinner']] (only when that meal is served).
+  continuousOf: |
+    (cells, meals) => runs(cells, range(0, 3).filter(k => k == 0 || cells[k].id != cells[k - 1].id))
+      .filter(x => x.e > x.k && meals[MEALS[x.k]])
+      .map(x => MEALS.slice(x.k, x.e + 1))
+  runs: "(cells, starts) => starts.map((k, j) => ({ k, e: j + 1 < starts.length ? starts[j + 1] - 1 : 2 }))"
+  venueOf: |
+    (canteen, area, cells, meals) => ({ canteen, area, meals, ...(continuousOf(cells, meals).length ? { continuous: continuousOf(cells, meals) } : {}) })
+  mealsOf: "(cells) => ({ breakfast: meal(cells[0].text), lunch: meal(cells[1].text), dinner: meal(cells[2].text) })"
+  step: |
+    (st, row) => !row || row.length < 5 || !row[0]?.text ? st : stepRow(st, row[0].text, row[1] && row[1].id != row[0].id ? row[1].text : null, row.slice(2, 5), st.venues[st.venues.length - 1])
+  # A notes row (one cell over all three meals that is not a time, "值班餐均在中厅档口开放…")
+  # attaches to the canteen above; so does 佟园's second row (its breakfast cell spans two rows,
+  # the other cells of the second row are a note).
+  stepRow: |
+    (st, canteen, area, cells, prev) =>
+      cells.length < 3 || cells.some(c => !c) ? st
+      : cells[0].id == cells[1].id && cells[1].id == cells[2].id && !test(cells[0].text, TIME_RANGE)
+        ? (prev && prev.canteen == canteen ? { ...st, venues: addNote(st.venues, cells[0].text) } : st)
+      : prev && prev.canteen == canteen && area == null && cells[1].id == cells[2].id && cells[0].id == st.lastBreakfast
+        ? { ...st, venues: addNote(st.venues, cells[1].text) }
+      : { venues: [...st.venues, venueOf(canteen, area, cells, mealsOf(cells))], lastBreakfast: cells[0].id }
+  parseVenues: "(table) => grid(table).slice(1).reduce(step, { venues: [], lastBreakfast: null }).venues"
+steps:
+  - let: canteen
+    value: "trim(input.canteen ?? '')"
+  - let: cached
+    kv: get
+    key: hours
+  - let: hours
+    value: "cached && now - cached.at < DAY_MS ? { venues: cached.venues, updated: cached.updated, origin: 'cache' } : null"
+  - if: "!hours"
+    then:
+      - try:
+          - let: page
+            request:
+              url: ${HOURS_SOURCE.url}
+              headers: { accept-language: 'zh-CN,zh;q=0.9', user-agent: '${DESKTOP_UA}' }
+              timeout: 15s
+            as: html
+          - let: table
+            value: "select(page, 'table').find(t => test(t.text, '食堂名称') && test(t.text, '早餐'))"
+          - check: table
+            error: 餐饮中心页面里没找到开闭餐时间表，网站可能已改版
+          - let: venues
+            value: parseVenues(table)
+          - check: venues.length > 0
+            error: 开闭餐时间表是空的，网站可能已改版
+          - let: updated
+            value: "match(page.rawText, '日期[：:]\\s*(\\d{4}-\\d{2}-\\d{2})', 1)"
+          - kv: set
+            key: hours
+            value: "{ at: now, updated, venues }"
+          - let: hours
+            value: "{ venues, updated, origin: 'live' }"
+        catch:
+          - let: hours
+            value: |
+              cached
+                ? { venues: cached.venues, updated: cached.updated, origin: 'cache', error: httpMsg(error.message) }
+                : { venues: HOURS_SNAPSHOT, updated: HOURS_SOURCE.published, origin: 'snapshot', error: httpMsg(error.message) }
+return: |
+  {
+    venues: hours.venues.filter(v => !canteen || v.canteen.includes(canteen) || (v.area ?? '').includes(canteen)),
+    updates: updatesFor(canteen),
+    hoursUpdated: hours.updated,
+    origin: hours.origin,
+    ...(hours.error ? { fetchError: hours.error } : {}),
+    source: HOURS_SOURCE,
+  }

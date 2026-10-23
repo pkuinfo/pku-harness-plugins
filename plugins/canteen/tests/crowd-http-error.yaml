@@ -1,0 +1,7 @@
+# HTTP errors read as in the TS plugin.
+tool: crowd
+responses:
+  - match: retrCarteenInfos.do
+    status: 502
+    body: bad gateway
+expectError: portal.pku.edu.cn 返回 HTTP 502

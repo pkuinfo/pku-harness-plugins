@@ -1,0 +1,135 @@
+# Default: every canteen, least crowded first; 松林 over capacity carries the portal warning.
+tool: crowd
+now: 2026-10-21 09:53
+responses:
+  - match: retrCarteenInfos.do
+    file: crowd.json
+expect:
+  time: 2026-10-21 09:52
+  canteens:
+    - name: 勺园一层
+      diners: 1
+      seats: 542
+      percent: 0
+      level: 空闲
+    - name: 勺园二层
+      diners: 0
+      seats: 532
+      percent: 0
+      level: 空闲
+    - name: 万柳食堂
+      diners: 0
+      seats: 354
+      percent: 0
+      level: 空闲
+    - name: 畅春园二层
+      diners: 3
+      seats: 184
+      percent: 2
+      level: 空闲
+    - name: 家园四层
+      diners: 18
+      seats: 760
+      percent: 2
+      level: 空闲
+    - name: 家园二层
+      diners: 43
+      seats: 1250
+      percent: 3
+      level: 空闲
+    - name: 农园二层
+      diners: 30
+      seats: 764
+      percent: 4
+      level: 空闲
+    - name: 佟园餐厅
+      diners: 4
+      seats: 96
+      percent: 4
+      level: 空闲
+    - name: 成府园食堂
+      diners: 7
+      seats: 200
+      percent: 4
+      level: 空闲
+    - name: 家园三层
+      diners: 34
+      seats: 865
+      percent: 4
+      level: 空闲
+    - name: 畅春园三层
+      diners: 9
+      seats: 168
+      percent: 5
+      level: 空闲
+    - name: 教师之家
+      diners: 10
+      seats: 160
+      percent: 6
+      level: 空闲
+    - name: 农园三层
+      diners: 11
+      seats: 200
+      percent: 6
+      level: 空闲
+    - name: 家园一层
+      diners: 73
+      seats: 1260
+      percent: 6
+      level: 空闲
+    - name: 燕南美食
+      diners: 34
+      seats: 456
+      percent: 7
+      level: 空闲
+    - name: 中关园食堂
+      diners: 14
+      seats: 214
+      percent: 7
+      level: 空闲
+    - name: 畅春园一层
+      diners: 15
+      seats: 196
+      percent: 8
+      level: 空闲
+    - name: 农园一层
+      diners: 67
+      seats: 782
+      percent: 9
+      level: 空闲
+    - name: 学一食堂
+      diners: 45
+      seats: 430
+      percent: 10
+      level: 空闲
+    - name: 学五食堂
+      diners: 85
+      seats: 520
+      percent: 16
+      level: 空闲
+    - name: 燕南地下
+      diners: 44
+      seats: 152
+      percent: 29
+      level: 空闲
+    - name: 松林食堂
+      diners: 88
+      seats: 45
+      percent: 196
+      level: 拥挤
+      warning: ">100%"
+  updates:
+    - canteen: 勺园食堂
+      status: closed
+      detail: 后厨改造，2026 年秋季学期起暂停营业，工期预计半年，恢复时间另行通知；部分服务项目迁入艺园食堂一层。
+      date: 2026-08-17
+      source: https://cyzx.pku.edu.cn/tzgg/faff32055b2b47a4aa8b8d18c8acb3a5.htm
+    - canteen: 艺园食堂
+      status: open
+      detail: 2026 年 9 月 10 日早餐起恢复营业（勺园部分服务迁入）。
+      hours: 早餐 7:00-9:00，午餐 11:00-13:00，晚餐 17:00-19:00
+      date: 2026-09-07
+      source: https://cyzx.pku.edu.cn/tzgg/9c8ea2435e134d4bad0a5f0f1b62eb8f.htm
+  source:
+    title: 校内信息门户·食堂就餐人数（公开查询）
+    url: https://portal.pku.edu.cn/publicQuery/#/canteen

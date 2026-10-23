@@ -1,0 +1,7 @@
+# Site down, nothing cached.
+tool: notices
+responses:
+  - match: /tzgg/
+    status: 502
+    body: bad gateway
+expectError: cyzx.pku.edu.cn 返回 HTTP 502

@@ -35,6 +35,8 @@ export type FieldDef = {
   min?: number;
   max?: number;
   pattern?: string;
+  /** Strings: trim before validating (like zod .trim()). */
+  trim?: boolean;
   items?: FieldDef;
 };
 export const fieldSchema: z.ZodType<FieldDef> = z.lazy(() =>
@@ -48,6 +50,7 @@ export const fieldSchema: z.ZodType<FieldDef> = z.lazy(() =>
       min: z.number().optional(),
       max: z.number().optional(),
       pattern: z.string().max(300).optional(),
+      trim: z.boolean().optional(),
       items: fieldSchema.optional(),
     })
     .strict(),
@@ -72,6 +75,14 @@ export const toolSchema = z
   })
   .strict();
 export type ToolDoc = z.infer<typeof toolSchema>;
+
+/** The `shared:` file: constants and functions merged into every tool. */
+export const sharedSchema = z
+  .object({
+    constants: z.record(z.string().regex(/^[A-Za-z_$][A-Za-z0-9_$]*$/), z.unknown()).optional(),
+    functions: z.record(z.string().regex(/^[A-Za-z_$][A-Za-z0-9_$]*$/), z.string()).optional(),
+  })
+  .strict();
 
 const i18nToolSchema = z.object({ title: z.string() }).partial();
 export const translationSchema = z
@@ -103,6 +114,8 @@ export const manifestSchema = z
     campus: z.array(z.string().regex(/^[a-z][a-z0-9-]{1,30}$/)).optional(),
     network: z.array(z.string().regex(/^(\*\.)?[a-z0-9-]+(\.[a-z0-9-]+)+$/i, 'a host like example.com or *.example.com')).optional(),
     abilities: z.array(abilitySchema).optional(),
+    /** A YAML file of `constants` and `functions` every tool sees (a tool's own win). */
+    shared: relPathSchema.optional(),
     tools: z.record(toolNameSchema, z.union([relPathSchema, toolSchema])).optional(),
     dataSources: z.record(z.string(), z.object({ title: z.string().optional(), tool: toolNameSchema, args: z.record(z.string(), z.unknown()).optional(), ttl: durationSchema }).strict()).optional(),
     widgets: z.record(z.string().regex(/^[a-zA-Z][\w-]{0,39}$/), relPathSchema).optional(),

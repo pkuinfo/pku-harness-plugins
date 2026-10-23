@@ -1,0 +1,48 @@
+# Cached less than a day ago: no request.
+tool: hours
+now: 2026-10-23 12:10
+kv:
+  doc:hours:
+    v:
+      at: 1792717200000
+      updated: 2022-09-09
+      venues:
+        - canteen: 学五食堂
+          area: 麻辣烫
+          meals:
+            breakfast: null
+            lunch: 10:00-22:30
+            dinner: 10:00-22:30
+          continuous:
+            - - lunch
+              - dinner
+expect:
+  venues:
+    - canteen: 学五食堂
+      area: 麻辣烫
+      meals:
+        breakfast: null
+        lunch: 10:00-22:30
+        dinner: 10:00-22:30
+      continuous:
+        - - lunch
+          - dinner
+  updates:
+    - canteen: 勺园食堂
+      status: closed
+      detail: 后厨改造，2026 年秋季学期起暂停营业，工期预计半年，恢复时间另行通知；部分服务项目迁入艺园食堂一层。
+      date: 2026-08-17
+      source: https://cyzx.pku.edu.cn/tzgg/faff32055b2b47a4aa8b8d18c8acb3a5.htm
+    - canteen: 艺园食堂
+      status: open
+      detail: 2026 年 9 月 10 日早餐起恢复营业（勺园部分服务迁入）。
+      hours: 早餐 7:00-9:00，午餐 11:00-13:00，晚餐 17:00-19:00
+      date: 2026-09-07
+      source: https://cyzx.pku.edu.cn/tzgg/9c8ea2435e134d4bad0a5f0f1b62eb8f.htm
+  hoursUpdated: 2022-09-09
+  origin: cache
+  source:
+    title: 食堂开闭餐时间（北京大学餐饮中心·服务指南）
+    url: https://cyzx.pku.edu.cn/fwzn/74317312d14a4988bc38eff6f5c8b851.htm
+    published: 2022-09-09
+    checked: 2026-10-21

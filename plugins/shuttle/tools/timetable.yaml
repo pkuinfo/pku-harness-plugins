@@ -1,0 +1,29 @@
+# The whole static timetable (see next.yaml for where it comes from; keep the two copies of the
+# tables identical).
+title: 校车时刻表
+description: Full timetables (weekday and weekend/holiday) grouped by direction, with boarding spots, booking rules, fares, notes and the source URL + publish date of each line.
+effect: read
+input:
+  dayType: { enum: [ weekday, holiday ], optional: true, description: only this table; default both }
+  line: { enum: [ commute, beianhe ], optional: true, description: 'commute = 燕园—新燕园通勤班车, beianhe = 新燕园—北安河快速公交' }
+functions:
+  direction: "(trip) => AREA_NAMES[STOPS[trip.stops[0].stop].area] + '→' + AREA_NAMES[STOPS[trip.stops[trip.stops.length - 1].stop].area]"
+  # Later stops with a published time show it: 200号校园→新燕园校区(16:50)→…
+  route: "(trip) => trip.stops.map((s, k) => STOPS[s.stop].name + (s.time && k > 0 ? '(' + s.time + ')' : '')).join('→')"
+  # One day type's runs grouped by line and direction (in timetable order), each group by time.
+  groups: |
+    (dayType, line) => values(groupBy(
+      TRIPS.filter(t => t.days == dayType && (!line || t.line == line)),
+      t => t.line + ':' + direction(t),
+    )).map(g => ({
+      direction: direction(g[0]),
+      line: LINES[g[0].line].name,
+      runs: sortBy(g.map(t => ({ time: t.stops[0].time, route: route(t) })), r => r.time),
+    }))
+return: |
+  {
+    today: formatDate(now, 'YYYY-MM-DD HH:mm'),
+    tables: (input.dayType ? [input.dayType] : ['weekday', 'holiday']).map(d => ({ dayType: d, groups: groups(d, input.line) })),
+    stops: values(STOPS).map(s => ({ name: s.name, where: s.where })),
+    lines: values(LINES).filter(l => !input.line || l.id == input.line).map(l => ({ name: l.name, operator: l.operator, fare: l.fare, booking: l.booking, notes: l.notes, source: l.source })),
+  }

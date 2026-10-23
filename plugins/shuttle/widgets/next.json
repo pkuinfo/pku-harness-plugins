@@ -1,0 +1,74 @@
+{
+  "title": "下一班校车",
+  "description": "燕园⇄新燕园通勤班车两个方向的下一班（倒计时），按内置时刻表每分钟刷新，无需联网。",
+  "sizes": ["sm", "md", "lg"],
+  "defaultSize": "md",
+  "bindings": {
+    "/next": { "tool": "next", "args": { "count": 2 }, "ttlMinutes": 1 }
+  },
+  "spec": {
+    "root": "root",
+    "elements": {
+      "root": { "type": "Column", "props": { "gap": "md" }, "children": ["toX", "toY", "footnote"] },
+
+      "toX": { "type": "Column", "props": { "gap": "sm" }, "children": ["toXLabel", "toXList", "toXNone"] },
+      "toXLabel": { "type": "Text", "props": { "text": "燕园 → 新燕园", "tone": "muted", "size": "small" } },
+      "toXList": {
+        "type": "Column",
+        "props": { "gap": "sm" },
+        "repeat": { "statePath": "/next/directions/0/departures", "key": "inMinutes" },
+        "children": ["toXRun"]
+      },
+      "toXRun": {
+        "type": "ListItem",
+        "props": {
+          "title": { "$item": "time" },
+          "subtitle": null,
+          "value": {
+            "$cond": { "$item": "inMinutes", "lt": 1 },
+            "$then": "即将发车",
+            "$else": { "$cond": { "$item": "inMinutes", "lt": 180 }, "$then": { "$template": "${inMinutes} 分钟后" }, "$else": { "$item": "weekday" } }
+          },
+          "icon": "clock"
+        },
+        "on": { "press": { "action": "ask", "params": { "text": "燕园到新燕园的下一班校车" } } }
+      },
+      "toXNone": {
+        "type": "Text",
+        "props": { "text": "今明两天没有班次", "tone": "muted", "size": "small" },
+        "visible": [{ "$state": "/next" }, { "$state": "/next/directions/0/departures/0", "not": true }]
+      },
+
+      "toY": { "type": "Column", "props": { "gap": "sm" }, "children": ["toYLabel", "toYList", "toYNone"] },
+      "toYLabel": { "type": "Text", "props": { "text": "新燕园 → 燕园", "tone": "muted", "size": "small" } },
+      "toYList": {
+        "type": "Column",
+        "props": { "gap": "sm" },
+        "repeat": { "statePath": "/next/directions/1/departures", "key": "inMinutes" },
+        "children": ["toYRun"]
+      },
+      "toYRun": {
+        "type": "ListItem",
+        "props": {
+          "title": { "$item": "time" },
+          "subtitle": null,
+          "value": {
+            "$cond": { "$item": "inMinutes", "lt": 1 },
+            "$then": "即将发车",
+            "$else": { "$cond": { "$item": "inMinutes", "lt": 180 }, "$then": { "$template": "${inMinutes} 分钟后" }, "$else": { "$item": "weekday" } }
+          },
+          "icon": "clock"
+        },
+        "on": { "press": { "action": "ask", "params": { "text": "新燕园到燕园的下一班校车" } } }
+      },
+      "toYNone": {
+        "type": "Text",
+        "props": { "text": "今明两天没有班次", "tone": "muted", "size": "small" },
+        "visible": [{ "$state": "/next" }, { "$state": "/next/directions/1/departures/0", "not": true }]
+      },
+
+      "footnote": { "type": "Text", "props": { "text": "需在门户「新校区班车预约」预约 · 节假日按周末表", "tone": "muted", "size": "small" } }
+    },
+    "state": { "next": null }
+  }
+}

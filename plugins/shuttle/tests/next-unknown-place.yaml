@@ -1,0 +1,4 @@
+tool: next
+input: { from: 燕园, to: 五道口 }
+now: 2026-10-23 07:50
+expectError: 不认识的地点：五道口

@@ -10,7 +10,7 @@ tools as { "PLUGIN.md": "...", "tools/x.yaml": "..." }.
 
 ## PLUGIN.md frontmatter
 spec: 1 · id: kebab-case · name · description (4–200) · version: 1.0.0 · author
-optional: icon, homepage, campus: [card|its|treehole|blackboard|elective|cwfw|cwpay|bdkj|library|library-space]
+optional: icon, homepage, shared: shared.yaml ({ constants, functions } every tool sees), campus: [card|its|treehole|blackboard|elective|cwfw|cwpay|bdkj|library|library-space]
 (campus services called with the user's signed-in session), network: [host, *.host] (public
 HTTPS hosts), abilities: [verify|otp|todos|timetable|scheduler|browser|campusPage|sms|files|crypto|cloud],
 tools: { name: tools/name.yaml }, dataSources: { name: { tool, args?, ttl: 10m } },
@@ -19,7 +19,7 @@ i18n: { en: { name, description, tools: { name: { title } } } }
 
 ## Tool file (YAML)
 title (short, Chinese) · description (for the AI) · effect: read|write|money|public ·
-untrusted?: true when results carry third-party text · input: { field: { type: string|number|integer|boolean|array|object, enum?, default?, optional?, min?, max?, description? } } ·
+untrusted?: true when results carry third-party text · input: { field: { type: string|number|integer|boolean|array|object, enum?, default?, optional?, min?, max?, pattern?, trim?, description? } } ·
 constants: { NAME: data } · functions: { f: "(a, b) => expr" } · steps: [...] · return: expr
 
 ## Steps (run in order; \`let: name\` binds the result)
@@ -50,13 +50,14 @@ Every other string is a template: "text \${expr}"; exactly "\${expr}" keeps the 
 YAML: quote an expression containing ": " or starting with { [ ' " (or use a | block).
 
 stdlib (also as methods, x.f(...)):
-lists: map filter find some every flatMap reduce flat slice concat includes indexOf join reverse sort sortBy(l, f, desc) groupBy unique sum count min max range(a, b) chunk zip length compactRanges
+lists: map filter find findIndex some every flatMap reduce(l, (acc, x) => …, init) flat slice concat includes indexOf join reverse sort sortBy(l, f, desc) groupBy unique sum count min max range(a, b) chunk zip length compactRanges
 objects: keys values entries fromEntries pick omit merge
+regexes are strings; start with (?i) for case-insensitive. // and /* */ comments work inside expressions.
 strings: str trim squash lower upper split replace(s, re, with) replaceText match(s, re, group?) matchAll test startsWith endsWith padStart clip(s, n) fmt('{a}', obj)
 numbers: num(x, fallback) int round(x, digits) fixed abs floor ceil yuan(fen)
 dates (Beijing time, ms): date(text) formatDate(ms, 'YYYY-MM-DD HH:mm W') addDays addMinutes daysBetween startOfDay minutesOf('HH:mm'|ms) weekday (1=Mon)
 urls/json: url(base, path) query(url, name) encode decode json(text) path(v, 'a.b[0]')
-html: html(text, url?) select(node, css) first(node, css) node.text node.html node.attrs attr(node, name) data(node, name) children parent tableRows(node, {header}) options(select) htmlText(s) largestText(node)
+html: html(text, url?) select(node, css) first(node, css) node.text node.html node.attrs attr(node, name) data(node, name) children parent tableRows(node, {header, cells}) options(select) htmlText(s) largestText(node)
 
 ## Limits per run
 200 steps, 60 requests (4 in flight), 60 s, 2 MB per response, 1 MB result, 100 000 operations.

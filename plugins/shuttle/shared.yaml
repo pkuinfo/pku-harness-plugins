@@ -1,0 +1,479 @@
+# Constants and functions every tool of this plugin sees (PLUGIN.md shared:).
+constants:
+  AREA_NAMES:
+    yanyuan: 燕园校区
+    xinyanyuan: 新燕园校区
+    lab200: 200号校园
+    xiaojiahe: 肖家河
+    xierqi: 西二旗
+    yangfang: 阳坊
+    beianhe: 地铁北安河站
+  STOPS:
+    yanyuan:
+      id: yanyuan
+      name: 燕园校区
+      where: 金光生命科学大厦南侧
+      area: yanyuan
+    xiaojiahe:
+      id: xiaojiahe
+      name: 肖家河
+      where: 农大南路地铁站 C 口往东 20 米
+      area: xiaojiahe
+    xierqi:
+      id: xierqi
+      name: 西二旗
+      where: 上地八街与上地东路交叉口红绿灯往北 20 米
+      area: xierqi
+    xinyanyuan:
+      id: xinyanyuan
+      name: 新燕园校区
+      where: 学生公寓 5 号楼前，经停行政楼停车场
+      area: xinyanyuan
+    lab200:
+      id: lab200
+      name: 200号校园
+      where: C 座广场停车场
+      area: lab200
+    machikou:
+      id: machikou
+      name: 马池口政府中街南
+      where: 新燕园校区东门外马路东侧公交站
+      area: xinyanyuan
+    yangfang:
+      id: yangfang
+      name: 阳坊
+      where: 阳坊公交站
+      area: yangfang
+    beianhe:
+      id: beianhe
+      name: 地铁北安河站
+      where: 地铁 16 号线北安河站 D 西南出口西侧公交站
+      area: beianhe
+  LINES:
+    commute:
+      id: commute
+      name: 燕园—新燕园通勤班车
+      operator: 北京大学校园服务中心车辆管理科
+      fare: 免费（本校师生）
+      booking: 需提前在校内门户「办事大厅」→「新校区班车预约」预约（当日及未来 7 天），登车扫码签到；5 次未签到将不能预约。
+      source:
+        title: 燕园校区-新燕园校区通勤班车运行时刻表（北京大学新校区管理委员会办公室）
+        url: https://www.cpc.pku.edu.cn/info/1048/1082.htm
+        published: 2022-09-16
+        checked: 2026-10-21
+      notes:
+        - 周六、周日及节假日按「周末及节假日」时刻表运行；寒暑假期间通常也按周末及节假日时刻表运行（见新校区管委办假期安排通知）。
+        - 途经站（肖家河、西二旗）的到站时间未公布，只有始发时间。
+        - 官方时刻表为 2022 年版图片，若与预约系统显示不一致，以「新校区班车预约」为准。
+    beianhe:
+      id: beianhe
+      name: 新燕园—地铁北安河站快速公交（北京大学新燕园校区临时专线）
+      operator: 昌平公交公司
+      fare: 全程现金 4 元，刷卡刷码五折
+      booking: null
+      source:
+        title: 关于开通新燕园校区至北安河地铁快速公交线路的通知（总务部，校园服务中心、学生工作部）
+        url: https://zwb.pku.edu.cn/zbtb/xgtz/401167d650ed4e7ea5bbabea0e29ff50.htm
+        published: 2025-12-30
+        checked: 2026-10-21
+      notes:
+        - 2026 年 1 月 1 日起运营，循环往返，发车时间为预计时间，堵车可能延误。
+        - 可在微信小程序「车来了」搜索「北京大学新燕园校区临时专线」看实时到站。
+  TRIPS:
+    - line: commute
+      days: weekday
+      stops:
+        - stop: yanyuan
+          time: 07:00
+        - stop: xiaojiahe
+        - stop: xierqi
+        - stop: xinyanyuan
+        - stop: lab200
+    - line: commute
+      days: weekday
+      stops:
+        - stop: yanyuan
+          time: 07:40
+        - stop: xinyanyuan
+        - stop: lab200
+    - line: commute
+      days: weekday
+      stops:
+        - stop: yanyuan
+          time: 08:30
+        - stop: xinyanyuan
+        - stop: lab200
+    - line: commute
+      days: weekday
+      stops:
+        - stop: yanyuan
+          time: 10:10
+        - stop: xinyanyuan
+    - line: commute
+      days: weekday
+      stops:
+        - stop: yanyuan
+          time: 13:30
+        - stop: xinyanyuan
+    - line: commute
+      days: weekday
+      stops:
+        - stop: yanyuan
+          time: 16:00
+        - stop: xinyanyuan
+    - line: commute
+      days: weekday
+      stops:
+        - stop: yanyuan
+          time: 18:30
+        - stop: xinyanyuan
+    - line: commute
+      days: weekday
+      stops:
+        - stop: yanyuan
+          time: 20:40
+        - stop: xinyanyuan
+    - line: commute
+      days: weekday
+      stops:
+        - stop: yanyuan
+          time: 22:00
+        - stop: xinyanyuan
+    - line: commute
+      days: weekday
+      stops:
+        - stop: xinyanyuan
+          time: 06:30
+        - stop: yanyuan
+    - line: commute
+      days: weekday
+      stops:
+        - stop: xinyanyuan
+          time: 07:40
+        - stop: yanyuan
+    - line: commute
+      days: weekday
+      stops:
+        - stop: xinyanyuan
+          time: 08:30
+        - stop: yanyuan
+    - line: commute
+      days: weekday
+      stops:
+        - stop: xinyanyuan
+          time: 11:20
+        - stop: yanyuan
+    - line: commute
+      days: weekday
+      stops:
+        - stop: xinyanyuan
+          time: 13:00
+        - stop: yanyuan
+    - line: commute
+      days: weekday
+      stops:
+        - stop: xinyanyuan
+          time: 16:30
+        - stop: yanyuan
+    - line: commute
+      days: weekday
+      stops:
+        - stop: lab200
+          time: 16:30
+        - stop: xinyanyuan
+          time: 16:50
+        - stop: xierqi
+        - stop: xiaojiahe
+        - stop: yanyuan
+    - line: commute
+      days: weekday
+      stops:
+        - stop: lab200
+          time: 19:00
+        - stop: xinyanyuan
+          time: 19:20
+        - stop: yanyuan
+    - line: commute
+      days: weekday
+      stops:
+        - stop: xinyanyuan
+          time: 21:45
+        - stop: yanyuan
+    - line: commute
+      days: holiday
+      stops:
+        - stop: yanyuan
+          time: 07:00
+        - stop: xinyanyuan
+    - line: commute
+      days: holiday
+      stops:
+        - stop: yanyuan
+          time: 15:00
+        - stop: xinyanyuan
+    - line: commute
+      days: holiday
+      stops:
+        - stop: yanyuan
+          time: 19:00
+        - stop: xinyanyuan
+    - line: commute
+      days: holiday
+      stops:
+        - stop: yanyuan
+          time: 22:00
+        - stop: xinyanyuan
+    - line: commute
+      days: holiday
+      stops:
+        - stop: xinyanyuan
+          time: 08:00
+        - stop: yanyuan
+    - line: commute
+      days: holiday
+      stops:
+        - stop: xinyanyuan
+          time: 09:00
+        - stop: yanyuan
+    - line: commute
+      days: holiday
+      stops:
+        - stop: xinyanyuan
+          time: 11:00
+        - stop: yanyuan
+    - line: commute
+      days: holiday
+      stops:
+        - stop: xinyanyuan
+          time: 16:30
+        - stop: yanyuan
+    - line: commute
+      days: holiday
+      stops:
+        - stop: xinyanyuan
+          time: 21:45
+        - stop: yanyuan
+    - line: beianhe
+      days: weekday
+      stops:
+        - stop: machikou
+          time: 09:00
+        - stop: yangfang
+        - stop: beianhe
+    - line: beianhe
+      days: weekday
+      stops:
+        - stop: machikou
+          time: 09:30
+        - stop: yangfang
+        - stop: beianhe
+    - line: beianhe
+      days: weekday
+      stops:
+        - stop: machikou
+          time: 10:20
+        - stop: yangfang
+        - stop: beianhe
+    - line: beianhe
+      days: weekday
+      stops:
+        - stop: machikou
+          time: 10:50
+        - stop: yangfang
+        - stop: beianhe
+    - line: beianhe
+      days: weekday
+      stops:
+        - stop: machikou
+          time: 16:40
+        - stop: yangfang
+        - stop: beianhe
+    - line: beianhe
+      days: weekday
+      stops:
+        - stop: machikou
+          time: 17:30
+        - stop: yangfang
+        - stop: beianhe
+    - line: beianhe
+      days: weekday
+      stops:
+        - stop: machikou
+          time: 19:00
+        - stop: yangfang
+        - stop: beianhe
+    - line: beianhe
+      days: weekday
+      stops:
+        - stop: machikou
+          time: 21:00
+        - stop: yangfang
+        - stop: beianhe
+    - line: beianhe
+      days: holiday
+      stops:
+        - stop: machikou
+          time: 10:00
+        - stop: yangfang
+        - stop: beianhe
+    - line: beianhe
+      days: holiday
+      stops:
+        - stop: machikou
+          time: 12:00
+        - stop: yangfang
+        - stop: beianhe
+    - line: beianhe
+      days: holiday
+      stops:
+        - stop: machikou
+          time: 13:00
+        - stop: yangfang
+        - stop: beianhe
+    - line: beianhe
+      days: holiday
+      stops:
+        - stop: machikou
+          time: 14:00
+        - stop: yangfang
+        - stop: beianhe
+    - line: beianhe
+      days: holiday
+      stops:
+        - stop: machikou
+          time: 16:00
+        - stop: yangfang
+        - stop: beianhe
+    - line: beianhe
+      days: holiday
+      stops:
+        - stop: machikou
+          time: 17:20
+        - stop: yangfang
+        - stop: beianhe
+    - line: beianhe
+      days: holiday
+      stops:
+        - stop: machikou
+          time: 19:20
+        - stop: yangfang
+        - stop: beianhe
+    - line: beianhe
+      days: holiday
+      stops:
+        - stop: machikou
+          time: 20:20
+        - stop: yangfang
+        - stop: beianhe
+    - line: beianhe
+      days: weekday
+      stops:
+        - stop: beianhe
+          time: 09:40
+        - stop: yangfang
+        - stop: machikou
+    - line: beianhe
+      days: weekday
+      stops:
+        - stop: beianhe
+          time: 10:10
+        - stop: yangfang
+        - stop: machikou
+    - line: beianhe
+      days: weekday
+      stops:
+        - stop: beianhe
+          time: 11:00
+        - stop: yangfang
+        - stop: machikou
+    - line: beianhe
+      days: weekday
+      stops:
+        - stop: beianhe
+          time: 11:30
+        - stop: yangfang
+        - stop: machikou
+    - line: beianhe
+      days: weekday
+      stops:
+        - stop: beianhe
+          time: 17:20
+        - stop: yangfang
+        - stop: machikou
+    - line: beianhe
+      days: weekday
+      stops:
+        - stop: beianhe
+          time: 18:10
+        - stop: yangfang
+        - stop: machikou
+    - line: beianhe
+      days: weekday
+      stops:
+        - stop: beianhe
+          time: 19:40
+        - stop: yangfang
+        - stop: machikou
+    - line: beianhe
+      days: weekday
+      stops:
+        - stop: beianhe
+          time: 21:40
+        - stop: yangfang
+        - stop: machikou
+    - line: beianhe
+      days: holiday
+      stops:
+        - stop: beianhe
+          time: 10:40
+        - stop: yangfang
+        - stop: machikou
+    - line: beianhe
+      days: holiday
+      stops:
+        - stop: beianhe
+          time: 12:40
+        - stop: yangfang
+        - stop: machikou
+    - line: beianhe
+      days: holiday
+      stops:
+        - stop: beianhe
+          time: 13:40
+        - stop: yangfang
+        - stop: machikou
+    - line: beianhe
+      days: holiday
+      stops:
+        - stop: beianhe
+          time: 14:40
+        - stop: yangfang
+        - stop: machikou
+    - line: beianhe
+      days: holiday
+      stops:
+        - stop: beianhe
+          time: 16:40
+        - stop: yangfang
+        - stop: machikou
+    - line: beianhe
+      days: holiday
+      stops:
+        - stop: beianhe
+          time: 18:00
+        - stop: yangfang
+        - stop: machikou
+    - line: beianhe
+      days: holiday
+      stops:
+        - stop: beianhe
+          time: 20:00
+        - stop: yangfang
+        - stop: machikou
+    - line: beianhe
+      days: holiday
+      stops:
+        - stop: beianhe
+          time: 21:00
+        - stop: yangfang
+        - stop: machikou

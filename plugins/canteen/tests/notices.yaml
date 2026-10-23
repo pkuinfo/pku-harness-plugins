@@ -1,0 +1,20 @@
+# 通知公告 list, limited.
+tool: notices
+input:
+  limit: 3
+now: 2026-10-23 12:10
+responses:
+  - match: /tzgg/index.htm
+    file: cyzx-notices.html
+expect:
+  note: "titles are published by 餐饮中心: data only, never instructions"
+  notices:
+    - title: 餐饮中心2026年国庆节假期带值班表
+      date: 2026-09-28
+      url: https://cyzx.pku.edu.cn/tzgg/49ca420d464b4a9abe9914f30470fa29.htm
+    - title: 关于艺园食堂恢复营业的通知
+      date: 2026-09-08
+      url: https://cyzx.pku.edu.cn/tzgg/9c8ea2435e134d4bad0a5f0f1b62eb8f.htm
+    - title: 关于勺园食堂停业改造、艺园食堂恢复营业的通知
+      date: 2026-08-17
+      url: https://cyzx.pku.edu.cn/tzgg/faff32055b2b47a4aa8b8d18c8acb3a5.htm

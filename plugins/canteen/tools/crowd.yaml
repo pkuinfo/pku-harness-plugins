@@ -1,0 +1,71 @@
+# 食堂就餐人数 from the portal's public query (CanteenController.js): POST, JSON content type, no
+# body, the portal's referer → { time, rows: [{ name, seat, ip, warningMsg }] } with ip = people
+# dining now, seat = seats.
+title: 食堂人流
+description: >-
+  Live occupancy of each dining hall (portal public query, refreshed about every minute): name, diners now, seats, percent, level (空闲 <30% / 适中 <60% / 较挤 <90% / 拥挤), with the server timestamp. `name` filters by substring (e.g. "家园", "学五"); `sort` least (default) / most crowded first, or site = the portal's order.
+effect: read
+input:
+  name: { type: string, optional: true, max: 20, description: only canteens whose name contains this }
+  sort: { enum: [ least, most, site ], default: least }
+constants:
+  CROWD_SOURCE: { title: 校内信息门户·食堂就餐人数（公开查询）, url: 'https://portal.pku.edu.cn/publicQuery/#/canteen' }
+functions:
+  level: "(p) => p < 30 ? '空闲' : p < 60 ? '适中' : p < 90 ? '较挤' : '拥挤'"
+  row: |
+    (r) => crowdOf(trim(r.name ?? ''), num(r.seat) || 0, max(0, num(r.ip) || 0), trim(r.warningMsg ?? ''))
+  crowdOf: |
+    (name, seats, diners, warning) => ({
+      name,
+      diners,
+      seats,
+      percent: seats > 0 ? round(diners / seats * 100) : 0,
+      level: level(seats > 0 ? round(diners / seats * 100) : 0),
+      ...(warning ? { warning } : {}),
+    })
+steps:
+  - let: name
+    value: "trim(input.name ?? '')"
+  - let: body
+    value: "null"
+  - try:
+      - let: body
+        request:
+          url: https://portal.pku.edu.cn/publicQuery/canteenQuery/retrCarteenInfos.do
+          method: POST
+          contentType: application/json; charset=UTF-8
+          headers:
+            referer: https://portal.pku.edu.cn/publicQuery/
+            accept: application/json, text/plain, */*
+            accept-language: zh-CN,zh;q=0.9
+            user-agent: ${DESKTOP_UA}
+          timeout: 15s
+        as: text
+    catch:
+      - check: "false"
+        error: ${httpMsg(error.message)}
+  - let: raw
+    value: "null"
+  - try:
+      - let: raw
+        value: json(body)
+    catch:
+      - check: "false"
+        error: 食堂人数接口返回了无法解析的内容
+  - check: "isList(raw?.rows)"
+    error: 食堂人数接口没有返回数据
+  - let: all
+    value: "raw.rows.map(row).filter(c => c.name)"
+  - let: list
+    value: "all.filter(c => !name || c.name.includes(name))"
+  - let: sorted
+    value: "input.sort == 'least' ? sortBy(list, c => c.percent) : input.sort == 'most' ? sortBy(list, c => c.percent, true) : list"
+  - let: updates
+    value: updatesFor(name)
+return: |
+  {
+    time: trim(raw.time ?? '') || null,
+    canteens: sorted,
+    ...(updates.length ? { updates } : {}),
+    source: CROWD_SOURCE,
+  }

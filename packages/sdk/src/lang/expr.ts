@@ -41,6 +41,16 @@ function tokenize(src: string): Tok[] {
       i++;
       continue;
     }
+    // Comments: // to end of line, /* … */.
+    if (c === '/' && src[i + 1] === '/') {
+      while (i < src.length && src[i] !== '\n') i++;
+      continue;
+    }
+    if (c === '/' && src[i + 1] === '*') {
+      const end = src.indexOf('*/', i + 2);
+      i = end < 0 ? src.length : end + 2;
+      continue;
+    }
     if (/[0-9]/.test(c) || (c === '.' && /[0-9]/.test(src[i + 1] ?? ''))) {
       const m = /^(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?/.exec(src.slice(i))!;
       out.push({ t: 'num', v: m[0], pos: i });

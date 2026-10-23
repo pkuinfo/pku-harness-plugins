@@ -1,0 +1,103 @@
+# Next departures, computed from the static timetables below in Beijing time (UTC+8). No network:
+# PKU publishes the timetables only as an image / notice text, so they are transcribed here with
+# their source and date (re-check each semester). The same tables are in timetable.yaml: a tool
+# file's constants are its own, so keep the two copies identical.
+title: 下一班校车
+description: >-
+  Next departures (Beijing time) from → to, searching today and tomorrow: date, time, minutes until, boarding spot, route, line. Places: 燕园/本部, 新燕园/昌平, 200号, 肖家河, 西二旗, 阳坊, 北安河(地铁). Without from/to: next runs both ways between 燕园 and 新燕园. `at` = "YYYY-MM-DD HH:mm" to plan ahead. Intermediate stops (肖家河, 西二旗) have no published times: those results are marked approx and show the origin's departure.
+effect: read
+input:
+  from: { type: string, optional: true, max: 20, description: boarding place }
+  to: { type: string, optional: true, max: 20, description: destination }
+  at: { type: string, optional: true, description: 'Beijing time "YYYY-MM-DD HH:mm", default now' }
+  count: { type: integer, min: 1, max: 10, optional: true, description: 'departures per direction, default 3' }
+  dayType: { enum: [ weekday, holiday ], optional: true, description: override the table for that day (public holiday / vacation = holiday) }
+constants:
+  PLACE_HINT: 燕园/本部, 新燕园/昌平, 200号, 肖家河, 西二旗, 阳坊, 北安河(地铁)
+  AT_RE: '^(\d{4})-(\d{2})-(\d{2})[ T](\d{1,2}):(\d{2})$'
+  DAY_NAMES: [ 周日, 周一, 周二, 周三, 周四, 周五, 周六 ]
+  # User wording → stop area; first match wins. Tested against the lower-cased text (the language
+  # has no regex flags), so the Latin alternatives are written in lower case.
+  ALIASES:
+    - [ '200\s*号|二百号|昌平200|200', lab200 ]
+    - [ '新燕园|昌平|新校区|马池口|xinyanyuan|changping|new\s*campus', xinyanyuan ]
+    - [ '北安河|16号线|十六号线|bei[’'']?anhe|line\s*16', beianhe ]
+    - [ '阳坊|yangfang', yangfang ]
+    - [ '肖家河|农大南路|xiaojiahe', xiaojiahe ]
+    - [ '西二旗|上地|xi[’'']?erqi|shangdi', xierqi ]
+    - [ '燕园|本部|校本部|海淀|主校区|金光|yanyuan|main\s*campus|haidian', yanyuan ]
+functions:
+  # "YYYY-MM-DD HH:mm" (or "…THH:mm") read as Beijing time → epoch ms; null unless it round-trips
+  # (rejects 2026-02-30, 24:00…).
+  parseAt: "(s) => atMs(match(trim(s), AT_RE))"
+  atMs: "(m) => m ? sameAt(m, date(m[1] + '-' + m[2] + '-' + m[3] + ' ' + m[4] + ':' + m[5])) : null"
+  sameAt: "(m, ms) => ms != null && formatDate(ms, 'YYYY-MM-DD HH:mm') == m[1] + '-' + m[2] + '-' + m[3] + ' ' + padStart(m[4], 2, '0') + ':' + m[5] ? ms : null"
+  # Beijing wall clock of an instant; weekday 0 = Sunday … 6 = Saturday (as DAY_NAMES).
+  bj: "(ms) => ({ date: formatDate(ms, 'YYYY-MM-DD'), weekday: weekday(ms) % 7, minutes: minutesOf(ms) })"
+  # Saturday and Sunday use the 周末及节假日 table; public holidays must be passed as dayType.
+  dayTypeOf: "(wd) => wd == 0 || wd == 6 ? 'holiday' : 'weekday'"
+  resolvePlace: "(text) => trim(text) == '' ? null : ALIASES.find(a => test(lower(text), a[0]))?.[1] ?? null"
+  areaOf: "(s) => STOPS[s.stop].area"
+  # Boarding index i and alighting index j of a trip for from → to (null = origin / terminus).
+  legOf: "(trip, from, to) => legFrom(trip, from ? trip.stops.findIndex(s => areaOf(s) == from) : 0, to)"
+  legFrom: "(trip, i, to) => i < 0 || i == trip.stops.length - 1 ? null : !to ? { i, j: trip.stops.length - 1 } : legTo(i, trip.stops.findIndex((s, k) => k > i && areaOf(s) == to))"
+  legTo: "(i, j) => j < 0 ? null : { i, j }"
+  # The boarding stop's time, or (stops without a published time) the last earlier one's.
+  boardTime: "(trip, i) => trip.stops[i].time ?? trip.stops.slice(0, i + 1).reverse().find(s => s.time)?.time"
+  departure: |
+    (trip, leg, time, day, d, nowMin) => !time ? null : {
+      sort: minutesOf(time),
+      date: day.date,
+      weekday: DAY_NAMES[day.weekday],
+      time,
+      ...(trip.stops[leg.i].time ? {} : { approx: true }),
+      inMinutes: d * 1440 + minutesOf(time) - nowMin,
+      from: STOPS[trip.stops[leg.i].stop].name,
+      boardAt: STOPS[trip.stops[leg.i].stop].where,
+      to: STOPS[trip.stops[leg.j].stop].name,
+      route: trip.stops.map(s => STOPS[s.stop].name).join('→'),
+      line: LINES[trip.line].name,
+    }
+  # Departures on day d (0 = today, 1 = tomorrow) of the given table, earliest first.
+  dayDepartures: |
+    (from, to, day, d, type, nowMin) => sortBy(
+      TRIPS
+        .filter(t => t.days == type)
+        .map(t => ({ t, leg: legOf(t, from, to) }))
+        .filter(x => x.leg)
+        .map(x => departure(x.t, x.leg, boardTime(x.t, x.leg.i), day, d, nowMin))
+        .filter(x => x && !(d == 0 && x.sort < nowMin)),
+      x => x.sort,
+    ).map(x => omit(x, 'sort'))
+  # Today, then tomorrow only when today has fewer than `count`. dayType overrides today only.
+  nextDepartures: "(from, to, nowMs, count, type) => withToday(from, to, nowMs, count, dayDepartures(from, to, bj(nowMs), 0, type ?? dayTypeOf(bj(nowMs).weekday), bj(nowMs).minutes))"
+  withToday: |
+    (from, to, nowMs, count, first) => first.length >= count ? first.slice(0, count)
+      : first.concat(dayDepartures(from, to, bj(addDays(nowMs, 1)), 1, dayTypeOf(bj(addDays(nowMs, 1)).weekday), bj(nowMs).minutes)).slice(0, count)
+steps:
+  - let: nowMs
+    value: "input.at ? parseAt(input.at) : now"
+  - check: "nowMs != null"
+    error: 时间格式不对：${input.at}（应为 YYYY-MM-DD HH:mm）
+  - let: f
+    value: resolvePlace(input.from)
+  - let: t
+    value: resolvePlace(input.to)
+  - check: "!trim(input.from) || f"
+    error: 不认识的地点：${trim(input.from)}（可用：${PLACE_HINT}）
+  - check: "!trim(input.to) || t"
+    error: 不认识的地点：${trim(input.to)}（可用：${PLACE_HINT}）
+  - let: pairs
+    value: "f || t ? [{ from: f, to: t }] : [{ from: 'yanyuan', to: 'xinyanyuan' }, { from: 'xinyanyuan', to: 'yanyuan' }]"
+return: |
+  {
+    now: formatDate(nowMs, 'YYYY-MM-DD HH:mm'),
+    dayType: input.dayType ?? dayTypeOf(bj(nowMs).weekday),
+    directions: pairs.map(p => ({
+      from: p.from ? AREA_NAMES[p.from] : null,
+      to: p.to ? AREA_NAMES[p.to] : null,
+      departures: nextDepartures(p.from, p.to, nowMs, input.count ?? 3, input.dayType),
+    })),
+    booking: LINES.commute.booking,
+    sources: values(LINES).map(l => ({ line: l.name, ...l.source })),
+  }

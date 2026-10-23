@@ -2,7 +2,6 @@ import type { PluginDef } from '@pku-harness/sdk';
 
 import { authenticatorPlugin } from './authenticator/src';
 import { calendarPlugin } from './calendar/src';
-import { canteenPlugin } from './canteen/src';
 import { cardSharePlugin } from './card-share/src';
 import { courseCatalogPlugin } from './course-catalog/src';
 import { courseSyncPlugin } from './course-sync/src';
@@ -19,7 +18,6 @@ import { pluginsPlugin } from './plugins/src';
 import { roomBookingPlugin } from './room-booking/src';
 import { schedulePlugin } from './schedule/src';
 import { schedulerPlugin } from './scheduler/src';
-import { shuttlePlugin } from './shuttle/src';
 import { timetablePlugin } from './timetable/src';
 import { todoPlugin } from './todo/src';
 import { treeholePlugin } from './treehole/src';
@@ -54,8 +52,6 @@ export const builtinPlugins: PluginDef[] = [
   financePlugin,
   libraryPlugin,
   roomBookingPlugin,
-  canteenPlugin,
-  shuttlePlugin,
   noticesPlugin,
   memoryPlugin,
   pluginsPlugin,

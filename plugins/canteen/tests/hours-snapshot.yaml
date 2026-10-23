@@ -1,0 +1,28 @@
+# Site down, nothing cached: the bundled snapshot with the error.
+tool: hours
+input:
+  canteen: 佟园
+now: 2026-10-23 12:10
+responses:
+  - match: /fwzn/
+    status: 503
+    body: down
+expect:
+  venues:
+    - canteen: 佟园食堂
+      area: null
+      meals:
+        breakfast: 7:00-9:00
+        lunch: 11:00-13:00
+        dinner: 17:00-22:00
+      notes:
+        - 假期期间，晚餐时段为17:00-20:00
+  updates: []
+  hoursUpdated: 2022-09-09
+  origin: snapshot
+  fetchError: cyzx.pku.edu.cn 返回 HTTP 503
+  source:
+    title: 食堂开闭餐时间（北京大学餐饮中心·服务指南）
+    url: https://cyzx.pku.edu.cn/fwzn/74317312d14a4988bc38eff6f5c8b851.htm
+    published: 2022-09-09
+    checked: 2026-10-21

@@ -1,0 +1,38 @@
+# Filter matches canteen or area.
+tool: hours
+input:
+  canteen: 咖啡厅
+now: 2026-10-23 12:10
+responses:
+  - match: /fwzn/74317312d14a4988bc38eff6f5c8b851.htm
+    file: hours.html
+expect:
+  venues:
+    - canteen: 家园食堂
+      area: 咖啡厅（地下一层）
+      meals:
+        breakfast: 7:00-23:00
+        lunch: 7:00-23:00
+        dinner: 7:00-23:00
+      continuous:
+        - - breakfast
+          - lunch
+          - dinner
+    - canteen: 燕南美食
+      area: 咖啡厅
+      meals:
+        breakfast: 7:30-22:00
+        lunch: 7:30-22:00
+        dinner: 7:30-22:00
+      continuous:
+        - - breakfast
+          - lunch
+          - dinner
+  updates: []
+  hoursUpdated: 2022-09-09
+  origin: live
+  source:
+    title: 食堂开闭餐时间（北京大学餐饮中心·服务指南）
+    url: https://cyzx.pku.edu.cn/fwzn/74317312d14a4988bc38eff6f5c8b851.htm
+    published: 2022-09-09
+    checked: 2026-10-21

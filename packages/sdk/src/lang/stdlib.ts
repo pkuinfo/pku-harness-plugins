@@ -67,13 +67,20 @@ function select(v: unknown, css: string): object[] {
   return el.querySelectorAll(String(css)).map((e) => wrapNode(e, baseOf(v)));
 }
 
-/** Rows of a table; `spans` expands rowspan/colspan into a full grid; `header` keys rows by the first row's labels. */
-function tableRows(v: unknown, opts: { header?: boolean } = {}): unknown[] {
+/**
+ * Rows of a table with rowspan/colspan expanded into a full grid. `header` (default) keys rows by
+ * the first row's labels; `header: false` gives arrays of text; `cells: true` gives arrays of
+ * { text, row, col, rowspan, colspan, id } where `id` is the same for every grid slot one merged
+ * cell covers.
+ */
+function tableRows(v: unknown, opts: { header?: boolean; cells?: boolean } = {}): unknown[] {
   const el = node(v, 'tableRows');
   const table = el.tagName?.toLowerCase() === 'table' ? el : el.querySelector('table');
   if (!table) return [];
-  const grid: string[][] = [];
+  type Cell = { text: string; row: number; col: number; rowspan: number; colspan: number; id: number };
+  const grid: Cell[][] = [];
   const rows = table.querySelectorAll('tr');
+  let id = 0;
   rows.forEach((tr, r) => {
     grid[r] ??= [];
     let c = 0;
@@ -81,12 +88,13 @@ function tableRows(v: unknown, opts: { header?: boolean } = {}): unknown[] {
       while (grid[r]![c] !== undefined) c++;
       const rs = Math.max(1, Math.min(50, Number(cell.getAttribute('rowspan')) || 1));
       const cs = Math.max(1, Math.min(50, Number(cell.getAttribute('colspan')) || 1));
-      const text = squash(cell.text);
-      for (let i = 0; i < rs; i++) for (let j = 0; j < cs; j++) (grid[r + i] ??= [])[c + j] = text;
+      const info: Cell = { text: squash(cell.text), row: r, col: c, rowspan: rs, colspan: cs, id: id++ };
+      for (let i = 0; i < rs; i++) for (let j = 0; j < cs; j++) (grid[r + i] ??= [])[c + j] = info;
       c += cs;
     }
   });
-  const dense = grid.map((row) => Array.from({ length: row.length }, (_, i) => row[i] ?? ''));
+  if (opts.cells) return grid.map((row) => Array.from({ length: row.length }, (_, i) => row[i] ?? null).map((x) => (x ? { ...x } : null)));
+  const dense = grid.map((row) => Array.from({ length: row.length }, (_, i) => row[i]?.text ?? ''));
   if (opts.header === false) return dense;
   const [head, ...body] = dense;
   if (!head) return [];
@@ -97,7 +105,13 @@ function tableRows(v: unknown, opts: { header?: boolean } = {}): unknown[] {
 
 const reCache = new Map<string, RegExp>();
 export function re(pattern: unknown, flags = ''): RegExp {
-  const src = String(pattern);
+  let src = String(pattern);
+  // Inline flags at the start, e.g. '(?i)yanyuan' (JS has no inline flags): i, m, s, u.
+  const inline = /^\(\?([imsu]+)\)/.exec(src);
+  if (inline) {
+    src = src.slice(inline[0].length);
+    flags = [...new Set((flags + inline[1]).split(''))].join('');
+  }
   if (src.length > 500) throw new ExprError('regular expression too long');
   const key = `${flags}/${src}`;
   let r = reCache.get(key);
@@ -436,7 +450,7 @@ const fns: Record<string, Impl> = {
     const p = node(v, 'parent').parentNode;
     return p ? wrapNode(p, baseOf(v)) : null;
   },
-  tableRows: (_c, [v, opts]) => tableRows(v, (opts as { header?: boolean }) ?? {}),
+  tableRows: (_c, [v, opts]) => tableRows(v, (opts as { header?: boolean; cells?: boolean }) ?? {}),
   options: (_c, [v]) =>
     node(v, 'options')
       .querySelectorAll('option')

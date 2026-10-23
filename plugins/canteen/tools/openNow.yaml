@@ -1,0 +1,47 @@
+# Weekday hours from the hours tool (live page / cache / snapshot), minus canteens announced
+# closed in its updates.
+title: 现在开着的食堂
+description: >-
+  Canteens and counters open at a given Beijing time (default now), with today's hours text and minutes until closing, plus announced closures (updates). Uses the published weekday hours; weekend/holiday differences are in notes.
+effect: read
+input:
+  at: { type: string, optional: true, pattern: '^\d{1,2}:\d{2}$', description: '"HH:mm" Beijing time, default now' }
+constants:
+  MEALS: [ breakfast, lunch, dinner ]
+  TIME_RANGE: '(\d{1,2}):(\d{2})\s*[-–—~至]\s*(\d{1,2}):(\d{2})'
+  EXTENDED: '值班餐至\s*(\d{1,2}):(\d{2})'
+functions:
+  # Minutes after midnight of the first range in a meal text; "值班餐至 HH:mm" extends the close,
+  # "24:00" (or "0:00") closes at midnight.
+  mealRange: "(text) => text ? rangeOf(match(text, TIME_RANGE), match(text, EXTENDED)) : null"
+  rangeOf: |
+    (m, ext) => m ? {
+      open: int(m[1]) * 60 + int(m[2]),
+      close: extend(int(m[3]) * 60 + int(m[4]) == 0 ? 1440 : int(m[3]) * 60 + int(m[4]), ext),
+    } : null
+  extend: "(close, ext) => ext ? max(close, int(ext[1]) * 60 + int(ext[2])) : close"
+  isOpen: "(r, minutes) => r != null && minutes >= r.open && minutes < r.close"
+  openAt: |
+    (venues, minutes) => venues.flatMap(v => openIn(v, MEALS.find(meal => isOpen(mealRange(v.meals[meal]), minutes)), minutes))
+  openIn: |
+    (v, meal, minutes) => meal ? [{ canteen: v.canteen, area: v.area, hours: v.meals[meal], closesInMinutes: mealRange(v.meals[meal]).close - minutes }] : []
+steps:
+  - let: at
+    value: "input.at ?? null"
+  - let: minutes
+    value: "at ? int(split(at, ':')[0]) * 60 + int(split(at, ':')[1]) : minutesOf(now)"
+  - let: hours
+    call: hours
+    input: "{}"
+  - let: closed
+    value: "hours.updates.filter(u => u.status == 'closed').map(u => u.canteen)"
+return: |
+  {
+    at: at ?? formatDate(now, 'HH:mm'),
+    weekend: !at && (weekday(now) == 6 || weekday(now) == 7),
+    open: openAt(hours.venues, minutes).filter(o => !closed.includes(o.canteen)),
+    updates: hours.updates,
+    hoursUpdated: hours.hoursUpdated,
+    origin: hours.origin,
+    source: hours.source,
+  }

@@ -125,3 +125,21 @@ describe('string escapes', () => {
     expect(ev("'a\\'b' + '\\\\' + '\\n'")).toBe("a'b\\\n");
   });
 });
+
+describe('additions from the ports', () => {
+  test('inline regex flags and comments', () => {
+    expect(ev("test('YanYuan', '(?i)^yanyuan$')")).toBe(true);
+    expect(ev("replace('A a', '(?i)a', 'x')")).toBe('x x');
+    expect(ev('1 + /* two */ 2 // three\n + 3')).toBe(6);
+    expect(ev("'//not a comment'")).toBe('//not a comment');
+  });
+
+  test('tableRows cells keep merged-cell identity', () => {
+    const page = '<table><tr><td rowspan="2">A</td><td>x</td></tr><tr><td>A</td></tr></table>';
+    const cells = ev('tableRows(html(p), { cells: true })', { p: page }) as { text: string; id: number; rowspan: number }[][];
+    expect(cells[0]![0]!.id).toBe(cells[1]![0]!.id);
+    expect(cells[0]![0]!.rowspan).toBe(2);
+    expect(cells[1]![1]!.text).toBe('A');
+    expect(cells[1]![1]!.id).not.toBe(cells[0]![0]!.id);
+  });
+});

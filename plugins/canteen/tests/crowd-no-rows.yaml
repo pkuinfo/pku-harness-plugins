@@ -1,0 +1,6 @@
+# JSON without rows.
+tool: crowd
+responses:
+  - match: retrCarteenInfos.do
+    body: {}
+expectError: 没有返回数据

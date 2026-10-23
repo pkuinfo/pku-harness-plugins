@@ -1,0 +1,49 @@
+{
+  "title": "食堂人流",
+  "description": "各食堂实时就餐人数和拥挤程度（人最少的在前），每 2 分钟刷新。",
+  "sizes": ["sm", "md", "lg"],
+  "defaultSize": "md",
+  "bindings": {
+    "/crowd": { "tool": "crowd", "args": { "sort": "least" }, "ttlMinutes": 2 }
+  },
+  "spec": {
+    "root": "root",
+    "elements": {
+      "root": { "type": "Column", "props": { "gap": "sm" }, "children": ["list", "time"] },
+      "list": {
+        "type": "Column",
+        "props": { "gap": "sm" },
+        "repeat": { "statePath": "/crowd/canteens", "key": "name" },
+        "children": ["row"]
+      },
+      "row": {
+        "type": "Row",
+        "props": { "gap": "sm", "align": "between", "wrap": false },
+        "children": ["name", "load"]
+      },
+      "name": { "type": "Text", "props": { "text": { "$item": "name" }, "tone": null, "size": "body" } },
+      "load": {
+        "type": "Text",
+        "props": {
+          "text": { "$template": "${diners}/${seats} · ${level}" },
+          "tone": {
+            "$cond": { "$item": "level", "eq": "空闲" },
+            "$then": "up",
+            "$else": {
+              "$cond": { "$item": "level", "eq": "适中" },
+              "$then": "info",
+              "$else": { "$cond": { "$item": "level", "eq": "较挤" }, "$then": "warn", "$else": "down" }
+            }
+          },
+          "size": "small"
+        }
+      },
+      "time": {
+        "type": "Text",
+        "props": { "text": { "$template": "数据时间 ${/crowd/time}" }, "tone": "muted", "size": "small" },
+        "visible": { "$state": "/crowd/time", "neq": null }
+      }
+    },
+    "state": { "crowd": null }
+  }
+}

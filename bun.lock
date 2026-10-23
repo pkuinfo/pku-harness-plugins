@@ -84,19 +84,6 @@
         "zod": "^4.0.0",
       },
     },
-    "plugins/canteen": {
-      "name": "@pku-harness/plugin-canteen",
-      "version": "0.1.0",
-      "dependencies": {
-        "node-html-parser": "^9.0.4",
-      },
-      "peerDependencies": {
-        "@pku-harness/sdk": "*",
-        "react": "*",
-        "react-native": "*",
-        "zod": "^4.0.0",
-      },
-    },
     "plugins/card-share": {
       "name": "@pku-harness/plugin-card-share",
       "version": "0.1.0",
@@ -262,16 +249,6 @@
         "zod": "^4.0.0",
       },
     },
-    "plugins/shuttle": {
-      "name": "@pku-harness/plugin-shuttle",
-      "version": "0.1.0",
-      "peerDependencies": {
-        "@pku-harness/sdk": "*",
-        "react": "*",
-        "react-native": "*",
-        "zod": "^4.0.0",
-      },
-    },
     "plugins/timetable": {
       "name": "@pku-harness/plugin-timetable",
       "version": "0.3.0",
@@ -409,8 +386,6 @@
 
     "@pku-harness/plugin-calendar": ["@pku-harness/plugin-calendar@workspace:plugins/calendar"],
 
-    "@pku-harness/plugin-canteen": ["@pku-harness/plugin-canteen@workspace:plugins/canteen"],
-
     "@pku-harness/plugin-card-share": ["@pku-harness/plugin-card-share@workspace:plugins/card-share"],
 
     "@pku-harness/plugin-course-catalog": ["@pku-harness/plugin-course-catalog@workspace:plugins/course-catalog"],
@@ -442,8 +417,6 @@
     "@pku-harness/plugin-schedule": ["@pku-harness/plugin-schedule@workspace:plugins/schedule"],
 
     "@pku-harness/plugin-scheduler": ["@pku-harness/plugin-scheduler@workspace:plugins/scheduler"],
-
-    "@pku-harness/plugin-shuttle": ["@pku-harness/plugin-shuttle@workspace:plugins/shuttle"],
 
     "@pku-harness/plugin-timetable": ["@pku-harness/plugin-timetable@workspace:plugins/timetable"],
 
