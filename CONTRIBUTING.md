@@ -57,5 +57,9 @@ Add an entry to `registry/registry.json`:
 Use the registry `id` as your MCP server `name` (`new McpServer({ name: 'my-plugin', … })`): the app
 installs remote plugins as `mcp-<server name>` and uses that to show them as installed.
 
+If the plugin uses PKU Harness Cloud (`PluginDef.cloud`), copy its `cloud` declaration into the
+entry (`{ "uses": [...], "e2e": true, "disclosure": { "zh": [...] } }`): the market shows it before
+install, and `disclosure.zh` must say in plain words what leaves the device.
+
 Run `bun scripts/validate-registry.ts`, then open a pull request. Maintainers review new
 entries and mark them `verified` after checking the source.

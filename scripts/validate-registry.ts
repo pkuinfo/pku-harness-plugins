@@ -1,7 +1,7 @@
-// Validate registry/registry.json: schema, unique ids and icons, built-ins exist, sources point here.
+// Validate registry/registry.json: schema, unique ids and icons, built-ins exist, sources point here, cloud disclosure.
 import { existsSync } from 'node:fs';
 
-import { registry } from '../registry/schema';
+import { cloudIssues, registry } from '../registry/schema';
 
 const raw = await Bun.file(new URL('../registry/registry.json', import.meta.url)).json();
 const parsed = registry.safeParse(raw);
@@ -24,6 +24,7 @@ for (const p of parsed.data.plugins) {
   if (p.kind === 'builtin' && !existsSync(new URL(`../plugins/${p.id}/src/index.ts`, import.meta.url))) errors.push(`builtin ${p.id} has no plugins/${p.id}/src/index.ts`);
   if (p.kind === 'remote' && p.requires.includes('shell')) errors.push(`${p.id}: remote plugins run on a server; 'shell' is not a device requirement`);
   if (p.kind === 'builtin' && p.endpoint) errors.push(`${p.id}: builtins have no endpoint`);
+  if (p.cloud) errors.push(...cloudIssues(p.cloud).map((e) => `${p.id}: ${e}`));
 }
 if (errors.length) {
   console.error(errors.join('\n'));
