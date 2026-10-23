@@ -60,6 +60,14 @@ export async function cardAccount(services: Services) {
   return account;
 }
 
+/** Account plus the holder's name (queryCard), e.g. for a masked-name hint. */
+export async function cardHolder(services: Services) {
+  const data = unwrap<{ card: CardInfo[] }>(await get(services, '/berserker-app/ykt/tsm/queryCard?synAccessSource=h5'));
+  const card = data.card[0];
+  if (!card?.account) throw new Error('校园卡缺少账户信息');
+  return { account: card.account, name: card.name?.trim() ?? '' };
+}
+
 export async function cardMode(services: Services) {
   const c = unwrap<UseCardConfig>(await get(services, '/berserker-app/useCard/getUseCardConfig?synAccessSource=h5'));
   const code = Number(c.cardType);
