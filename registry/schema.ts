@@ -26,6 +26,8 @@ export const registryEntry = z.object({
   id: z.string().regex(/^[a-z0-9][a-z0-9-]{1,40}$/),
   name: z.string().min(1),
   description: z.string().min(4).max(200),
+  /** English name and description for the marketplace and the app in English (required for official entries). */
+  i18n: z.object({ en: z.object({ name: z.string().min(1).max(40), description: z.string().min(4).max(200) }) }).optional(),
   author: z.string().min(1),
   /** Where the source lives (a folder in this repo, or an external repo). */
   source: z.string().url(),

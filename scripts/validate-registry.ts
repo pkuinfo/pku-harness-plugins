@@ -25,6 +25,8 @@ for (const p of parsed.data.plugins) {
   const hasDoc = existsSync(new URL(`../plugins/${p.id}/PLUGIN.md`, import.meta.url));
   if (p.kind === 'builtin' && !hasDoc && !existsSync(new URL(`../plugins/${p.id}/src/index.ts`, import.meta.url))) errors.push(`builtin ${p.id} has no plugins/${p.id}/PLUGIN.md or src/index.ts`);
   if (p.kind === 'remote' && p.requires.includes('shell')) errors.push(`${p.id}: remote plugins run on a server; 'shell' is not a device requirement`);
+  // Official and reviewed entries are shown in English too (marketplace /en, the app in English).
+  if ((p.kind === 'builtin' || p.verified) && !p.i18n?.en) errors.push(`${p.id}: official entries need i18n.en { name, description }`);
   if (p.kind === 'builtin' && p.endpoint) errors.push(`${p.id}: builtins have no endpoint`);
   if (p.cloud) errors.push(...cloudIssues(p.cloud).map((e) => `${p.id}: ${e}`));
 }

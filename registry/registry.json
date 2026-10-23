@@ -1,11 +1,17 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-22",
+  "updatedAt": "2026-10-23",
   "plugins": [
     {
       "id": "ui",
       "name": "界面生成",
       "description": "让 AI 在对话里生成原生界面：表单、选择器、数据卡片。",
+      "i18n": {
+        "en": {
+          "name": "Generative UI",
+          "description": "Lets the AI build native UI in the chat: forms, pickers and data cards."
+        }
+      },
       "author": "pkuinfo",
       "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/ui",
       "kind": "builtin",
@@ -21,6 +27,12 @@
       "id": "dashboard",
       "name": "看板",
       "description": "由 AI 搭建、可随时修改的数据看板。",
+      "i18n": {
+        "en": {
+          "name": "Dashboard",
+          "description": "A dashboard the AI builds for you and you can change any time."
+        }
+      },
       "author": "pkuinfo",
       "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/dashboard",
       "kind": "builtin",
@@ -36,6 +48,12 @@
       "id": "scheduler",
       "name": "提醒与定时任务",
       "description": "准时的本地提醒，以及定期检查数据并在满足条件时通知。",
+      "i18n": {
+        "en": {
+          "name": "Reminders and scheduled tasks",
+          "description": "On-time local reminders, plus scheduled checks on your data (like a balance) that notify you when a condition is met."
+        }
+      },
       "author": "pkuinfo",
       "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/scheduler",
       "kind": "builtin",
@@ -54,6 +72,12 @@
       "id": "todo",
       "name": "待办",
       "description": "待办事项，可设截止时间和准时提醒。",
+      "i18n": {
+        "en": {
+          "name": "To-dos",
+          "description": "To-dos with due dates and on-time reminders."
+        }
+      },
       "author": "pkuinfo",
       "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/todo",
       "kind": "builtin",
@@ -71,6 +95,12 @@
       "id": "timetable",
       "name": "课表",
       "description": "课程表、今天的课和上课提醒。",
+      "i18n": {
+        "en": {
+          "name": "Timetable",
+          "description": "Your class timetable, today’s classes and class reminders."
+        }
+      },
       "author": "pkuinfo",
       "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/timetable",
       "kind": "builtin",
@@ -88,6 +118,12 @@
       "id": "course-sync",
       "name": "教务课表",
       "description": "从学校同步本学期课表到日程。",
+      "i18n": {
+        "en": {
+          "name": "Official timetable",
+          "description": "Syncs this semester’s timetable from the university into Schedule."
+        }
+      },
       "author": "pkuinfo",
       "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/course-sync",
       "kind": "builtin",
@@ -109,6 +145,12 @@
       "id": "authenticator",
       "name": "手机令牌",
       "description": "把本 App 绑定为统一身份认证的手机令牌，自动完成二次验证。",
+      "i18n": {
+        "en": {
+          "name": "Authenticator",
+          "description": "Makes this app your IAAA mobile authenticator (手机令牌), so two-step verification happens on its own."
+        }
+      },
       "author": "pkuinfo",
       "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/authenticator",
       "kind": "builtin",
@@ -129,6 +171,12 @@
       "id": "schedule",
       "name": "日程",
       "description": "日程页：今天的课、待办、提醒，以及课表周视图和相关表单。",
+      "i18n": {
+        "en": {
+          "name": "Schedule",
+          "description": "The Schedule tab: today’s classes, to-dos and reminders, plus a weekly timetable and the forms behind them."
+        }
+      },
       "author": "pkuinfo",
       "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/schedule",
       "kind": "builtin",
@@ -145,6 +193,12 @@
       "id": "calendar",
       "name": "日期与校历",
       "description": "今天的日期、星期、第几教学周，以及北大官方校历（开学、节假日、考试周），可一键设置课表学期。",
+      "i18n": {
+        "en": {
+          "name": "Date and academic calendar",
+          "description": "Today’s date, weekday and teaching week, plus Peking University’s official academic calendar (term start, holidays, exam weeks). Sets your timetable’s semester in one tap."
+        }
+      },
       "author": "pkuinfo",
       "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/calendar",
       "kind": "builtin",
@@ -162,6 +216,12 @@
       "id": "wallet",
       "name": "校园钱包",
       "description": "校园卡余额与付款码、充值，网费、电费、水费、浴卡（原「校园卡」「网费」「水电浴」合并）。",
+      "i18n": {
+        "en": {
+          "name": "Campus wallet",
+          "description": "Campus Card balance and payment code, top-ups, network fee, electricity, water and bath card."
+        }
+      },
       "author": "pkuinfo",
       "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/wallet",
       "kind": "builtin",
@@ -185,6 +245,12 @@
       "id": "card-share",
       "name": "付款码共享",
       "description": "把校园卡付款码临时分享给朋友：端到端加密转发，可设消费上限、口令和姓名验证，随时停止。",
+      "i18n": {
+        "en": {
+          "name": "Share payment code",
+          "description": "Lend your Campus Card payment code to a friend for a while: end-to-end encrypted relay, optional spend cap, PIN and name check, stop at any time."
+        }
+      },
       "author": "pkuinfo",
       "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/card-share",
       "kind": "builtin",
@@ -223,6 +289,12 @@
       "id": "courses",
       "name": "教学网",
       "description": "教学网课程公告、作业（截止时间、要求、成绩）、课程资料目录和课程回放列表（只读）。",
+      "i18n": {
+        "en": {
+          "name": "Course (教学网)",
+          "description": "Blackboard (教学网): announcements, assignments (due dates, requirements, grades), submissions, your grades, deadlines synced to to-dos, course materials and lecture recordings."
+        }
+      },
       "author": "pkuinfo",
       "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/courses",
       "kind": "builtin",
@@ -244,6 +316,12 @@
       "id": "course-catalog",
       "name": "全校课程目录",
       "description": "按课程名、教师、院系搜索全校开课，含上课时间（选课网查询含教室）。只读。",
+      "i18n": {
+        "en": {
+          "name": "Course catalogue",
+          "description": "Search every course at Peking University by name, teacher or department, with class times (Elective searches include rooms). Read-only."
+        }
+      },
       "author": "pkuinfo",
       "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/course-catalog",
       "kind": "builtin",
@@ -265,6 +343,12 @@
       "id": "grades",
       "name": "成绩",
       "description": "查询各学期成绩和绩点（GPA）。",
+      "i18n": {
+        "en": {
+          "name": "Grades",
+          "description": "Your grades and GPA, semester by semester."
+        }
+      },
       "author": "pkuinfo",
       "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/grades",
       "kind": "builtin",
@@ -286,6 +370,12 @@
       "id": "treehole",
       "name": "树洞",
       "description": "北大树洞：浏览、搜索、阅读帖子，关注帖子，匿名发帖和回复。",
+      "i18n": {
+        "en": {
+          "name": "Treehole",
+          "description": "PKU Treehole (树洞): browse, search and read posts, follow them, and post or reply anonymously."
+        }
+      },
       "author": "pkuinfo",
       "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/treehole",
       "kind": "builtin",
@@ -308,6 +398,12 @@
       "id": "campus-events",
       "name": "校园活动",
       "description": "学术讲座日历和校园活动日历。",
+      "i18n": {
+        "en": {
+          "name": "Campus events",
+          "description": "Calendars of academic talks and campus activities."
+        }
+      },
       "author": "pkuinfo",
       "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/campus-events",
       "kind": "builtin",
@@ -329,6 +425,12 @@
       "id": "elective",
       "name": "选课网",
       "description": "选课网选课结果、补退选课程余量和课程搜索（只读，选课请到官网）。",
+      "i18n": {
+        "en": {
+          "name": "Elective (选课网)",
+          "description": "Elective (选课网): your enrolment results, open seats in add/drop courses, and course search. Read-only; enrol on the official site."
+        }
+      },
       "author": "pkuinfo",
       "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/elective",
       "kind": "builtin",
@@ -350,6 +452,12 @@
       "id": "finance",
       "name": "财务",
       "description": "个人酬金/收入（财务门户，仅校园网）、学费住宿费欠费和缴费记录（收费平台）。只读。",
+      "i18n": {
+        "en": {
+          "name": "Finance",
+          "description": "Your stipends and income (Finance portal, campus network only), plus unpaid tuition and housing fees and payment history (payment platform). Read-only."
+        }
+      },
       "author": "pkuinfo",
       "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/finance",
       "kind": "builtin",
@@ -374,6 +482,12 @@
       "id": "room-booking",
       "name": "研讨室预约",
       "description": "北大空间：二教、四教、地学楼研讨教室的查询、空闲时段、预约和取消。",
+      "i18n": {
+        "en": {
+          "name": "Seminar rooms",
+          "description": "PKU Space: find, book and cancel seminar rooms in the Second and Fourth Teaching Buildings and the Geoscience Building."
+        }
+      },
       "author": "pkuinfo",
       "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/room-booking",
       "kind": "builtin",
@@ -395,6 +509,12 @@
       "id": "memory",
       "name": "AI 记忆",
       "description": "记住你的偏好、习惯和长期信息，让 AI 越用越懂你。只保存在本机，可随时查看和删除。",
+      "i18n": {
+        "en": {
+          "name": "AI memory",
+          "description": "Remembers your preferences, habits and long-term details, so the AI gets to know you over time. Stored only on this device; view, edit or delete it any time."
+        }
+      },
       "author": "pkuinfo",
       "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/memory",
       "kind": "builtin",
@@ -410,6 +530,12 @@
       "id": "plugins",
       "name": "插件管理",
       "description": "查看已安装的插件，安装或移除远程（MCP）插件。",
+      "i18n": {
+        "en": {
+          "name": "Plugins",
+          "description": "See installed plugins, install or remove plugins, and write new ones (PLUGIN.md) with the AI."
+        }
+      },
       "author": "pkuinfo",
       "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/plugins",
       "kind": "builtin",
@@ -427,6 +553,12 @@
       "id": "deepseek",
       "name": "DeepSeek",
       "description": "DeepSeek 官方 API（默认 AI 服务）。",
+      "i18n": {
+        "en": {
+          "name": "DeepSeek",
+          "description": "The official DeepSeek API (the default AI service)."
+        }
+      },
       "author": "pkuinfo",
       "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/deepseek",
       "kind": "builtin",
@@ -444,6 +576,12 @@
       "id": "openai-compatible",
       "name": "OpenAI 兼容服务",
       "description": "接入任意兼容 OpenAI Chat Completions 接口的模型服务。",
+      "i18n": {
+        "en": {
+          "name": "OpenAI-compatible",
+          "description": "Connect any model service that supports the OpenAI Chat Completions API."
+        }
+      },
       "author": "pkuinfo",
       "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/openai-compatible",
       "kind": "builtin",
@@ -461,6 +599,12 @@
       "id": "demo-canteen",
       "name": "食堂菜单（演示）",
       "description": "示例远程插件：模拟的食堂菜单与座位预约，演示如何用 MCP 写一个插件。",
+      "i18n": {
+        "en": {
+          "name": "Canteen menu (demo)",
+          "description": "A demo remote (MCP) plugin with mock canteen menus: the starting point for writing your own remote plugin."
+        }
+      },
       "author": "pkuinfo",
       "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/examples/demo-canteen",
       "kind": "remote",
@@ -482,6 +626,12 @@
       "id": "library",
       "name": "图书馆",
       "description": "馆藏检索、我的借阅与续借、预约取书、研讨室预约、研修专座余量和开馆时间。",
+      "i18n": {
+        "en": {
+          "name": "Library",
+          "description": "Peking University Library (图书馆): catalogue search, loans and renewals, holds, study room booking, study seat availability and opening hours."
+        }
+      },
       "author": "pkuinfo",
       "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/library",
       "kind": "builtin",
@@ -508,6 +658,12 @@
       "id": "classrooms",
       "name": "空闲教室",
       "description": "各教学楼今天到后天每节课的空闲教室。",
+      "i18n": {
+        "en": {
+          "name": "Free classrooms",
+          "description": "Free classrooms in each teaching building for every period from today to the day after tomorrow. Find somewhere to study."
+        }
+      },
       "author": "pkuinfo",
       "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/classrooms",
       "kind": "builtin",
@@ -528,6 +684,12 @@
       "id": "canteen",
       "name": "食堂",
       "description": "各食堂实时就餐人数、开闭餐时间和餐饮中心通知。",
+      "i18n": {
+        "en": {
+          "name": "Canteens",
+          "description": "Live diner counts (how crowded), opening hours, which canteens are open now, and Dining Center notices."
+        }
+      },
       "author": "pkuinfo",
       "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/canteen",
       "kind": "builtin",
@@ -550,6 +712,12 @@
       "id": "shuttle",
       "name": "校车",
       "description": "燕园—新燕园通勤班车和快速公交时刻表，算出下一班车。",
+      "i18n": {
+        "en": {
+          "name": "Shuttle bus",
+          "description": "Timetables for the Yanyuan–Xinyanyuan (Changping) commuter shuttle and the Xinyanyuan–Bei’anhe metro express bus, with the next departure worked out for you."
+        }
+      },
       "author": "pkuinfo",
       "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/shuttle",
       "kind": "builtin",
@@ -566,6 +734,12 @@
       "id": "notices",
       "name": "校园通知",
       "description": "教务部、研究生院、学工部、总务部通知和北大新闻，可搜索、读全文。",
+      "i18n": {
+        "en": {
+          "name": "Campus notices",
+          "description": "Latest notices from the Office of Educational Administration, the Graduate School, PKU News and other official sites, plus WeChat articles; search them and read any notice in full."
+        }
+      },
       "author": "pkuinfo",
       "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/notices",
       "kind": "builtin",
