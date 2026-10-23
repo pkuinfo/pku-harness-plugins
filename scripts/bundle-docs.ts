@@ -9,7 +9,7 @@ import { loadDocument } from '../packages/sdk/src';
 const root = new URL('../plugins/', import.meta.url).pathname;
 const out = join(root, 'documents.generated.ts');
 const docs: Record<string, { link: string; files: Record<string, string> }> = {};
-for (const dir of readdirSync(root, { withFileTypes: true })) {
+for (const dir of readdirSync(root, { withFileTypes: true }).sort((a, b) => (a.name < b.name ? -1 : 1))) {
   if (!dir.isDirectory() || !existsSync(join(root, dir.name, 'PLUGIN.md'))) continue;
   const doc = await loadDocument(async (p) => readFileSync(join(root, dir.name, p), 'utf8'));
   docs[doc.manifest.id] = { link: `https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/${dir.name}`, files: doc.files };
