@@ -138,6 +138,16 @@ export interface HostServices {
     plugins(): PluginInfo[];
     tool(id: string): ToolInfo | undefined;
   };
+  /**
+   * Plugin documents (PLUGIN.md, pku-harness docs/PLUGIN-LANGUAGE.md). Installing always goes
+   * through the app's permission sheet: `review` opens it and resolves once it is shown; the
+   * user decides there.
+   */
+  docs?: {
+    review(input: { link?: string; files?: Record<string, string> }): Promise<{ opened: true }>;
+    /** Files of an installed document plugin (to read or fork it), null if it isn't one. */
+    source(id: string): { link: string | null; version: string; files: Record<string, string> } | null;
+  };
   /** Remote (MCP) plugin management. */
   remote: {
     install(input: { url: string; name?: string; token?: string }): Promise<{ id: string; name: string; tools: { name: string; effect: ToolEffect }[] }>;

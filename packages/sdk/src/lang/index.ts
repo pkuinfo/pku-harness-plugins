@@ -23,3 +23,5 @@ export {
   type ViewDoc,
 } from './schema';
 export { STDLIB_NAMES } from './stdlib';
+export { LANGUAGE_REFERENCE } from './reference';
+export { memoryKV } from './testing';

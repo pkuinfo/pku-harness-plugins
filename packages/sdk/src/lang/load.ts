@@ -1,4 +1,4 @@
-import { parse as parseYaml, YAMLParseError } from 'yaml';
+import { parse as parseYaml } from 'yaml';
 
 import { ABILITIES, effectRank, type AbilityDef } from './abilities';
 import { compile, ExprError, templateExprs } from './expr';
@@ -44,7 +44,7 @@ function yaml(text: string, file: string): unknown {
   try {
     return parseYaml(text, { prettyErrors: true, maxAliasCount: 50 });
   } catch (e) {
-    const msg = e instanceof YAMLParseError ? e.message.split('\n')[0]! : (e as Error).message;
+    const msg = (e instanceof Error ? e.message : String(e)).split('\n')[0]!;
     // The usual cause: an expression or ${…} containing ': ' (a ternary, an object) left unquoted.
     const hint = /mapping|implicit keys|Nested|Unexpected flow|bad indentation/i.test(msg) ? " — if that line holds an expression or ${…} with ': ' or starts with { or [, put it in quotes or use a | block" : '';
     throw new PluginDocError([`${file}: YAML: ${msg}${hint}`]);
