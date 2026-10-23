@@ -44,16 +44,24 @@ export async function listProjects(services: Services): Promise<PayProject[]> {
   return [...projects, ...nested.flat()];
 }
 
+const BATH_CLOSED = '收费平台目前没有为你的账号开放浴卡充值（项目列表里没有这一项）';
+
+// The list is per account: the platform only offers 浴卡充值 to some students (or seasonally).
+const findBathProject = async (services: Services) => (await listProjects(services)).find(isBathProject);
+
 async function bathProject(services: Services) {
-  const p = (await listProjects(services)).find(isBathProject);
-  // The list is per account: the platform only offers 浴卡充值 to some students (or seasonally).
-  if (!p) throw new Error('收费平台目前没有为你的账号开放浴卡充值（项目列表里没有这一项）');
+  const p = await findBathProject(services);
+  if (!p) throw new Error(BATH_CLOSED);
   return p;
 }
 
-/** 浴卡充值 page init: card number + holder, and the latest bath top-ups from 我的订单. */
+/**
+ * 浴卡充值 page init: card number + holder, and the latest bath top-ups from 我的订单.
+ * `available: false` (not an error) when the platform doesn't offer 浴卡充值 to this account.
+ */
 export async function bathCard(services: Services) {
-  const project = await bathProject(services);
+  const project = await findBathProject(services);
+  if (!project) return { available: false as const, cardNo: null, holder: null, recentTopUps: [], note: BATH_CLOSED };
   const [info, orders] = await Promise.all([
     call<{ idserial?: string; username?: string }>(services, `pay/web/bath/queryBathFeeInfo/${encodeURIComponent(idserial(services))}/${encodeURIComponent(project.id)}`, '浴卡信息'),
     call<{ records?: RawOrder[] }>(services, '/pay/web/order/pageOrderlist', '订单记录', {
@@ -67,7 +75,7 @@ export async function bathCard(services: Services) {
       schoolCode: SCHOOL_CODE,
     }).catch(() => null),
   ]);
-  return { ...bathCardInfo(info), recentTopUps: bathTopUps(orders) };
+  return { available: true as const, ...bathCardInfo(info), recentTopUps: bathTopUps(orders) };
 }
 
 /**

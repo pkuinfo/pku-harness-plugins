@@ -11,6 +11,7 @@ export const strings = defineStrings({
     /** Order status from the payment platform (see ORDER_STATUS) → display text. */
     status: {} as Record<string, string>,
     noTopUps: '还没有线上充值记录',
+    closed: '收费平台目前没有为你的账号开放浴卡充值。浴卡余额在卡片芯片里，可在转存机或洗浴时查看。',
     activate: '余额在卡里，需转存机激活',
     refreshing: '刷新中…',
     refreshFailed: '刷新失败 · ',
@@ -31,6 +32,7 @@ export const strings = defineStrings({
     lastTopUp: 'Latest top-up',
     status: { 待支付: 'Unpaid', 已付款: 'Paid', 未知: 'Unknown' } as Record<string, string>,
     noTopUps: 'No online top-ups yet',
+    closed: 'The payment platform doesn’t offer bath-card top-ups for your account right now. The balance lives on the card chip: check it at a top-up kiosk or in the shower.',
     activate: 'Credit goes on the card at a top-up kiosk',
     refreshing: 'Refreshing…',
     refreshFailed: 'Couldn’t refresh · ',

@@ -15,7 +15,7 @@ export const utilityTools: Record<string, ToolDef> = {
   bathCard: defineTool({
     title: '浴卡信息',
     description:
-      'Bath card (浴卡) on the PKU payment platform: masked card number, holder name, and the latest bath-card top-ups (amount in yuan, time, status 待支付/已付款). The card balance is stored on the card chip and cannot be read online.',
+      'Bath card (浴卡) on the PKU payment platform: masked card number, holder name, and the latest bath-card top-ups (amount in yuan, time, status 待支付/已付款). available: false means the platform doesn\'t offer bath top-ups to this account right now (say so plainly; not an error, retrying won\'t help). The card balance is stored on the card chip and cannot be read online.',
     input: z.object({}),
     effect: 'read',
     execute: async (_input, ctx) => {

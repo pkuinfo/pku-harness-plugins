@@ -3,7 +3,7 @@ import { View } from 'react-native';
 
 import { strings } from './strings';
 
-type Bath = { cardNo: string | null; recentTopUps: { amount: number | null; createdAt: string; status: string }[] };
+type Bath = { available?: boolean; cardNo: string | null; recentTopUps: { amount: number | null; createdAt: string; status: string }[] };
 
 /** 浴卡: last top-up and a recharge button (the balance is on the chip, not online). */
 export function BathWidget(props: PluginWidgetProps) {
@@ -45,6 +45,13 @@ function Live({ host, size }: PluginWidgetProps) {
         </Text>
         <Button title={str.retry} size="sm" variant="secondary" icon="refresh" loading={data.fetching} onPress={() => void data.refresh()} style={{ alignSelf: 'flex-start' }} />
       </View>
+    );
+  // Not offered to this account: a fact, not a failure (no retry, no top-up button).
+  if (data.value.available === false)
+    return (
+      <Text variant="caption" tone="muted">
+        {str.closed}
+      </Text>
     );
   const last = data.value.recentTopUps[0];
   return (
