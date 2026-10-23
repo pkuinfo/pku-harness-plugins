@@ -4,9 +4,7 @@
   "description": "Plugins for PKU Harness — built-in and community, all equal. Plus the SDK and the marketplace registry.",
   "workspaces": [
     "packages/*",
-    "plugins",
     "plugins/*",
-    "registry",
     "examples/*",
     "templates/*"
   ],
