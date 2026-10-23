@@ -19,7 +19,7 @@ const EXTEND_S = 30 * 60;
  */
 export function ActiveScreen(props: PluginScreenProps) {
   const { host } = props;
-  const { Screen, EmptyState, Button, ListGroup, ListRow, Switch, Text, FadeIn } = host.components;
+  const { Screen, EmptyState, Button, IconButton, ListGroup, ListRow, Switch, Text, FadeIn } = host.components;
   const t = host.useTheme();
   const locale = host.useLocale();
   const s = strings[locale];
@@ -34,7 +34,7 @@ export function ActiveScreen(props: PluginScreenProps) {
   return (
     <Screen title={s.title} subtitle={s.subtitle} back
       // The empty state already has the big "New share" button; the header one only when shares exist.
-      trailing={active.length ? <Button title={s.newShare} size="sm" variant="secondary" icon="plus" onPress={() => host.navigate('/m/card-share/create')} /> : undefined}>
+      trailing={active.length ? <IconButton icon="plus" label={s.newShare} variant="secondary" onPress={() => host.navigate('/m/card-share/create')} /> : undefined}>
       <View style={{ gap: t.spacing.xl }}>
         {notice ? (
           <Text variant="callout" tone={notice.tone}>

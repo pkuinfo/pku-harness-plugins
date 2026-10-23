@@ -59,6 +59,8 @@ const mmss = (ms: number) => {
 export function App() {
   const [themeMode, , cycleTheme] = useTheme();
   const share = useMemo(() => readShare(window.location), []);
+  // Once the share is over, "open in the app" leads nowhere: hide it.
+  const [over, setOver] = useState(false);
 
   return (
     <>
@@ -68,8 +70,8 @@ export function App() {
         style="padding-top:max(env(safe-area-inset-top),18px);padding-bottom:max(env(safe-area-inset-bottom),28px)"
       >
         <Masthead themeMode={themeMode} cycleTheme={cycleTheme} />
-        <main class="flex flex-1 flex-col justify-center py-7">{share ? <Viewer share={share} /> : <Status icon="alert" text={t.badLink} />}</main>
-        {share && <OpenInApp href={share.appLink} />}
+        <main class="flex flex-1 flex-col justify-center py-7">{share ? <Viewer share={share} onOver={setOver} /> : <Status icon="alert" text={t.badLink} />}</main>
+        {share && !over && <OpenInApp href={share.appLink} />}
         <Colophon />
       </div>
     </>
@@ -93,8 +95,11 @@ function Masthead({ themeMode, cycleTheme }: { themeMode: ReturnType<typeof useT
   );
 }
 
-function Viewer({ share }: { share: PageShare }) {
+const FINAL = new Set(["ended", "expired", "taken", "capped"]);
+
+function Viewer({ share, onOver }: { share: PageShare; onOver: (over: boolean) => void }) {
   const [state, setState] = useState<ViewerState>({ s: "loading" });
+  useEffect(() => onOver(FINAL.has(state.s) || (state.s === "error" && state.message === "bad_link")), [state, onOver]);
   const viewer = useRef<ShareViewer | null>(null);
 
   useEffect(() => {
@@ -140,11 +145,11 @@ function Viewer({ share }: { share: PageShare }) {
     case "paused":
       return <Status icon="clock" text={t.paused} detail={state.message} />;
     case "capped":
-      return <Status icon="lock" text={t.capped} />;
+      return <Status icon="lock" text={t.capped} detail={t.newLink} />;
     case "ended":
-      return <Status icon="lock" text={state.reason === "locked" ? t.endedLocked : state.reason === "kicked" ? t.kicked : state.reason === "cap" ? t.capped : t.ended} />;
+      return <Status icon="lock" text={state.reason === "locked" ? t.endedLocked : state.reason === "kicked" ? t.kicked : state.reason === "cap" ? t.capped : t.ended} detail={t.newLink} />;
     case "expired":
-      return <Status icon="clock" text={t.expired} />;
+      return <Status icon="clock" text={t.expired} detail={t.newLink} />;
     case "taken":
       return <Status icon="person" text={t.taken} />;
     case "error":
