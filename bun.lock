@@ -28,6 +28,13 @@
       "name": "@pku-harness/example-mock-llm",
       "version": "0.1.0",
     },
+    "packages/campus-card": {
+      "name": "@pku-harness/campus-card",
+      "version": "0.1.0",
+      "peerDependencies": {
+        "@pku-harness/sdk": "^0.1.0",
+      },
+    },
     "packages/cloud-protocol": {
       "name": "@pku-harness/cloud-protocol",
       "version": "0.1.0",
@@ -55,11 +62,12 @@
       "name": "@pku-harness/plugins",
       "version": "0.1.0",
       "dependencies": {
+        "@pku-harness/campus-card": "^0.1.0",
         "node-html-parser": "^9.0.4",
       },
       "peerDependencies": {
         "@ai-sdk/openai-compatible": "^3.0.0",
-        "@pku-harness/sdk": "workspace:^",
+        "@pku-harness/sdk": "^0.1.0",
         "react": ">=19",
         "react-native": "*",
         "zod": "^4.0.0",
@@ -325,6 +333,9 @@
     "plugins/wallet": {
       "name": "@pku-harness/plugin-wallet",
       "version": "1.0.0",
+      "dependencies": {
+        "@pku-harness/campus-card": "^0.1.0",
+      },
       "peerDependencies": {
         "@pku-harness/sdk": "*",
         "react": "*",
@@ -417,6 +428,8 @@
     "@noble/curves": ["@noble/curves@2.4.0", "", { "dependencies": { "@noble/hashes": "2.4.0" } }, "sha512-P4/62zrgfH33CneE3Dn4WhJVA22YUU0eR51wKIan4NVRvwsA0YnPTwWGpNbpuacSujmSFLvyzpyuR30+fbq2Ew=="],
 
     "@noble/hashes": ["@noble/hashes@2.4.0", "", {}, "sha512-X5XaVWZIBCT7HHZGm5I7ZQXDwLG+bGXuSrMQAW+7Zvl87h1kmc1ZB1VSRJcpUfoUrGQp4Fkoxm5kZ+Ms+aW+eA=="],
+
+    "@pku-harness/campus-card": ["@pku-harness/campus-card@workspace:packages/campus-card"],
 
     "@pku-harness/cloud-protocol": ["@pku-harness/cloud-protocol@workspace:packages/cloud-protocol"],
 

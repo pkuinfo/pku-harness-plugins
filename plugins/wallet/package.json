@@ -8,6 +8,9 @@
   "pkuHarness": {
     "builtin": true
   },
+  "dependencies": {
+    "@pku-harness/campus-card": "^0.1.0"
+  },
   "peerDependencies": {
     "@pku-harness/sdk": "*",
     "zod": "^4.0.0",

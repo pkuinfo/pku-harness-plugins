@@ -15,6 +15,7 @@
     "!**/fixtures"
   ],
   "dependencies": {
+    "@pku-harness/campus-card": "^0.1.0",
     "node-html-parser": "^9.0.4"
   },
   "peerDependencies": {

@@ -1,7 +1,7 @@
 /// <reference types="bun" />
 import { describe, expect, test } from 'bun:test';
 
-import { unwrap } from './api';
+import { unwrap } from '@pku-harness/campus-card';
 import { currentMonth, monthRange, statsUrls, summarizeMonth } from './stats';
 
 const res = (body: unknown, status = 200) => ({ status, url: 'https://bdcard.pku.edu.cn/x', headers: {}, body: JSON.stringify(body) });

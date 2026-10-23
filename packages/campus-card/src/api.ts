@@ -107,3 +107,18 @@ export async function paymentCode(services: Services, account: string) {
   if (!code) throw new Error('未获取到付款码');
   return { code, name: info.name, balance: yuan(info.elec_accamt) };
 }
+
+// ── Turnover (pkucli crates/campuscard/src/api.rs `get_turnover`) ─────────────────────────────
+
+export type TurnoverQuery = { size?: number; current?: number; from?: string; to?: string };
+
+/** Path of the personal turnover search, newest first (`from`/`to`: YYYY-MM-DD). */
+export function turnoverUrl({ size = 20, current = 1, from, to }: TurnoverQuery = {}) {
+  const q = [`size=${size}`, `current=${current}`, 'synAccessSource=h5', from ? `timeFrom=${from}` : '', to ? `timeTo=${to}` : ''].filter(Boolean).join('&');
+  return `/berserker-search/search/personal/turnover?${q}`;
+}
+
+/** One page of card transactions (amounts in fen, as the service returns them). */
+export async function turnoverPage(services: Services, query?: TurnoverQuery) {
+  return unwrap<{ records: Turnover[]; total: number }>(await get(services, turnoverUrl(query)));
+}

@@ -1,7 +1,7 @@
 import { defineTool, type ToolDef } from '@pku-harness/sdk';
 import { z } from 'zod';
 
-import { cardMode, INCOME_ICONS, setDigitalCard, unwrap, yuan, type CardInfo, type Turnover } from './api';
+import { cardMode, INCOME_ICONS, setDigitalCard, turnoverPage, unwrap, yuan, type CardInfo } from '@pku-harness/campus-card';
 import { createRechargeOrder, RECHARGE_MAX } from './recharge';
 import { currentMonth, monthRange, statsUrls, summarizeMonth, type DailyStats, type TurnoverCategory, type TurnoverCount } from './stats';
 
@@ -78,8 +78,7 @@ export const cardTools: Record<string, ToolDef> = {
     }),
     effect: 'read',
     execute: async ({ limit, from, to }, ctx) => {
-      const q = [`size=${limit ?? 20}`, 'current=1', 'synAccessSource=h5', from ? `timeFrom=${from}` : '', to ? `timeTo=${to}` : ''].filter(Boolean).join('&');
-      const page = unwrap<{ records: Turnover[]; total: number }>(await ctx.services.campus.request('card', { url: `/berserker-search/search/personal/turnover?${q}` }));
+      const page = await turnoverPage(ctx.services, { size: limit ?? 20, from, to });
       return {
         total: page.total,
         items: page.records.map((t) => ({
