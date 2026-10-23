@@ -62,6 +62,8 @@ The app builds against published npm packages, not a checkout of this repo:
 | [`@pku-harness/plugins`](https://www.npmjs.com/package/@pku-harness/plugins) | `plugins` | Every bundled plugin (`builtinPlugins`) |
 | [`@pku-harness/registry`](https://www.npmjs.com/package/@pku-harness/registry) | `registry` | Marketplace schema + `registry.json` |
 
+Not published: [`packages/cloud-server`](packages/cloud-server), the self-hostable reference server for PKU Harness Cloud (`bun run --filter @pku-harness/cloud-server dev`).
+
 They ship TypeScript source (Metro compiles it in the app) and share one version. To release:
 
 ```bash

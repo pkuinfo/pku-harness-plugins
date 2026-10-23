@@ -1,0 +1,19 @@
+# TLS-terminating reverse proxy in front of the cloud server.
+# CLOUD_DOMAIN=s.example.org caddy run --config Caddyfile
+# Run the server with CLOUD_PUBLIC_URL=https://$CLOUD_DOMAIN and CLOUD_TRUST_PROXY=1.
+#
+# No `log` directive on purpose: Caddy access logs record full URIs, and WebSocket/SSE peer
+# tokens travel in `?t=`. The server logs route patterns only.
+{$CLOUD_DOMAIN} {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		-Server
+	}
+
+	# WebSocket upgrades are proxied automatically; flush immediately for SSE.
+	reverse_proxy {$CLOUD_UPSTREAM:127.0.0.1:8787} {
+		flush_interval -1
+	}
+}

@@ -1,0 +1,9 @@
+# Continuous SQLite replication (https://litestream.io). Environment variables are expanded.
+# LITESTREAM_REPLICA_URL examples: s3://bucket/pku-harness-cloud, sftp://user@host/path
+# S3 credentials: LITESTREAM_ACCESS_KEY_ID / LITESTREAM_SECRET_ACCESS_KEY.
+dbs:
+  - path: ${CLOUD_DB}
+    replicas:
+      - url: ${LITESTREAM_REPLICA_URL}
+        sync-interval: 10s
+        retention: 72h

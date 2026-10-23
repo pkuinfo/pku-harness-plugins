@@ -1,0 +1,5 @@
+# Used by BuildKit for deploy/Dockerfile (context = plugins repo root).
+**/node_modules
+**/.git
+**/data
+**/*.log
