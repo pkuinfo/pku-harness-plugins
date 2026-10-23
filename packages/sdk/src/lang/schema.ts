@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { serverSchema } from './server-schema';
+
 /**
  * Schemas of a plugin document (docs/PLUGIN-LANGUAGE.md §4–§5): the `PLUGIN.md` frontmatter and
  * tool files. The website's marketplace scanner mirrors `manifestSchema`. Steps are validated
@@ -116,8 +118,8 @@ export const manifestSchema = z
     cloud: z.record(z.string(), z.unknown()).optional(),
     i18n: z.object({ en: translationSchema.optional() }).optional(),
     remote: z.object({ mcp: z.string().url(), auth: z.enum(['none', 'bearer']).optional() }).strict().optional(),
-    /** Server functions run by the cloud server (pku-harness docs/CLOUD-FUNCTIONS.md); validated there. */
-    server: z.record(z.string(), z.unknown()).optional(),
+    /** Server functions, schedules, collections (pku-harness docs/CLOUD-FUNCTIONS.md); see server-schema.ts. */
+    server: z.lazy(() => serverSchema).optional(),
   })
   .strict();
 export type Manifest = z.infer<typeof manifestSchema>;

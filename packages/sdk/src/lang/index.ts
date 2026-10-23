@@ -22,6 +22,20 @@ export {
   type ToolDoc,
   type ViewDoc,
 } from './schema';
+export {
+  accessSchema,
+  secretNameSchema,
+  SERVER_ABILITIES,
+  SERVER_ABILITY_DEFS,
+  serverSchema,
+  validateServer,
+  type CollectionDoc,
+  type FunctionAccess,
+  type ScheduleDoc,
+  type ServerDoc,
+  type ServerFunctionDoc,
+  type ServerLimitsDoc,
+} from './server-schema';
 export { STDLIB_NAMES } from './stdlib';
 export { LANGUAGE_REFERENCE } from './reference';
 export { memoryKV } from './testing';
