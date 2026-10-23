@@ -121,6 +121,20 @@
         "zod": "^4.0.0",
       },
     },
+    "plugins/card-share": {
+      "name": "@pku-harness/plugin-card-share",
+      "version": "0.1.0",
+      "dependencies": {
+        "@pku-harness/campus-card": "^0.1.0",
+        "@pku-harness/cloud-protocol": "^0.1.0",
+      },
+      "peerDependencies": {
+        "@pku-harness/sdk": "*",
+        "react": "*",
+        "react-native": "*",
+        "zod": "^4.0.0",
+      },
+    },
     "plugins/classrooms": {
       "name": "@pku-harness/plugin-classrooms",
       "version": "0.1.0",
@@ -455,6 +469,8 @@
     "@pku-harness/plugin-campus-events": ["@pku-harness/plugin-campus-events@workspace:plugins/campus-events"],
 
     "@pku-harness/plugin-canteen": ["@pku-harness/plugin-canteen@workspace:plugins/canteen"],
+
+    "@pku-harness/plugin-card-share": ["@pku-harness/plugin-card-share@workspace:plugins/card-share"],
 
     "@pku-harness/plugin-classrooms": ["@pku-harness/plugin-classrooms@workspace:plugins/classrooms"],
 

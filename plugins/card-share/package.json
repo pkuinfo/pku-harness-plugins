@@ -1,0 +1,21 @@
+{
+  "name": "@pku-harness/plugin-card-share",
+  "version": "0.1.0",
+  "description": "Share your Campus Card payment code with a friend for a while: end-to-end encrypted through PKU Harness Cloud, with a spend cap, PIN and masked-name gates",
+  "type": "module",
+  "main": "src/index.ts",
+  "license": "MIT",
+  "pkuHarness": {
+    "builtin": true
+  },
+  "dependencies": {
+    "@pku-harness/campus-card": "^0.1.0",
+    "@pku-harness/cloud-protocol": "^0.1.0"
+  },
+  "peerDependencies": {
+    "@pku-harness/sdk": "*",
+    "zod": "^4.0.0",
+    "react": "*",
+    "react-native": "*"
+  }
+}
