@@ -45,7 +45,7 @@ Limits and quotas are `DEFAULT_LIMITS` from cloud-protocol; rate-limit buckets a
 
 | Method / path | Auth | Notes |
 |---|---|---|
-| `GET /v1/meta` | — | services `store`, `channels`; limits; PoW salt + difficulty; served pages |
+| `GET /v1/meta` | — | services `store`, `channels`, `functions`; limits; PoW salt + difficulty; served pages; `serverFunctions.policy` |
 | `POST /v1/devices` | PoW | idempotent per signing key |
 | `DELETE /v1/devices/me` | device token | wipes store, channels (sockets get `closed: revoked`), nonces |
 | `POST /v1/auth/token` | Ed25519 challenge | aud, ±5 min skew, nonce replay → 401; 10-min token for the offered subset of `services` |
@@ -58,7 +58,9 @@ Limits and quotas are `DEFAULT_LIMITS` from cloud-protocol; rate-limit buckets a
 | `POST /v1/c/:id/join` | `authKey` | claim a seat (409 when full); 5 wrong keys lock the channel |
 | `GET /v1/c/:id/ws?t=` · `GET /v1/c/:id/events?t=` · `POST /v1/c/:id/send` | peer token | peer WebSocket, or SSE + POST for webviews without WebSocket |
 | `GET /v1/c/:id/mailbox` | peer token | |
-| `POST /v1/fn/*` · `/v1/push/*` | — | `501 unsupported` until stage 6 |
+| `POST /v1/fn/:plugin/:name` | token with `functions` + `doc` claim | runs an `access: user` server function of the consented document (below) |
+| `GET/POST /v1/p/:plugin/:name` | — (per-IP limit) | `access: public` functions; `cache` honoured |
+| `/v1/push/*` | — | `501 unsupported` until stage 5 |
 | `GET /w/:plugin/*` | — | `<plugin>/web/dist`, strict CSP, `Referrer-Policy: no-referrer` |
 | `GET /s/:id` | — | `302 /w/<plugin>/<page>?c=<id>`; the browser keeps `#k=…` across the redirect |
 | `GET /healthz` | — | liveness |
@@ -84,12 +86,64 @@ party, `4010` channel closed/expired (a `closed` frame comes first), `1001` serv
 `error` frame and the frame is dropped. A frame to an offline party is dropped with
 `error: conflict`; use the mailbox for offline delivery.
 
+## Server functions
+
+Plugins declare a `server:` section in their `PLUGIN.md` (pku-harness `docs/CLOUD-FUNCTIONS.md`);
+this server runs it with the SDK's interpreter (`@pku-harness/sdk` `lang/run.ts`) and the server
+abilities in `src/fn/host.ts` (`kv.*`, `crypto.sha256/hmacSha256/randomId`; `collection.*` and
+`push.send` answer `501` until stages 3 and 5). Runs are in-process for now (a worker pool is a
+later stage), limited to 100 steps, 20 requests, 10 s, 50 000 operations and a 256 KB result.
+
+How a call is checked:
+
+1. The device asks `POST /v1/auth/token` for `functions` with `doc: { link, hash }` — the link it
+   installed the plugin from and the content hash it recorded when the user consented. The doc is
+   an extra line of the signed challenge (`cloud-protocol` `auth.ts`), so the token proves the
+   device approved exactly that version. Without it `/v1/fn` answers `400 doc_required`.
+2. The operator policy decides whether that (plugin, hash) runs at all.
+3. The server fetches the document by its link (or reads it from `CLOUD_FN_LOCAL`), recomputes the
+   hash like the app (`sha256hex(fingerprintText(files))`), refuses a mismatch (`409`), and keeps
+   the compiled section (LRU, 64 documents).
+4. The function runs with `caller.id` = a per-plugin pseudonym of the device
+   (`base64url(HMAC(token secret, "pseudonym" NUL plugin NUL deviceId))[:22]`). Its KV lives in the
+   store table under the namespace `fn:<plugin>` and is wiped with the device.
+
+Secrets are substituted into request templates (and `crypto.hmacSha256 { secret: NAME }`) only;
+results and error messages are scrubbed of their values, and log lines carry the plugin, function,
+status and time — never inputs, results, secrets or pseudonyms.
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `CLOUD_FN_POLICY` | `open` (`allowlist` when `NODE_ENV=production`) | `verified` · `allowlist` · `open` |
+| `CLOUD_FN_ALLOW` | empty | comma list of `plugin@<sha256 hex>`, `plugin@*`; `plugin@<hash>=<link>` also tells `/v1/p` where the document is |
+| `CLOUD_FN_VERIFIED` | — | JSON file for `verified`: `{ "<plugin>": ["<hash>", …] }` or `{ "<plugin>": { "link": "…", "hashes": [...] } }`; re-read when it changes |
+| `CLOUD_FN_LOCAL` | — | folder of plugin folders (`<dir>/<id>/PLUGIN.md`) used instead of fetching links (development) |
+| `CLOUD_SECRET_<PLUGIN>__<NAME>` | — | operator secret `NAME` of a plugin, plugin id upper-snake: `canteen-crowd` + `QWEATHER_KEY` → `CLOUD_SECRET_CANTEEN_CROWD__QWEATHER_KEY` |
+| `CLOUD_FN_CALLS_PER_DAY` / `CLOUD_FN_REQUESTS_PER_DAY` | `50000` / `20000` | per plugin; over → `429 rate_limited` |
+
+Calls are also limited per (device, plugin) to `limits.functions.callsPerMin`, and `/v1/p` per IP.
+
+### Try a local plugin
+
+```bash
+cd packages/cloud-server
+CLOUD_FN_POLICY=open CLOUD_FN_LOCAL=../../plugins CLOUD_DB=:memory: bun run start
+# a public function of plugins/<id>/PLUGIN.md (access: public):
+curl 'http://localhost:8787/v1/p/<id>/<fn>?arg=value'
+```
+
+`access: user` functions need a device token whose `doc` hash matches the local folder's content;
+the app sends it once the phone side (`cloud` step) lands. In tests, see `test/fn.test.ts` and the
+fixture `test/fixtures/fn-demo/PLUGIN.md`.
+
 ## Layout
 
 ```
 src/index.ts          Bun.serve + websocket handlers, env config
 src/app.ts            Hono app, middleware (IP, rate-limit headers, body limit, logging)
 src/routes/*.ts       meta, devices, auth, store, channels, peer, mailbox, fn, push
+src/fn/               policy.ts (CLOUD_FN_POLICY), docs.ts (fetch + hash + LRU), host.ts (server
+                      abilities, KV, fetch), run.ts (RunEnv, limits, secret scrubbing)
 src/auth/             token.ts (HMAC bearer tokens), pow.ts (salt rotation), sig.ts (nonce replay)
 src/db/               schema.sql, storage.ts (interface), sqlite.ts
 src/limits.ts         token buckets
