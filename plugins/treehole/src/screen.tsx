@@ -14,7 +14,7 @@ type Detail = { status: 'ok'; hole: HoleOut; totalComments: number; comments: Co
 const errText = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
 /** SMS step shared by both screens: send the code, then rerun `retry` with it. */
-function VerifyPanel({ host, message, invoke, retry }: { host: HostUI; message: string; invoke: PluginScreenProps['invoke']; retry: (code: string) => Promise<void> }) {
+function VerifyPanel({ host, services, message, invoke, retry }: { host: HostUI; services: PluginScreenProps['services']; message: string; invoke: PluginScreenProps['invoke']; retry: (code: string) => Promise<void> }) {
   const { Text, Button, Field } = host.components;
   const t = host.useTheme();
   const s = strings[host.useLocale()];
@@ -24,8 +24,24 @@ function VerifyPanel({ host, message, invoke, retry }: { host: HostUI; message: 
   const act = async (kind: 'send' | 'verify') => {
     setBusy(kind);
     try {
-      if (kind === 'send') setNotice({ tone: 'muted', text: s.sentText(((await invoke('treehole.sendCode')) as { sent: string }).sent) });
-      else {
+      if (kind === 'send') {
+        setNotice({ tone: 'muted', text: s.sentText(((await invoke('treehole.sendCode')) as { sent: string }).sent) });
+        // One tap takes over the code: Android asks to allow reading the incoming SMS, then it
+        // fills in and verifies by itself (typing it still works).
+        void services.sms.awaitCode().then(async (found) => {
+          if (!found) return;
+          setCode(found);
+          setBusy('verify');
+          try {
+            await retry(found);
+            host.haptics.success();
+          } catch (e) {
+            setNotice({ tone: 'down', text: errText(e) });
+          } finally {
+            setBusy(null);
+          }
+        });
+      } else {
         await retry(code.trim());
         host.haptics.success();
       }
@@ -70,7 +86,7 @@ export function TreeholeScreen(props: PluginScreenProps) {
   return <Latest {...props} />;
 }
 
-function Latest({ host, invoke }: PluginScreenProps) {
+function Latest({ host, invoke, services }: PluginScreenProps) {
   const { Screen, Text, Skeleton, Glass, EmptyState, Button } = host.components;
   const t = host.useTheme();
   const s = strings[host.useLocale()];
@@ -86,6 +102,7 @@ function Latest({ host, invoke }: PluginScreenProps) {
         ) : v.status === 'verification_required' ? (
           <VerifyPanel
             host={host}
+            services={services}
             message={v.message}
             invoke={invoke}
             retry={async (code) => {
@@ -124,7 +141,7 @@ export function HoleScreen(props: PluginScreenProps) {
   return <Thread {...props} />;
 }
 
-function Thread({ host, invoke, params }: PluginScreenProps) {
+function Thread({ host, invoke, params, services }: PluginScreenProps) {
   const { Screen, Text, Skeleton, Surface, EmptyState, Button } = host.components;
   const t = host.useTheme();
   const s = strings[host.useLocale()];
@@ -167,6 +184,7 @@ function Thread({ host, invoke, params }: PluginScreenProps) {
         ) : v.status === 'verification_required' ? (
           <VerifyPanel
             host={host}
+            services={services}
             message={v.message}
             invoke={invoke}
             retry={async (code) => {

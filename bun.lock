@@ -57,16 +57,6 @@
         "zod": "^4.0.0",
       },
     },
-    "plugins/campus-card": {
-      "name": "@pku-harness/plugin-campus-card",
-      "version": "0.3.0",
-      "peerDependencies": {
-        "@pku-harness/sdk": "*",
-        "react": "*",
-        "react-native": "*",
-        "zod": "^4.0.0",
-      },
-    },
     "plugins/campus-events": {
       "name": "@pku-harness/plugin-campus-events",
       "version": "0.1.0",
@@ -144,7 +134,7 @@
     },
     "plugins/deepseek": {
       "name": "@pku-harness/plugin-deepseek",
-      "version": "0.2.0",
+      "version": "0.3.0",
       "peerDependencies": {
         "@ai-sdk/openai-compatible": "^3.0.0",
         "@pku-harness/sdk": "*",
@@ -199,16 +189,6 @@
       "version": "0.1.0",
       "peerDependencies": {
         "@pku-harness/sdk": "*",
-        "zod": "^4.0.0",
-      },
-    },
-    "plugins/netfee": {
-      "name": "@pku-harness/plugin-netfee",
-      "version": "0.2.0",
-      "peerDependencies": {
-        "@pku-harness/sdk": "*",
-        "react": "*",
-        "react-native": "*",
         "zod": "^4.0.0",
       },
     },
@@ -316,9 +296,9 @@
         "zod": "^4.0.0",
       },
     },
-    "plugins/utilities": {
-      "name": "@pku-harness/plugin-utilities",
-      "version": "0.1.0",
+    "plugins/wallet": {
+      "name": "@pku-harness/plugin-wallet",
+      "version": "1.0.0",
       "peerDependencies": {
         "@pku-harness/sdk": "*",
         "react": "*",
@@ -407,8 +387,6 @@
 
     "@pku-harness/plugin-calendar": ["@pku-harness/plugin-calendar@workspace:plugins/calendar"],
 
-    "@pku-harness/plugin-campus-card": ["@pku-harness/plugin-campus-card@workspace:plugins/campus-card"],
-
     "@pku-harness/plugin-campus-events": ["@pku-harness/plugin-campus-events@workspace:plugins/campus-events"],
 
     "@pku-harness/plugin-canteen": ["@pku-harness/plugin-canteen@workspace:plugins/canteen"],
@@ -435,8 +413,6 @@
 
     "@pku-harness/plugin-memory": ["@pku-harness/plugin-memory@workspace:plugins/memory"],
 
-    "@pku-harness/plugin-netfee": ["@pku-harness/plugin-netfee@workspace:plugins/netfee"],
-
     "@pku-harness/plugin-notices": ["@pku-harness/plugin-notices@workspace:plugins/notices"],
 
     "@pku-harness/plugin-openai-compatible": ["@pku-harness/plugin-openai-compatible@workspace:plugins/openai-compatible"],
@@ -459,7 +435,7 @@
 
     "@pku-harness/plugin-ui": ["@pku-harness/plugin-ui@workspace:plugins/ui"],
 
-    "@pku-harness/plugin-utilities": ["@pku-harness/plugin-utilities@workspace:plugins/utilities"],
+    "@pku-harness/plugin-wallet": ["@pku-harness/plugin-wallet@workspace:plugins/wallet"],
 
     "@pku-harness/sdk": ["@pku-harness/sdk@workspace:packages/sdk"],
 

@@ -7,6 +7,7 @@ export const strings = defineStrings({
     noData: '没有数据',
     retry: '重试',
     label: '浴卡 · 最近充值',
+    lastTopUp: '最近充值',
     /** Order status from the payment platform (see ORDER_STATUS) → display text. */
     status: {} as Record<string, string>,
     noTopUps: '还没有线上充值记录',
@@ -27,6 +28,7 @@ export const strings = defineStrings({
     noData: 'No data',
     retry: 'Retry',
     label: 'Bath card · Latest top-up',
+    lastTopUp: 'Latest top-up',
     status: { 待支付: 'Unpaid', 已付款: 'Paid', 未知: 'Unknown' } as Record<string, string>,
     noTopUps: 'No online top-ups yet',
     activate: 'Credit goes on the card at a top-up kiosk',

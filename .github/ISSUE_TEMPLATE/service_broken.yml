@@ -16,7 +16,7 @@ body:
     id: tool
     attributes:
       label: 工具 / 功能
-      placeholder: 例如 treehole.read、campus-card.recharge
+      placeholder: 例如 treehole.read、wallet.cardRecharge
   - type: textarea
     id: what
     attributes:

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-21",
+  "updatedAt": "2026-10-22",
   "plugins": [
     {
       "id": "ui",
@@ -159,11 +159,11 @@
       "verified": true
     },
     {
-      "id": "campus-card",
-      "name": "校园卡",
-      "description": "查询校园卡余额、消费记录和月度消费统计；付款码。",
+      "id": "wallet",
+      "name": "校园钱包",
+      "description": "校园卡余额与付款码、充值，网费、电费、水费、浴卡（原「校园卡」「网费」「水电浴」合并）。",
       "author": "pkuinfo",
-      "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/campus-card",
+      "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/wallet",
       "kind": "builtin",
       "icon": "card",
       "requires": [
@@ -171,28 +171,9 @@
         "network"
       ],
       "scopes": [
-        "bdcard.pku.edu.cn"
-      ],
-      "tags": [
-        "official",
-        "campus"
-      ],
-      "verified": true
-    },
-    {
-      "id": "netfee",
-      "name": "网费",
-      "description": "查询校园网账户余额和本月用量。",
-      "author": "pkuinfo",
-      "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/netfee",
-      "kind": "builtin",
-      "icon": "wifi",
-      "requires": [
-        "campus-session",
-        "network"
-      ],
-      "scopes": [
-        "its.pku.edu.cn"
+        "bdcard.pku.edu.cn",
+        "its.pku.edu.cn",
+        "cwpay.pku.edu.cn"
       ],
       "tags": [
         "official",
@@ -456,28 +437,6 @@
       ],
       "tags": [
         "example"
-      ],
-      "verified": true
-    },
-    {
-      "id": "utilities",
-      "name": "水电浴",
-      "description": "浴卡信息、充值记录和充值（收费平台）；宿舍电费的缴费方式。",
-      "author": "pkuinfo",
-      "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/utilities",
-      "kind": "builtin",
-      "icon": "bolt",
-      "requires": [
-        "campus-session",
-        "network"
-      ],
-      "scopes": [
-        "cwpay.pku.edu.cn"
-      ],
-      "tags": [
-        "official",
-        "campus",
-        "finance"
       ],
       "verified": true
     },

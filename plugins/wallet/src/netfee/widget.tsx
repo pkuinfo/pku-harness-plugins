@@ -29,7 +29,7 @@ function Live({ host, size }: PluginWidgetProps) {
   const locale = host.useLocale();
   const str = strings[locale];
   const now = host.useNow(30_000);
-  const data = host.useToolData<Status>('netfee.getStatus', {}, { ttlMinutes: 30 });
+  const data = host.useToolData<Status>('wallet.netfeeBalance', {}, { ttlMinutes: 30 });
   if (data.status === 'loading') return <Skeleton width="50%" height={30} />;
   if (!data.value)
     return (

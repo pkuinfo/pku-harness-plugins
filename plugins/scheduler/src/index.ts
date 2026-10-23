@@ -22,7 +22,7 @@ const notifyAction = z.object({
 
 const checkAction = z.object({
   type: z.literal('check'),
-  tool: z.string().describe('read-only tool id to call, e.g. "campus-card.getBalance"'),
+  tool: z.string().describe('read-only tool id to call, e.g. "wallet.cardBalance"'),
   args: z.record(z.string(), z.unknown()).optional(),
   condition: conditionSchema.describe('notify only when this holds; path is a dot path into the tool result'),
   title: z.string().describe('notification title; "{value}" is replaced by the checked value'),

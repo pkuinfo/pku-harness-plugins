@@ -29,7 +29,7 @@ function Live({ host, size, config }: PluginWidgetProps) {
   const locale = host.useLocale();
   const s = strings[locale];
   const now = host.useNow(30_000);
-  const data: LiveData<Balance> = host.useToolData<Balance>('campus-card.getBalance', {}, { ttlMinutes: 10 });
+  const data: LiveData<Balance> = host.useToolData<Balance>('wallet.cardBalance', {}, { ttlMinutes: 10 });
   const warnBelow = typeof config.warnBelow === 'number' ? config.warnBelow : 50;
   if (data.status === 'loading')
     return (
@@ -77,8 +77,8 @@ function Live({ host, size, config }: PluginWidgetProps) {
         </Text>
         {size !== 'sm' ? (
           <View style={{ flexDirection: 'row', gap: t.spacing.xs }}>
-            <Button title={s.topUp} size="sm" variant="secondary" onPress={() => host.navigate('/m/campus-card/recharge')} />
-            <Button title={s.payCode} size="sm" icon="qr" onPress={() => host.navigate('/m/campus-card/pay')} />
+            <Button title={s.topUp} size="sm" variant="secondary" onPress={() => host.navigate('/m/wallet/recharge')} />
+            <Button title={s.payCode} size="sm" icon="qr" onPress={() => host.navigate('/m/wallet/pay')} />
           </View>
         ) : null}
       </View>

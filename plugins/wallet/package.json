@@ -1,7 +1,7 @@
 {
-  "name": "@pku-harness/plugin-utilities",
-  "version": "0.1.0",
-  "description": "水电浴: bath card (浴卡) info, top-ups and recharge hand-off via 北京大学收费平台 (cwpay.pku.edu.cn); dorm electricity guidance",
+  "name": "@pku-harness/plugin-wallet",
+  "version": "1.0.0",
+  "description": "Campus wallet: Campus Card balance and payment code, top-ups, network fee, dorm electricity and bath card",
   "type": "module",
   "main": "src/index.ts",
   "license": "MIT",

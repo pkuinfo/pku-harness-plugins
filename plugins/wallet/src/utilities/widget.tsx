@@ -29,7 +29,7 @@ function Live({ host, size }: PluginWidgetProps) {
   const locale = host.useLocale();
   const str = strings[locale];
   const now = host.useNow(60_000);
-  const data = host.useToolData<Bath>('utilities.bathCard', {}, { ttlMinutes: 30 });
+  const data = host.useToolData<Bath>('wallet.bathCard', {}, { ttlMinutes: 30 });
   if (data.status === 'loading')
     return (
       <View style={{ gap: t.spacing.sm }}>
@@ -49,8 +49,9 @@ function Live({ host, size }: PluginWidgetProps) {
   const last = data.value.recentTopUps[0];
   return (
     <View style={{ gap: t.spacing.xs }}>
+      {/* On the dashboard (md) and in the wallet hub the card title already says 浴卡. */}
       <Text variant="micro" tone="faint">
-        {str.label}
+        {size === 'sm' ? str.label : str.lastTopUp}
       </Text>
       {last ? (
         <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: t.spacing.xs }}>
@@ -76,7 +77,7 @@ function Live({ host, size }: PluginWidgetProps) {
         <Text variant="micro" tone={data.error ? 'warn' : 'faint'} style={{ flex: 1 }}>
           {data.fetching ? str.refreshing : `${data.error ? str.refreshFailed : ''}${data.updatedAt ? formatRelative(data.updatedAt, locale, now.getTime()) : ''}`}
         </Text>
-        <Button title={str.topUp} size="sm" variant="secondary" onPress={() => host.navigate('/m/utilities/bath-recharge')} />
+        <Button title={str.topUp} size="sm" variant="secondary" onPress={() => host.navigate('/m/wallet/bath-recharge')} />
       </View>
     </View>
   );

@@ -140,6 +140,14 @@ export interface HostServices {
     readiness(): Promise<NotifyReadiness>;
     fix(kind: NotifyFixKind): Promise<NotifyReadiness>;
   };
+  /**
+   * One-tap SMS code takeover: resolves with the code of the next incoming SMS once the user
+   * allows reading that one message (Android SMS User Consent); null when unavailable, denied,
+   * timed out (5 min) or unclear. Call it right after asking the service to send the SMS.
+   */
+  sms: {
+    awaitCode(): Promise<string | null>;
+  };
   /** Exact notifications and scheduled checks. */
   scheduler: {
     create(input: JobInput): Promise<Job>;
@@ -374,6 +382,21 @@ export interface PluginDef {
    * to Chinese. Tool descriptions and `instructions` are for the model and stay as they are.
    */
   i18n?: { en?: PluginTranslation };
+  /**
+   * Ids this plugin replaced (e.g. after merging plugins), so data stored by users keeps
+   * working: the host resolves old plugin ids (settings, screens `/p/<old>/…`, widgets) to this
+   * plugin and old tool ids to the new tools. Ids here never shadow a plugin that is installed.
+   */
+  legacy?: PluginLegacy;
+}
+
+export interface PluginLegacy {
+  /** Old plugin ids now served by this plugin, e.g. ['campus-card', 'netfee']. */
+  pluginIds?: string[];
+  /** Old full tool id → tool name in this plugin, e.g. { 'campus-card.getBalance': 'cardBalance' }. */
+  tools?: Record<string, string>;
+  /** Old `<plugin>.<widget>` → widget key in this plugin's `contributes.widgets`. */
+  widgets?: Record<string, string>;
 }
 
 export interface ContextInput {

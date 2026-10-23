@@ -57,7 +57,7 @@ export function PayScreen({ host, services, invoke }: PluginScreenProps) {
   const switchCard = async () => {
     setBusy(true);
     try {
-      await invoke('campus-card.setDigitalCard');
+      await invoke('wallet.cardSetDigital');
       host.haptics.success();
       setState({ step: 'loading' });
       await load();

@@ -1,5 +1,5 @@
 /**
- * Pure helpers for the utilities plugin. Bath card data comes from 北京大学收费平台
+ * Pure helpers for the wallet plugin's utilities module (浴卡, 电费). Bath card data comes from 北京大学收费平台
  * (cwpay.pku.edu.cn) through the harness `cwpay` session, which decrypts the answers; shapes are
  * the ones the site's mobile bundle reads (2026-10-21, /mobile/js/chunk-09728569 浴卡充值,
  * chunk-8158cdf6 订单, chunk-3f0f2878 项目). Amounts from the server are in fen.

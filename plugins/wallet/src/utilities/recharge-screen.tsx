@@ -2,31 +2,31 @@ import type { PluginScreenProps } from '@pku-harness/sdk';
 import { useState } from 'react';
 import { View } from 'react-native';
 
-import { RECHARGE_MAX, RECHARGE_PRESETS } from './recharge';
+import { BATH_MAX, BATH_MIN, BATH_PRESETS, checkBathAmount } from './parse';
 import { strings } from './strings';
 
 /**
- * 充值: pick an amount, then the same `campus-card.recharge` tool the agent uses creates the order
- * and opens the 收银台, where the user pays with WeChat Pay or Alipay in that app.
+ * 浴卡充值: pick an amount; the same `wallet.bathRecharge` tool the agent uses creates the order
+ * and opens the signed-in payment platform, where the user pays it with WeChat Pay or Alipay.
  */
-export function RechargeScreen({ host, invoke }: PluginScreenProps) {
+export function BathRechargeScreen({ host, invoke }: PluginScreenProps) {
   const { SheetScreen, Text, Pressable, Field } = host.components;
   const t = host.useTheme();
   const s = strings[host.useLocale()];
-  const [amount, setAmount] = useState<number | null>(100);
+  const [amount, setAmount] = useState<number | null>(50);
   const [custom, setCustom] = useState('');
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<{ tone: 'muted' | 'down' | 'up'; text: string } | null>(null);
 
   const value = custom ? Number(custom) : amount;
-  const valid = value != null && Number.isInteger(value) && value >= 1 && value <= RECHARGE_MAX;
+  const valid = value != null && checkBathAmount(value) == null;
 
   const go = async () => {
     if (!valid) return;
     setBusy(true);
     setNotice(null);
     try {
-      await invoke('campus-card.recharge', { amount: value });
+      await invoke('wallet.bathRecharge', { amount: value });
       host.haptics.success();
       setNotice({ tone: 'up', text: s.opened });
     } catch (e) {
@@ -40,8 +40,8 @@ export function RechargeScreen({ host, invoke }: PluginScreenProps) {
   return (
     <SheetScreen title={s.rechargeTitle} primary={valid ? s.rechargeAmount(value) : s.topUp} onPrimary={() => void go()} primaryDisabled={!valid} loading={busy}>
       <View style={{ gap: t.spacing.lg }}>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: t.spacing.sm }}>
-          {RECHARGE_PRESETS.map((n) => {
+        <View style={{ flexDirection: 'row', gap: t.spacing.sm }}>
+          {BATH_PRESETS.map((n) => {
             const on = !custom && amount === n;
             return (
               <Pressable
@@ -53,8 +53,7 @@ export function RechargeScreen({ host, invoke }: PluginScreenProps) {
                   setAmount(n);
                 }}
                 style={{
-                  flexBasis: '31%',
-                  flexGrow: 1,
+                  flex: 1,
                   paddingVertical: t.spacing.lg,
                   alignItems: 'center',
                   borderRadius: t.radius.lg,
@@ -70,7 +69,7 @@ export function RechargeScreen({ host, invoke }: PluginScreenProps) {
             );
           })}
         </View>
-        <Field label={s.otherAmount} value={custom} onChangeText={(v) => setCustom(v.replace(/\D/g, ''))} placeholder={s.amountHint(RECHARGE_MAX)} keyboardType="number-pad" />
+        <Field label={s.otherAmount} value={custom} onChangeText={(v) => setCustom(v.replace(/[^\d.]/g, ''))} placeholder={`${BATH_MIN}–${BATH_MAX}`} keyboardType="decimal-pad" />
         <Text variant="caption" tone="muted">
           {s.rechargeNote}
         </Text>
