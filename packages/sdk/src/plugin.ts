@@ -1,6 +1,7 @@
 import type { z } from 'zod';
 
 import type { CampusRequest, CampusResponse, CampusService, CampusStatus, OtpCode, OtpStatus, PickedFile } from './campus';
+import type { CloudManifest, PluginCloud } from './cloud';
 import type { Binding, Widget, WidgetSize } from './dashboard';
 import type { SpecCheck, UISpec } from './genui';
 import type { NotifyFixKind, NotifyReadiness } from './notify';
@@ -51,7 +52,9 @@ export type Capability =
   | 'notifications'
   | 'background' // periodic background execution
   | 'shell' // never available on phones; plugins needing it must run remotely
-  | 'filesystem';
+  | 'filesystem'
+  | 'cloud' // a PKU Harness Cloud provider is configured (docs/CLOUD.md); see PluginDef.cloud
+  | 'ongoing'; // a persistent ongoing notification / foreground service (Android only); see HostServices.ongoing
 
 /** Minimal namespaced JSON store each plugin gets. */
 export interface KV {
@@ -86,6 +89,23 @@ export interface WidgetCatalogEntry {
   defaultSize: WidgetSize;
   /** JSON Schema of the widget's config, if it takes any. */
   config?: Record<string, unknown>;
+}
+
+/** Options for `HostServices.ongoing.start`. */
+export interface OngoingOptions {
+  title: string;
+  body?: string;
+  /** When the activity ends (ms epoch): shown as a countdown; the host stops it then. */
+  until?: number;
+  /** Label of the notification's stop action (default 停止). */
+  stopLabel?: string;
+  /** Called when the user taps stop (or the system ends the service). */
+  onStop?: () => void;
+}
+
+export interface OngoingHandle {
+  update(p: { title?: string; body?: string }): void;
+  stop(): void;
 }
 
 export interface HostServices {
@@ -204,6 +224,14 @@ export interface HostServices {
      */
     openSignedIn(service: CampusService): Promise<{ opened: true }>;
   };
+  /**
+   * Keep the app alive while something long runs in the background (live sharing), shown as an
+   * ongoing notification: an Android foreground service. Present only when the 'ongoing'
+   * capability is (Android); check before use. Start it from a user action, stop it when done.
+   */
+  ongoing?: {
+    start(opts: OngoingOptions): OngoingHandle;
+  };
   timetable: {
     get(): { courses: Course[]; semester: Semester | null; reminderMinutes: number | null };
     newId(): string;
@@ -247,6 +275,11 @@ export interface ToolContext {
   /** This plugin's private store. */
   kv: KV;
   services: HostServices;
+  /**
+   * PKU Harness Cloud, bound to this plugin (consent, manifest `uses` and `e2e` enforced by the
+   * host). Plugins declaring `PluginDef.cloud` get it; optional until every host build wires it.
+   */
+  cloud?: PluginCloud;
   signal?: AbortSignal;
 }
 
@@ -357,6 +390,11 @@ export interface PluginDef {
   core?: boolean;
   /** What the plugin needs from the device; unmet requirements hide it (see Capability). */
   requires?: Capability[];
+  /**
+   * PKU Harness Cloud use (docs/CLOUD.md §2.2): services, what leaves the device (consent
+   * sheet), E2E. Without `optional: true`, also list 'cloud' in `requires`.
+   */
+  cloud?: CloudManifest;
   /** Remote (MCP) plugin: where its tools run. Set by the host for installed remote plugins. */
   remote?: { url: string; server: string };
   /** Default per-effect modes; the user can change them. */

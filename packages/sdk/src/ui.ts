@@ -2,6 +2,7 @@ import type { ComponentType, ReactNode } from 'react';
 
 import type { z } from 'zod';
 
+import type { PluginCloud, SecretLink } from './cloud';
 import type { Binding, Widget, WidgetSize } from './dashboard';
 import type { HostServices, KV } from './plugin';
 
@@ -65,8 +66,11 @@ export interface HostComponents {
   Glass: ComponentType<{ children?: ReactNode; style?: Style; radius?: number; tone?: 'regular' | 'strong' | 'brand'; onPress?: () => void; onLongPress?: () => void; accessibilityLabel?: string; accessibilityRole?: 'button' | 'summary' | 'none'; haptic?: boolean }>;
   /** Edge + top light for a container that paints its own `colors.surface*` fill (first child). */
   GlassEdges: ComponentType<{ radius?: number }>;
-  /** Scannable QR code (dark on white in every theme). */
-  QRCode: ComponentType<{ value: string; size?: number; ecl?: 'L' | 'M' | 'Q' | 'H' }>;
+  /**
+   * Scannable QR code (dark on white in every theme). Pass `value`, or `link` to encode a share
+   * link the plugin can't read itself (`link` wins when both are set).
+   */
+  QRCode: ComponentType<{ value?: string; link?: SecretLink; size?: number; ecl?: 'L' | 'M' | 'Q' | 'H' }>;
 }
 
 /**
@@ -141,6 +145,11 @@ export interface HostUI {
   useLocale(): AppLocale;
   /** Copy text to the system clipboard; undefined when this build has no clipboard module. */
   clipboard?: { setString(text: string): Promise<void> };
+  /**
+   * Open the system share sheet (WeChat, QQ, copy…) with a share link and an optional message.
+   * The plugin never sees the URL. Undefined until the host supports cloud channels.
+   */
+  shareLink?(link: SecretLink, opts?: { message?: string }): Promise<void>;
 }
 
 export interface PluginScreenProps {
@@ -151,6 +160,8 @@ export interface PluginScreenProps {
   /** Run one of the app's tools as the user (same validation and permissions as the agent). */
   invoke(toolId: string, input?: Record<string, unknown>): Promise<unknown>;
   params: Record<string, string | undefined>;
+  /** This plugin's cloud client (plugins that declare `PluginDef.cloud`). */
+  cloud?: PluginCloud;
 }
 
 export interface PluginWidgetProps {
@@ -161,6 +172,8 @@ export interface PluginWidgetProps {
   size: WidgetSize;
   /** Agent/user-chosen options, validated by `configSchema`. */
   config: Record<string, unknown>;
+  /** This plugin's cloud client (plugins that declare `PluginDef.cloud`). */
+  cloud?: PluginCloud;
 }
 
 /**
