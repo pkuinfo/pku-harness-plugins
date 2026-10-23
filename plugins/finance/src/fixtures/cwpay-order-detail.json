@@ -1,0 +1,9 @@
+{
+  "_note": "List row (pageOrderlist record) + getOrderById/<id> answer, fields trimmed to the ones read (live 2026-10-23). Synthetic values.",
+  "row": { "id": "o-1", "orderNo": "26090100000000000001", "projectName": "浴卡充值", "amount": 5000, "createDate": "2026-09-01 15:41:37", "displayStatus": "103", "billNo": "E0001", "billType": "HANGXIN", "receiptMust": "YES", "productDesc": "浴卡充值" },
+  "detail": {
+    "messageCode": "0",
+    "message": "成功",
+    "data": { "id": "o-1", "orderNo": "26090100000000000001", "projectName": null, "amount": 5000, "payableAmount": 5000, "tradeChannel": "02", "status": "COMPLETED", "displayStatus": "103", "createDate": "2026-09-01 15:41:37", "actualCloseTime": "2026-09-01 15:42:05", "receiptMust": "YES", "refundAmount": null }
+  }
+}

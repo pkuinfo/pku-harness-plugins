@@ -1,6 +1,6 @@
 import type { HostServices } from '@pku-harness/sdk';
 
-import { flattenProjects, folderProjects, isTuitionProject, orderRecords, statusDict, tuitionItems, unwrapCwpay, type PayProject, type RawOrder, type RawProject, type RawTuition } from './cwpay-parse';
+import { flattenProjects, folderProjects, isTuitionProject, orderRecords, statusDict, tuitionItems, unwrapCwpay, unwrapTuition, type PayProject, type RawOrder, type RawProject } from './cwpay-parse';
 
 /**
  * 北京大学收费平台 (cwpay.pku.edu.cn) over the harness `cwpay` session (src/core/campus/adapters/
@@ -13,7 +13,8 @@ type Services = Pick<HostServices, 'campus'>;
 export const SCHOOL_CODE = '10001';
 const DATA_SOURCE = 'PAY';
 
-async function call<T>(services: Services, url: string, what: string, body?: unknown): Promise<T> {
+/** The decrypted body of one platform call (POST when `body` is given). */
+export async function fetchBody(services: Services, url: string, body?: unknown): Promise<string> {
   const res = await services.campus.request('cwpay', {
     url,
     method: body === undefined ? 'GET' : 'POST',
@@ -21,11 +22,15 @@ async function call<T>(services: Services, url: string, what: string, body?: unk
     body: body === undefined ? undefined : JSON.stringify(body),
   });
   if (res.status >= 500 && !res.body.trim().startsWith('{')) throw new Error(`收费平台暂时不可用（HTTP ${res.status}）`);
-  return unwrapCwpay<T>(res.body, what);
+  return res.body;
+}
+
+export async function call<T>(services: Services, url: string, what: string, body?: unknown): Promise<T> {
+  return unwrapCwpay<T>(await fetchBody(services, url, body), what);
 }
 
 /** pay/queryUserInfo/<token> needs the token; the dealcas jsonData has idserial = 学号 = campus username. */
-function idserial(services: Pick<HostServices, 'campus'>) {
+export function idserial(services: Pick<HostServices, 'campus'>) {
   const id = services.campus.status().username;
   if (!id) throw new Error('还没有登录校园账号');
   return id;
@@ -50,8 +55,9 @@ export async function listProjects(services: Services): Promise<PayProject[]> {
 export async function queryTuition(services: Services) {
   const project = (await listProjects(services)).find(isTuitionProject);
   if (!project) throw new Error('收费平台目前没有开放“学费住宿费”缴费项目');
-  const rows = await call<RawTuition[]>(services, `pay/web/tuitionAndDorm/getTuitionAndDormList/${encodeURIComponent(idserial(services))}/${encodeURIComponent(project.id)}`, '学费住宿费');
-  return { project: project.name, ...tuitionItems(rows ?? []) };
+  // "0001 无欠费##" = nothing owed (unwrapTuition).
+  const rows = unwrapTuition(await fetchBody(services, `pay/web/tuitionAndDorm/getTuitionAndDormList/${encodeURIComponent(idserial(services))}/${encodeURIComponent(project.id)}`));
+  return { project: project.name, ...tuitionItems(rows) };
 }
 
 /** 我的订单 (orderList page): newest first; dates YYYY-MM-DD. */

@@ -1,6 +1,6 @@
 {
   "name": "@pku-harness/plugin-finance",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "财务: 个人酬金 (cwfw.pku.edu.cn, campus network only), 学费住宿费 and payment orders (cwpay.pku.edu.cn); read-only",
   "type": "module",
   "main": "src/index.ts",

@@ -86,10 +86,38 @@ export function tuitionItems(rows: RawTuition[]): { items: TuitionItem[]; totals
   return { items, totals: { due: sum('due'), paid: sum('paid'), unpaid: sum('unpaid') } };
 }
 
+/**
+ * getTuitionAndDormList answers `{messageCode: "0001", message: "无欠费##", data: null}` when
+ * nothing is owed (seen live 2026-10-23; the SPA just toasts the message). That is an empty
+ * list, not an error.
+ */
+export function unwrapTuition(body: string): RawTuition[] {
+  try {
+    const env = JSON.parse(body) as Envelope<unknown>;
+    if (String(env?.messageCode ?? '') === '0001' && /无欠费/.test(String(env?.message ?? ''))) return [];
+  } catch {
+    // unwrapCwpay reports it
+  }
+  const rows = unwrapCwpay<RawTuition[] | null>(body, '学费住宿费');
+  return Array.isArray(rows) ? rows : [];
+}
+
 // ── 订单 (缴费记录), chunk-8158cdf6 (orderList) ───────────────────────────────────────────────
 
-/** TRADE_DISPLAY_STATUS: the SPA reads the names from a dict; 101 = 待支付 (blue), 103 = 已付款. */
-export const ORDER_STATUS: Record<string, string> = { '101': '待支付', '103': '已付款' };
+/**
+ * TRADE_DISPLAY_STATUS: the SPA reads the names from a dict; 101 = 待支付 (blue), 103 = 已付款.
+ * The rest as the live dict listed them (2026-10-23); the live dict still overrides at runtime.
+ */
+export const ORDER_STATUS: Record<string, string> = {
+  '101': '待支付',
+  '102': '支付中',
+  '103': '已付款',
+  '104': '支付失败',
+  '107': '部分退款',
+  '108': '全额退款',
+  '005': '已过期',
+  '006': '已取消',
+};
 
 export type RawOrder = { id?: string | number; orderNo?: string; projectName?: string; amount?: number | string; createDate?: string; displayStatus?: string | number; billNo?: string | null };
 export type PayOrder = { orderNo: string; project: string; amount: number | null; createdAt: string; status: string; invoiced: boolean };
