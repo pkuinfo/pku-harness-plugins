@@ -120,7 +120,7 @@ export function compilePlugin(doc: PluginDocument, opts: CompileOptions): Plugin
       userOnly: t.userOnly,
       execute: async (input, ctx) => {
         try {
-          return await runTool({ manifest: m, tools: doc.tools, services: ctx.services, kv: ctx.kv, fetch: opts.fetch, signal: ctx.signal }, name, input as Record<string, unknown>);
+          return await runTool({ manifest: m, tools: doc.tools, services: ctx.services, kv: ctx.kv, fetch: opts.fetch, signal: ctx.signal, cloud: ctx.cloud }, name, input as Record<string, unknown>);
         } catch (e) {
           throw e instanceof ToolFailure ? new Error(e.message) : e;
         }

@@ -1,6 +1,6 @@
 // The plugin language (docs/PLUGIN-LANGUAGE.md in pku-harness): plugins as shareable PLUGIN.md
 // folders, interpreted by the harness.
-export { ABILITIES, ABILITY_IDS, type AbilityDef } from './abilities';
+export { ABILITIES, ABILITY_IDS, effectRank, type AbilityDef, type AbilityEnv } from './abilities';
 export { compilePlugin, inputZod, type CompileOptions } from './compile';
 export { ExprError } from './expr';
 export { fileUrl, installDeepLink, LinkError, resolveLink, type PluginLink } from './link';

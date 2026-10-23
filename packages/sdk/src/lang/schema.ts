@@ -20,7 +20,7 @@ const relPathSchema = z
   .refine((p) => !/^[a-z]+:|^\/|(^|\/)\.\.(\/|$)|\\/.test(p), 'a relative path inside the plugin folder');
 
 export const capabilitySchema = z.enum(['network', 'campus-network', 'campus-session', 'notifications', 'background', 'cloud', 'ongoing']);
-export const abilitySchema = z.enum(['verify', 'otp', 'todos', 'timetable', 'scheduler', 'browser', 'campusPage', 'sms', 'files', 'crypto']);
+export const abilitySchema = z.enum(['verify', 'otp', 'todos', 'timetable', 'scheduler', 'browser', 'campusPage', 'sms', 'files', 'crypto', 'cloud']);
 export type Ability = z.infer<typeof abilitySchema>;
 
 /** An input field of a tool (compiled to zod). */

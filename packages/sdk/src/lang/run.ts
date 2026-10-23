@@ -1,6 +1,7 @@
 import { parse as parseHtml } from 'node-html-parser';
 
 import type { CampusRequest, CampusResponse } from '../campus';
+import type { PluginCloud } from '../cloud';
 import type { HostServices, KV, ToolEffect } from '../plugin';
 import { ABILITIES, effectRank, type AbilityDef } from './abilities';
 import { callFn, compile, evaluate, ExprError, getProp, isFn, lambda, Scope, template, templateDeep, type EvalContext } from './expr';
@@ -54,6 +55,8 @@ export interface RunEnv {
   scope?: Record<string, unknown>;
   /** False on hosts without campus sessions (the server): campus requests fail clearly. */
   campus?: boolean;
+  /** This plugin's cloud client, for the `cloud.call` ability. */
+  cloud?: PluginCloud;
   /** Limit overrides (only lower than LIMITS). */
   limits?: Partial<typeof LIMITS>;
 }
@@ -457,6 +460,8 @@ async function runStep(run: Run, step: StepDoc, scope: Scope): Promise<unknown> 
       services: run.env.services,
       kv: run.env.kv,
       request: (r) => request(run, r, 'json', scope),
+      call: (fn, fnArgs) => run.ctx.call(fn, fnArgs),
+      cloud: run.env.cloud,
     });
   }
 

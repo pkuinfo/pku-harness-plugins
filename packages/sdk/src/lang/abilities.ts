@@ -1,3 +1,4 @@
+import type { PluginCloud } from '../cloud';
 import type { HostServices, KV, ToolEffect } from '../plugin';
 
 /**
@@ -10,11 +11,15 @@ export function effectRank(e: ToolEffect): number {
   return e === 'read' ? 0 : e === 'write' ? 1 : 2;
 }
 
-type AbilityEnv = {
+export type AbilityEnv = {
   services: HostServices;
   kv: KV;
   /** A request through the runner (declared hosts/services, limits), parsed as JSON. */
   request: (req: Record<string, unknown>) => Promise<unknown>;
+  /** Call a function value from `args` (a lambda like `r => r.at > now`) under the run's budget. */
+  call: (fn: unknown, args: unknown[]) => unknown;
+  /** This plugin's cloud client (plugins that declare `cloud`), when the host has one. */
+  cloud?: PluginCloud;
 };
 
 export type AbilityDef = { effect: ToolEffect; description: string; run: (args: Record<string, unknown>, env: AbilityEnv) => Promise<unknown> };
@@ -112,6 +117,14 @@ export const ABILITIES: Record<string, AbilityDef> = {
   'campusPage.open': { effect: 'read', description: 'Open a campus site signed in { service }', run: async (a, e) => e.services.campus.openSignedIn(str(a.service)) },
   'sms.awaitCode': { effect: 'read', description: 'One-tap SMS code (user allows reading one SMS)', run: async (_a, e) => ({ code: await e.services.sms.awaitCode() }) },
   'files.pick': { effect: 'read', description: 'Let the user pick files { types?, multiple? }', run: async (a, e) => e.services.files.pick(a as never) },
+  'cloud.call': {
+    effect: 'read',
+    description: 'Call one of this plugin’s server functions { fn, input } (docs/CLOUD-FUNCTIONS.md)',
+    run: async (a, e) => {
+      if (!e.cloud) throw new Error('this plugin has no cloud connection (declare cloud: in PLUGIN.md)');
+      return e.cloud.functions.invoke(str(a.fn), a.input ?? {});
+    },
+  },
   'crypto.sha256': { effect: 'read', description: 'SHA-256 hex of text { text }', run: async (a, e) => e.services.crypto.sha256(str(a.text)) },
 };
 
