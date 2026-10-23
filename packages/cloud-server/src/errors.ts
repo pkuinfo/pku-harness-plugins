@@ -21,6 +21,8 @@ const STATUS: Record<WireErrorCode, ContentfulStatusCode> = {
   pow_invalid: 400,
   unsupported: 501,
   server: 500,
+  doc_required: 400,
+  failed: 422,
 };
 
 export class HttpError extends Error {

@@ -38,6 +38,23 @@ export const storeKeySchema = z
 export const mailboxSlotSchema = z.string().regex(/^[A-Za-z0-9._:-]{1,64}$/);
 export const pageNameSchema = z.string().regex(/^[a-z0-9][a-z0-9-]{0,40}$/);
 export const functionNameSchema = z.string().regex(/^[a-zA-Z][a-zA-Z0-9_]{0,63}$/);
+/** Content hash of a plugin document: sha256 hex of `fingerprintText(files)` (sdk lang/load.ts). */
+export const docHashSchema = z.string().regex(/^[0-9a-f]{64}$/, 'sha256 hex');
+/**
+ * Where the server fetches a plugin document: an https link (any form `resolveLink` accepts), or
+ * for local development `file:/…` or `http://localhost…` (served from the operator's
+ * CLOUD_FN_LOCAL folder). No whitespace, so it fits one line of the signed challenge.
+ */
+export const docLinkSchema = z
+  .string()
+  .max(512)
+  .regex(/^(https:\/\/|file:\/|http:\/\/(localhost|127\.0\.0\.1)(:\d+)?(\/|$))\S*$/, 'an https:// link (file:/ or http://localhost for development)');
+/** The plugin document version a device consented to (docs/CLOUD-FUNCTIONS.md §7). */
+export const docClaimSchema = z.object({ link: docLinkSchema, hash: docHashSchema });
+export type DocClaim = z.infer<typeof docClaimSchema>;
+/** Operator policy for running plugins' server functions (`CLOUD_FN_POLICY`). */
+export const functionPolicySchema = z.enum(['verified', 'allowlist', 'open']);
+export type FunctionPolicy = z.infer<typeof functionPolicySchema>;
 
 export const envelopeSchema = z.object({ v: z.literal(1), n: b64urlBytes(24), c: b64url.refine((s) => s.length >= 22, 'ciphertext shorter than the tag') });
 
@@ -61,6 +78,8 @@ export const wireErrorCode = z.enum([
   'pow_invalid',
   'unsupported', // service not offered by this provider
   'server',
+  'doc_required', // a functions call without the token's doc claim (link + hash)
+  'failed', // a server function ran and failed (message from the plugin's steps)
 ]);
 export type WireErrorCode = z.infer<typeof wireErrorCode>;
 
@@ -112,6 +131,11 @@ export const metaResponse = z.object({
   /** Static viewer pages served at /w/<plugin>/<page>. */
   pages: z.array(z.object({ plugin: pluginIdSchema, page: pageNameSchema })),
   functions: z.array(z.object({ plugin: pluginIdSchema, name: functionNameSchema, version: z.number().int().positive() })),
+  /**
+   * Server functions from plugin documents (docs/CLOUD-FUNCTIONS.md): which plugins this server
+   * runs. Absent on servers without them. (`functions` above stays for older clients.)
+   */
+  serverFunctions: z.object({ policy: functionPolicySchema }).optional(),
   operator: z.object({ name: z.string().min(1), contact: z.string(), privacyURL: z.string().url().optional() }),
 });
 export type MetaResponse = z.infer<typeof metaResponse>;
@@ -134,12 +158,14 @@ export const authTokenRequest = z.object({
   services: z.array(cloudService).min(1),
   ts: ms,
   nonce: b64urlBytes(16),
+  /** The plugin document version for `functions` calls; signed as an extra challenge line. */
+  doc: docClaimSchema.optional(),
   sig: sig64,
 });
 export const authTokenResponse = z.object({ token: z.string().min(16), expiresAt: ms });
 
 /** Claims inside the bearer token (opaque to clients; the server's own format). */
-export const tokenClaims = z.object({ sub: deviceIdSchema, plg: pluginIdSchema, svc: z.array(cloudService), iat: ms, exp: ms });
+export const tokenClaims = z.object({ sub: deviceIdSchema, plg: pluginIdSchema, svc: z.array(cloudService), iat: ms, exp: ms, doc: docClaimSchema.optional() });
 export type TokenClaims = z.infer<typeof tokenClaims>;
 
 /** DELETE /v1/devices/me (any token of the device) → ok. */
@@ -238,11 +264,26 @@ export const peerSendResponse = ok;
 /** GET /v1/c/:id/mailbox (peer token). */
 export const mailboxListResponse = z.object({ items: z.array(z.object({ slot: mailboxSlotSchema, env: envelopeSchema, expiresAt: ms })) });
 
-// --- functions & push (stage 6) ---------------------------------------------------------
+// --- server functions (docs/CLOUD-FUNCTIONS.md) -----------------------------------------
 
-/** POST /v1/fn/:plugin/:name */
-export const functionRequest = z.object({ input: z.unknown(), version: z.number().int().positive().optional() });
-export const functionResponse = z.object({ output: z.unknown() });
+/**
+ * POST /v1/fn/:plugin/:name (token with `functions` whose `plg` is :plugin and which carries a
+ * `doc` claim; else 400 `doc_required`). The server runs the function of exactly that document
+ * version. Failures are `errorBody`: `failed` (422, the function's own error message),
+ * `forbidden` (policy), `conflict` (the document at the link doesn't match the hash),
+ * `rate_limited` (429, rates and daily quotas).
+ */
+export const functionRequest = z.object({ input: z.record(z.string(), z.unknown()).default({}) });
+export const functionResponse = z.object({ result: z.unknown() });
+/**
+ * GET|POST /v1/p/:plugin/:name: `access: public` functions, no token, rate-limited per IP.
+ * GET takes the input as query parameters (numbers and booleans are coerced by the declared
+ * input types); POST takes `functionRequest`. Responses are `functionResponse` | `errorBody`.
+ */
+export const publicFunctionRequest = functionRequest;
+export const publicFunctionResponse = functionResponse;
+
+// --- push (stage 6) ---------------------------------------------------------------------
 
 /** POST /v1/push/tokens */
 export const pushTokenRequest = z.object({ kind: z.enum(['unifiedpush', 'apns', 'fcm']), token: z.string().min(1).max(2048) });
@@ -276,6 +317,7 @@ export const paths = {
   peerSend: (id: string) => `/v1/c/${enc(id)}/send`,
   peerMailbox: (id: string) => `/v1/c/${enc(id)}/mailbox`,
   fn: (plugin: string, name: string) => `/v1/fn/${enc(plugin)}/${enc(name)}`,
+  publicFn: (plugin: string, name: string) => `/v1/p/${enc(plugin)}/${enc(name)}`,
   pushTokens: () => '/v1/push/tokens',
   pushSchedule: () => '/v1/push/schedule',
   shareRedirect: (id: string) => `/s/${enc(id)}`,

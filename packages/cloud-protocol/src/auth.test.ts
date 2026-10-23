@@ -33,6 +33,25 @@ describe('auth challenge', () => {
     expect(verifyAuthChallenge({ ...body, plugin: 'a\nb' }, key.publicKey, opts)).toEqual({ ok: false, reason: 'format' });
     expect(verifyAuthChallenge({ ...body, sig: 'AAAA' }, key.publicKey, opts)).toEqual({ ok: false, reason: 'format' });
   });
+  test('doc claim: an extra signed line; old challenges unchanged', () => {
+    const doc = { link: 'https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/canteen', hash: 'ab'.repeat(32) };
+    const body = signAuthChallenge({ ...base, services: ['functions'], doc, rand: (n) => new Uint8Array(n) }, key.secretKey);
+    const lines = fromUtf8(authChallengeBytes(body)).split('\n');
+    expect(lines).toHaveLength(8);
+    expect(lines[7]).toBe(`doc ${doc.hash} ${doc.link}`);
+    expect(authTokenRequest.safeParse(body).success).toBe(true);
+    const opts = { aud: 'https://s.example.org', now };
+    expect(verifyAuthChallenge(body, key.publicKey, opts)).toEqual({ ok: true });
+    // tampering with or dropping the doc breaks the signature; adding one to an old challenge too
+    expect(verifyAuthChallenge({ ...body, doc: { ...doc, hash: 'cd'.repeat(32) } }, key.publicKey, opts)).toEqual({ ok: false, reason: 'signature' });
+    expect(verifyAuthChallenge({ ...body, doc: { ...doc, link: 'https://evil.example/PLUGIN.md' } }, key.publicKey, opts)).toEqual({ ok: false, reason: 'signature' });
+    const { doc: _dropped, ...noDoc } = body;
+    expect(verifyAuthChallenge(noDoc, key.publicKey, opts)).toEqual({ ok: false, reason: 'signature' });
+    const old = signAuthChallenge(base, key.secretKey);
+    expect(fromUtf8(authChallengeBytes(old)).split('\n')).toHaveLength(7);
+    expect(verifyAuthChallenge({ ...old, doc }, key.publicKey, opts)).toEqual({ ok: false, reason: 'signature' });
+    expect(verifyAuthChallenge({ ...body, doc: { link: 'https://a b', hash: doc.hash } }, key.publicKey, opts)).toEqual({ ok: false, reason: 'format' });
+  });
   test('audience normalisation', () => {
     expect(normaliseAudience('HTTP://10.0.2.2:8787/x')).toBe('http://10.0.2.2:8787');
     expect(() => normaliseAudience('pkuharness://x')).toThrow();

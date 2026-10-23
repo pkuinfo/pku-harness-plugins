@@ -11,15 +11,21 @@
  *   <services>   requested services, deduplicated, sorted, joined by ","
  *   <ts>         Unix time in milliseconds, decimal integer
  *   <nonce>      16 random bytes, base64url
+ *   [doc <hash> <link>]   only when the request carries `doc` (server functions,
+ *                docs/CLOUD-FUNCTIONS.md §7): the consented document's sha256 hex and link
  *
  * Every field is validated against a newline-free charset, so the encoding is unambiguous.
  * `aud` stops a provider from replaying a device's signature at another provider; the server
  * compares it with its own configured origin. The server accepts `|now - ts| ≤ AUTH_MAX_SKEW_MS`
  * and remembers nonces for that window (reject reuse).
+ *
+ * The optional `doc` line keeps older challenges valid: without `doc` the bytes are exactly the
+ * seven lines above, and a signature over seven lines can't be replayed with a `doc` added (the
+ * signed bytes differ).
  */
 import { fromB64url, toB64url, utf8 } from './bytes';
 import { type RandomBytes, SIG_BYTES, defaultRandomBytes, sign, verify } from './crypto';
-import { type CloudServiceName, cloudService, deviceIdSchema, pluginIdSchema } from './schemas';
+import { type CloudServiceName, type DocClaim, cloudService, deviceIdSchema, docClaimSchema, pluginIdSchema } from './schemas';
 
 export const AUTH_CONTEXT = 'pku-harness-cloud/v1/auth';
 export const AUTH_MAX_SKEW_MS = 5 * 60_000;
@@ -34,6 +40,8 @@ export interface AuthChallenge {
   services: CloudServiceName[];
   ts: number;
   nonce: string;
+  /** The plugin document version this token may run server functions of. */
+  doc?: DocClaim;
 }
 
 /** `https://Example.org:443/x/` → `https://example.org:443`. Throws for non-http(s). */
@@ -57,12 +65,17 @@ export function authChallengeBytes(c: AuthChallenge): Uint8Array {
   }
   if (nonce.length !== AUTH_NONCE_BYTES) throw new Error('bad nonce length');
   const services = [...new Set(c.services.map((s) => cloudService.parse(s)))].sort();
-  return utf8([AUTH_CONTEXT, c.aud, c.deviceId, c.plugin, services.join(','), String(c.ts), c.nonce].join('\n'));
+  const lines = [AUTH_CONTEXT, c.aud, c.deviceId, c.plugin, services.join(','), String(c.ts), c.nonce];
+  if (c.doc !== undefined) {
+    if (!docClaimSchema.safeParse(c.doc).success) throw new Error('bad doc claim');
+    lines.push(`doc ${c.doc.hash} ${c.doc.link}`);
+  }
+  return utf8(lines.join('\n'));
 }
 
 /** Build a fresh challenge and sign it; the result is the `POST /v1/auth/token` body. */
 export function signAuthChallenge(
-  input: { aud: string; deviceId: string; plugin: string; services: CloudServiceName[]; now?: number; rand?: RandomBytes },
+  input: { aud: string; deviceId: string; plugin: string; services: CloudServiceName[]; doc?: DocClaim; now?: number; rand?: RandomBytes },
   signSecretKey: Uint8Array,
 ): AuthChallenge & { sig: string } {
   const c: AuthChallenge = {
@@ -72,6 +85,7 @@ export function signAuthChallenge(
     services: [...new Set(input.services)].sort(),
     ts: Math.floor(input.now ?? Date.now()),
     nonce: toB64url((input.rand ?? defaultRandomBytes)(AUTH_NONCE_BYTES)),
+    ...(input.doc ? { doc: { link: input.doc.link, hash: input.doc.hash } } : {}),
   };
   return { ...c, sig: toB64url(sign(authChallengeBytes(c), signSecretKey)) };
 }

@@ -7,7 +7,11 @@ import {
   channelInfoResponse,
   createChannelRequest,
   envelopeSchema,
+  authTokenRequest,
+  docClaimSchema,
   errorBody,
+  functionRequest,
+  functionResponse,
   joinRequest,
   metaResponse,
   ownerInFrame,
@@ -37,6 +41,9 @@ describe('wire schemas', () => {
     const parsed = metaResponse.parse(meta);
     expect('future' in parsed).toBe(false);
     expect(metaResponse.safeParse({ ...meta, protocol: 2 }).success).toBe(false);
+    expect(parsed.serverFunctions).toBeUndefined();
+    expect(metaResponse.parse({ ...meta, serverFunctions: { policy: 'allowlist' } }).serverFunctions).toEqual({ policy: 'allowlist' });
+    expect(metaResponse.safeParse({ ...meta, serverFunctions: { policy: 'anything' } }).success).toBe(false);
   });
   test('envelope', () => {
     expect(envelopeSchema.safeParse(env).success).toBe(true);
@@ -76,6 +83,23 @@ describe('wire schemas', () => {
   test('error body', () => {
     expect(errorBody.safeParse({ error: { code: 'rate_limited', message: 'x', retryAfterS: 3 } }).success).toBe(true);
     expect(errorBody.safeParse({ error: { code: 'teapot', message: 'x' } }).success).toBe(false);
+  });
+  test('server functions: doc claim, requests, responses, paths', () => {
+    const hash = 'a'.repeat(64);
+    for (const link of ['https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/canteen', 'file:///home/me/plugins/canteen', 'http://localhost:8080/canteen/PLUGIN.md', 'http://127.0.0.1'])
+      expect(docClaimSchema.safeParse({ link, hash }).success).toBe(true);
+    for (const link of ['http://example.org/PLUGIN.md', 'https://a b', 'https://x\ny', 'ftp://x', 'http://localhost.evil.com/x'])
+      expect(docClaimSchema.safeParse({ link, hash }).success).toBe(false);
+    expect(docClaimSchema.safeParse({ link: 'https://x.org', hash: 'A'.repeat(64) }).success).toBe(false);
+    expect(functionRequest.parse({}).input).toEqual({});
+    expect(functionRequest.safeParse({ input: [1] }).success).toBe(false);
+    expect(functionResponse.parse({ result: { ok: true } }).result).toEqual({ ok: true });
+    expect(errorBody.safeParse({ error: { code: 'doc_required', message: 'x' } }).success).toBe(true);
+    expect(errorBody.safeParse({ error: { code: 'failed', message: 'x' } }).success).toBe(true);
+    expect(paths.publicFn('canteen-crowd', 'crowd')).toBe('/v1/p/canteen-crowd/crowd');
+    const req = { aud: 'https://s.org', deviceId: 'dev_ABCDEFGH', plugin: 'p1', services: ['functions'], ts: 1, nonce: toB64url(new Uint8Array(16)), sig: toB64url(new Uint8Array(64)) };
+    expect(authTokenRequest.safeParse(req).success).toBe(true);
+    expect(authTokenRequest.parse({ ...req, doc: { link: 'https://x.org', hash } }).doc).toEqual({ link: 'https://x.org', hash });
   });
   test('store keys and paths', () => {
     expect(storeKeySchema.safeParse('shares/2026-10/a.b').success).toBe(true);
