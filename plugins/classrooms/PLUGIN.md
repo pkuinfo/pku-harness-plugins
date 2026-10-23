@@ -11,6 +11,8 @@ network: [portal.pku.edu.cn]
 tools:
   free: tools/free.yaml
   overview: tools/overview.yaml
+widgets:
+  overview: widgets/overview.json
 dataSources:
   overview: { title: 各楼空闲教室数, tool: overview, ttl: 10m }
 commands:
@@ -20,6 +22,7 @@ i18n:
     name: Free classrooms
     description: Free classrooms in each teaching building for every period from today to the day after tomorrow. Find somewhere to study.
     tools: { free: { title: Free classrooms }, overview: { title: Free rooms by building } }
+    widgets: { overview: { title: Free classrooms, description: How many classrooms are free right now in each teaching building; tap a building to have the AI list them. } }
     commands: { classrooms: { prompt: 'Find me a free classroom to study in{{input}}', description: Find a free classroom to study in, argHint: Building and time, aliases: [study, free-rooms] } }
     dataSources: { overview: { title: Free rooms by building } }
 ---

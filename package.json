@@ -9,10 +9,11 @@
     "templates/*"
   ],
   "scripts": {
-    "check": "tsc --noEmit -p . && bun scripts/validate-registry.ts",
+    "check": "tsc --noEmit -p . && bun scripts/validate-registry.ts && bun scripts/bundle-docs.ts --check",
     "test": "bun test",
     "validate": "bun scripts/validate-registry.ts",
-    "plugin": "bun scripts/plugin.ts"
+    "plugin": "bun scripts/plugin.ts",
+    "bundle": "bun scripts/bundle-docs.ts"
   },
   "devDependencies": {
     "@ai-sdk/openai-compatible": "^3.0.71",

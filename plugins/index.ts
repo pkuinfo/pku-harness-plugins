@@ -64,3 +64,4 @@ export const builtinPlugins: PluginDef[] = [
   deepseekPlugin,
   openAICompatiblePlugin,
 ];
+export { bundledDocuments } from './documents.generated';

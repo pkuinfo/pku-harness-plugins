@@ -1,0 +1,31 @@
+{
+  "title": "空闲教室",
+  "description": "各教学楼现在的空闲教室数（门户教室使用概况），点按一栋楼让 AI 列出空教室。",
+  "sizes": ["sm", "md", "lg"],
+  "defaultSize": "md",
+  "bindings": {
+    "/buildings": { "tool": "overview", "path": "buildings", "ttlMinutes": 10 }
+  },
+  "spec": {
+    "root": "list",
+    "elements": {
+      "list": {
+        "type": "Column",
+        "props": { "gap": "sm" },
+        "repeat": { "statePath": "/buildings", "key": "building" },
+        "children": ["row"]
+      },
+      "row": {
+        "type": "ListItem",
+        "props": {
+          "title": { "$item": "building" },
+          "subtitle": null,
+          "value": { "$template": "${free} / ${total}" },
+          "icon": "location"
+        },
+        "on": { "press": { "action": "ask", "params": { "text": { "$template": "帮我找${building}现在能自习的空闲教室" } } } }
+      }
+    },
+    "state": { "buildings": [] }
+  }
+}
