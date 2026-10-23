@@ -5,6 +5,8 @@ name: 函数演示
 description: Fixture plugin for the cloud server's function tests.
 version: 1.0.0
 author: pkuinfo
+cloud:
+  disclosure: { zh: ["访问计数和你输入的文字会发送到云端"] }
 server:
   network: [api.example.org]
   secrets: [API_KEY]
