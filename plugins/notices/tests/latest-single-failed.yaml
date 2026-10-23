@@ -1,0 +1,6 @@
+tool: latest
+now: 2026-10-23 14:20
+input: { source: grs }
+responses:
+  - { match: grs.pku.edu.cn/tzgg/index.htm, status: 404, body: missing }
+expectError: '^grs\.pku\.edu\.cn 返回 HTTP 404$'

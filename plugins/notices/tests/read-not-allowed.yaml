@@ -1,0 +1,3 @@
+tool: read
+input: { url: 'https://pku.edu.cn.evil.com/notice.htm' }
+expectError: 只能读取北大网站

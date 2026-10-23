@@ -24,7 +24,7 @@ constants: { NAME: data } · functions: { f: "(a, b) => expr" } · steps: [...] 
 
 ## Steps (run in order; \`let: name\` binds the result)
 - { let, value: expr }
-- { let, request: { campus?: service, url, method?, query?, headers?, json? | form? | body?+contentType?, timeout? }, as: json|text|html|response }
+- { let, request: { campus?: service, url, method?, query?, headers?, json? | form? | body?+contentType?, timeout?, maxSize? }, as: json|text|html|response }
   campus url = path on that service; public url must be https on a network host. html → a node for select().
 - { let, each: listExpr, concurrency?: 1–4, request | steps + return | value }  (item, index in scope; ≤ 50 items)
 - { let, paginate: { start?, request (uses cursor), items: expr (page), next: expr (null stops), max ≤ 30 } }
@@ -33,7 +33,7 @@ constants: { NAME: data } · functions: { f: "(a, b) => expr" } · steps: [...] 
 - { if: expr, then: [steps], else?: [steps] } · { check: expr, error: "template" } · { return: expr }
 - { try: [steps], catch: [steps] }  (error.message in catch)
 - { let?, kv: get|set|delete, key: "template", value?: expr, ttl? }  (plugin's own storage)
-- { let, cache: { key, ttl: 10m, staleOnError?: true }, steps: [...], return: expr }
+- { let, cache: { key, ttl: 10m, staleOnError?: true, refresh?: expr }, steps: [...], return: expr }
 - { let, call: otherTool, input: expr } · { let, ability: group.op, args: expr }
 Abilities: verify.treehole { request, code?, via? } (SMS/OTP second factor; returns data or
 {status:'verification_required'}), verify.treeholeSendCode, otp.code, todos.list/add/update/setDone/remove,
@@ -57,10 +57,10 @@ strings: str trim squash lower upper split replace(s, re, with) replaceText matc
 numbers: num(x, fallback) int round(x, digits) fixed abs floor ceil yuan(fen)
 dates (Beijing time, ms): date(text) formatDate(ms, 'YYYY-MM-DD HH:mm W') addDays addMinutes daysBetween startOfDay minutesOf('HH:mm'|ms) weekday (1=Mon)
 urls/json: url(base, path) query(url, name) encode decode json(text) path(v, 'a.b[0]')
-html: html(text, url?) select(node, css) first(node, css) node.text node.html node.attrs attr(node, name) data(node, name) children parent tableRows(node, {header, cells}) options(select) htmlText(s) largestText(node)
+html: html(text, url?) select(node, css) first(node, css) node.text node.html node.attrs attr(node, name) data(node, name) children parent tableRows(node, {header, cells}) options(select) htmlText(s) htmlLines(node|s) without(node, css) largestText(node)
 
 ## Limits per run
-200 steps, 60 requests (4 in flight), 60 s, 2 MB per response, 1 MB result, 100 000 operations.
+400 steps, 60 requests (4 in flight), 60 s, 2 MB per response (request.maxSize up to 8 MB), 1 MB result, 300 000 operations.
 
 ## Widgets / screens (JSON)
 { title, description?, sizes?: [sm,md,lg], spec: { root, elements: { id: { type, props, children?, repeat?: { statePath, key }, on? } }, state? },

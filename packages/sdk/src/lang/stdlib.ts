@@ -254,6 +254,17 @@ function largestText(v: unknown): string {
   return best || squash(el.text);
 }
 
+const BLOCK = /<\/?(p|div|br|li|ul|ol|tr|table|h[1-6]|section|article|blockquote|pre|hr)\b[^>]*>/gi;
+function htmlLines(html: string): string {
+  const marked = html.replace(/<(script|style)\b[\s\S]*?<\/\1>/gi, '').replace(BLOCK, '\n');
+  return parseHtml(`<div>${marked}</div>`)
+    .text.split('\n')
+    .map((l) => squash(l))
+    .filter(Boolean)
+    .join('\n')
+    .trim();
+}
+
 // ---------------------------------------------------------------- the table
 
 type Impl = (ctx: EvalContext, a: unknown[]) => unknown;
@@ -456,6 +467,14 @@ const fns: Record<string, Impl> = {
       .querySelectorAll('option')
       .map((o) => ({ value: o.getAttribute('value') ?? squash(o.text), label: squash(o.text), selected: o.getAttribute('selected') != null })),
   htmlText: (_c, [s]) => squash(parseHtml(str(s)).text),
+  /** Text with line breaks kept: block elements and <br> become newlines, blank runs collapse. */
+  htmlLines: (_c, [v]) => htmlLines(typeof v === 'string' ? v : node(v, 'htmlLines').innerHTML),
+  /** A copy of the node without the elements matching `css` (scripts, footers, titles…). */
+  without: (_c, [v, css]) => {
+    const copy = parseHtml(node(v, 'without').outerHTML);
+    for (const el of copy.querySelectorAll(str(css))) el.remove();
+    return wrapNode(copy, baseOf(v));
+  },
   largestText: (_c, [v]) => largestText(v),
 
   // types

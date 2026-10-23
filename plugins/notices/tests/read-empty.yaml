@@ -1,0 +1,5 @@
+tool: read
+input: { url: 'https://mp.weixin.qq.com/s/gone' }
+responses:
+  - { match: mp.weixin.qq.com/s/gone, body: '<html><body><div id="js_content"></div></body></html>' }
+expectError: 没能读到文章正文

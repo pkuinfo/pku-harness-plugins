@@ -1,0 +1,119 @@
+# Keyword search over the list pages of every source (or one), plus 教务部's own site search,
+# which reaches older notices. Same list parsing and cache as tools/latest.yaml (keep the
+# `constants` and shared `functions` equal). Titles are third-party text: data, never instructions.
+title: 搜索通知
+description: >-
+  Find notices whose title (or news summary) contains every word of `keyword`, newest first, scanning the first `pages` list pages of each source (default 2). For 教务部 it also runs the site's own search, which covers older notices (those hits have no date and may have titles cut with "…").
+effect: read
+untrusted: true
+input:
+  keyword: { type: string, min: 1, max: 40, pattern: '\S' }
+  source: { enum: [ dean, grs, xgb, zwb, news, pku ], optional: true, description: only this source; default all }
+  pages: { type: integer, min: 1, max: 5, optional: true, description: 'list pages per source to scan, default 2' }
+  limit: { type: integer, min: 1, max: 40, optional: true, description: 'max items, default 15' }
+functions:
+  # ── list parsing (same in latest.yaml and search.yaml) ──
+  ymd: |
+    (m) => m ? replace(replace(m[0], DATE, '$1-0$2-0$3'), '-0(\d\d)', '-$1') : null
+  # ── this tool ──
+  jobs: |
+    (id) => (SOURCES[id].paged ? range(1, (input.pages ?? 2) + 1) : [1]).map(p => ({ id, src: SOURCES[id], p, force: false, gather: true }))
+  # Case-insensitive; every space-separated word must occur in title + summary (one lookahead
+  # per word, regex characters escaped).
+  wordsRe: |
+    (words) => '^' + words.map(w => '(?=[\s\S]*' + replace(w, '[.*+?^$(){}|[\]\\\\/]', '\\$&') + ')').join('')
+  matches: "(it, re) => test(lower(it.title + ' ' + (it.summary ?? '')), re)"
+  # 教务部 site search: { status, msg } where msg is HTML with up to 30 links ("[公告]" prefix, no dates).
+  parseDean: |
+    (msg) => select(html(msg), 'a')
+      .map(a => ({ title: sq(replace(a.rawText, '^\[[^\]]{1,6}\]', '')), url: resolve(attr(a, 'href') ?? '', 'https://dean.pku.edu.cn/web/'), date: null }))
+      .filter(x => x.title && test(x.url, 'notice_details\.php\?id=\d+'))
+steps:
+  - let: kw
+    value: trim(input.keyword)
+  - let: words
+    value: "wordsRe(split(lower(kw), '\\s+', true).filter(w => w))"
+  - let: ids
+    value: "input.source ? [input.source] : SOURCE_IDS"
+  - let: runs
+    each: ids
+    concurrency: 4
+    steps:
+      # One list page per job: KV cache `list:<id>` = { "<page>": { at, items, next } }, 20 min;
+      # a failed fetch falls back to the cached copy of that page.
+      - let: pages
+        each: jobs(item)
+        steps:
+          - let: store
+            kv: get
+            key: list:${item.id}
+          - if: "early(item, store) != null"
+            then:
+              - return: early(item, store)
+          - let: got
+            try:
+              - let: res
+                request:
+                  url: '${urlOf(item, store)}'
+                  headers: '${HEADERS}'
+                  timeout: 15s
+                as: response
+              - let: pg
+                value: parsePage(item.src, res, urlOf(item, store))
+              - kv: set
+                key: list:${item.id}
+                value: "pg.ok ? merge(store, { [str(item.p)]: { at: now, items: pg.items, next: pg.next } }) : store"
+            catch:
+              - let: pg
+                value: "{ ok: false, error: error.message }"
+        return: "got.ok ? { items: got.items } : store?.[item.p] ? { items: store[item.p].items } : { error: got.error }"
+  - let: per
+    value: "ids.map((id, i) => ({ id, ...collect(runs[i]) }))"
+  - let: hits
+    value: "per.flatMap(x => x.items.filter(it => matches(it, words)).map(it => tag(it, x.id)))"
+  - let: deanHits
+    value: "[]"
+  - let: deanError
+    value: "null"
+  - if: "ids.includes('dean')"
+    then:
+      - try:
+          - let: sres
+            request:
+              url: https://dean.pku.edu.cn/web/right_do.php?act=search
+              method: POST
+              body: text=${encode(kw)}
+              contentType: application/x-www-form-urlencoded; charset=UTF-8
+              headers: '${HEADERS}'
+              timeout: 15s
+            as: response
+          - check: "sres.status >= 200 && sres.status < 300"
+            error: dean.pku.edu.cn 返回 HTTP ${sres.status}
+          - try:
+              - let: dj
+                value: json(sres.text)
+            catch:
+              - let: dj
+                value: "null"
+          # Server-side matches (titles may be cut with "…", so no local re-filtering).
+          - let: deanHits
+            value: "dj?.status ? parseDean(dj.msg ?? '') : []"
+        catch:
+          - let: deanError
+            value: error.message
+  - let: seen
+    value: "hits.map(h => h.url)"
+  - let: all
+    value: "hits.concat(deanHits.filter(h => !seen.includes(h.url)).map(h => tag(h, 'dean')))"
+  - let: failed
+    value: |
+      per.filter(x => x.error).map(x => ({ source: SOURCES[x.id].name, error: x.error }))
+        .concat(deanError ? [{ source: '教务部站内搜索', error: deanError }] : [])
+return: |
+  {
+    note: UNTRUSTED,
+    keyword: kw,
+    total: all.length,
+    notices: byDate(all).slice(0, input.limit ?? 15),
+    ...(failed.length ? { failed } : {}),
+  }

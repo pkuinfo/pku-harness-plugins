@@ -143,3 +143,10 @@ describe('additions from the ports', () => {
     expect(cells[1]![1]!.id).not.toBe(cells[0]![0]!.id);
   });
 });
+
+describe('html helpers from the notices port', () => {
+  test('htmlLines keeps paragraphs; without drops elements', () => {
+    expect(ev("htmlLines('<p>a <b>b</b></p><p>c</p><br>d<script>x()</script>')")).toBe('a b\nc\nd');
+    expect(ev("text(without(html('<div><h1>T</h1><p>body</p></div>'), 'h1'))")).toBe('body');
+  });
+});

@@ -12,7 +12,6 @@ import { electivePlugin } from './elective/src';
 import { financePlugin } from './finance/src';
 import { libraryPlugin } from './library/src';
 import { memoryPlugin } from './memory/src';
-import { noticesPlugin } from './notices/src';
 import { openAICompatiblePlugin } from './openai-compatible/src';
 import { pluginsPlugin } from './plugins/src';
 import { roomBookingPlugin } from './room-booking/src';
@@ -52,7 +51,6 @@ export const builtinPlugins: PluginDef[] = [
   financePlugin,
   libraryPlugin,
   roomBookingPlugin,
-  noticesPlugin,
   memoryPlugin,
   pluginsPlugin,
   deepseekPlugin,

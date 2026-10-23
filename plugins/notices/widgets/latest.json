@@ -1,0 +1,44 @@
+{
+  "title": "最新通知",
+  "description": "教务部、研究生院、学工部、总务部和北大新闻网的最新通知，点按打开原文。",
+  "sizes": ["md", "lg"],
+  "defaultSize": "md",
+  "bindings": {
+    "/latest": { "tool": "latest", "args": { "limit": 3 }, "ttlMinutes": 30 }
+  },
+  "spec": {
+    "root": "root",
+    "elements": {
+      "root": { "type": "Column", "props": { "gap": "sm" }, "children": ["list", "empty"] },
+      "list": {
+        "type": "Column",
+        "props": { "gap": "sm" },
+        "repeat": { "statePath": "/latest/notices", "key": "url" },
+        "children": ["row"]
+      },
+      "row": {
+        "type": "ListItem",
+        "props": {
+          "title": { "$item": "title" },
+          "subtitle": { "$template": "${source} · ${date}" },
+          "value": null,
+          "icon": null
+        },
+        "on": { "press": { "action": "open", "params": { "url": { "$item": "url" } } } }
+      },
+      "empty": {
+        "type": "Column",
+        "props": { "gap": "sm" },
+        "visible": { "$state": "/latest/notices/0", "not": true },
+        "children": ["emptyText", "ask"]
+      },
+      "emptyText": { "type": "Text", "props": { "text": "暂时没有读到通知", "tone": "muted", "size": "small" } },
+      "ask": {
+        "type": "Button",
+        "props": { "label": "问问 AI", "variant": "secondary" },
+        "on": { "press": { "action": "ask", "params": { "text": "查一下北大最新的校园通知，挑和我相关的重点说" } } }
+      }
+    },
+    "state": { "latest": { "notices": [] } }
+  }
+}

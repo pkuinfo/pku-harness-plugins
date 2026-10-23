@@ -74,7 +74,7 @@ const STEP_KEYS: Record<string, string[]> = {
   return: ['return'],
 };
 const KIND_ORDER = ['each', 'paginate', 'extract', 'request', 'if', 'check', 'try', 'kv', 'cache', 'call', 'ability', 'value', 'return'];
-const REQUEST_KEYS = new Set(['campus', 'url', 'method', 'query', 'headers', 'json', 'form', 'body', 'contentType', 'followRedirects', 'timeout']);
+const REQUEST_KEYS = new Set(['campus', 'url', 'method', 'query', 'headers', 'json', 'form', 'body', 'contentType', 'followRedirects', 'timeout', 'maxSize']);
 
 type Ctx = { file: string; manifest: Manifest; tool: ToolDoc; toolNames: Set<string>; issues: string[]; abilities: Record<string, AbilityDef>; implicitAbilities: boolean };
 

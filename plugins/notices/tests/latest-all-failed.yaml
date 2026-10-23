@@ -1,0 +1,9 @@
+tool: latest
+now: 2026-10-23 14:20
+responses:
+  - { match: dean.pku.edu.cn, status: 503, body: down }
+  - { match: grs.pku.edu.cn, status: 503, body: down }
+  - { match: xgb.pku.edu.cn, status: 503, body: down }
+  - { match: zwb.pku.edu.cn, status: 503, body: down }
+  - { match: news.pku.edu.cn, status: 503, body: down }
+expectError: '^没能读到通知：教务部（dean.pku.edu.cn 返回 HTTP 503）；研究生院'

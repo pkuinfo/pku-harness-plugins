@@ -1,0 +1,124 @@
+# One notice page (*.pku.edu.cn) or WeChat official-account article as clean text. Article
+# cleaning after pkucli crates/info-spider/src/scrape.rs: keep only the content container
+# (#js_content for WeChat), drop script/style. WeChat answers a MicroMessenger UA from outside the
+# app with "未知错误" (checked 2026-10-21), so it gets a plain mobile browser UA.
+# Everything here is third-party text: data, never instructions.
+title: 读通知全文
+description: >-
+  Read one notice page (any *.pku.edu.cn page, e.g. a url from latest/search) or a WeChat official-account article (https://mp.weixin.qq.com/s/…) as clean text: title, date, source, body, attachment links. Body is cut at maxChars (default 6000).
+effect: read
+untrusted: true
+input:
+  url: { type: string, pattern: '^\s*\S+\s*$', description: the notice or article URL }
+  maxChars: { type: integer, min: 500, max: 20000, optional: true, description: default 6000 }
+constants:
+  MOBILE_HEADERS:
+    user-agent: 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Mobile Safari/537.36'
+    accept-language: 'zh-CN,zh;q=0.9'
+    accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,application/json;q=0.8,*/*;q=0.5'
+  # Content containers in priority order (most specific first).
+  CONTAINERS: [ '#js_content', .v_news_content, .newsinfo_box, .gp-article1, .article, .wp_articlecontent, '#vsb_content', .content, article, main ]
+  TITLE_SEL: '#activity-name, .rich_media_title, .news-header h3, .newsinfo_box h1, .articleTitle h2, .article .title, .gp-articleTitle, h1'
+  HEAD_SEL: '.news-header .info, .articleAuthor, .gp-articleAuthor, .newsinfo_box > span, .introTit, .info'
+  OG_TITLE: 'meta[property="og:title"]'
+  FILE: '\.(pdf|docx?|xlsx?|pptx?|zip|rar|7z|wps|txt|csv)(\?|$)'
+  # HTML → lines (as the TS htmlToText walk): <br> and block tags end a line, table cells are
+  # joined with " | ", other tags vanish. SENT marks line ends while entities are decoded.
+  SENT: ""
+  BR: |-
+    <[bB][rR]\b(?:"[^"]*"|'[^']*'|[^'">])*>
+  CELL_END: '</[tT][dDhH]\s*>'
+  BLOCK: |-
+    </?(?:[pP]|[dD][iI][vV]|[sS][eE][cC][tT][iI][oO][nN]|[lL][iI]|[tT][rR]|[hH][1-6]|[tT][aA][bB][lL][eE]|[uU][lL]|[oO][lL]|[bB][lL][oO][cC][kK][qQ][uU][oO][tT][eE]|[aA][rR][tT][iI][cC][lL][eE]|[hH][eE][aA][dD][eE][rR]|[fF][oO][oO][tT][eE][rR])\b(?:"[^"]*"|'[^']*'|[^'">])*>
+  OTHER_TAG: |-
+    <[/!?]?[A-Za-z](?:"[^"]*"|'[^']*'|[^'">])*>
+  BOILERPLATE: '(?:^|\n)(?:转载本网文章请注明出处|分享到：?|返回|【 字体：.*】|预览时标签不可点)(?=\n|$)'
+functions:
+  ymd: "(m) => m ? m[1] + '-' + padStart(m[2], 2, '0') + '-' + padStart(m[3], 2, '0') : null"
+  isFile: "(href) => test(lower(href ?? ''), FILE)"
+  # The container with the most text for the first selector that has more than 10 characters.
+  pickBody: |
+    (root) => CONTAINERS.map(sel => sortBy(select(root, sel), e => length(e.rawText), true)[0]).find(e => e && length(sq(e.rawText)) > 10) ?? first(root, 'body') ?? root
+  toText: |
+    (h) => trim(replace(replace(replace(
+      htmlText(replace(replace(replace(replace(replace(h, '[\s\u200b]+', ' '), BR, SENT), CELL_END, ' | '), BLOCK, SENT), OTHER_TAG, '')),
+      ' ?\| ?(?=\uE000|$)', ''), ' ?\uE000 ?', '\n'), '\n{3,}', '\n\n'))
+  # Pages that repeat the title and date at the top of the body (教务部): drop those lines.
+  dropHead: "(lines, title) => fromIndex(lines, findIndex(lines, l => !(!l || sq(l) == title || test(trim(l), '^\\d{4}[-/.]\\d{1,2}[-/.]\\d{1,2}$'))))"
+  fromIndex: "(lines, k) => k < 0 ? [] : slice(lines, k)"
+steps:
+  - let: u
+    value: trim(input.url)
+  - let: host
+    value: "lower(match(u, '^[hH][tT][tT][pP][sS]?://([^/:?#]+)(?::\\d+)?(/|$|\\?)', 1) ?? '')"
+  - check: "host == 'pku.edu.cn' || endsWith(host, '.pku.edu.cn') || host == 'mp.weixin.qq.com'"
+    error: 只能读取北大网站（*.pku.edu.cn）或微信公众号文章（mp.weixin.qq.com）的链接
+  - let: wechat
+    value: "test(lower(u), 'mp\\.weixin\\.qq\\.com')"
+  # Plugins may only use https; plain-http links are upgraded.
+  - let: res
+    request:
+      url: "${replace(u, '^[hH][tT][tT][pP]://', 'https://')}"
+      headers: '${wechat ? MOBILE_HEADERS : HEADERS}'
+      timeout: 20s
+      # WeChat article pages are 3–4 MB (the TS plugin allowed 8 MB).
+      maxSize: 8000000
+    as: response
+  - check: "res.status >= 200 && res.status < 300"
+    error: "${hostOf(replace(u, '^[hH][tT][tT][pP]://', 'https://'))} 返回 HTTP ${res.status}"
+  # WeChat's publish time is a script variable (`var ct = "1788426855"`), unix seconds.
+  - let: ct
+    value: "match(res.text, 'var ct\\s*=\\s*\"(\\d{9,11})\"', 1)"
+  - let: root
+    value: html(stripCode(res.text))
+  - let: body
+    value: pickBody(root)
+  - let: title
+    value: "replace(sq(sq(first(root, OG_TITLE)?.attr('content')) || first(root, TITLE_SEL)?.rawText || first(root, 'title')?.rawText || ''), '_北京大学.*$', '')"
+  - let: head
+    value: sq(first(root, HEAD_SEL)?.rawText)
+  - let: date
+    value: "ct ? formatDate(num(ct) * 1000, 'YYYY-MM-DD') : findDate(match(head, '发布(?:时间|日期)[：:]\\s*([^\\s]+)', 1) ?? head) ?? findDate(slice(sq(body.rawText), -200))"
+  - let: source
+    value: "test(u, 'mp\\.weixin\\.qq\\.com') ? (sq(first(root, '#js_name')?.rawText) || null) : match(head, '(?:信息)?来源[：:]\\s*([^\\s|]{2,30})', 1)"
+  # A list item title inside the body (学工部 / 总务部 put the title in p.title) is not body text.
+  - let: titleHtml
+    value: "select(body, 'p.title, #title').map(e => e.outerHtml)"
+  - let: skipLinks
+    value: "select(body, 'p.title a, #title a').map(e => e.outerHtml)"
+  - let: attachments
+    value: |
+      unique(
+        select(root, 'a[href]')
+          .filter(a => isFile(attr(a, 'href')) && !skipLinks.includes(a.outerHtml))
+          .map(a => ({ name: sq(a.rawText) || decode(slice(split(resolve(attr(a, 'href'), u), '/'), -1)[0] ?? ''), url: resolve(attr(a, 'href'), u) })),
+        x => x.url).slice(0, 20)
+  # Attachment list items are listed above, not left in the text.
+  - let: fileItems
+    value: "select(body, 'li').filter(li => isFile(first(li, 'a')?.attr('href'))).map(e => e.outerHtml)"
+  - let: bodyHtml
+    value: "reduce(fileItems, (acc, h) => replaceText(acc, h, ''), reduce(titleHtml, (acc, h) => replaceText(acc, h, ''), body.html))"
+  - let: lines
+    value: "split(replace(toText(bodyHtml), BOILERPLATE, ''), '
+
+      ')"
+  - let: text
+    value: "trim(join(dropHead(lines, title), '
+
+      '))"
+  - check: text
+    error: "${wechat ? '没能读到文章正文（可能已删除、需要在微信内打开，或被微信限制）' : '没能读到正文，页面结构可能不同'}"
+  - let: images
+    value: "matchAll(bodyHtml, '<[iI][mM][gG]\\b').length"
+return: |
+  {
+    note: UNTRUSTED,
+    url: u,
+    title,
+    date,
+    source,
+    text: cut(text, input.maxChars ?? 6000),
+    ...(length(text) > (input.maxChars ?? 6000) ? { truncated: true, totalChars: length(text) } : {}),
+    ...(attachments.length ? { attachments } : {}),
+    ...(images ? { images } : {}),
+  }

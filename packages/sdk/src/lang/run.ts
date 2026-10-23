@@ -16,13 +16,15 @@ import { isNode, squash, STDLIB, wrapNode } from './stdlib';
  */
 
 export const LIMITS = {
-  steps: 200,
+  steps: 400,
   requests: 60,
   inFlight: 4,
   wallMs: 60_000,
+  /** Default per response; a request may raise it with `maxSize` up to `responseBytesMax`. */
   responseBytes: 2_000_000,
+  responseBytesMax: 8_000_000,
   resultBytes: 1_000_000,
-  ops: 100_000,
+  ops: 300_000,
   kvValueBytes: 256_000,
   eachItems: 50,
   pages: 30,
@@ -124,6 +126,8 @@ type RequestDoc = {
   contentType?: string;
   followRedirects?: boolean;
   timeout?: string | number;
+  /** Larger pages (e.g. WeChat articles, ~4 MB): bytes, at most LIMITS.responseBytesMax. */
+  maxSize?: number;
 };
 
 /** One request; returns the response shaped by `as`. */
@@ -187,7 +191,8 @@ async function request(run: Run, raw: unknown, as: unknown, scope: Scope): Promi
   } finally {
     run.inFlight--;
   }
-  if (res.body.length > run.lim.responseBytes) throw new ToolFailure(`response larger than ${run.lim.responseBytes / 1e6} MB`);
+  const maxSize = Math.min(run.lim.responseBytesMax, Math.max(run.lim.responseBytes, Number(req.maxSize) || 0));
+  if (res.body.length > maxSize) throw new ToolFailure(`response larger than ${maxSize / 1e6} MB (raise request.maxSize, at most ${run.lim.responseBytesMax / 1e6} MB)`);
   const mode = as == null ? (/json/i.test(res.headers['content-type'] ?? '') ? 'json' : 'text') : String(as);
   const shown = (() => {
     try {
@@ -413,11 +418,12 @@ async function runStep(run: Run, step: StepDoc, scope: Scope): Promise<unknown> 
   }
 
   if ('cache' in step) {
-    const c = step.cache as { key: string; ttl: string; staleOnError?: boolean };
+    const c = step.cache as { key: string; ttl: string; staleOnError?: boolean; refresh?: unknown };
     const key = `cache:${String(template(c.key, scope, run.ctx))}`;
     const hit = await run.env.kv.get<{ v: unknown; at: number }>(`doc:${key}`);
     const ttl = durationMs(c.ttl);
-    if (hit && run.ctx.now - hit.at < ttl) return hit.v;
+    const refresh = c.refresh !== undefined && !!expr(run, c.refresh, scope);
+    if (hit && !refresh && run.ctx.now - hit.at < ttl) return hit.v;
     const compute = async () => {
       const s = scope.child();
       try {

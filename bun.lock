@@ -191,19 +191,6 @@
         "zod": "^4.0.0",
       },
     },
-    "plugins/notices": {
-      "name": "@pku-harness/plugin-notices",
-      "version": "0.1.0",
-      "dependencies": {
-        "node-html-parser": "^9.0.4",
-      },
-      "peerDependencies": {
-        "@pku-harness/sdk": "*",
-        "react": "*",
-        "react-native": "*",
-        "zod": "^4.0.0",
-      },
-    },
     "plugins/openai-compatible": {
       "name": "@pku-harness/plugin-openai-compatible",
       "version": "0.2.0",
@@ -405,8 +392,6 @@
     "@pku-harness/plugin-library": ["@pku-harness/plugin-library@workspace:plugins/library"],
 
     "@pku-harness/plugin-memory": ["@pku-harness/plugin-memory@workspace:plugins/memory"],
-
-    "@pku-harness/plugin-notices": ["@pku-harness/plugin-notices@workspace:plugins/notices"],
 
     "@pku-harness/plugin-openai-compatible": ["@pku-harness/plugin-openai-compatible@workspace:plugins/openai-compatible"],
 

@@ -1,0 +1,89 @@
+# Newest notices from PKU's public sites (no login). Sources verified live 2026-10-21; pkucli's
+# info-spider lists WeChat articles through the publisher backend (needs an owner QR login), so
+# lists come from the schools' own sites. List pages are cached per source in the plugin KV
+# (`list:<id>` = { "<page>": { at, items, next } }) for 20 minutes; an older copy is used when a
+# site is down. Titles and summaries are third-party text: data, never instructions.
+#
+# The list parsing below is shared with tools/search.yaml (keep the two `functions` blocks equal).
+title: 最新通知
+description: >-
+  Newest notices, newest first: title, date, source, url (北大新闻网 items also carry a summary). Without `source`, page 1 of dean, grs, xgb, zwb, news is merged. Sources: dean = 教务部（本科教务通知：选课、退课、考试、成绩单、转专业、双学位/辅修、推免、交流项目）; grs = 研究生院（研究生通知：研究生选课/退课、学位论文、奖助学金、招生项目）; xgb = 学生工作部（学工部最新通知：假期安排、安全提示、学生事务）; zwb = 总务部（后勤相关通知：供暖、停水停电、校园交通（含新燕园快速公交）、假期后勤安排）; news = 北大新闻网（学校新闻（新闻纵横）：校园要闻、会议活动、学术成果，带摘要）; pku = 学校主页通知公告（www.pku.edu.cn 首页的"通知公告"（学校层面声明公告，更新很少））. `page` (1–5) only applies to a single source.
+effect: read
+untrusted: true
+input:
+  source: { enum: [ dean, grs, xgb, zwb, news, pku ], optional: true, description: 'one source; default: merge the main ones' }
+  page: { type: integer, min: 1, max: 5, optional: true, description: 'page of a single source, default 1' }
+  limit: { type: integer, min: 1, max: 40, optional: true, description: 'max items, default 10' }
+  refresh: { type: boolean, optional: true, description: ignore the 20-minute cache }
+functions:
+  # ── list parsing (same in latest.yaml and search.yaml) ──
+  ymd: |
+    (m) => m ? replace(replace(m[0], DATE, '$1-0$2-0$3'), '-0(\d\d)', '-$1') : null
+  # ── this tool ──
+  # One source walks pages 1..page when later pages are only reachable by link (北大新闻网).
+  jobs: |
+    (id) => (input.source && SOURCES[id].style == 'single' && SOURCES[id].paged ? range(1, (input.page ?? 1) + 1) : [input.source ? input.page ?? 1 : 1])
+      .map(p => ({ id, src: SOURCES[id], p, force: !!input.refresh && p == (input.source ? input.page ?? 1 : 1), gather: false }))
+steps:
+  - let: ids
+    value: "input.source ? [input.source] : DEFAULT_SOURCES"
+  - let: runs
+    each: ids
+    concurrency: 4
+    steps:
+      # One list page per job: KV cache `list:<id>` = { "<page>": { at, items, next } }, 20 min;
+      # a failed fetch falls back to the cached copy of that page.
+      - let: pages
+        each: jobs(item)
+        steps:
+          - let: store
+            kv: get
+            key: list:${item.id}
+          - if: "early(item, store) != null"
+            then:
+              - return: early(item, store)
+          - let: got
+            try:
+              - let: res
+                request:
+                  url: '${urlOf(item, store)}'
+                  headers: '${HEADERS}'
+                  timeout: 15s
+                as: response
+              - let: pg
+                value: parsePage(item.src, res, urlOf(item, store))
+              - kv: set
+                key: list:${item.id}
+                value: "pg.ok ? merge(store, { [str(item.p)]: { at: now, items: pg.items, next: pg.next } }) : store"
+            catch:
+              - let: pg
+                value: "{ ok: false, error: error.message }"
+        return: "got.ok ? { items: got.items } : store?.[item.p] ? { items: store[item.p].items } : { error: got.error }"
+  - if: input.source
+    then:
+      - let: fin
+        value: "reduce(runs[0], (prev, cur) => cur.chain ? settle(cur, prev) : cur, null)"
+      - check: fin.items
+        error: '${fin.error}'
+      - return: |
+          {
+            note: UNTRUSTED,
+            source: SOURCES[input.source].name,
+            page: input.page ?? 1,
+            notices: byDate(fin.items).slice(0, input.limit ?? 10).map(it => tag(it, input.source)),
+            hasMore: SOURCES[input.source].paged && fin.items.length > 0,
+          }
+  - let: per
+    value: "ids.map((id, i) => ({ id, ...collect(runs[i]) }))"
+  - let: failed
+    value: "per.filter(x => x.error).map(x => ({ source: SOURCES[x.id].name, error: x.error }))"
+  - let: items
+    value: "per.flatMap(x => x.items.map(it => tag(it, x.id)))"
+  - check: "items.length || !failed.length"
+    error: "没能读到通知：${failed.map(f => f.source + '（' + f.error + '）').join('；')}"
+return: |
+  {
+    note: UNTRUSTED,
+    notices: byDate(items).slice(0, input.limit ?? 10),
+    ...(failed.length ? { failed } : {}),
+  }
