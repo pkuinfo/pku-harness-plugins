@@ -1,6 +1,6 @@
 {
   "name": "@pku-harness/sdk",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Plugin contract and pure helpers for PKU Harness plugins.",
   "type": "module",
   "main": "src/index.ts",
@@ -24,9 +24,21 @@
     "url": "git+https://github.com/pkuinfo/pku-harness-plugins.git",
     "directory": "packages/sdk"
   },
-  "homepage": "https://github.com/pkuinfo/pku-harness-plugins#readme",
+  "homepage": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/packages/sdk#readme",
   "publishConfig": {
     "access": "public"
   },
+  "bugs": {
+    "url": "https://github.com/pkuinfo/pku-harness-plugins/issues"
+  },
+  "author": "pkuinfo (https://github.com/pkuinfo)",
+  "keywords": [
+    "agent",
+    "peking-university",
+    "pku",
+    "pku-harness",
+    "plugin",
+    "sdk"
+  ],
   "license": "MIT"
 }

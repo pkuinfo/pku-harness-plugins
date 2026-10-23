@@ -1,5 +1,6 @@
 {
   "name": "@pku-harness/plugin-elective",
+  "private": true,
   "version": "0.1.0",
   "description": "选课网 (elective.pku.edu.cn) election results, supplementary-election list and course search, read-only",
   "type": "module",

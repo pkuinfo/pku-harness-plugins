@@ -1,5 +1,6 @@
 {
   "name": "@pku-harness/plugin-scheduler",
+  "private": true,
   "version": "0.2.0",
   "description": "Exact reminders and scheduled checks",
   "type": "module",

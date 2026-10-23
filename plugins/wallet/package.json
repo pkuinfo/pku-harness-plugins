@@ -1,5 +1,6 @@
 {
   "name": "@pku-harness/plugin-wallet",
+  "private": true,
   "version": "1.0.0",
   "description": "Campus wallet: Campus Card balance and payment code, top-ups, network fee, dorm electricity and bath card",
   "type": "module",

@@ -1,5 +1,6 @@
 {
   "name": "@pku-harness/plugin-timetable",
+  "private": true,
   "version": "0.3.0",
   "description": "Class timetable and class reminders",
   "type": "module",

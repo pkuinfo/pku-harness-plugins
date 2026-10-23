@@ -1,5 +1,6 @@
 {
   "name": "@pku-harness/plugin-canteen",
+  "private": true,
   "version": "0.1.0",
   "description": "PKU canteens: live occupancy (portal public query), opening hours (餐饮中心, live with dated snapshot fallback), what's open now and 餐饮中心 notices; read-only",
   "type": "module",

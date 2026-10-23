@@ -1,5 +1,6 @@
 {
   "name": "@pku-harness/plugin-grades",
+  "private": true,
   "version": "0.1.0",
   "description": "Scores and GPA (成绩/绩点) from PKU via the treehole course API, read-only",
   "type": "module",

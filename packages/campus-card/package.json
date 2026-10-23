@@ -1,6 +1,6 @@
 {
   "name": "@pku-harness/campus-card",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Campus Card (bdcard.pku.edu.cn) API helpers shared by PKU Harness plugins: payment code, card mode, turnover. Ported from pkucli crates/campuscard.",
   "type": "module",
   "main": "src/index.ts",
@@ -13,16 +13,26 @@
     "!src/**/*.test.ts"
   ],
   "peerDependencies": {
-    "@pku-harness/sdk": "^0.1.0"
+    "@pku-harness/sdk": "^0.1.1"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/pkuinfo/pku-harness-plugins.git",
     "directory": "packages/campus-card"
   },
-  "homepage": "https://github.com/pkuinfo/pku-harness-plugins#readme",
+  "homepage": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/packages/campus-card#readme",
   "publishConfig": {
     "access": "public"
   },
+  "bugs": {
+    "url": "https://github.com/pkuinfo/pku-harness-plugins/issues"
+  },
+  "author": "pkuinfo (https://github.com/pkuinfo)",
+  "keywords": [
+    "campus-card",
+    "peking-university",
+    "pku",
+    "pku-harness"
+  ],
   "license": "MIT"
 }

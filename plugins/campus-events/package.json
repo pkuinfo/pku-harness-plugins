@@ -1,5 +1,6 @@
 {
   "name": "@pku-harness/plugin-campus-events",
+  "private": true,
   "version": "0.1.0",
   "description": "Academic talks (学术日历) and campus activities (活动日历) from the treehole API, read-only",
   "type": "module",

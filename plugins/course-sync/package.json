@@ -1,5 +1,6 @@
 {
   "name": "@pku-harness/plugin-course-sync",
+  "private": true,
   "version": "0.1.0",
   "description": "Sync the class timetable from PKU (treehole course table)",
   "type": "module",

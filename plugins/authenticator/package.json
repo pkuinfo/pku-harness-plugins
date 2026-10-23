@@ -1,5 +1,6 @@
 {
   "name": "@pku-harness/plugin-authenticator",
+  "private": true,
   "version": "0.1.0",
   "description": "IAAA 手机令牌 (TOTP authenticator) held on the device: bind by SMS, show the current code, auto-fill second factors",
   "type": "module",

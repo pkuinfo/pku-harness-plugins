@@ -1,5 +1,6 @@
 {
   "name": "@pku-harness/plugin-ui",
+  "private": true,
   "version": "0.2.0",
   "description": "Generative UI in the conversation",
   "type": "module",

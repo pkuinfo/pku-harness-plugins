@@ -1,6 +1,6 @@
 {
   "name": "@pku-harness/plugins",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "The plugins bundled in the PKU Harness app (campus services, dashboard, schedule, memory, model providers).",
   "type": "module",
   "main": "index.ts",
@@ -10,17 +10,17 @@
   },
   "files": [
     "index.ts",
-    "*/src",
+    "*/src/**",
     "!**/*.test.ts",
     "!**/fixtures"
   ],
   "dependencies": {
-    "@pku-harness/campus-card": "^0.1.0",
+    "@pku-harness/campus-card": "^0.1.1",
     "node-html-parser": "^9.0.4"
   },
   "peerDependencies": {
     "@ai-sdk/openai-compatible": "^3.0.0",
-    "@pku-harness/sdk": "^0.1.0",
+    "@pku-harness/sdk": "^0.1.1",
     "react": ">=19",
     "react-native": "*",
     "zod": "^4.0.0"
@@ -30,9 +30,20 @@
     "url": "git+https://github.com/pkuinfo/pku-harness-plugins.git",
     "directory": "plugins"
   },
-  "homepage": "https://github.com/pkuinfo/pku-harness-plugins#readme",
+  "homepage": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins#readme",
   "publishConfig": {
     "access": "public"
   },
+  "bugs": {
+    "url": "https://github.com/pkuinfo/pku-harness-plugins/issues"
+  },
+  "author": "pkuinfo (https://github.com/pkuinfo)",
+  "keywords": [
+    "campus",
+    "peking-university",
+    "pku",
+    "pku-harness",
+    "plugins"
+  ],
   "license": "MIT"
 }

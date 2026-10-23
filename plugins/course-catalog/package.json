@@ -1,5 +1,6 @@
 {
   "name": "@pku-harness/plugin-course-catalog",
+  "private": true,
   "version": "0.1.0",
   "description": "PKU course catalog: search every course by name, teacher or department, with times (and rooms via the elective system), read-only",
   "type": "module",

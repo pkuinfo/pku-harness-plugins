@@ -30,14 +30,14 @@
     },
     "packages/campus-card": {
       "name": "@pku-harness/campus-card",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "peerDependencies": {
         "@pku-harness/sdk": "^0.1.0",
       },
     },
     "packages/cloud-protocol": {
       "name": "@pku-harness/cloud-protocol",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "dependencies": {
         "@noble/ciphers": "2.4.0",
         "@noble/curves": "2.4.0",
@@ -58,7 +58,7 @@
     },
     "packages/sdk": {
       "name": "@pku-harness/sdk",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "devDependencies": {
         "zod": "^4.6.7",
       },
@@ -69,7 +69,7 @@
     },
     "plugins": {
       "name": "@pku-harness/plugins",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "dependencies": {
         "@pku-harness/campus-card": "^0.1.0",
         "node-html-parser": "^9.0.4",
@@ -354,7 +354,7 @@
     },
     "registry": {
       "name": "@pku-harness/registry",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "peerDependencies": {
         "zod": "^4.0.0",
       },

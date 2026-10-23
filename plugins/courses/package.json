@@ -1,5 +1,6 @@
 {
   "name": "@pku-harness/plugin-courses",
+  "private": true,
   "version": "0.3.0",
   "description": "Blackboard (教学网): courses, announcements, assignments, submission, grades, deadline sync, content and recordings",
   "type": "module",

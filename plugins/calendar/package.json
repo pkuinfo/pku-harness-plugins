@@ -1,5 +1,6 @@
 {
   "name": "@pku-harness/plugin-calendar",
+  "private": true,
   "version": "0.3.0",
   "description": "Today, the teaching week and the official PKU school calendar",
   "type": "module",

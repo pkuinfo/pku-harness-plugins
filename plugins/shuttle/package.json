@@ -1,5 +1,6 @@
 {
   "name": "@pku-harness/plugin-shuttle",
+  "private": true,
   "version": "0.1.0",
   "description": "PKU inter-campus commuter bus (燕园 ⇄ 新燕园 ⇄ 200号) and 新燕园 ⇄ 地铁北安河 express bus timetables, next departure in Beijing time; static data with source and date",
   "type": "module",

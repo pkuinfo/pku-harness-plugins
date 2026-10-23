@@ -1,5 +1,6 @@
 {
   "name": "@pku-harness/plugin-classrooms",
+  "private": true,
   "version": "0.1.0",
   "description": "PKU free classrooms (空闲教室) per teaching building and period, from the portal public query; read-only",
   "type": "module",

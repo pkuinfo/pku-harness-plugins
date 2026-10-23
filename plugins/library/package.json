@@ -1,5 +1,6 @@
 {
   "name": "@pku-harness/plugin-library",
+  "private": true,
   "version": "0.1.0",
   "description": "PKU Library: catalog search and holdings, my loans / renewals / holds, discussion-room booking, study-carrel availability, opening hours, due-date reminders",
   "type": "module",

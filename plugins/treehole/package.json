@@ -1,5 +1,6 @@
 {
   "name": "@pku-harness/plugin-treehole",
+  "private": true,
   "version": "0.1.0",
   "description": "PKU Treehole (树洞): browse, search and read holes; follow, post and reply anonymously",
   "type": "module",

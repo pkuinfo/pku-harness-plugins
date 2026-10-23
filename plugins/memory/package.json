@@ -1,5 +1,6 @@
 {
   "name": "@pku-harness/plugin-memory",
+  "private": true,
   "version": "0.1.0",
   "description": "Long-term memory about the user (on device)",
   "type": "module",
