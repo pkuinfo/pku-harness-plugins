@@ -1,0 +1,19 @@
+{
+  "name": "@pku-harness/cloud-server",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Reference server for the PKU Harness Cloud protocol v1: a blind, end-to-end-encrypted relay and store. Bun + Hono + SQLite.",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "PORT=8787 bun --watch src/index.ts",
+    "start": "bun src/index.ts",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@pku-harness/cloud-protocol": "workspace:*",
+    "hono": "4.13.13",
+    "zod": "4.6.7"
+  },
+  "license": "MIT"
+}

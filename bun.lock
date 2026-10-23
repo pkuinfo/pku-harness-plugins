@@ -47,6 +47,15 @@
         "zod": "^4.0.0",
       },
     },
+    "packages/cloud-server": {
+      "name": "@pku-harness/cloud-server",
+      "version": "0.1.0",
+      "dependencies": {
+        "@pku-harness/cloud-protocol": "workspace:*",
+        "hono": "4.13.13",
+        "zod": "4.6.7",
+      },
+    },
     "packages/sdk": {
       "name": "@pku-harness/sdk",
       "version": "0.1.0",
@@ -432,6 +441,8 @@
     "@pku-harness/campus-card": ["@pku-harness/campus-card@workspace:packages/campus-card"],
 
     "@pku-harness/cloud-protocol": ["@pku-harness/cloud-protocol@workspace:packages/cloud-protocol"],
+
+    "@pku-harness/cloud-server": ["@pku-harness/cloud-server@workspace:packages/cloud-server"],
 
     "@pku-harness/example-demo-canteen": ["@pku-harness/example-demo-canteen@workspace:examples/demo-canteen"],
 
