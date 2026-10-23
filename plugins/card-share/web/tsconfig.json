@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "jsxImportSource": "preact",
+    "strict": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["vite/client"],
+    "paths": {
+      "@pku-harness/cloud-protocol": ["../../../packages/cloud-protocol/src/index.ts"],
+      "zod": ["./node_modules/zod"]
+    }
+  },
+  "include": ["src", "vite.config.ts"]
+}

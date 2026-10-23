@@ -1,0 +1,30 @@
+{
+  "name": "@pku-harness/card-share-web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Web viewer for card-share links (served by PKU Harness Cloud at /w/card-share/view). Port of pkubdcard/web UseFlow.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "typecheck": "tsc --noEmit -p .",
+    "build": "tsc --noEmit -p . && vite build"
+  },
+  "dependencies": {
+    "@noble/ciphers": "2.4.0",
+    "@noble/curves": "2.4.0",
+    "@noble/hashes": "2.4.0",
+    "motion": "^12.42.0",
+    "preact": "^10.29.1",
+    "qrcode": "^1.5.4",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@preact/preset-vite": "^2.10.5",
+    "@tailwindcss/vite": "^4.3.1",
+    "@types/qrcode": "^1.5.6",
+    "tailwindcss": "^4.3.1",
+    "typescript": "~6.0.3",
+    "vite": "^8.0.10"
+  },
+  "license": "MIT"
+}

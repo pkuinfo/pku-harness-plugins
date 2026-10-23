@@ -1,0 +1,400 @@
+@import "tailwindcss";
+
+/* ════════════════════════════════════════════════════════════════════════
+ *  DESIGN SYSTEM — 「凭信 · 精密交接 / precision instrument」
+ *  Ported from pkubdcard/web (see its DESIGN.md). Components pull only from these tokens; add tokens here
+ *  rather than inlining values. Colors are semantic CSS variables so the
+ *  auto/light/dark theme (data-theme on <html>) switches everything at once.
+ * ════════════════════════════════════════════════════════════════════════ */
+
+/* Map semantic vars into Tailwind's theme so utilities like bg-bg / text-ink /
+ * text-seal / border-line / font-mono resolve to the live (themeable) vars. */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-seal: var(--seal);
+  --color-seal-ink: var(--seal-ink);
+  --color-seal-weak: var(--seal-weak);
+
+  /* System fonts only: the relay's CSP allows no third-party font hosts. */
+  --font-sans: system-ui, -apple-system, "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+
+  --radius-card: 16px;
+  --radius-ctl: 12px;
+  --radius-chip: 8px;
+  --radius-qr: 20px;
+}
+
+/* ─── Theme tokens ─────────────────────────────────────────────────────── */
+:root {
+  /* light · 昼 / daylight instrument */
+  --bg: #f3f3f4;
+  --surface: #ffffff;
+  --surface-2: #fafafa;
+  --ink: #0c0d0f;
+  --ink-2: #44464d;
+  --ink-3: #6e7178;
+  --line: rgba(12, 13, 15, 0.1);
+  --line-strong: rgba(12, 13, 15, 0.16);
+  --seal: #c8362b;
+  --seal-ink: #a82a20;
+  --seal-weak: rgba(200, 54, 43, 0.08);
+
+  --glass-blur: 0px;
+  --card-shadow: 0 1px 2px rgba(12, 13, 15, 0.04), 0 10px 30px -16px rgba(12, 13, 15, 0.12);
+  --card-inset: none;
+  --noise-opacity: 0.02;
+  --glow-strength: 0.1;
+  --grid-line: rgba(12, 13, 15, 0.04);
+
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur: 440ms;
+  --dur-fast: 200ms;
+
+  color-scheme: light;
+}
+
+/* dark · 夜 / night instrument (near-OLED) — applied when the OS prefers dark
+ * (unless the user forced light) and always when data-theme="dark". */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0a0a0b;
+    --surface: rgba(255, 255, 255, 0.045);
+    --surface-2: #17171a;
+    --ink: #f5f5f6;
+    --ink-2: #a6a8ae;
+    --ink-3: #74767c;
+    --line: rgba(255, 255, 255, 0.1);
+    --line-strong: rgba(255, 255, 255, 0.16);
+    --seal: #ff5247;
+    --seal-ink: #ff6a60;
+    --seal-weak: rgba(255, 82, 71, 0.12);
+
+    --glass-blur: 12px;
+    --card-shadow: 0 1px 0 rgba(0, 0, 0, 0.4);
+    --card-inset: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    --noise-opacity: 0.03;
+    --glow-strength: 0.18;
+    --grid-line: rgba(255, 255, 255, 0.05);
+
+    color-scheme: dark;
+  }
+}
+[data-theme="dark"] {
+  --bg: #0a0a0b;
+  --surface: rgba(255, 255, 255, 0.045);
+  --surface-2: #17171a;
+  --ink: #f5f5f6;
+  --ink-2: #a6a8ae;
+  --ink-3: #74767c;
+  --line: rgba(255, 255, 255, 0.1);
+  --line-strong: rgba(255, 255, 255, 0.16);
+  --seal: #ff5247;
+  --seal-ink: #ff6a60;
+  --seal-weak: rgba(255, 82, 71, 0.12);
+
+  --glass-blur: 12px;
+  --card-shadow: 0 1px 0 rgba(0, 0, 0, 0.4);
+  --card-inset: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --noise-opacity: 0.03;
+  --glow-strength: 0.18;
+  --grid-line: rgba(255, 255, 255, 0.05);
+
+  color-scheme: dark;
+}
+
+/* ─── Base ─────────────────────────────────────────────────────────────── */
+@layer base {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.55;
+    letter-spacing: 0.01em;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    transition: background-color var(--dur) var(--ease), color var(--dur) var(--ease);
+  }
+  /* fixed grain overlay — atmosphere, never interactive */
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    opacity: var(--noise-opacity);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  ::selection {
+    background: var(--seal-weak);
+    color: var(--seal-ink);
+  }
+  :focus-visible {
+    outline: 2px solid var(--seal);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--line-strong);
+    border-radius: 999px;
+    border: 3px solid transparent;
+    background-clip: padding-box;
+  }
+  .tnum {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* ─── Components ───────────────────────────────────────────────────────── */
+@layer components {
+  /* Card surface — adapts per theme via vars (white+shadow / glass+blur). */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-card);
+    box-shadow: var(--card-shadow), var(--card-inset);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+  }
+
+  /* Eyebrow — mono uppercase technical label. */
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.26em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 46px;
+    padding: 0 20px;
+    border-radius: var(--radius-ctl);
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    user-select: none;
+    border: 1px solid transparent;
+    transition: background-color var(--dur-fast) var(--ease),
+      border-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease),
+      opacity var(--dur-fast) var(--ease);
+  }
+  .btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  .btn-primary {
+    background: var(--seal);
+    color: #fff;
+  }
+  .btn-primary:not(:disabled):hover {
+    background: color-mix(in oklab, var(--seal) 86%, #000);
+  }
+  .btn-ghost {
+    background: transparent;
+    border-color: var(--line-strong);
+    color: var(--ink);
+  }
+  .btn-ghost:not(:disabled):hover {
+    background: var(--surface-2);
+    border-color: var(--ink-3);
+  }
+  .btn-quiet {
+    background: transparent;
+    color: var(--ink-2);
+    height: auto;
+    padding: 6px 4px;
+  }
+  .btn-quiet:hover {
+    color: var(--seal-ink);
+  }
+
+  /* Inputs */
+  .input {
+    width: 100%;
+    height: 48px;
+    padding: 0 14px;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-ctl);
+    color: var(--ink);
+    font-size: 15px;
+    font-family: var(--font-sans);
+    transition: border-color var(--dur-fast) var(--ease), background-color var(--dur-fast) var(--ease);
+  }
+  .input::placeholder {
+    color: var(--ink-3);
+  }
+  .input:focus {
+    outline: none;
+    border-color: var(--seal);
+    background: var(--surface);
+  }
+
+  /* OTP / token cells (overlay on a real <input>) */
+  .otp-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 58px;
+    border-radius: var(--radius-ctl);
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    font-family: var(--font-mono);
+    font-size: 26px;
+    font-weight: 500;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+    transition: border-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
+  }
+  .otp-cell.is-filled {
+    border-color: var(--line-strong);
+  }
+  .otp-cell.is-active {
+    border-color: var(--seal);
+    box-shadow: 0 0 0 3px var(--seal-weak);
+  }
+
+  /* Chip toggle */
+  .chip {
+    height: 34px;
+    padding: 0 14px;
+    border-radius: var(--radius-chip);
+    border: 1px solid var(--line);
+    background: transparent;
+    color: var(--ink-2);
+    font-size: 13px;
+    font-family: var(--font-mono);
+    cursor: pointer;
+    transition: all var(--dur-fast) var(--ease);
+  }
+  .chip:hover {
+    border-color: var(--ink-3);
+    color: var(--ink);
+  }
+  .chip.is-on {
+    background: var(--seal-weak);
+    border-color: var(--seal);
+    color: var(--seal-ink);
+  }
+
+  /* Notice — single-accent, seal left rule */
+  .notice {
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--seal);
+    background: var(--seal-weak);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 14px;
+    color: var(--ink);
+  }
+
+  /* The 6-digit hero token */
+  .token-digit {
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: var(--fs-token, clamp(44px, 13vw, 72px));
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+    text-shadow: 0 0 24px color-mix(in oklab, var(--seal) calc(var(--glow-strength) * 100%), transparent);
+  }
+
+  /* Radial seal bloom behind a hero (token / QR) */
+  .hero-glow {
+    position: relative;
+  }
+  .hero-glow::before {
+    content: "";
+    position: absolute;
+    inset: -20% -10%;
+    z-index: -1;
+    background: radial-gradient(
+      55% 55% at 50% 45%,
+      color-mix(in oklab, var(--seal) calc(var(--glow-strength) * 100%), transparent),
+      transparent 72%
+    );
+    pointer-events: none;
+  }
+
+  /* QR frame with corner registration marks */
+  .qr-frame {
+    position: relative;
+    padding: 18px;
+    border-radius: var(--radius-qr);
+    /* always a white plate so inked QR modules stay scannable in dark mode */
+    background: #ffffff;
+    border: 1px solid var(--line);
+    box-shadow: var(--card-shadow), var(--card-inset);
+  }
+  .qr-frame::before,
+  .qr-frame::after {
+    content: "";
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--seal);
+  }
+  .qr-frame::before {
+    top: 8px;
+    left: 8px;
+    border-right: 0;
+    border-bottom: 0;
+    border-top-left-radius: 6px;
+  }
+  .qr-frame::after {
+    bottom: 8px;
+    right: 8px;
+    border-left: 0;
+    border-top: 0;
+    border-bottom-right-radius: 6px;
+  }
+}
+
+/* CountdownRing — sweeps over the refresh window, re-triggered via key. */
+@keyframes countdown {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: var(--ring-c);
+  }
+}
+.ring-progress {
+  animation: countdown var(--ring-dur) linear forwards;
+}
+
+/* ─── Motion fallbacks ─────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
