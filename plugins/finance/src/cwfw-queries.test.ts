@@ -131,10 +131,18 @@ describe('flows against a fake portal', () => {
       if (action === 'loadRolesMenu.action') return ROLES;
       if (action === 'loadInitFunction.action') return JSON.stringify([{ varname: 'showzerogz', data: 'N' }]);
       if (action === 'loadDefinition.action') return W5609;
-      if (action === 'common_getBindingDataBackend.action') return '6:奖学金类;7:生活补贴';
+      if (action === 'common_getBindingDataBackend.action') {
+        if (f.sqlid === '4d8c371d4534cacd0332441cedb2d292') return f.cvstr === '#5574-D.FUNCNO#::6' ? 'B:奖学金' : '';
+        return '6:奖学金类;7:生活补贴';
+      }
       if (action === 'commonUpdate_responseButtonEvent.action') {
         const cmd = JSON.parse(f.cmd) as { check_func: string; proc0?: string };
-        return cmd.proc0 ? 'pass' : (checks[cmd.check_func] ?? 'error');
+        if (cmd.proc0) return 'pass';
+        // like the live portal: triggers read the form from userContext, a fresh session answers `error`
+        const uc = JSON.parse(f.userContext) as Record<string, unknown>;
+        if (cmd.check_func.includes('25b8177e') && uc['WF_CWBS$5574-D.FUNCNO'] !== '6') return 'error';
+        if (cmd.check_func.includes('f930ffe8') && uc['WF_CWBS$5574-D.INCOMETYPE'] !== 'B') return 'error';
+        return checks[cmd.check_func] ?? 'error';
       }
       if (action === 'crossfieldrebuild.action') return JSON.stringify({ prjfields: 'qq.ym,mon9,mon10,sum,qq.ord,qq.gztype,qq.remark,qq.itemcode,qq.unino', colModel: {} });
       if (action === 'commonQuery_doQuery.action') return grid('6160', [['研究生奖学金', '1200', '800', '2000', '9', '', '', 'A01', '2000000000']]);
@@ -170,6 +178,10 @@ describe('flows against a fake portal', () => {
     // the beforeLoad procedure ran before the query button
     const order = log.filter((l) => l.action === 'commonUpdate_responseButtonEvent.action' && l.f.cmd.includes('proc0')).map((l) => (l.f.cmd.includes('9baa856e') ? 'before' : 'query'));
     expect(order).toEqual(['before', 'query']);
+
+    // no kind: 7 has no 收入类型 here, so only 6 comes back
+    expect((await querySalary(services, 2026, 9, 10)).map((x) => x.code)).toEqual(['6']);
+    await expect(querySalary(services, 2026, 9, 10, '01')).rejects.toThrow('可用：6 奖学金类, 7 生活补贴');
   });
 
   test('queryReimbursements enters the YBX subsystem when it has no session yet', async () => {

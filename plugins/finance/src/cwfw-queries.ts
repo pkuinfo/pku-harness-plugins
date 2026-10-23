@@ -128,29 +128,55 @@ export function salaryItems(resp: QueryResp, fields: [string, string][]): Salary
     .filter((i) => i.name);
 }
 
-/** 个人工资查询 (students: scholarships, stipends, living subsidies paid monthly). `only` = one 查询功能 code. */
+/** `6 奖学金类, 7 生活补贴` — listed in errors so a wrong `kind` corrects itself. */
+const optionList = (options: [string, string][]) => options.map(([c, t]) => `${c} ${t}`).join(', ');
+
+/**
+ * 个人工资查询 (students: scholarships, stipends, living subsidies paid monthly). `only` = one 查询功能 code.
+ *
+ * The triggers (`funcMap` checks) read the form from the userContext they are sent with
+ * (`WF_CWBS$5574-D.FUNCNO`, …), not from check_data: with a bare context the server falls back to
+ * whatever an earlier page visit left in the session, and on a fresh session it answers `error`, so
+ * 收入类型 stayed empty and the 查询 procedure refused ("收入类型不能为空"). Every check therefore gets
+ * the form seeded so far, like the page. 收入类型 is a select (`bindMap`, depends on 查询功能) whose
+ * default is its check's answer; each option is queried (default first) so nothing is missed.
+ */
 export async function querySalary(services: Services, year: number, from: number, to: number, only?: string): Promise<SalarySection[]> {
   const { wf, ctx: base } = await openCwbs(services);
   const def = await wf.loadWindow('5609');
-  let options = await fieldOptions(wf, def, 'd.funcno', [], base);
-  if (only) options = options.filter(([c]) => c === only);
-  if (!options.length) throw new Error(only ? `没有代码为 ${only} 的工资查询功能` : '这个账号在财务门户里没有可查询的工资/奖助学金项目');
+  const all = await fieldOptions(wf, def, 'd.funcno', [], base);
+  if (!all.length) throw new Error('这个账号在财务门户里没有可查询的工资/奖助学金项目');
+  const options = only ? all.filter(([c]) => c === only.trim()) : all;
+  if (!options.length) throw new Error(`没有代码为 ${only} 的工资查询功能。可用：${optionList(all)}（只能用上一次结果 sections[].code 里的代码，不传则查全部）`);
   const out: SalarySection[] = [];
+  const at = (form: FormValues) => seedForm(base, PROJECT, '5574', form, 219);
   for (const [code, title] of options) {
-    const form: FormValues = [['d.funcno', code]];
-    // triggers: 收入类型 → 代码/库 → 发布方式
-    for (const f of ['d.incometype', 'd.code', 'd.dbcode', 'd.pubdate']) form.push([f, (await resolveField(wf, def, f, form, base)) ?? '']);
-    form.push(['d.year', String(year)], ['d.month_1', pad2(from)], ['d.month_2', pad2(to)]);
-    // the grid window's beforeLoad procedure (the page runs it on open); not fatal
-    const before = beforeLoadProc(def);
-    if (before) await wf.button(before.hash, buildArgs(before.params, form, base), base).catch(() => undefined);
-    const ctx = await runForm(wf, base, { winno: '5609', func: '5574', first: '5574-d.year', menuNode: 219, def }, form);
-    const fields = await wf
-      .crossFields('6160', ctx)
-      .then((f) => (f.some(([k]) => k.startsWith('mon')) ? f : defaultSalaryFields(from, to)))
-      .catch(() => defaultSalaryFields(from, to));
-    out.push({ code, title, items: salaryItems(await wf.doQuery('6160', 'qq.ord ASC', 10000), fields) });
+    const head: FormValues = [['d.funcno', code]];
+    const types = await fieldOptions(wf, def, 'd.incometype', head, at(head));
+    const fallback = (await resolveField(wf, def, 'd.incometype', head, at(head))) || types[0]?.[0] || '';
+    if (!fallback) {
+      if (only) throw new Error(`财务门户没有给“${title}”返回收入类型，请稍后重试`);
+      continue; // the other kinds still answer
+    }
+    const incomeTypes: [string, string][] = [[fallback, types.find(([c]) => c === fallback)?.[1] ?? ''], ...types.filter(([c]) => c !== fallback)];
+    for (const [incometype, typeTitle] of incomeTypes) {
+      const form: FormValues = [...head, ['d.incometype', incometype]];
+      // triggers: 收入类型 → 代码/库 → 发布方式, each seeing the fields before it
+      for (const f of ['d.code', 'd.dbcode', 'd.pubdate']) form.push([f, (await resolveField(wf, def, f, form, at(form))) ?? '']);
+      form.push(['d.year', String(year)], ['d.month_1', pad2(from)], ['d.month_2', pad2(to)]);
+      // the grid window's beforeLoad procedure (the page runs it on open); not fatal
+      const before = beforeLoadProc(def);
+      if (before) await wf.button(before.hash, buildArgs(before.params, form, base), at(form)).catch(() => undefined);
+      const ctx = await runForm(wf, base, { winno: '5609', func: '5574', first: '5574-d.year', menuNode: 219, def }, form);
+      const fields = await wf
+        .crossFields('6160', ctx)
+        .then((f) => (f.some(([k]) => k.startsWith('mon')) ? f : defaultSalaryFields(from, to)))
+        .catch(() => defaultSalaryFields(from, to));
+      const sectionTitle = incomeTypes.length > 1 && typeTitle ? `${title} · ${typeTitle}` : title;
+      out.push({ code, title: sectionTitle, items: salaryItems(await wf.doQuery('6160', 'qq.ord ASC', 10000), fields) });
+    }
   }
+  if (!out.length) throw new Error('财务门户没有返回收入类型，请稍后重试');
   return out;
 }
 

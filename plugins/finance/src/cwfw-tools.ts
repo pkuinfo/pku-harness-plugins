@@ -39,12 +39,16 @@ const SENSITIVE = 'Sensitive personal data: call only when the user asks, answer
 export const cwfwTools = {
   monthlyIncome: defineTool({
     title: '个人工资/奖助学金查询',
-    description: `Monthly payments listed under 个人工资查询 on the finance portal. For students: scholarships, 助学金, living subsidies and other stipends paid every month (staff get their payslip items). Returns one section per query kind (code + title) with items: name, months [{month, amount}] (yuan, only months with money) and total. Use for "how much scholarship did I get this month / this year". Per-payment TA/RA/labour fees are in finance__rewards instead. One calendar year per call. ${SENSITIVE}`,
+    description: `Monthly payments listed under 个人工资查询 on the finance portal. For students: scholarships, 助学金, living subsidies and other stipends paid every month (staff get their payslip items). Call it without kind: it returns one section per query kind (code + title, e.g. scholarships, living subsidy) with items: name, months [{month, amount}] (yuan, only months with money) and total. Use for "how much scholarship did I get this month / this year". Per-payment TA/RA/labour fees are in finance__rewards instead. One calendar year per call. ${SENSITIVE}`,
     input: z.object({
       year: z.number().int().min(2000).max(2100).optional().describe('calendar year; default this year'),
       monthFrom: z.number().int().min(1).max(12).optional().describe('first month (1-12); default 1'),
       monthTo: z.number().int().min(1).max(12).optional().describe('last month (1-12); default the current month this year, 12 for past years'),
-      kind: z.string().max(10).optional().describe('only this query kind code (as returned in sections[].code); default all kinds'),
+      kind: z
+        .string()
+        .max(10)
+        .optional()
+        .describe('omit to get every kind (the normal call). Only to narrow a follow-up: a code copied from sections[].code of a previous monthlyIncome result. Never guess codes (not 1, 01, 6941, 奖学金…); a wrong one fails with the list of valid codes'),
     }),
     effect: 'read',
     execute: async ({ year, monthFrom, monthTo, kind }, ctx) => {
