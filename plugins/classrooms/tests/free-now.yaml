@@ -1,0 +1,7 @@
+# 14:20 on a weekday: periods from the current one to the evening.
+tool: free
+input: { building: "2" }
+now: 2026-10-23 14:20
+responses:
+  - { match: retrClassRoomFree.do, file: free-erjiao.json, headers: { content-type: application/json } }
+expect: {"day":"today","periods":"6-12","times":"14:00-21:30","total":10,"rooms":[{"building":"二教","room":"529","capacity":16,"freePeriods":"1-12","freeCount":12},{"building":"二教","room":"513","capacity":14,"freePeriods":"3-12","freeCount":10},{"building":"二教","room":"521","capacity":12,"freePeriods":"1-12","freeCount":12},{"building":"二教","room":"523","capacity":12,"freePeriods":"1-12","freeCount":12},{"building":"二教","room":"524","capacity":12,"freePeriods":"1-12","freeCount":12},{"building":"二教","room":"528","capacity":12,"freePeriods":"1-12","freeCount":12},{"building":"二教","room":"530","capacity":12,"freePeriods":"1-12","freeCount":12},{"building":"二教","room":"514","capacity":10,"freePeriods":"1-12","freeCount":12},{"building":"二教","room":"518","capacity":10,"freePeriods":"1-12","freeCount":12},{"building":"二教","room":"526","capacity":10,"freePeriods":"1-12","freeCount":12}],"source":"https://portal.pku.edu.cn/publicQuery/#/freeClassroom"}

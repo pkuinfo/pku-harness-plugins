@@ -1,0 +1,7 @@
+# An afternoon window, biggest rooms first, truncated to 5.
+tool: free
+input: { building: 二教, from: "13:00", to: "18:00", limit: 5 }
+now: 2026-10-23 09:00
+responses:
+  - { match: retrClassRoomFree.do, file: free-erjiao.json, headers: { content-type: application/json } }
+expect: {"day":"today","periods":"5-9","times":"13:00-18:00","total":15,"rooms":[{"building":"二教","room":"101","capacity":492,"freePeriods":"1,5-9,12","freeCount":7},{"building":"二教","room":"519","capacity":97,"freePeriods":"1-9","freeCount":9},{"building":"二教","room":"304","capacity":96,"freePeriods":"1-2,5-9","freeCount":7},{"building":"二教","room":"412","capacity":55,"freePeriods":"5-9,12","freeCount":6},{"building":"二教","room":"511","capacity":18,"freePeriods":"1-9,12","freeCount":10}],"truncated":true,"source":"https://portal.pku.edu.cn/publicQuery/#/freeClassroom"}

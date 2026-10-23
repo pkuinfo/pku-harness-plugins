@@ -1,0 +1,4 @@
+tool: overview
+responses:
+  - { match: retrClassRoomInfos.do, file: buildings.json, headers: { content-type: application/json } }
+expect: {"buildings":[{"building":"二教","free":48,"total":74},{"building":"三教","free":27,"total":38},{"building":"理教","free":27,"total":58},{"building":"文史","free":22,"total":34},{"building":"一教","free":16,"total":32},{"building":"四教","free":15,"total":24},{"building":"政管","free":5,"total":9},{"building":"哲学","free":2,"total":2},{"building":"国关","free":1,"total":5}],"source":"https://portal.pku.edu.cn/publicQuery/#/lifeIndex"}

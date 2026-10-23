@@ -1,0 +1,20 @@
+# The portal's 教室使用 overview (LifeIndexController.js):
+# GET /publicQuery/classroomQuery/retrClassRoomInfos.do → { success, rows: [{ buildingName, classroomFree, classroomSum }] }
+title: 各楼空闲教室数
+description: 'How many classrooms are free right now in each teaching building (portal overview): building, free, total.'
+effect: read
+steps:
+  - let: r
+    request:
+      url: https://portal.pku.edu.cn/publicQuery/classroomQuery/retrClassRoomInfos.do
+      headers: { referer: 'https://portal.pku.edu.cn/publicQuery/', accept: 'application/json, text/plain, */*' }
+    as: json
+  - check: "r.success && isList(r.rows)"
+    error: 教室概况查询未成功
+return: |
+  {
+    buildings: sortBy(
+      r.rows.map(x => ({ building: str(x.buildingName ?? ''), free: num(x.classroomFree, 0), total: num(x.classroomSum, 0) })).filter(x => x.building && x.total > 0),
+      x => x.free, true),
+    source: 'https://portal.pku.edu.cn/publicQuery/#/lifeIndex',
+  }

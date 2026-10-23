@@ -1,0 +1,3 @@
+tool: free
+input: { building: 五教 }
+expectError: 没有「五教」

@@ -14,3 +14,4 @@ export * from './scheduler/types';
 export * from './timetable';
 export * from './todo';
 export * from './ui';
+export * from './lang';

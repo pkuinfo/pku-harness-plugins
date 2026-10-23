@@ -1,0 +1,132 @@
+# 空闲教室 from the portal's public query (pkucli crates/portal/src/freeclassroom.rs):
+# GET /publicQuery/classroomQuery/retrClassRoomFree.do?buildingName=<中文>&time=今天|明天|后天
+# → { success, rows: [{ room, cap, c1…c12 }] }; c<n> non-empty = period n is taken.
+title: 空闲教室
+description: >-
+  Classrooms free during every requested period: building, room, capacity, all free periods of
+  that day (e.g. "1-2,5-12"). Buildings: 一教 二教 三教 四教 理教 文史 哲学 地学 国关 政管 (omit =
+  all ten, queried in parallel). Pick periods with `periods` (1–12) or a time window `from`/`to`
+  (HH:mm); default today = from the current period to the end of the day, other days = all 12.
+  Biggest rooms first.
+effect: read
+input:
+  building: { type: string, optional: true, max: 10, description: 'e.g. 二教, 理教, 3, 文史' }
+  day: { enum: [today, tomorrow, dayAfter], default: today, description: 'today (default), tomorrow, dayAfter' }
+  periods: { type: array, items: { type: integer, min: 1, max: 12 }, max: 12, optional: true }
+  from: { type: string, optional: true, description: window start HH:mm }
+  to: { type: string, optional: true, description: window end HH:mm }
+  minCapacity: { type: integer, min: 0, max: 1000, default: 0 }
+  limit: { type: integer, min: 1, max: 100, default: 30, description: 'max rooms, default 30' }
+constants:
+  BASE: https://portal.pku.edu.cn/publicQuery
+  BUILDINGS: [一教, 二教, 三教, 四教, 理教, 文史, 哲学, 地学, 国关, 政管]
+  # freeclassroom.rs normalize_building aliases, plus full names.
+  ALIASES:
+    '1': 一教
+    1教: 一教
+    第一教学楼: 一教
+    '2': 二教
+    2教: 二教
+    第二教学楼: 二教
+    '3': 三教
+    3教: 三教
+    第三教学楼: 三教
+    '4': 四教
+    4教: 四教
+    第四教学楼: 四教
+    li: 理教
+    理: 理教
+    理科教学楼: 理教
+    ws: 文史
+    文: 文史
+    文史楼: 文史
+    zx: 哲学
+    哲: 哲学
+    哲学楼: 哲学
+    dx: 地学
+    地: 地学
+    地学楼: 地学
+    gg: 国关
+    国: 国关
+    国关楼: 国关
+    国际关系学院: 国关
+    zg: 政管
+    政: 政管
+    政管楼: 政管
+    廊坊楼: 政管
+  DAY_QUERY: { today: 今天, tomorrow: 明天, dayAfter: 后天 }
+  PERIODS: [['08:00', '08:50'], ['09:00', '09:50'], ['10:10', '11:00'], ['11:10', '12:00'], ['13:00', '13:50'], ['14:00', '14:50'], ['15:10', '16:00'], ['16:10', '17:00'], ['17:10', '18:00'], ['18:40', '19:30'], ['19:40', '20:30'], ['20:40', '21:30']]
+functions:
+  building: "(s) => BUILDINGS.includes(replace(s, '\\s+', '')) ? replace(s, '\\s+', '') : ALIASES[replace(s, '\\s+', '')] ?? ALIASES[lower(replace(s, '\\s+', ''))] ?? null"
+  periodsBetween: "(a, b) => range(1, 13).filter(i => minutesOf(PERIODS[i - 1][1]) > minutesOf(a) && minutesOf(PERIODS[i - 1][0]) < minutesOf(b))"
+  remaining: "(t) => range(1, 13).filter(i => minutesOf(PERIODS[i - 1][1]) > minutesOf(t))"
+  isFree: "(row, p) => trim(str(row['c' + p])) == ''"
+  roomsOf: |
+    (b, rows, wanted) => rows
+      .filter(r => trim(str(r.room)) != '' && num(r.cap, 0) >= input.minCapacity && wanted.every(p => isFree(r, p)))
+      .map(r => ({
+        building: b,
+        room: trim(str(r.room)),
+        capacity: num(r.cap, 0),
+        freePeriods: compactRanges(range(1, 13).filter(p => isFree(r, p))),
+        freeCount: count(range(1, 13), p => isFree(r, p)),
+      }))
+steps:
+  - let: b
+    value: "input.building ? building(input.building) : null"
+  - check: "!input.building || b"
+    error: 没有「${input.building}」的空闲教室数据。可查：${BUILDINGS.join('、')}
+  - if: "input.from && !minutesOf(input.from) && minutesOf(input.from) != 0 || input.to && !minutesOf(input.to) && minutesOf(input.to) != 0"
+    then:
+      - check: "false"
+        error: 时间格式不对（应为 HH:mm）
+  - let: wanted
+    value: |
+      input.periods?.length ? unique(input.periods).sort()
+        : input.from || input.to ? periodsBetween(input.from ?? '08:00', input.to ?? '21:30')
+        : input.day == 'today' ? remaining(now)
+        : range(1, 13)
+  - if: "wanted.length == 0"
+    then:
+      - check: "!(input.from || input.to)"
+        error: 结束时间要晚于开始时间
+      - return: "{ day: input.day, periods: '', rooms: [], note: '今天的课已经全部结束（第 12 节 21:30 结束），可以查明天。' }"
+  - let: results
+    each: "b ? [b] : BUILDINGS"
+    concurrency: 4
+    steps:
+      - let: failure
+        value: "null"
+      - try:
+          - let: rows
+            # Room usage changes when bookings are made; 10 minutes keeps follow-up questions instant.
+            cache: { key: 'free:${item}:${input.day}', ttl: 10m }
+            steps:
+              - let: r
+                request:
+                  url: ${BASE}/classroomQuery/retrClassRoomFree.do
+                  query: { buildingName: '${item}', time: '${DAY_QUERY[input.day]}' }
+                  headers: { referer: '${BASE}/', accept: 'application/json, text/plain, */*' }
+                as: json
+              - check: "r.success && isList(r.rows)"
+                error: "空闲教室查询未成功${r.message ? '：' + r.message : ''}"
+            return: r.rows
+        catch:
+          - let: failure
+            value: error.message
+    return: "failure ? { building: item, error: failure } : { building: item, rooms: roomsOf(item, rows, wanted) }"
+  - check: "results.some(r => !r.error)"
+    error: 空闲教室查询失败：${results[0].error}
+  - let: all
+    value: "sortBy(sortBy(sortBy(results.flatMap(r => r.rooms ?? []), r => r.room), r => r.freeCount, true), r => r.capacity, true)"
+return: |
+  {
+    day: input.day,
+    periods: compactRanges(wanted),
+    times: PERIODS[wanted[0] - 1][0] + '-' + PERIODS[wanted[wanted.length - 1] - 1][1],
+    total: all.length,
+    rooms: all.slice(0, input.limit),
+    ...(all.length > input.limit ? { truncated: true } : {}),
+    ...(results.some(r => r.error) ? { failed: results.filter(r => r.error).map(r => ({ building: r.building, error: r.error })) } : {}),
+    source: BASE + '/#/freeClassroom',
+  }
