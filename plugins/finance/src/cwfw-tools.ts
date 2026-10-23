@@ -62,7 +62,7 @@ export const cwfwTools = {
 
   cardDeposits: defineTool({
     title: '我的入卡',
-    description: `Payments the university sent to the user's own bank card (银行入卡-我的入卡): each with summary (what it is for), unit (发放部门, who paid), handler (经办人), amount / paid (入卡金额) / tax (yuan), status (支付状态) and errorCode when the transfer failed (e.g. wrong card). Use for "who sent me money", "did the money reach my card". Date range defaults to Jan 1 of this year .. today. ${SENSITIVE}`,
+    description: `Payments the university sent to the user's own bank card (银行入卡-我的入卡): each with summary (what it is for), unit (发放部门, who paid), handler (经办人), amount / paid (入卡金额) / tax (yuan), status (支付状态) and errorCode when the transfer failed (e.g. wrong card). Use for "who sent me money", "did the money reach my card". Only payments routed through the 银行入卡 channel appear here; stipends and TA/RA pay usually show up in rewards / monthlyIncome instead, so an empty list next to paid rewards is normal and says nothing about the card. Date range defaults to Jan 1 of this year .. today. ${SENSITIVE}`,
     input: z.object({
       since: DATE.optional().describe('YYYY-MM-DD; default Jan 1 this year'),
       until: DATE.optional().describe('YYYY-MM-DD; default today'),
