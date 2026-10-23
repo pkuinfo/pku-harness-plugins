@@ -55,7 +55,7 @@
       "version": "0.1.1",
       "dependencies": {
         "node-html-parser": "^9.0.4",
-        "yaml": "^2.8.1",
+        "yaml": "^2.9.1",
       },
       "devDependencies": {
         "zod": "^4.6.7",
@@ -83,14 +83,6 @@
         "zod": "^4.0.0",
       },
     },
-    "plugins/campus-events": {
-      "name": "@pku-harness/plugin-campus-events",
-      "version": "0.1.0",
-      "peerDependencies": {
-        "@pku-harness/sdk": "*",
-        "zod": "^4.0.0",
-      },
-    },
     "plugins/canteen": {
       "name": "@pku-harness/plugin-canteen",
       "version": "0.1.0",
@@ -110,16 +102,6 @@
       "dependencies": {
         "@pku-harness/cloud-protocol": "^0.1.0",
       },
-      "peerDependencies": {
-        "@pku-harness/sdk": "*",
-        "react": "*",
-        "react-native": "*",
-        "zod": "^4.0.0",
-      },
-    },
-    "plugins/classrooms": {
-      "name": "@pku-harness/plugin-classrooms",
-      "version": "0.1.0",
       "peerDependencies": {
         "@pku-harness/sdk": "*",
         "react": "*",
@@ -196,16 +178,6 @@
     "plugins/finance": {
       "name": "@pku-harness/plugin-finance",
       "version": "0.3.0",
-      "peerDependencies": {
-        "@pku-harness/sdk": "*",
-        "react": "*",
-        "react-native": "*",
-        "zod": "^4.0.0",
-      },
-    },
-    "plugins/grades": {
-      "name": "@pku-harness/plugin-grades",
-      "version": "0.1.0",
       "peerDependencies": {
         "@pku-harness/sdk": "*",
         "react": "*",
@@ -436,13 +408,9 @@
 
     "@pku-harness/plugin-calendar": ["@pku-harness/plugin-calendar@workspace:plugins/calendar"],
 
-    "@pku-harness/plugin-campus-events": ["@pku-harness/plugin-campus-events@workspace:plugins/campus-events"],
-
     "@pku-harness/plugin-canteen": ["@pku-harness/plugin-canteen@workspace:plugins/canteen"],
 
     "@pku-harness/plugin-card-share": ["@pku-harness/plugin-card-share@workspace:plugins/card-share"],
-
-    "@pku-harness/plugin-classrooms": ["@pku-harness/plugin-classrooms@workspace:plugins/classrooms"],
 
     "@pku-harness/plugin-course-catalog": ["@pku-harness/plugin-course-catalog@workspace:plugins/course-catalog"],
 
@@ -457,8 +425,6 @@
     "@pku-harness/plugin-elective": ["@pku-harness/plugin-elective@workspace:plugins/elective"],
 
     "@pku-harness/plugin-finance": ["@pku-harness/plugin-finance@workspace:plugins/finance"],
-
-    "@pku-harness/plugin-grades": ["@pku-harness/plugin-grades@workspace:plugins/grades"],
 
     "@pku-harness/plugin-library": ["@pku-harness/plugin-library@workspace:plugins/library"],
 

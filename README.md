@@ -11,8 +11,9 @@ Everything here is open source (MIT).
 
 | Folder | What it is |
 |---|---|
-| [`packages/sdk`](packages/sdk) | The plugin contract (`definePlugin`, tools, `HostServices`, `HostUI`, capabilities) + pure helpers (recurrence, schedules, timetable, checks) |
-| [`plugins/<id>`](plugins) | The plugins bundled in the app (`builtinPlugins` in `plugins/index.ts`), one folder per plugin |
+| [`plugins/<id>/PLUGIN.md`](plugins/classrooms) | **Plugin documents**: integrations written in the plugin language, shared and installed by link (classrooms, campus-events, grades, …) |
+| [`plugins/<id>/src`](plugins) | TypeScript plugins: the harness's own features (dashboard, schedule, memory, scheduler, model providers…) and integrations not yet ported (`builtinPlugins` in `plugins/index.ts`) |
+| [`packages/sdk`](packages/sdk) | The plugin contract (`definePlugin`, tools, `HostServices`, `HostUI`, capabilities), pure helpers, and **the plugin language** in `src/lang` (schemas, interpreter, abilities, loader) |
 | [`plugins/shared`](plugins/shared) | Code shared by bundled plugins (e.g. `campus-card.ts`) |
 | [`packages/cloud-protocol`](packages/cloud-protocol) | PKU Harness Cloud wire protocol: schemas, envelope crypto, share links |
 | [`packages/cloud-server`](packages/cloud-server) | Reference Cloud server (Bun + Hono + SQLite) |
@@ -20,13 +21,36 @@ Everything here is open source (MIT).
 | [`templates/remote-plugin`](templates/remote-plugin) | Starting point for a remote plugin (MCP over Streamable HTTP) |
 | [`examples/demo-canteen`](examples/demo-canteen) | A working remote plugin with mock data |
 | [`examples/mock-llm`](examples/mock-llm) | Scripted OpenAI-compatible model server for testing the agent without a key |
-| [`scripts`](scripts) | `validate-registry.ts` |
+| [`scripts`](scripts) | `plugin.ts` (validate / test / run a plugin document), `bundle-docs.ts`, `validate-registry.ts` |
 
-## Two kinds of plugin, one contract
+## Write a plugin: a folder with a PLUGIN.md
 
-- **Bundled** plugins are TypeScript modules built on the SDK. They ship inside the app binary
-  (app stores forbid downloading executable code) and reach the app only through
-  `ctx.services` — never by importing app internals.
+A plugin is shared like a skill: a folder with a `PLUGIN.md` (YAML frontmatter = what it may
+reach; Markdown = instructions for the AI) and the tool files it names, written in a small
+declarative language the app interprets. No build, no package, no app release: push the folder
+to GitHub and share the link (or `pkuharness://plugin?src=<link>`). The app shows what the plugin
+can reach before installing it and keeps it updated from the link.
+
+```bash
+bun run plugin validate plugins/classrooms      # check everything, with precise messages
+bun run plugin test plugins/classrooms          # replay tests/*.yaml (recorded responses)
+bun run plugin run plugins/classrooms overview  # call the real site (public hosts)
+```
+
+Start from [`plugins/classrooms`](plugins/classrooms). Language reference:
+[pku-harness docs/PLUGIN-LANGUAGE.md](https://github.com/pkuinfo/pku-harness/blob/master/docs/PLUGIN-LANGUAGE.md)
+and the [quickstart on the website](https://github.com/pkuinfo/pkuharness-website). You can also
+ask the AI in the app to write one with you (`plugins.reference` / `validate` / `tryTool` /
+`install`). After changing an official document, run `bun run bundle` (the app ships them).
+
+## Three kinds of plugin, one contract
+
+- **Documents** (`PLUGIN.md`) are interpreted by the app: they reach only the campus services,
+  hosts and app abilities they declare, and every tool still goes through the user's permission
+  modes. This is the default for campus integrations.
+- **TypeScript** plugins are modules built on the SDK, for the harness's own features and things
+  the language can't express yet. They ship inside the app binary (app stores forbid
+  downloading executable code) and reach the app only through `ctx.services`.
 - **Remote** plugins are MCP servers. Users add them by URL (or from the marketplace); their tools
   join the same registry, permissions and agent loop. No third-party code runs on the phone, and
   remote plugins never see campus credentials.
@@ -53,9 +77,8 @@ widget and scheduled check, so don't poll yourself. See `plugins/wallet/src/card
 
 ```bash
 bun install
-bun test                          # SDK tests (recurrence, schedules, timetable, checks)
-bunx tsc --noEmit -p .            # typecheck SDK + plugins
-bun scripts/validate-registry.ts  # registry schema + consistency
+bun run check                     # typecheck, registry, bundled documents up to date
+bun test                          # SDK, TS plugins and every PLUGIN.md's recorded tests
 bun examples/demo-canteen/server.ts
 ```
 

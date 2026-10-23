@@ -21,7 +21,9 @@ for (const p of parsed.data.plugins) {
     if (other) errors.push(`${p.id}: icon '${p.icon}' is already used by ${other}`);
     else icons.set(p.icon, p.id);
   }
-  if (p.kind === 'builtin' && !existsSync(new URL(`../plugins/${p.id}/src/index.ts`, import.meta.url))) errors.push(`builtin ${p.id} has no plugins/${p.id}/src/index.ts`);
+  // A built-in is either a plugin document (PLUGIN.md) or a TypeScript plugin (src/index.ts).
+  const hasDoc = existsSync(new URL(`../plugins/${p.id}/PLUGIN.md`, import.meta.url));
+  if (p.kind === 'builtin' && !hasDoc && !existsSync(new URL(`../plugins/${p.id}/src/index.ts`, import.meta.url))) errors.push(`builtin ${p.id} has no plugins/${p.id}/PLUGIN.md or src/index.ts`);
   if (p.kind === 'remote' && p.requires.includes('shell')) errors.push(`${p.id}: remote plugins run on a server; 'shell' is not a device requirement`);
   if (p.kind === 'builtin' && p.endpoint) errors.push(`${p.id}: builtins have no endpoint`);
   if (p.cloud) errors.push(...cloudIssues(p.cloud).map((e) => `${p.id}: ${e}`));

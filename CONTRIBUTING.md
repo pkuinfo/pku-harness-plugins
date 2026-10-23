@@ -5,10 +5,14 @@ service or adds a capability; the agent and the user use it through the same typ
 
 ## Choose the kind
 
-- **Remote (most contributions)**: write an MCP server (start from `templates/remote-plugin`),
+- **Plugin document (most contributions)**: a folder with a `PLUGIN.md` and tool files in the
+  plugin language (see the README and `plugins/classrooms`). Users install it from your GitHub
+  link; to list it in the marketplace, register your repo on the website. To make it official
+  (bundled), open a PR adding the folder under `plugins/` with recorded `tests/*.yaml`.
+- **Remote**: write an MCP server (start from `templates/remote-plugin`),
   deploy it over HTTPS, and register it. You can iterate without app releases, and you can use
   any language or library.
-- **Bundled**: only for capabilities that need the device itself (notifications, on-device
+- **TypeScript (bundled)**: only for capabilities that need the device itself (notifications, on-device
   data) or that every user needs. Open an issue first; bundled plugins ship with app releases.
 
 ## Rules
