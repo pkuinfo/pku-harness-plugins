@@ -71,7 +71,8 @@
       "name": "@pku-harness/plugins",
       "version": "0.1.1",
       "dependencies": {
-        "@pku-harness/campus-card": "^0.1.0",
+        "@pku-harness/campus-card": "^0.1.1",
+        "@pku-harness/cloud-protocol": "^0.1.1",
         "node-html-parser": "^9.0.4",
       },
       "peerDependencies": {

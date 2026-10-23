@@ -182,6 +182,44 @@
       "verified": true
     },
     {
+      "id": "card-share",
+      "name": "付款码共享",
+      "description": "把校园卡付款码临时分享给朋友：端到端加密转发，可设消费上限、口令和姓名验证，随时停止。",
+      "author": "pkuinfo",
+      "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/card-share",
+      "kind": "builtin",
+      "icon": "share",
+      "requires": [
+        "campus-session",
+        "network",
+        "cloud"
+      ],
+      "scopes": [
+        "bdcard.pku.edu.cn"
+      ],
+      "tags": [
+        "official",
+        "campus"
+      ],
+      "cloud": {
+        "uses": [
+          "channels"
+        ],
+        "e2e": true,
+        "disclosure": {
+          "zh": [
+            "分享期间，加密后的付款码经云服务转发给你分享的人；服务器无法解密",
+            "服务器能看到：分享的开始/结束时间、查看者的 IP"
+          ],
+          "en": [
+            "While you share, encrypted payment codes are relayed by the cloud service to the person you shared with; the server can’t decrypt them",
+            "The server can see when a share starts and ends, and the viewer’s IP address"
+          ]
+        }
+      },
+      "verified": true
+    },
+    {
       "id": "courses",
       "name": "教学网",
       "description": "教学网课程公告、作业（截止时间、要求、成绩）、课程资料目录和课程回放列表（只读）。",

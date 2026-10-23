@@ -16,6 +16,7 @@
   ],
   "dependencies": {
     "@pku-harness/campus-card": "^0.1.1",
+    "@pku-harness/cloud-protocol": "^0.1.1",
     "node-html-parser": "^9.0.4"
   },
   "peerDependencies": {

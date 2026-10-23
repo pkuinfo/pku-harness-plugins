@@ -4,6 +4,7 @@ import { authenticatorPlugin } from './authenticator/src';
 import { calendarPlugin } from './calendar/src';
 import { campusEventsPlugin } from './campus-events/src';
 import { canteenPlugin } from './canteen/src';
+import { cardSharePlugin } from './card-share/src';
 import { classroomsPlugin } from './classrooms/src';
 import { courseCatalogPlugin } from './course-catalog/src';
 import { courseSyncPlugin } from './course-sync/src';
@@ -44,6 +45,7 @@ export const builtinPlugins: PluginDef[] = [
   authenticatorPlugin,
   calendarPlugin,
   walletPlugin,
+  cardSharePlugin,
   coursesPlugin,
   courseCatalogPlugin,
   gradesPlugin,
