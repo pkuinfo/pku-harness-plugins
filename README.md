@@ -58,6 +58,7 @@ The app builds against published npm packages, not a checkout of this repo:
 | Package | Folder | Contents |
 |---|---|---|
 | [`@pku-harness/sdk`](https://www.npmjs.com/package/@pku-harness/sdk) | `packages/sdk` | Plugin contract + pure helpers |
+| [`@pku-harness/cloud-protocol`](https://www.npmjs.com/package/@pku-harness/cloud-protocol) | `packages/cloud-protocol` | PKU Harness Cloud wire schemas + envelope crypto |
 | [`@pku-harness/plugins`](https://www.npmjs.com/package/@pku-harness/plugins) | `plugins` | Every bundled plugin (`builtinPlugins`) |
 | [`@pku-harness/registry`](https://www.npmjs.com/package/@pku-harness/registry) | `registry` | Marketplace schema + `registry.json` |
 

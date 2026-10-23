@@ -1,0 +1,33 @@
+{
+  "name": "@pku-harness/cloud-protocol",
+  "version": "0.1.0",
+  "description": "PKU Harness Cloud wire protocol v1: zod schemas, envelope crypto, share links and proof of work. Pure TypeScript for Hermes, Bun and browsers.",
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "files": [
+    "src",
+    "!src/**/*.test.ts"
+  ],
+  "dependencies": {
+    "@noble/ciphers": "2.4.0",
+    "@noble/curves": "2.4.0",
+    "@noble/hashes": "2.4.0"
+  },
+  "peerDependencies": {
+    "zod": "^4.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pkuinfo/pku-harness-plugins.git",
+    "directory": "packages/cloud-protocol"
+  },
+  "homepage": "https://github.com/pkuinfo/pku-harness-plugins#readme",
+  "publishConfig": {
+    "access": "public"
+  },
+  "license": "MIT"
+}
