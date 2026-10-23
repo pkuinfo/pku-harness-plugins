@@ -11,7 +11,7 @@
 import { $ } from 'bun';
 
 /** Published packages, dependencies first. Everything else in the workspace stays private. */
-const PACKAGES = ['packages/cloud-protocol', 'packages/sdk', 'registry', 'packages/campus-card', 'plugins'];
+const PACKAGES = ['packages/cloud-protocol', 'packages/sdk', 'registry', 'plugins'];
 
 const root = new URL('..', import.meta.url).pathname;
 const [command, arg] = process.argv.slice(2);

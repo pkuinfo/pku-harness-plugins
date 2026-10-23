@@ -1,7 +1,7 @@
 import { defineTool, type ToolDef } from '@pku-harness/sdk';
 import { z } from 'zod';
 
-import { cardMode, INCOME_ICONS, setDigitalCard, turnoverPage, unwrap, yuan, type CardInfo } from '@pku-harness/campus-card';
+import { cardMode, INCOME_ICONS, setDigitalCard, turnoverPage, unwrap, yuan, type CardInfo } from '../../../shared/campus-card';
 import { createRechargeOrder, RECHARGE_MAX } from './recharge';
 import { currentMonth, monthRange, statsUrls, summarizeMonth, type DailyStats, type TurnoverCategory, type TurnoverCount } from './stats';
 

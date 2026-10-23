@@ -7,14 +7,14 @@ and the ones the community runs — plus the SDK and the marketplace registry.
 
 ## Repository map
 
-Everything here is open source (MIT). Five folders are published to npm under
+Everything here is open source (MIT). Four folders are published to npm under
 [`@pku-harness`](https://www.npmjs.com/org/pku-harness); the rest stay in this repo.
 
 | Folder | npm package | What it is | Used by |
 |---|---|---|---|
 | [`packages/sdk`](packages/sdk) | [`@pku-harness/sdk`](https://www.npmjs.com/package/@pku-harness/sdk) | The plugin contract (`definePlugin`, tools, `HostServices`, `HostUI`, capabilities) + pure helpers (recurrence, schedules, timetable, checks) | Every plugin, the app, plugin authors |
 | [`plugins/<id>`](plugins) | [`@pku-harness/plugins`](https://www.npmjs.com/package/@pku-harness/plugins) | The plugins bundled in the app (`builtinPlugins` in `plugins/index.ts`), one folder per plugin | The app |
-| [`packages/campus-card`](packages/campus-card) | [`@pku-harness/campus-card`](https://www.npmjs.com/package/@pku-harness/campus-card) | Campus Card (bdcard) API helpers shared by plugins | `wallet`, `card-share` |
+| [`plugins/shared`](plugins/shared) | (in `@pku-harness/plugins`) | Code shared by bundled plugins, e.g. `campus-card.ts` (Campus Card API helpers) | `wallet`, `card-share` |
 | [`packages/cloud-protocol`](packages/cloud-protocol) | [`@pku-harness/cloud-protocol`](https://www.npmjs.com/package/@pku-harness/cloud-protocol) | PKU Harness Cloud wire protocol: schemas, envelope crypto, share links | The app, `cloud-server`, share pages |
 | [`registry`](registry) | [`@pku-harness/registry`](https://www.npmjs.com/package/@pku-harness/registry) | Marketplace schema + `registry.json` (bundled and remote plugins side by side) | The app's 插件市场, `scripts/validate-registry.ts` |
 | [`packages/cloud-server`](packages/cloud-server) | — (app) | Reference Cloud server (Bun + Hono + SQLite) | Self-hosters |

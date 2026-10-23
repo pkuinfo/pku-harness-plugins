@@ -2,7 +2,7 @@ import type { PluginScreenProps } from '@pku-harness/sdk';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 
-import { cardAccount, conflictNotice, paymentCode, cardMode } from '@pku-harness/campus-card';
+import { cardAccount, conflictNotice, paymentCode, cardMode } from '../../../shared/campus-card';
 import { strings } from './strings';
 
 /** The code is short-lived; fetch a fresh one this often while the screen is open. */

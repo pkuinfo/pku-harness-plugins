@@ -1,6 +1,6 @@
 import type { HostServices } from '@pku-harness/sdk';
 
-import { cardAccount } from '@pku-harness/campus-card';
+import { cardAccount } from '../../../shared/campus-card';
 
 /**
  * 校园卡充值 (pkucli crates/campuscard/src/api.rs create_recharge_order + sign_params, commands.rs

@@ -1,9 +1,9 @@
 /**
  * Where payment codes come from. The real source asks the Campus Card service through the
- * host's signed-in session (`@pku-harness/campus-card`); the mock lets the whole share flow run
+ * host's signed-in session (`plugins/shared/campus-card.ts`); the mock lets the whole share flow run
  * in development and tests without a card (docs/CLOUD.md "Local testing").
  */
-import { cardAccount, cardHolder, cardMode, paymentCode, turnoverPage, type Turnover } from '@pku-harness/campus-card';
+import { cardAccount, cardHolder, cardMode, paymentCode, turnoverPage, type Turnover } from '../../shared/campus-card';
 import type { HostServices } from '@pku-harness/sdk';
 
 export type MintedCode = { code: string; balance: number | null };

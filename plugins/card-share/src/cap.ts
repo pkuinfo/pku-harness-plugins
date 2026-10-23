@@ -4,7 +4,7 @@
  * fixtures. The cap is checked per payment, so the last one can overshoot it; the card's own
  * daily limit (`daycostlimit`) still applies on top.
  */
-import { INCOME_ICONS, type Turnover } from '@pku-harness/campus-card';
+import { INCOME_ICONS, type Turnover } from '../../shared/campus-card';
 
 /** One payment seen during the share. */
 export type SharePayment = { key: string; at: number; title: string; amount: number };

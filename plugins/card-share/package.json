@@ -16,7 +16,6 @@
     "builtin": true
   },
   "dependencies": {
-    "@pku-harness/campus-card": "^0.1.0",
     "@pku-harness/cloud-protocol": "^0.1.0"
   },
   "peerDependencies": {

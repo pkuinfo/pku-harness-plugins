@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 
-import { turnoverUrl, unwrap, yuan } from './api';
+import { turnoverUrl, unwrap, yuan } from './campus-card';
 
 describe('campus-card api helpers', () => {
   test('turnoverUrl keeps the wallet query shape', () => {

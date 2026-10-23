@@ -7,14 +7,31 @@
     "noEmit": true,
     "skipLibCheck": true,
     "jsx": "react-jsx",
-    "types": ["bun"],
-    "lib": ["ESNext", "DOM"],
+    "types": [
+      "bun"
+    ],
+    "lib": [
+      "ESNext",
+      "DOM"
+    ],
     "paths": {
-      "@pku-harness/sdk": ["./packages/sdk/src/index.ts"],
-      "@pku-harness/sdk/*": ["./packages/sdk/src/*"],
-      "@pku-harness/cloud-protocol": ["./packages/cloud-protocol/src/index.ts"],
-      "@pku-harness/campus-card": ["./packages/campus-card/src/index.ts"]
+      "@pku-harness/sdk": [
+        "./packages/sdk/src/index.ts"
+      ],
+      "@pku-harness/sdk/*": [
+        "./packages/sdk/src/*"
+      ],
+      "@pku-harness/cloud-protocol": [
+        "./packages/cloud-protocol/src/index.ts"
+      ]
     }
   },
-  "include": ["packages/*/src/**/*.ts", "plugins/*/src/**/*.ts", "plugins/*/src/**/*.tsx", "plugins/*.ts", "scripts/**/*.ts", "registry/**/*.ts"]
+  "include": [
+    "packages/*/src/**/*.ts",
+    "plugins/*/src/**/*.ts",
+    "plugins/*/src/**/*.tsx",
+    "plugins/*.ts",
+    "scripts/**/*.ts",
+    "registry/**/*.ts"
+  ]
 }

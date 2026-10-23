@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import type { Turnover } from '@pku-harness/campus-card';
+import type { Turnover } from '../../shared/campus-card';
 
 import { capLeft, evaluateCap, parseCardTime } from './cap';
 
