@@ -20,7 +20,7 @@ const DRAFT_TTL_MS = 30 * 60_000;
  */
 export function CreateScreen(props: PluginScreenProps) {
   const { host, services, kv, cloud } = props;
-  const { SheetScreen, Text, Segmented, Switch, Field, ListGroup, Glass, Icon, Pressable, Button, QRCode, Skeleton } = host.components;
+  const { SheetScreen, Text, Segmented, Switch, Field, ListGroup, ListRow, Glass, Icon, Pressable, Button, QRCode, Skeleton } = host.components;
   const t = host.useTheme();
   const locale = host.useLocale();
   const s = strings[locale];
@@ -177,10 +177,10 @@ export function CreateScreen(props: PluginScreenProps) {
         </ListGroup>
 
         <ListGroup title={s.gates} footer={s.gatesFooter}>
-          <View style={{ padding: t.spacing.md, gap: t.spacing.md }}>
-            <Switch label={s.nameGate} value={nameOn} onValueChange={setNameOn} />
-            {nameOn ? (
-              holder === undefined ? (
+          <ListRow icon="person" title={s.nameGate} accessory={<Switch label={s.nameGate} value={nameOn} onValueChange={setNameOn} />} />
+          {nameOn ? (
+            <View style={{ paddingHorizontal: t.spacing.lg, paddingBottom: t.spacing.md, gap: t.spacing.md }}>
+              {holder === undefined ? (
                 <Skeleton width="60%" height={52} rounded={t.radius.md} />
               ) : holder ? (
                 <View style={{ gap: t.spacing.sm }}>
@@ -219,11 +219,15 @@ export function CreateScreen(props: PluginScreenProps) {
                 <Text variant="caption" tone="warn">
                   {s.nameMissing}
                 </Text>
-              )
-            ) : null}
-            <Switch label={s.pinGate} value={pinOn} onValueChange={setPinOn} />
-            {pinOn ? <Field label={s.pinField} value={pin} onChangeText={(v) => setPin(v.replace(/\D/g, '').slice(0, 8))} keyboardType="number-pad" placeholder="••••" hint={s.pinHint} autoCapitalize="none" /> : null}
-          </View>
+              )}
+            </View>
+          ) : null}
+          <ListRow icon="lock" title={s.pinGate} accessory={<Switch label={s.pinGate} value={pinOn} onValueChange={setPinOn} />} />
+          {pinOn ? (
+            <View style={{ paddingHorizontal: t.spacing.lg, paddingBottom: t.spacing.md }}>
+              <Field label={s.pinField} value={pin} onChangeText={(v) => setPin(v.replace(/\D/g, '').slice(0, 8))} keyboardType="number-pad" placeholder="••••" hint={s.pinHint} autoCapitalize="none" />
+            </View>
+          ) : null}
         </ListGroup>
 
         {problem ? (

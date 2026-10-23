@@ -32,7 +32,9 @@ export function ActiveScreen(props: PluginScreenProps) {
   const history = all.filter((r) => r.status === 'ended');
 
   return (
-    <Screen title={s.title} subtitle={s.subtitle} back trailing={<Button title={s.newShare} size="sm" variant="secondary" icon="plus" onPress={() => host.navigate('/m/card-share/create')} />}>
+    <Screen title={s.title} subtitle={s.subtitle} back
+      // The empty state already has the big "New share" button; the header one only when shares exist.
+      trailing={active.length ? <Button title={s.newShare} size="sm" variant="secondary" icon="plus" onPress={() => host.navigate('/m/card-share/create')} /> : undefined}>
       <View style={{ gap: t.spacing.xl }}>
         {notice ? (
           <Text variant="callout" tone={notice.tone}>
@@ -66,9 +68,7 @@ export function ActiveScreen(props: PluginScreenProps) {
 
         {DEV ? (
           <ListGroup footer={s.devMockHint}>
-            <View style={{ padding: t.spacing.md }}>
-              <Switch label={s.devMock} value={mock} onValueChange={(v) => void setMock(v)} disabled={active.length > 0} />
-            </View>
+            <ListRow icon="wrench" title={s.devMock} accessory={<Switch label={s.devMock} value={mock} onValueChange={(v) => void setMock(v)} disabled={active.length > 0} />} />
           </ListGroup>
         ) : null}
       </View>
