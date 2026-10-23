@@ -38,7 +38,7 @@ export const canteenPlugin = definePlugin({
       dataSources: { crowd: { title: 'Canteen diner counts' } },
     },
   },
-  icon: 'store',
+  icon: 'food',
   requires: ['network'],
   scopes: ['portal.pku.edu.cn（公开查询：食堂就餐人数）', 'cyzx.pku.edu.cn（餐饮中心）'],
   contributes: {

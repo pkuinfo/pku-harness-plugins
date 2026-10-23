@@ -26,7 +26,7 @@ export const campusEventsPlugin = definePlugin({
       tools: { talks: { title: 'Academic talks' }, activities: { title: 'Campus activities' }, sendCode: { title: 'Send verification code' } },
     },
   },
-  icon: 'globe',
+  icon: 'ticket',
   requires: ['campus-session', 'network'],
   scopes: ['treehole.pku.edu.cn（学术日历、活动日历）'],
   instructions: `用户问讲座、学术报告、seminar 用 campus-events__talks；问校园活动、社团活动、演出、比赛等用 campus-events__activities。日期用 YYYY-MM-DD（本地日期），"这周""下周"先换算成具体日期。

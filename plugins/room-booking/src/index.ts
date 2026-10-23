@@ -67,7 +67,7 @@ export const roomBookingPlugin = definePlugin({
       },
     },
   },
-  icon: 'calendar',
+  icon: 'room',
   requires: ['campus-session', 'network'],
   scopes: ['bdkj.pku.edu.cn'],
   instructions: `北大空间（bdkj.pku.edu.cn）学术研讨教室：用户说借教室、订研讨室、预约讨论间时用。

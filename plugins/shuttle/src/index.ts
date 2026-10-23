@@ -29,7 +29,7 @@ export const shuttlePlugin = definePlugin({
       dataSources: { next: { title: 'Next shuttle' } },
     },
   },
-  icon: 'location',
+  icon: 'bus',
   requires: [],
   scopes: [],
   contributes: {

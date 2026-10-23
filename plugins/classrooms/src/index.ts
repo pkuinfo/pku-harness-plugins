@@ -40,7 +40,7 @@ export const classroomsPlugin = definePlugin({
       dataSources: { overview: { title: 'Free rooms by building' } },
     },
   },
-  icon: 'search',
+  icon: 'building',
   requires: ['network'],
   scopes: ['portal.pku.edu.cn（公开查询：空闲教室）'],
   contributes: {

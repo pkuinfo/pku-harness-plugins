@@ -64,7 +64,7 @@ export const walletPlugin = definePlugin({
       },
     },
   },
-  icon: 'card',
+  icon: 'wallet',
   requires: ['campus-session', 'network'],
   scopes: ['bdcard.pku.edu.cn', 'its.pku.edu.cn', 'cwpay.pku.edu.cn（收费平台）', 'portal.pku.edu.cn（登录）', 'iaaa.pku.edu.cn（登录）'],
   contributes: {
@@ -75,7 +75,7 @@ export const walletPlugin = definePlugin({
       'bath-recharge': { title: '浴卡充值', component: BathRechargeScreen, presentation: 'modal' },
     },
     settings: [
-      { screen: 'wallet', title: '校园钱包', subtitle: '校园卡、网费、浴卡与充值', icon: 'card' },
+      { screen: 'wallet', title: '校园钱包', subtitle: '校园卡、网费、浴卡与充值', icon: 'wallet' },
       // Kept one tap away from Settings: it is what people open at the canteen till.
       { screen: 'pay', title: '校园卡付款码', subtitle: '食堂、超市扫码付款', icon: 'qr' },
     ],

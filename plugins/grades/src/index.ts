@@ -28,7 +28,7 @@ export const gradesPlugin = definePlugin({
       widgets: { gpa: { title: 'Overall GPA', description: 'Your overall GPA and total credits; hidden until you tap, since grades are private.' } },
     },
   },
-  icon: 'check',
+  icon: 'medal',
   requires: ['campus-session', 'network'],
   scopes: ['treehole.pku.edu.cn（成绩）'],
   contributes: {

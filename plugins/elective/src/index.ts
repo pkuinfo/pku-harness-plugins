@@ -26,7 +26,7 @@ export const electivePlugin = definePlugin({
       },
     },
   },
-  icon: 'todo',
+  icon: 'ballot',
   requires: ['campus-session', 'network'],
   scopes: ['elective.pku.edu.cn'],
   instructions: `选课网（elective.pku.edu.cn）只读：elective__results 选课结果（已选上 / 未选上 / 待抽签），elective__supplements 补退选课程列表和余量（按页，含已选课程），elective__search 按课程名 / 教师 / 课程号搜索补退选课程。

@@ -79,7 +79,7 @@ export const libraryPlugin = definePlugin({
       dataSources: { loans: { title: 'My loans' }, hours: { title: 'Today’s opening hours' } },
     },
   },
-  icon: 'book',
+  icon: 'library',
   requires: ['campus-session', 'network'],
   scopes: ['opac.lib.pku.edu.cn（馆藏检索）', 'a.lib.pku.edu.cn（我的借阅）', 'kjyy.lib.pku.edu.cn（空间预约）', 'www.lib.pku.edu.cn（开馆时间）', 'sso.lib.pku.edu.cn（登录）'],
   instructions: `北京大学图书馆。

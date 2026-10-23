@@ -119,7 +119,7 @@ export const memoryPlugin = definePlugin({
       settings: { memory: { title: 'AI memory', subtitle: 'What it remembers about you' } },
     },
   },
-  icon: 'sparkles',
+  icon: 'brain',
   core: true,
   scopes: [],
   instructions: `长期记忆：当用户透露以后还会用到的信息（偏好、作息习惯、院系年级、常去的地点、称呼、提醒方式等）时，用 memory__remember 记一条：一句话、第三人称、${MAX_TEXT} 字以内（如"用户喜欢在农园吃午饭"）；用户亲口说的设 userSaid: true。

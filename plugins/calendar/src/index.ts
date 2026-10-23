@@ -65,7 +65,7 @@ export const calendarPlugin = definePlugin({
       dataSources: { today: { title: 'Today and teaching week' } },
     },
   },
-  icon: 'schedule',
+  icon: 'calendarRange',
   core: true,
   scopes: ['simso.pku.edu.cn'],
   instructions: `日期与校历：

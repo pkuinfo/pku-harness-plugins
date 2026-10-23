@@ -51,7 +51,7 @@ export const timetablePlugin = definePlugin({
       dataSources: { today: { title: 'Today’s classes' } },
     },
   },
-  icon: 'book',
+  icon: 'timetable',
   core: true,
   scopes: [],
   contributes: {

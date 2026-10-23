@@ -35,7 +35,7 @@ export const courseCatalogPlugin = definePlugin({
       },
     },
   },
-  icon: 'book',
+  icon: 'catalog',
   requires: ['network'],
   scopes: ['dean.pku.edu.cn', 'elective.pku.edu.cn'],
   instructions: `全校课程目录（只读，不能选课/退课）：

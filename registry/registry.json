@@ -9,7 +9,7 @@
       "author": "pkuinfo",
       "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/ui",
       "kind": "builtin",
-      "icon": "sparkles",
+      "icon": "wand",
       "requires": [],
       "scopes": [],
       "tags": [
@@ -74,7 +74,7 @@
       "author": "pkuinfo",
       "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/timetable",
       "kind": "builtin",
-      "icon": "book",
+      "icon": "timetable",
       "requires": [
         "notifications"
       ],
@@ -91,7 +91,7 @@
       "author": "pkuinfo",
       "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/course-sync",
       "kind": "builtin",
-      "icon": "book",
+      "icon": "sync",
       "requires": [
         "campus-session",
         "network"
@@ -148,7 +148,7 @@
       "author": "pkuinfo",
       "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/calendar",
       "kind": "builtin",
-      "icon": "schedule",
+      "icon": "calendarRange",
       "requires": [],
       "scopes": [
         "simso.pku.edu.cn"
@@ -165,7 +165,7 @@
       "author": "pkuinfo",
       "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/wallet",
       "kind": "builtin",
-      "icon": "card",
+      "icon": "wallet",
       "requires": [
         "campus-session",
         "network"
@@ -188,7 +188,7 @@
       "author": "pkuinfo",
       "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/courses",
       "kind": "builtin",
-      "icon": "book",
+      "icon": "school",
       "requires": [
         "campus-session",
         "network"
@@ -209,7 +209,7 @@
       "author": "pkuinfo",
       "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/course-catalog",
       "kind": "builtin",
-      "icon": "book",
+      "icon": "catalog",
       "requires": [
         "network"
       ],
@@ -230,7 +230,7 @@
       "author": "pkuinfo",
       "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/grades",
       "kind": "builtin",
-      "icon": "check",
+      "icon": "medal",
       "requires": [
         "campus-session",
         "network"
@@ -273,7 +273,7 @@
       "author": "pkuinfo",
       "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/campus-events",
       "kind": "builtin",
-      "icon": "globe",
+      "icon": "ticket",
       "requires": [
         "campus-session",
         "network"
@@ -294,7 +294,7 @@
       "author": "pkuinfo",
       "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/elective",
       "kind": "builtin",
-      "icon": "todo",
+      "icon": "ballot",
       "requires": [
         "campus-session",
         "network"
@@ -339,7 +339,7 @@
       "author": "pkuinfo",
       "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/room-booking",
       "kind": "builtin",
-      "icon": "calendar",
+      "icon": "room",
       "requires": [
         "campus-session",
         "network"
@@ -360,7 +360,7 @@
       "author": "pkuinfo",
       "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/memory",
       "kind": "builtin",
-      "icon": "sparkles",
+      "icon": "brain",
       "requires": [],
       "scopes": [],
       "tags": [
@@ -447,7 +447,7 @@
       "author": "pkuinfo",
       "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/library",
       "kind": "builtin",
-      "icon": "book",
+      "icon": "library",
       "requires": [
         "campus-session",
         "network"
@@ -473,7 +473,7 @@
       "author": "pkuinfo",
       "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/classrooms",
       "kind": "builtin",
-      "icon": "search",
+      "icon": "building",
       "requires": [
         "network"
       ],
@@ -493,7 +493,7 @@
       "author": "pkuinfo",
       "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/canteen",
       "kind": "builtin",
-      "icon": "store",
+      "icon": "food",
       "requires": [
         "network"
       ],
@@ -515,7 +515,7 @@
       "author": "pkuinfo",
       "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/shuttle",
       "kind": "builtin",
-      "icon": "location",
+      "icon": "bus",
       "requires": [],
       "scopes": [],
       "tags": [

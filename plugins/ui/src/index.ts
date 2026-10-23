@@ -14,7 +14,7 @@ export const uiPlugin = definePlugin({
       tools: { render: { title: 'Show UI in chat' } },
     },
   },
-  icon: 'sparkles',
+  icon: 'wand',
   core: true,
   scopes: [],
   tools: {

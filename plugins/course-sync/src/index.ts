@@ -26,12 +26,12 @@ export const courseSyncPlugin = definePlugin({
       settings: { home: { title: 'Official timetable', subtitle: 'Sync your classes from the university' } },
     },
   },
-  icon: 'book',
+  icon: 'sync',
   requires: ['campus-session', 'network'],
   scopes: ['treehole.pku.edu.cn（课表）'],
   contributes: {
     screens: { home: { title: '教务课表', component: CourseSyncScreen } },
-    settings: [{ screen: 'home', title: '教务课表', subtitle: '从学校同步课表', icon: 'book' }],
+    settings: [{ screen: 'home', title: '教务课表', subtitle: '从学校同步课表', icon: 'sync' }],
   },
   instructions: `用户想导入/同步/更新课表时调用 course-sync__sync。
 - 已在「手机令牌」插件绑定时，课表二次验证会自动完成，不必问用户。

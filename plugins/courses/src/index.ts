@@ -67,7 +67,7 @@ export const coursesPlugin = definePlugin({
       },
     },
   },
-  icon: 'book',
+  icon: 'school',
   requires: ['campus-session', 'network'],
   scopes: ['course.pku.edu.cn'],
   contributes: {
