@@ -1,13 +1,27 @@
-## 做了什么
+## Summary
 
-<!-- 改动说明；关联 issue：Closes #… -->
+<!-- What does this change and why? Link the issue: "Closes #123". -->
 
-## 自查（插件规则见 CONTRIBUTING.md）
+## Type
 
-- [ ] `bun run check` 和 `bun test` 通过（解析器有测试）
-- [ ] 工具的 `title`（中文）和 `description`（给模型看：何时用、怎么用）清楚，输入用 zod / JSON Schema 校验
-- [ ] 效果类型如实声明（read / write / money / public），付款和公开发布不会绕过确认
-- [ ] 不索取、不记录校园密码与令牌；工具结果里不含 Cookie / token
-- [ ] 校园内容（帖子、公告）作为数据返回，没有拼进给模型的指令
-- [ ] 声明了 `requires`；协议移植自 pkucli 的在注释里注明来源文件
-- [ ] 在 App 里实测过（列出用到的工具和结果，注意打码）
+- [ ] Fix for a broken campus service
+- [ ] New plugin
+- [ ] Port of a TypeScript plugin to a plugin document
+- [ ] SDK / plugin language
+- [ ] Registry entry
+- [ ] Docs / CI / other
+
+## Checklist
+
+- [ ] `bun run verify` passes (typecheck, registry, bundled documents, all tests)
+- [ ] Changed plugin documents have recorded tests (`tests/*.yaml`) for the main and error paths, and `bun run bundle` was run
+- [ ] Tool effects are declared honestly (`read` / `write` / `money` / `public`); payments and public posts cannot skip confirmation
+- [ ] Campus services, hosts and abilities are declared in `PLUGIN.md`; nothing else is reached
+- [ ] No passwords, cookies, tokens or personal data in code, results, fixtures, logs or screenshots
+- [ ] Third-party text is returned as data (`untrusted: true` where it applies), never as instructions
+- [ ] Protocols ported from pkucli cite the source file
+- [ ] User-facing strings have English translations (`i18n.en`); repository text is in English
+
+## Testing
+
+<!-- How did you test against the live service (tool, input, result)? Redact personal data. -->

@@ -1,28 +1,49 @@
-# 安全策略 · Security Policy
+# Security Policy
 
-PKU Harness 在用户手机上保存校园账号凭据、IAAA 手机令牌密钥和 AI 服务 Key，并让 AI 代用户操作校园服务。
-我们非常重视安全问题。
+PKU Harness stores campus credentials, the IAAA authenticator secret and AI service keys on the
+user's phone, and lets an AI agent act on campus services on the user's behalf. Plugins are the
+code (or documents) that reach those services, so we take security reports very seriously.
 
-## 报告漏洞 · Reporting
+## Reporting a vulnerability
 
-**请不要公开提交 issue。** 使用 GitHub 的私密漏洞报告：仓库 → Security → *Report a vulnerability*
-（<https://github.com/pkuinfo/pku-harness-plugins/security/advisories/new>）。App 本体的问题请在
-[pku-harness](https://github.com/pkuinfo/pku-harness/security/advisories/new) 报告。
+**Do not open a public issue.** Use GitHub's private vulnerability reporting:
 
-请包含：影响范围、复现步骤、版本 / 提交号、你认为的严重程度。**不要附上任何真实的账号、密码、令牌或个人数据**，
-用测试数据或打码。
+- Plugins, the SDK, the plugin language or the registry:
+  <https://github.com/pkuinfo/pku-harness-plugins/security/advisories/new>
+- The app itself: <https://github.com/pkuinfo/pku-harness/security/advisories/new>
 
-我们会在 7 天内确认收到，修复后在发布说明中致谢（如你愿意）。
+Please include the affected component and version (or commit), steps to reproduce, the impact
+you see, and your severity estimate. **Never include real account names, passwords, tokens,
+cookies or personal data**: use test data or redact them.
 
-## 重点关注 · In scope
+We acknowledge reports within 7 days, keep you informed while we fix the issue, and credit you in
+the release notes if you wish.
 
-- 凭据泄露：SecureStore 之外出现密码 / 令牌密钥 / Cookie / API Key（日志、导出数据、崩溃信息、网络请求）。
-- 插件越权：插件拿到不属于它的会话、凭据，或绕过按效果（读 / 写 / 花钱 / 公开）的授权设置。
-- 提示注入：校园内容（树洞帖子、公告等）诱导 Agent 执行用户未授权的操作。
-- 付款与公开发布类操作在未确认的情况下被执行。
-- 远程插件（MCP）与市场注册表的供应链问题。
+## Supported versions
 
-## 不在范围 · Out of scope
+Security fixes go to the latest release of the app and to the `main` branch of this repository.
+Official plugin documents update over the air from their links, so fixes reach users without an
+app release.
 
-- 学校服务本身的漏洞（请联系学校相关部门）。
-- 需要已越狱 / 已 root 设备或物理接触已解锁手机的攻击。
+## Scope
+
+In scope:
+
+- **Credential exposure**: passwords, authenticator secrets, cookies, session tokens or API keys
+  appearing outside the device's secure storage (logs, exports, crash reports, network requests,
+  tool results).
+- **Plugin sandbox escapes**: a plugin reaching a campus service, host or app feature it did not
+  declare, another plugin's data, or bypassing the per-effect permissions (read / write / money /
+  public).
+- **Interpreter flaws**: plugin-language expressions or steps escaping their limits or reaching
+  JavaScript internals.
+- **Prompt injection**: campus content (treehole posts, notices) making the agent take actions
+  the user did not authorize.
+- **Unconfirmed payments or public posts.**
+- **Supply chain**: the marketplace registry, plugin update links, remote (MCP) plugins.
+
+Out of scope:
+
+- Vulnerabilities in the university's own services (please report those to the university).
+- Attacks that require a rooted or jailbroken device, or physical access to an unlocked phone.
+- Missing security headers on static pages without a demonstrated impact.

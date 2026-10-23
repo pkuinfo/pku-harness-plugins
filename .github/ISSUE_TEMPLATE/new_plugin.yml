@@ -1,37 +1,46 @@
-name: 新插件提案 / New plugin proposal
-description: 接入一个新的校园服务，或新增一项能力
+name: New plugin proposal
+description: Connect a new campus service, or add a new capability.
 labels: [plugin-proposal]
 body:
   - type: input
     id: service
     attributes:
-      label: 服务
-      placeholder: 例如 图书馆座位预约（seat.lib.pku.edu.cn）
+      label: Service
+      placeholder: e.g. Library seat reservation (seat.lib.pku.edu.cn)
     validations:
       required: true
   - type: textarea
     id: scenarios
     attributes:
-      label: 使用场景
-      description: 用户会怎么问 AI、希望看板或日程上出现什么
+      label: Use cases
+      description: What would students ask the AI? What should appear on the dashboard or in the schedule?
     validations:
       required: true
   - type: textarea
     id: tools
     attributes:
-      label: 打算提供的工具
-      description: 每个工具的作用和效果类型（read / write / money / public）
+      label: Proposed tools
+      description: For each tool, what it does and its effect (read / write / money / public).
+  - type: textarea
+    id: access
+    attributes:
+      label: Access needed
+      description: Campus services (signed-in session), public hosts and app abilities the plugin would declare.
   - type: dropdown
     id: kind
     attributes:
-      label: 形式
-      options: [远程插件（MCP）, 内置插件（需要设备能力，请说明理由）, 还不确定]
+      label: Kind
+      options:
+        - Plugin document (PLUGIN.md)
+        - Remote plugin (MCP server)
+        - TypeScript (needs a new host ability; please explain why)
+        - Not sure yet
   - type: checkboxes
     id: rules
     attributes:
-      label: 确认
+      label: Confirmation
       options:
-        - label: 不需要用户把校园密码交给插件（凭据只留在手机上）
+        - label: The plugin never needs the user's campus password (credentials stay on the phone).
           required: true
-        - label: 我读过 CONTRIBUTING.md 里的插件规则
+        - label: I have read the plugin rules in CONTRIBUTING.md.
           required: true

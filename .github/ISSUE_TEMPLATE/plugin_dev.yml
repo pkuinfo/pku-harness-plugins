@@ -1,16 +1,16 @@
-name: SDK 与插件开发 / SDK & plugin development
-description: SDK 接口、HostServices、远程插件模板、市场注册表的问题或建议
+name: SDK and plugin development
+description: Questions or proposals about the plugin language, the SDK, host abilities, the registry or the remote plugin template.
 labels: [sdk]
 body:
   - type: textarea
     id: what
     attributes:
-      label: 问题或建议
+      label: Question or proposal
     validations:
       required: true
   - type: textarea
     id: context
     attributes:
-      label: 代码与上下文
-      description: 相关的插件代码片段、报错信息
-      render: ts
+      label: Code and context
+      description: The relevant PLUGIN.md / tool YAML / TypeScript snippet and any error message.
+      render: yaml

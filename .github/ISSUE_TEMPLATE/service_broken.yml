@@ -1,36 +1,61 @@
-name: 校园服务失效 / A campus service broke
-description: 某个插件连不上、数据不对、学校网站改版
+name: A campus service broke
+description: A plugin can't connect, returns wrong data, or a university site changed.
 labels: [service-broken]
 body:
   - type: markdown
     attributes:
-      value: "**请勿粘贴真实的账号、密码、Cookie、令牌、学号或个人数据**，截图请打码。"
+      value: |
+        **Never paste real account names, passwords, cookies, tokens, student IDs or personal data.** Redact screenshots.
   - type: dropdown
     id: plugin
     attributes:
-      label: 插件
-      options: [校园卡, 网费, 树洞, 教学网（courses）, 课表同步, 成绩, 选课网, 财务门户, 空间预约, 讲座与活动, 课程目录, 校历, 手机令牌, 其他]
+      label: Plugin
+      options:
+        - wallet (campus card, network fee, utilities)
+        - finance
+        - courses (Blackboard)
+        - course-sync (timetable from the dean's office)
+        - course-catalog
+        - grades
+        - elective
+        - treehole
+        - library
+        - room-booking
+        - classrooms
+        - canteen
+        - shuttle
+        - notices
+        - campus-events
+        - calendar
+        - authenticator
+        - card-share
+        - Other
     validations:
       required: true
   - type: input
     id: tool
     attributes:
-      label: 工具 / 功能
-      placeholder: 例如 treehole.read、wallet.cardRecharge
+      label: Tool or feature
+      placeholder: e.g. treehole.read, wallet.cardRecharge, the canteen widget
   - type: textarea
     id: what
     attributes:
-      label: 现象
-      description: 报错原文（App 里显示的那句）、什么时候开始的、是否在校园网内
+      label: What happens
+      description: The exact error shown in the app, when it started, and what you expected.
     validations:
       required: true
   - type: dropdown
     id: network
     attributes:
-      label: 网络
-      options: [校园网, 校外网络, 不确定]
+      label: Network
+      options: [Campus network, Outside campus, Not sure]
+  - type: input
+    id: version
+    attributes:
+      label: App version
+      placeholder: e.g. 1.0.0 (Settings → About)
   - type: textarea
     id: notes
     attributes:
-      label: 其他线索
-      description: 学校网站是否改版、浏览器里能否正常访问、pkucli 是否也坏了
+      label: Other clues
+      description: Did the university site change? Does it work in a browser? Does pkucli work?
