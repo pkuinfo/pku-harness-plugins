@@ -1,6 +1,12 @@
 import { z } from 'zod';
 
-import { serverSchema } from './server-schema';
+import type { ServerDoc } from './server-schema';
+
+/**
+ * The `server:` schema (server-schema.ts) needs `validateTool` from load.ts, which imports this
+ * file; load.ts plugs it in here so neither module imports the other in a cycle.
+ */
+export const serverSlot: { schema: z.ZodType<ServerDoc> } = { schema: z.record(z.string(), z.unknown()) as unknown as z.ZodType<ServerDoc> };
 
 /**
  * Schemas of a plugin document (docs/PLUGIN-LANGUAGE.md §4–§5): the `PLUGIN.md` frontmatter and
@@ -132,7 +138,7 @@ export const manifestSchema = z
     i18n: z.object({ en: translationSchema.optional() }).optional(),
     remote: z.object({ mcp: z.string().url(), auth: z.enum(['none', 'bearer']).optional() }).strict().optional(),
     /** Server functions, schedules, collections (pku-harness docs/CLOUD-FUNCTIONS.md); see server-schema.ts. */
-    server: z.lazy(() => serverSchema).optional(),
+    server: z.lazy(() => serverSlot.schema).optional(),
   })
   .strict();
 export type Manifest = z.infer<typeof manifestSchema>;

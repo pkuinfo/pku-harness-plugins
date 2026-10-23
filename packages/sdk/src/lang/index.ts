@@ -4,6 +4,7 @@ export { ABILITIES, ABILITY_IDS, effectRank, type AbilityDef, type AbilityEnv } 
 export { compilePlugin, inputZod, type CompileOptions } from './compile';
 export { ExprError } from './expr';
 export { fileUrl, installDeepLink, LinkError, resolveLink, type PluginLink } from './link';
+export { serverSchema, validateServer } from './load';
 export { declarations, fingerprintText, loadDocument, parseTest, PluginDocError, splitFrontmatter, validateTool, widens, type PluginDocument, type ReadFile } from './load';
 export { LIMITS, runTool, ToolFailure, type PublicFetch, type RunEnv } from './run';
 export {
@@ -27,8 +28,6 @@ export {
   secretNameSchema,
   SERVER_ABILITIES,
   SERVER_ABILITY_DEFS,
-  serverSchema,
-  validateServer,
   type CollectionDoc,
   type FunctionAccess,
   type ScheduleDoc,

@@ -1,7 +1,6 @@
 import { z } from 'zod';
 
 import type { AbilityDef } from './abilities';
-import { validateTool } from './load';
 import { fieldSchema, toolSchema, type FieldDef, type Manifest, type StepDoc, type ToolDoc } from './schema';
 
 /**
@@ -10,9 +9,9 @@ import { fieldSchema, toolSchema, type FieldDef, type Manifest, type StepDoc, ty
  * The same steps and expressions as tools, run by the cloud server's interpreter with the
  * server's ability table (SERVER_ABILITIES) instead of the phone's.
  *
- * `schema.ts` references `serverSchema` through `z.lazy`, and everything here that touches
- * schema.ts is built on first use, so the import cycle schema.ts ↔ server-schema.ts is safe in
- * either load order.
+ * No import cycles: this file imports only `schema.ts`; `validateTool` (load.ts) is passed in.
+ * `load.ts` builds the schema with `makeServerSchema(validateTool)` and plugs it into
+ * `schema.ts`'s `serverSlot`, which `manifestSchema.server` reads lazily.
  */
 
 /** No `__`: the operator's env name is `CLOUD_SECRET_<PLUGIN>__<NAME>`, split at the last `__`. */
@@ -127,7 +126,7 @@ function campusRequests(steps: unknown, where: string, out: string[]) {
   });
 }
 
-function build() {
+function build(validateTool: ValidateTool) {
   const functionSchema = toolSchema.extend({
     title: z.string().min(1).max(60).optional(),
     description: z.string().min(4).max(2000).optional(),
@@ -184,13 +183,18 @@ function build() {
     })
     .strict()
     .superRefine((server, ctx) => {
-      for (const issue of validateServer(server as ServerDoc)) ctx.addIssue({ code: 'custom', path: [], message: issue });
+      for (const issue of validateServer(server as ServerDoc, validateTool)) ctx.addIssue({ code: 'custom', path: [], message: issue });
     });
 }
 
-let built: ReturnType<typeof build> | undefined;
-/** Zod schema of `server:` (structure + every function and schedule body). */
-export const serverSchema = z.lazy(() => (built ??= build()));
+/** `validateTool` from load.ts, injected to keep this module free of import cycles. */
+export type ValidateTool = (manifest: Manifest, file: string, tool: ToolDoc, toolNames: Set<string>, opts?: { abilities?: Record<string, AbilityDef>; implicitAbilities?: boolean }) => string[];
+
+/** Zod schema of `server:` (structure + every function and schedule body), built on first use. */
+export function makeServerSchema(validateTool: ValidateTool) {
+  let built: ReturnType<typeof build> | undefined;
+  return z.lazy(() => (built ??= build(validateTool)));
+}
 
 /** What `validateTool` needs of a manifest, for server steps: only `server.network` is reachable. */
 function serverManifest(server: ServerDoc): Manifest {
@@ -201,7 +205,7 @@ function serverManifest(server: ServerDoc): Manifest {
  * Rules beyond structure: function and schedule bodies validated with the server ability table,
  * no campus requests, declared secrets only, and access/effect pairs (§3.1).
  */
-export function validateServer(server: ServerDoc): string[] {
+export function validateServer(server: ServerDoc, validateTool: ValidateTool): string[] {
   const issues: string[] = [];
   const manifest = serverManifest(server);
   const fnNames = new Set(Object.keys(server.functions ?? {}));

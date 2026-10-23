@@ -2,7 +2,8 @@ import { parse as parseYaml } from 'yaml';
 
 import { ABILITIES, effectRank, type AbilityDef } from './abilities';
 import { compile, ExprError, templateExprs } from './expr';
-import { manifestSchema, sharedSchema, testSchema, toolSchema, viewSchema, type Manifest, type StepDoc, type TestDoc, type ToolDoc, type ViewDoc } from './schema';
+import { manifestSchema, serverSlot, sharedSchema, testSchema, toolSchema, viewSchema, type Manifest, type StepDoc, type TestDoc, type ToolDoc, type ViewDoc } from './schema';
+import { makeServerSchema, validateServer as validateServerWith, type ServerDoc } from './server-schema';
 
 /**
  * Load and validate a plugin document (docs/PLUGIN-LANGUAGE.md §3–§6): `PLUGIN.md` (YAML
@@ -362,3 +363,10 @@ export function fingerprintText(files: Record<string, string>): string {
 export function effectOfAbility(id: string) {
   return ABILITIES[id]?.effect;
 }
+
+/** The `server:` schema, built with this module's `validateTool` and plugged into manifestSchema. */
+export const serverSchema = makeServerSchema(validateTool);
+serverSlot.schema = serverSchema;
+
+/** Server-section rules beyond structure (server-schema.ts `validateServer`, bound to validateTool). */
+export const validateServer = (server: ServerDoc) => validateServerWith(server, validateTool);
