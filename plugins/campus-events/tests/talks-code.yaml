@@ -1,0 +1,9 @@
+# Retrying with the SMS code: redeemed first, then the calendar loads.
+tool: talks
+input: { from: '2026-10-24', to: '2026-10-24', code: '123456' }
+now: 2026-10-23 14:20
+kv: { 'verify:pending': login }
+responses:
+  - { match: /chapi/api/jwt_msg_verify, campus: treehole, body: { success: true } }
+  - { match: lab_events?startDate=2026-10-24&endDate=2026-10-24, campus: treehole, body: { success: true, data: { events: [] } } }
+expect: { status: ok, range: { from: '2026-10-24', to: '2026-10-24', capped: false }, total: 0, talks: [] }

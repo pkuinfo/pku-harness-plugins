@@ -1,0 +1,10 @@
+tool: activities
+now: 2026-10-23 14:20
+responses:
+  - { match: events/list, campus: treehole, body: { code: 40002, success: false } }
+expect:
+  status: verification_required
+  kind: login
+  methods: [sms]
+  message: 树洞需要短信验证（首次登录或定期验证）
+  next: Ask the user for the code (send an SMS first with the sendCode tool if they choose SMS), then call this tool again with code.

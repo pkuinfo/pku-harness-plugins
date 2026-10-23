@@ -1,0 +1,5 @@
+tool: activities
+now: 2026-10-23 14:20
+responses:
+  - { match: events/list, campus: treehole, body: { code: 50000, success: false, message: 服务繁忙 } }
+expectError: ^获取活动日历失败：服务繁忙$

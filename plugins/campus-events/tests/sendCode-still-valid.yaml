@@ -1,0 +1,5 @@
+# "还未过期": the previous SMS still works.
+tool: sendCode
+responses:
+  - { match: jwt_send_msg, campus: treehole, body: { success: false, message: 验证码还未过期 } }
+expect: { sent: 之前的验证码还有效（验证码还未过期） }

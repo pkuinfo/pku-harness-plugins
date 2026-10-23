@@ -48,7 +48,8 @@ async function treehole(args: Record<string, unknown>, env: AbilityEnv) {
   const req = { ...(args.request as Record<string, unknown>), campus: 'treehole' };
   const code = typeof args.code === 'string' && args.code.trim() ? args.code.trim() : undefined;
   if (code) {
-    const pending = (await env.kv.get<Pending>('verify:pending')) ?? 'course';
+    // No check pending (state cleared, or the code came from elsewhere): the caller says which.
+    const pending = (await env.kv.get<Pending>('verify:pending')) ?? (args.kind === 'login' ? 'login' : 'course');
     const via = args.via === 'sms' || args.via === 'otp' ? args.via : pending === 'login' ? 'sms' : 'otp';
     await redeem(env, pending, code, via);
     await env.kv.delete('verify:pending');
@@ -72,7 +73,7 @@ async function treehole(args: Record<string, unknown>, env: AbilityEnv) {
       next: 'Ask the user for the code (send an SMS first with the sendCode tool if they choose SMS), then call this tool again with code.',
     };
   }
-  if (res.success === false) throw new Error(res.message ?? '树洞请求失败');
+  if (res.success !== true) throw new Error(res.message || '未知错误');
   return res.data ?? res;
 }
 
@@ -89,7 +90,7 @@ async function treeholeSendCode(_args: Record<string, unknown>, env: AbilityEnv)
 const str = (v: unknown) => (typeof v === 'string' ? v : '');
 
 export const ABILITIES: Record<string, AbilityDef> = {
-  'verify.treehole': { effect: 'read', description: 'Treehole request with SMS / OTP second factor handled', run: treehole },
+  'verify.treehole': { effect: 'read', description: 'Treehole request with SMS / OTP second factor handled { request, code?, via?: sms|otp, kind?: login|course }', run: treehole },
   'verify.treeholeSendCode': { effect: 'write', description: 'Send the SMS code for the pending treehole check', run: treeholeSendCode },
   'otp.code': { effect: 'read', description: 'Current IAAA 手机令牌 code, or null', run: async (_a, e) => e.services.campus.otp() },
   'todos.list': { effect: 'read', description: 'The user’s to-dos', run: async (_a, e) => e.services.todos.list() },

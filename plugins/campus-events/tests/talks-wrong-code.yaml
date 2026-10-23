@@ -1,0 +1,7 @@
+tool: talks
+input: { code: '000000' }
+now: 2026-10-23 14:20
+kv: { 'verify:pending': login }
+responses:
+  - { match: jwt_msg_verify, campus: treehole, body: { success: false, message: 验证码错误 } }
+expectError: ^验证失败：验证码错误$

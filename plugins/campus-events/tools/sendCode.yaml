@@ -1,0 +1,8 @@
+# verify.rs handle_sms_verification: send the login SMS ("还未过期" = the last one still works).
+title: 发送验证码
+description: Send the treehole SMS code that a previous call asked for (to the phone bound to the account).
+effect: write
+steps:
+  - let: r
+    ability: verify.treeholeSendCode
+return: "{ sent: r.message }"

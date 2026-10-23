@@ -117,3 +117,11 @@ describe('stdlib', () => {
     expect(ev("htmlText('<p>a &amp; <b>b</b></p>')")).toBe('a & b');
   });
 });
+
+describe('string escapes', () => {
+  test('unknown escapes keep their backslash (regexes survive YAML)', () => {
+    expect(ev("'\\s+'")).toBe('\\s+');
+    expect(ev("replace('a  b', '\\s+', '-')")).toBe('a-b');
+    expect(ev("'a\\'b' + '\\\\' + '\\n'")).toBe("a'b\\\n");
+  });
+});

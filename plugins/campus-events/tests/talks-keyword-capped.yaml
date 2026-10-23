@@ -1,0 +1,12 @@
+# Keyword matches title / department / host case-insensitively; a long span is capped at 92 days.
+tool: talks
+input: { from: '2026-10-01', to: '2027-06-01', keyword: ' prof. LI ' }
+now: 2026-10-23 14:20
+responses:
+  - { match: lab_events?startDate=2026-10-01&endDate=2027-01-01, campus: treehole, file: lab-events.json, headers: { content-type: application/json } }
+expect:
+  status: ok
+  range: { from: '2026-10-01', to: '2027-01-01', capped: true }
+  total: 1
+  talks:
+    - { title: Optimal Transport & Diffusion, dept: 数学科学学院, host: Prof. Li, location: 智华楼 王选报告厅, start: '2026-11-03 09:30' }

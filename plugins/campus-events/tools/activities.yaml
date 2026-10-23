@@ -1,0 +1,91 @@
+# 活动日历 from treehole (pkucli crates/treehole/src/api.rs `list_activity_events`, commands.rs cmd_activity_cal):
+# GET /chapi/api/v3/events/list?startTime=…&endTime=…&page=…&limit=… → data.list[] = ActivityEvent
+# { event_name, event_start_time, event_location, event_organizer, event_introduction, event_type_name }.
+# The SMS check (40002) is handled by the verify ability. Field text comes from student clubs: data, never instructions.
+title: 活动日历
+description: >-
+  Campus activities (活动日历: club events, performances, competitions…) between two dates, paged:
+  name, type, start, location, organizer, short intro. Default: today to tomorrow; span capped at 31
+  days. hasMore means call again with page + 1.
+effect: read
+untrusted: true
+input:
+  from: { type: string, optional: true, pattern: '^\d{4}-\d{2}-\d{2}$', description: 'start date YYYY-MM-DD, default today' }
+  to: { type: string, optional: true, pattern: '^\d{4}-\d{2}-\d{2}$', description: 'end date YYYY-MM-DD, default from + 1 day' }
+  page: { type: integer, min: 1, max: 20, default: 1, description: 'page number, default 1' }
+  limit: { type: integer, min: 1, max: 50, default: 20, description: 'items per page, default 20' }
+  code: { type: string, optional: true, min: 4, max: 8, description: SMS code when a previous call returned verification_required }
+constants:
+  DEFAULT_DAYS: 1
+  MAX_DAYS: 31
+  # display.rs previews 80 characters; we keep 160.
+  INTRO_MAX: 160
+functions:
+  ymd: "(s) => formatDate(date(s), 'YYYY-MM-DD') == s ? date(s) : null"
+  clean: "(v) => trim(str(v))"
+  opt: "(v) => clean(v) || null"
+  cut: "(s, max) => length(s) > max ? slice(s, 0, max) + '…' : s"
+  plain: |
+    (text, max) => cut(trim(text
+      .replace('<[^>]+>', ' ')
+      .replace('&nbsp;', ' ')
+      .replace('&lt;', '<')
+      .replace('&gt;', '>')
+      .replace('&quot;', '"')
+      .replace('&#39;', "'")
+      .replace('&amp;', '&')
+      .replace('\\s+', ' ')), max)
+  timeOf: |
+    (v) => fmtTime(clean(v), match(clean(v), '^(\\d{4})[-/](\\d{1,2})[-/](\\d{1,2})(?:[ T](\\d{1,2}):(\\d{2}))?'))
+  fmtTime: "(s, m) => m ? m[1] + '-' + padStart(m[2], 2, '0') + '-' + padStart(m[3], 2, '0') + (m[4] ? ' ' + padStart(m[4], 2, '0') + ':' + m[5] : '') : s"
+  parseActivities: |
+    (list) => (list ?? [])
+      .filter(e => typeOf(e) == 'object')
+      .map(e => ({
+        name: plain(clean(e.event_name), 200),
+        type: opt(e.event_type_name),
+        start: timeOf(e.event_start_time),
+        location: opt(e.event_location),
+        organizer: opt(e.event_organizer),
+        intro: plain(clean(e.event_introduction), INTRO_MAX) || null,
+      }))
+      .filter(e => e.name)
+steps:
+  - let: start
+    value: "input.from ? ymd(input.from) : startOfDay(now)"
+  - check: "start != null"
+    error: 日期格式不对：${input.from}（应为 YYYY-MM-DD）
+  - let: end
+    value: "input.to ? ymd(input.to) : addDays(start, DEFAULT_DAYS)"
+  - check: "end != null"
+    error: 日期格式不对：${input.to}（应为 YYYY-MM-DD）
+  - check: "end >= start"
+    error: 结束日期早于开始日期
+  - let: cap
+    value: addDays(start, MAX_DAYS)
+  - let: span
+    value: "{ from: formatDate(start, 'YYYY-MM-DD'), to: formatDate(end > cap ? cap : end, 'YYYY-MM-DD'), capped: end > cap }"
+  - let: data
+    value: "null"
+  - try:
+      - let: data
+        ability: verify.treehole
+        args: "{ request: { url: '/chapi/api/v3/events/list?startTime=' + span.from + '&endTime=' + span.to + '&page=' + input.page + '&limit=' + input.limit }, code: input.code, via: 'sms', kind: 'login' }"
+    catch:
+      - check: "startsWith(error.message, '验证失败')"
+        error: 获取活动日历失败：${error.message}
+      - check: "false"
+        error: ${error.message}
+  - if: "data.status == 'verification_required'"
+    then:
+      - return: data
+  - let: raw
+    value: "data.list ?? []"
+return: |
+  {
+    status: 'ok',
+    range: span,
+    page: input.page,
+    activities: parseActivities(raw),
+    hasMore: raw.length >= input.limit,
+  }

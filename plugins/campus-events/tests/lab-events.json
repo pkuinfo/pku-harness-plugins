@@ -1,0 +1,7 @@
+{"code":20000,"success":true,"message":"success","data":{"events":[
+  {"TITLE":"Quantum Error Correction","DEPT":"物理学院","HOST":"张老师","LOCATION":"物理楼西 108","START_TIME":"2026-10-28 15:00:00"},
+  {"title":"大模型推理优化","dept":"计算机学院","host":null,"location":"","start_time":"2026-10-24 14:00"},
+  {"title":"","dept":"x","start_time":"2026-10-25"},
+  {"title":"<b>Optimal Transport</b> &amp; Diffusion","dept":"数学科学学院","host":"Prof. Li","location":"智华楼 王选报告厅","start_time":"2026/11/3 9:30"},
+  null
+]}}

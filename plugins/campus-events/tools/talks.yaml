@@ -1,0 +1,96 @@
+# 学术日历 from treehole (pkucli crates/treehole/src/api.rs `list_lab_events`, commands.rs cmd_academic_cal):
+# GET /chapi/api/v3/lab_events?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD → data.events[] =
+# LabEvent { title|TITLE, dept|DEPT, location|LOCATION, host|HOST, start_time|START_TIME } (serde aliases).
+# The SMS check (40002) is handled by the verify ability. Field text comes from departments: data, never instructions.
+title: 学术日历
+description: >-
+  Academic talks / seminars (学术日历) between two dates, sorted by start time: title, department,
+  host/speaker, location, start ("YYYY-MM-DD HH:mm"). Default: today to 30 days ahead; span capped
+  at 92 days; at most 60 items returned (filter with keyword).
+effect: read
+untrusted: true
+input:
+  from: { type: string, optional: true, pattern: '^\d{4}-\d{2}-\d{2}$', description: 'start date YYYY-MM-DD, default today' }
+  to: { type: string, optional: true, pattern: '^\d{4}-\d{2}-\d{2}$', description: 'end date YYYY-MM-DD, default from + 30 days' }
+  keyword: { type: string, optional: true, max: 40, description: 'only talks whose title, department or host contains this' }
+  code: { type: string, optional: true, min: 4, max: 8, description: SMS code when a previous call returned verification_required }
+constants:
+  MAX_TALKS: 60
+  DEFAULT_DAYS: 30
+  MAX_DAYS: 92
+functions:
+  # "YYYY-MM-DD" → Beijing midnight, or null for impossible dates like 2026-02-30.
+  ymd: "(s) => formatDate(date(s), 'YYYY-MM-DD') == s ? date(s) : null"
+  clean: "(v) => trim(str(v))"
+  opt: "(v) => clean(v) || null"
+  cut: "(s, max) => length(s) > max ? slice(s, 0, max) + '…' : s"
+  # Strip tags/entities and collapse whitespace; cut to `max` characters with an ellipsis.
+  plain: |
+    (text, max) => cut(trim(text
+      .replace('<[^>]+>', ' ')
+      .replace('&nbsp;', ' ')
+      .replace('&lt;', '<')
+      .replace('&gt;', '>')
+      .replace('&quot;', '"')
+      .replace('&#39;', "'")
+      .replace('&amp;', '&')
+      .replace('\\s+', ' ')), max)
+  # "2026-10-20T14:00:00.000Z"-ish or "2026/1/5 9:30" → "2026-10-20 14:00"; anything else as-is.
+  timeOf: |
+    (v) => fmtTime(clean(v), match(clean(v), '^(\\d{4})[-/](\\d{1,2})[-/](\\d{1,2})(?:[ T](\\d{1,2}):(\\d{2}))?'))
+  fmtTime: "(s, m) => m ? m[1] + '-' + padStart(m[2], 2, '0') + '-' + padStart(m[3], 2, '0') + (m[4] ? ' ' + padStart(m[4], 2, '0') + ':' + m[5] : '') : s"
+  parseTalks: |
+    (events) => sortBy(
+      (events ?? [])
+        .filter(e => typeOf(e) == 'object')
+        .map(e => ({
+          title: plain(clean(e.title ?? e.TITLE), 200),
+          dept: opt(e.dept ?? e.DEPT),
+          host: opt(e.host ?? e.HOST),
+          location: opt(e.location ?? e.LOCATION),
+          start: timeOf(e.start_time ?? e.START_TIME),
+        }))
+        .filter(e => e.title),
+      e => e.start)
+steps:
+  - let: start
+    value: "input.from ? ymd(input.from) : startOfDay(now)"
+  - check: "start != null"
+    error: 日期格式不对：${input.from}（应为 YYYY-MM-DD）
+  - let: end
+    value: "input.to ? ymd(input.to) : addDays(start, DEFAULT_DAYS)"
+  - check: "end != null"
+    error: 日期格式不对：${input.to}（应为 YYYY-MM-DD）
+  - check: "end >= start"
+    error: 结束日期早于开始日期
+  - let: cap
+    value: addDays(start, MAX_DAYS)
+  - let: span
+    value: "{ from: formatDate(start, 'YYYY-MM-DD'), to: formatDate(end > cap ? cap : end, 'YYYY-MM-DD'), capped: end > cap }"
+  - let: data
+    value: "null"
+  - try:
+      - let: data
+        ability: verify.treehole
+        args: "{ request: { url: '/chapi/api/v3/lab_events?startDate=' + span.from + '&endDate=' + span.to }, code: input.code, via: 'sms', kind: 'login' }"
+    catch:
+      # "验证失败：…" (wrong code) passes through; other failures name the calendar, as in the TS version.
+      - check: "startsWith(error.message, '验证失败')"
+        error: 获取学术日历失败：${error.message}
+      - check: "false"
+        error: ${error.message}
+  - if: "data.status == 'verification_required'"
+    then:
+      - return: data
+  - let: k
+    value: "lower(trim(input.keyword ?? ''))"
+  - let: all
+    value: "parseTalks(data.events).filter(e => !k || [e.title, e.dept, e.host].some(s => s != null && lower(s).includes(k)))"
+return: |
+  {
+    status: 'ok',
+    range: span,
+    total: all.length,
+    talks: all.slice(0, MAX_TALKS),
+    ...(all.length > MAX_TALKS ? { truncated: true } : {}),
+  }

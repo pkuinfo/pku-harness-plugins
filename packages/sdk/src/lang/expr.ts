@@ -53,7 +53,9 @@ function tokenize(src: string): Tok[] {
       while (j < src.length && src[j] !== c) {
         if (src[j] === '\\') {
           const e = src[j + 1];
-          s += e === 'n' ? '\n' : e === 't' ? '\t' : e === 'r' ? '\r' : (e ?? '');
+          // Known escapes as in JS; any other keeps its backslash, so regexes like '\d+' survive
+          // one round of YAML unescaping (unlike JS, where '\d' === 'd').
+          s += e === 'n' ? '\n' : e === 't' ? '\t' : e === 'r' ? '\r' : e === '\\' || e === "'" || e === '"' ? e : `\\${e ?? ''}`;
           j += 2;
         } else s += src[j++];
       }

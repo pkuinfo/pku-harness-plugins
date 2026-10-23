@@ -1,0 +1,14 @@
+# A full page means there may be more (hasMore); year-end ranges cross into the next year.
+tool: activities
+input: { from: '2026-12-30', page: 2, limit: 2 }
+now: 2026-10-23 14:20
+responses:
+  - { match: events/list?startTime=2026-12-30&endTime=2026-12-31&page=2&limit=2, campus: treehole, file: activities.json, headers: { content-type: application/json } }
+expect:
+  status: ok
+  range: { from: '2026-12-30', to: '2026-12-31', capped: false }
+  page: 2
+  activities:
+    - { name: 秋季音乐会, type: 文艺演出, start: '2026-10-23 19:00', location: 百周年纪念讲堂, organizer: 学生艺术团, intro: 欢迎 大家 很长的介绍很长的介绍很长的介绍很长的介绍很长的介绍很长的介绍很长的介绍很长的介绍很长的介绍很长的介绍很长的介绍很长的介绍很长的介绍很长的介绍很长的介绍很长的介绍很长的介绍很长的介绍很长的介绍很长的介绍很长的介绍很长的介绍很长的介绍很长的介绍很长的介绍很长的介绍很长的介绍很长的介绍很长的介绍很长的介绍很长的介… }
+    - { name: 读书会, type: null, start: '2026-10-24', location: null, organizer: null, intro: null }
+  hasMore: true

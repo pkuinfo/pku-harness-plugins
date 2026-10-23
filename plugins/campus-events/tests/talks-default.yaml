@@ -1,0 +1,13 @@
+# Default range (today + 30 days), mixed-case keys, empty titles dropped, sorted by start.
+tool: talks
+now: 2026-10-23 14:20
+responses:
+  - { match: /chapi/api/v3/lab_events?startDate=2026-10-23&endDate=2026-11-22, campus: treehole, file: lab-events.json, headers: { content-type: application/json } }
+expect:
+  status: ok
+  range: { from: '2026-10-23', to: '2026-11-22', capped: false }
+  total: 3
+  talks:
+    - { title: 大模型推理优化, dept: 计算机学院, host: null, location: null, start: '2026-10-24 14:00' }
+    - { title: Quantum Error Correction, dept: 物理学院, host: 张老师, location: 物理楼西 108, start: '2026-10-28 15:00' }
+    - { title: Optimal Transport & Diffusion, dept: 数学科学学院, host: Prof. Li, location: 智华楼 王选报告厅, start: '2026-11-03 09:30' }

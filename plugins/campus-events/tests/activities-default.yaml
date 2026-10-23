@@ -1,0 +1,18 @@
+# Default range (today → tomorrow), HTML intros flattened and cut at 160 characters.
+tool: activities
+now: 2026-10-23 14:20
+responses:
+  - { match: /chapi/api/v3/events/list?startTime=2026-10-23&endTime=2026-10-24&page=1&limit=20, campus: treehole, file: activities.json, headers: { content-type: application/json } }
+expect:
+  status: ok
+  range: { from: '2026-10-23', to: '2026-10-24', capped: false }
+  page: 1
+  activities:
+    - name: 秋季音乐会
+      type: 文艺演出
+      start: '2026-10-23 19:00'
+      location: 百周年纪念讲堂
+      organizer: 学生艺术团
+      intro: 欢迎 大家 很长的介绍很长的介绍很长的介绍很长的介绍很长的介绍很长的介绍很长的介绍很长的介绍很长的介绍很长的介绍很长的介绍很长的介绍很长的介绍很长的介绍很长的介绍很长的介绍很长的介绍很长的介绍很长的介绍很长的介绍很长的介绍很长的介绍很长的介绍很长的介绍很长的介绍很长的介绍很长的介绍很长的介绍很长的介绍很长的介绍很长的介…
+    - { name: 读书会, type: null, start: '2026-10-24', location: null, organizer: null, intro: null }
+  hasMore: false
