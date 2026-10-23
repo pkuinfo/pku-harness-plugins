@@ -21,7 +21,7 @@ bun test           # route tests + real WebSocket/SSE tests on an ephemeral port
 
 From the plugins repo root: `bun run --filter @pku-harness/cloud-server dev`.
 
-Android emulator: Settings → 云服务 → 自建 `http://10.0.2.2:8787`.
+Android emulator: Settings → Cloud → Self-hosted, URL `http://10.0.2.2:8787`.
 
 ## Configuration
 
@@ -34,7 +34,7 @@ Android emulator: Settings → 云服务 → 自建 `http://10.0.2.2:8787`.
 | `CLOUD_TOKEN_SECRET` | generated, stored in the DB | HMAC key for bearer tokens (≥ 32 chars) |
 | `CLOUD_POW_DIFFICULTY` | `16` | Leading zero bits for device registration (≈ 1 s on a phone) |
 | `CLOUD_POW_ROTATE_S` | `21600` | PoW salt rotation; the previous salt stays valid one period |
-| `CLOUD_OPERATOR_NAME` / `CLOUD_OPERATOR_CONTACT` / `CLOUD_PRIVACY_URL` | self-hosted / empty | Shown by `GET /v1/meta` (Settings → 测试连接) |
+| `CLOUD_OPERATOR_NAME` / `CLOUD_OPERATOR_CONTACT` / `CLOUD_PRIVACY_URL` | self-hosted / empty | Shown by `GET /v1/meta` (Settings → Cloud → Save and test) |
 | `CLOUD_PAGES_DIR` | `<plugins repo>/plugins` | Folder holding `<plugin>/web/dist` |
 | `CLOUD_TRUST_PROXY` | off | `1`: client IP = last `X-Forwarded-For` hop (behind Caddy) |
 
