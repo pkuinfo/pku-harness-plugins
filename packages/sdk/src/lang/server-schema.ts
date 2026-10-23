@@ -15,7 +15,8 @@ import { fieldSchema, toolSchema, type FieldDef, type Manifest, type StepDoc, ty
  * either load order.
  */
 
-export const secretNameSchema = z.string().regex(/^[A-Z][A-Z0-9_]{0,40}$/, 'UPPER_SNAKE like QWEATHER_KEY');
+/** No `__`: the operator's env name is `CLOUD_SECRET_<PLUGIN>__<NAME>`, split at the last `__`. */
+export const secretNameSchema = z.string().regex(/^(?!.*__)[A-Z][A-Z0-9_]{0,40}$/, 'UPPER_SNAKE like QWEATHER_KEY (no double underscore)');
 const hostSchema = z.string().regex(/^(\*\.)?[a-z0-9-]+(\.[a-z0-9-]+)+$/i, 'a host like example.com or *.example.com');
 const nameSchema = z.string().regex(/^[a-zA-Z][a-zA-Z0-9_]{0,39}$/, 'letters, digits and _, starting with a letter');
 const fieldNameSchema = z.string().regex(/^[a-zA-Z_][a-zA-Z0-9_]{0,39}$/);

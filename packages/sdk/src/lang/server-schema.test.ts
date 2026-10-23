@@ -148,6 +148,9 @@ describe('server: section', () => {
 
   test('schemas are usable directly; the validation table refuses to run', async () => {
     expect(serverSchema.safeParse({ functions: { f: { effect: 'read', return: 1 } } }).success).toBe(true);
+    // secret names can't hold '__' (the operator's env name splits plugin and name at the last '__')
+    expect(serverSchema.safeParse({ secrets: ['API_KEY'] }).success).toBe(true);
+    expect(serverSchema.safeParse({ secrets: ['CROWD__KEY'] }).success).toBe(false);
     expect(manifestSchema.shape.server).toBeDefined();
     await expect(SERVER_ABILITIES['kv.get']!.run({}, {} as never)).rejects.toThrow('only on the cloud server');
   });
