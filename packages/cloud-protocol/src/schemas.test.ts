@@ -58,6 +58,7 @@ describe('wire schemas', () => {
       { t: 'hello', id: 'chan_12345', expiresAt: 1, peers: [] },
       { t: 'join', peerId: 'p_1234', peerPub: key32, at: 5 },
       { t: 'leave', peerId: 'p_1234', at: 6 },
+      { t: 'peer', peerId: 'p_1234', online: false, at: 7 },
       { t: 'msg', peerId: 'p_1234', env },
       { t: 'closed', reason: 'expired' },
       { t: 'error', code: 'rate_limited', message: 'slow down' },
@@ -67,6 +68,7 @@ describe('wire schemas', () => {
     expect(ownerOutFrame.safeParse({ t: 'msg', to: '*', env }).success).toBe(false);
     expect(ownerOutFrame.safeParse({ t: 'kick', peerId: 'p_1234' }).success).toBe(true);
     expect(peerInFrame.safeParse({ t: 'closed', reason: 'kicked' }).success).toBe(true);
+    expect(peerInFrame.safeParse({ t: 'extended', expiresAt: 10 }).success).toBe(true);
     expect(peerInFrame.safeParse({ t: 'hello', peerId: 'p_1234', ownerOnline: false, expiresAt: 9 }).success).toBe(true);
     expect(peerOutFrame.safeParse({ t: 'msg', env }).success).toBe(true);
     expect(peerOutFrame.safeParse({ t: 'nope' }).success).toBe(false);

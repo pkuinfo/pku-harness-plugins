@@ -189,6 +189,8 @@ export const ownerInFrame = z.discriminatedUnion('t', [
   z.object({ t: z.literal('hello'), id: channelIdSchema, expiresAt: ms, peers: z.array(z.object({ peerId: peerIdSchema, peerPub: key32, joinedAt: ms, online: z.boolean() })) }),
   z.object({ t: z.literal('join'), peerId: peerIdSchema, peerPub: key32, at: ms }),
   z.object({ t: z.literal('leave'), peerId: peerIdSchema, at: ms }),
+  /** A claimed peer's connection came up or went away (its seat stays claimed until a kick). */
+  z.object({ t: z.literal('peer'), peerId: peerIdSchema, online: z.boolean(), at: ms }),
   z.object({ t: z.literal('msg'), peerId: peerIdSchema, env: envelopeSchema }),
   z.object({ t: z.literal('closed'), reason: closeReason }),
   z.object({ t: z.literal('error'), code: wireErrorCode, message: z.string() }),
@@ -219,6 +221,8 @@ export const joinResponse = z.object({ peerId: peerIdSchema, peerToken: z.string
 export const peerInFrame = z.discriminatedUnion('t', [
   z.object({ t: z.literal('hello'), peerId: peerIdSchema, ownerOnline: z.boolean(), expiresAt: ms }),
   z.object({ t: z.literal('owner'), online: z.boolean() }),
+  /** The owner extended the channel (PATCH); update countdowns. */
+  z.object({ t: z.literal('extended'), expiresAt: ms }),
   z.object({ t: z.literal('msg'), env: envelopeSchema }),
   z.object({ t: z.literal('closed'), reason: z.union([closeReason, z.literal('kicked')]) }),
   z.object({ t: z.literal('error'), code: wireErrorCode, message: z.string() }),
