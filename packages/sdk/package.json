@@ -8,12 +8,25 @@
   "exports": {
     ".": "./src/index.ts"
   },
+  "files": [
+    "src",
+    "!src/**/*.test.ts"
+  ],
   "peerDependencies": {
     "zod": "^4.0.0",
     "react": ">=19"
   },
   "devDependencies": {
     "zod": "^4.6.7"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pkuinfo/pku-harness-plugins.git",
+    "directory": "packages/sdk"
+  },
+  "homepage": "https://github.com/pkuinfo/pku-harness-plugins#readme",
+  "publishConfig": {
+    "access": "public"
   },
   "license": "MIT"
 }

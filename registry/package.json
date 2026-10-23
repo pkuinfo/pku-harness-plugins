@@ -1,0 +1,29 @@
+{
+  "name": "@pku-harness/registry",
+  "version": "0.1.0",
+  "description": "PKU Harness marketplace registry: the zod schema and the registry.json index.",
+  "type": "module",
+  "main": "schema.ts",
+  "types": "schema.ts",
+  "exports": {
+    ".": "./schema.ts",
+    "./registry.json": "./registry.json"
+  },
+  "files": [
+    "schema.ts",
+    "registry.json"
+  ],
+  "peerDependencies": {
+    "zod": "^4.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pkuinfo/pku-harness-plugins.git",
+    "directory": "registry"
+  },
+  "homepage": "https://github.com/pkuinfo/pku-harness-plugins#readme",
+  "publishConfig": {
+    "access": "public"
+  },
+  "license": "MIT"
+}

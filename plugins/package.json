@@ -1,0 +1,37 @@
+{
+  "name": "@pku-harness/plugins",
+  "version": "0.1.0",
+  "description": "The plugins bundled in the PKU Harness app (campus services, dashboard, schedule, memory, model providers).",
+  "type": "module",
+  "main": "index.ts",
+  "types": "index.ts",
+  "exports": {
+    ".": "./index.ts"
+  },
+  "files": [
+    "index.ts",
+    "*/src",
+    "!**/*.test.ts",
+    "!**/fixtures"
+  ],
+  "dependencies": {
+    "node-html-parser": "^9.0.4"
+  },
+  "peerDependencies": {
+    "@ai-sdk/openai-compatible": "^3.0.0",
+    "@pku-harness/sdk": "workspace:^",
+    "react": ">=19",
+    "react-native": "*",
+    "zod": "^4.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pkuinfo/pku-harness-plugins.git",
+    "directory": "plugins"
+  },
+  "homepage": "https://github.com/pkuinfo/pku-harness-plugins#readme",
+  "publishConfig": {
+    "access": "public"
+  },
+  "license": "MIT"
+}

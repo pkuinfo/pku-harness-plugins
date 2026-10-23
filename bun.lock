@@ -39,6 +39,20 @@
         "zod": "^4.0.0",
       },
     },
+    "plugins": {
+      "name": "@pku-harness/plugins",
+      "version": "0.1.0",
+      "dependencies": {
+        "node-html-parser": "^9.0.4",
+      },
+      "peerDependencies": {
+        "@ai-sdk/openai-compatible": "^3.0.0",
+        "@pku-harness/sdk": "workspace:^",
+        "react": ">=19",
+        "react-native": "*",
+        "zod": "^4.0.0",
+      },
+    },
     "plugins/authenticator": {
       "name": "@pku-harness/plugin-authenticator",
       "version": "0.1.0",
@@ -156,7 +170,7 @@
     },
     "plugins/finance": {
       "name": "@pku-harness/plugin-finance",
-      "version": "0.2.0",
+      "version": "0.3.0",
       "peerDependencies": {
         "@pku-harness/sdk": "*",
         "react": "*",
@@ -306,6 +320,13 @@
         "zod": "^4.0.0",
       },
     },
+    "registry": {
+      "name": "@pku-harness/registry",
+      "version": "0.1.0",
+      "peerDependencies": {
+        "zod": "^4.0.0",
+      },
+    },
     "templates/remote-plugin": {
       "name": "@pku-harness/template-remote-plugin",
       "version": "0.1.0",
@@ -436,6 +457,10 @@
     "@pku-harness/plugin-ui": ["@pku-harness/plugin-ui@workspace:plugins/ui"],
 
     "@pku-harness/plugin-wallet": ["@pku-harness/plugin-wallet@workspace:plugins/wallet"],
+
+    "@pku-harness/plugins": ["@pku-harness/plugins@workspace:plugins"],
+
+    "@pku-harness/registry": ["@pku-harness/registry@workspace:registry"],
 
     "@pku-harness/sdk": ["@pku-harness/sdk@workspace:packages/sdk"],
 

@@ -51,7 +51,31 @@ bun scripts/validate-registry.ts  # registry schema + consistency
 bun examples/demo-canteen/server.ts
 ```
 
-The app consumes this repo as a git submodule (`pku-harness/plugins`) and resolves
-`@pku-harness/sdk` and the plugins through TypeScript paths.
+## Packages and releases
+
+The app builds against published npm packages, not a checkout of this repo:
+
+| Package | Folder | Contents |
+|---|---|---|
+| [`@pku-harness/sdk`](https://www.npmjs.com/package/@pku-harness/sdk) | `packages/sdk` | Plugin contract + pure helpers |
+| [`@pku-harness/plugins`](https://www.npmjs.com/package/@pku-harness/plugins) | `plugins` | Every bundled plugin (`builtinPlugins`) |
+| [`@pku-harness/registry`](https://www.npmjs.com/package/@pku-harness/registry) | `registry` | Marketplace schema + `registry.json` |
+
+They ship TypeScript source (Metro compiles it in the app) and share one version. To release:
+
+```bash
+bun scripts/release.ts version 0.2.0   # bump every published package
+git commit -am "chore: release 0.2.0"
+bun scripts/release.ts publish         # check + test, then bun publish (npm 2FA)
+git tag v0.2.0 && git push --follow-tags
+```
+
+Then bump `@pku-harness/*` in the app; users receive it with the next app update (store
+release, or an over-the-air update for JS-only changes).
+
+**Developing a plugin against the app**: clone this repo next to the app
+(`pku-info/pku-harness-plugins` beside `pku-info/pku-harness`) and run `bun run plugins:link` in
+the app. It points the app's `@pku-harness/*` packages at your checkout, so Metro reloads on
+every save; `bun install` in the app goes back to the published versions.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) to add a plugin.
