@@ -1,0 +1,16 @@
+# Overall GPA "N/A" and no gpa.data: semesters from the courses in order, all GPAs null.
+tool: gpa
+now: 2026-10-23 14:20
+responses:
+  - match: /chapi/api/course/score_v2
+    campus: treehole
+    body:
+      code: 20000
+      success: true
+      data:
+        score:
+          cjxx:
+            - { kcmc: 体育, xf: "1", xqcj: 合格, kclbmc: 公共必修, xnd: 24-25, xq: "2" }
+            - { kcmc: 高等数学（B）（一）, xf: "5", xqcj: "92", kclbmc: 专业必修, xnd: 24-25, xq: "1" }
+          gpa: { gpa: N/A }
+expect: {"status":"ok","overallGpa":null,"totalCredits":null,"semesters":[{"semester":"24-25-2","label":"24-25学年度2学期","gpa":null,"credits":1,"courseCount":1},{"semester":"24-25-1","label":"24-25学年度1学期","gpa":null,"credits":5,"courseCount":1}]}

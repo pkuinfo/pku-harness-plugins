@@ -1,0 +1,6 @@
+tool: listScores
+input: { semester: 23-24 }
+now: 2026-10-23 14:20
+responses:
+  - { match: /chapi/api/course/score_v2, campus: treehole, file: score.json, headers: { content-type: application/json } }
+expect: {"status":"ok","overallGpa":3.712,"totalCredits":13.5,"semesters":[],"note":"没有找到学期 23-24；已有学期：24-25-1、24-25-2、24-25-3"}

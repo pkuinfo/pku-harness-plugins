@@ -1,0 +1,4 @@
+tool: gpa
+responses:
+  - { match: /chapi/api/course/score_v2, campus: treehole, body: { code: 50000, success: false, message: 服务繁忙 } }
+expectError: ^获取成绩失败：服务繁忙$

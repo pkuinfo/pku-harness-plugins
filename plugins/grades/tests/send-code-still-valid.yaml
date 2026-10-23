@@ -1,0 +1,5 @@
+tool: sendCode
+kv: { 'verify:pending': login }
+responses:
+  - { match: /chapi/api/jwt_send_msg, campus: treehole, body: { code: 40003, success: false, message: 验证码还未过期 } }
+expect: { sent: 之前的验证码还有效（验证码还未过期） }

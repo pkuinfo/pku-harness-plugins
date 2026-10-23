@@ -1,0 +1,6 @@
+tool: listScores
+input: { code: "000000", method: otp }
+kv: { 'verify:pending': course }
+responses:
+  - { match: /chapi/api/course/password_get_token, campus: treehole, body: { code: 40001, success: false, message: 验证码错误 } }
+expectError: ^验证失败：验证码错误$

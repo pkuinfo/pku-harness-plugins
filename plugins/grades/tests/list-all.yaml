@@ -1,0 +1,6 @@
+# All semesters: order follows gpa.data, the summer term (no GPA row) appended, nameless rows dropped.
+tool: listScores
+now: 2026-10-23 14:20
+responses:
+  - { match: /chapi/api/course/score_v2, campus: treehole, file: score.json, headers: { content-type: application/json } }
+expect: {"status":"ok","overallGpa":3.712,"totalCredits":13.5,"semesters":[{"semester":"24-25-1","label":"24-25学年度1学期","gpa":3.801,"credits":7,"courses":[{"name":"高等数学（B）（一）","credits":5,"score":"92","category":"专业必修"},{"name":"大学英语","credits":2,"score":"A-","category":"公共必修"}]},{"semester":"24-25-2","label":"24-25学年度2学期","gpa":3.65,"credits":4.5,"courses":[{"name":"体育","credits":1,"score":"合格","category":"公共必修"},{"name":"数据结构与算法","credits":3.5,"score":"88","category":"专业必修"}]},{"semester":"24-25-3","label":"24-25学年度3学期","gpa":null,"credits":2,"courses":[{"name":"暑期实践","credits":2,"score":"P","category":null}]}]}

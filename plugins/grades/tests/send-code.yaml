@@ -1,0 +1,5 @@
+tool: sendCode
+kv: { 'verify:pending': course }
+responses:
+  - { match: /chapi/api/course/send_get_token_message, campus: treehole, body: { code: 20000, success: true } }
+expect: { sent: 验证码已发送到绑定手机 }

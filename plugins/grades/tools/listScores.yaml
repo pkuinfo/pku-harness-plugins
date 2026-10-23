@@ -1,0 +1,85 @@
+# GET /chapi/api/course/score_v2 on treehole (pkucli crates/treehole/src/api.rs get_scores via
+# get_legacy; display.rs print_scores). `data` is
+#   { score: { cjxx: [{ kcmc 课程名称, xf 学分, xqcj 成绩, kclbmc 课程类别, xnd "25-26", xq "1"|"2"|"3" }],
+#              gpa: { gpa ("N/A" when missing), xxxf 总学分 } },
+#     gpa: { data: [{ gpa, xndxq "25-26-1" }] } }
+# Values are normally strings; numbers are accepted too. The 40002 / 40077 second factor is the
+# host's verify.treehole ability.
+title: 查询成绩
+description: >-
+  The user's course scores grouped by semester (name, credits, score as written e.g. "92"/"A-"/"合格",
+  category) with each semester's GPA. Sensitive: only when the user asks. May return
+  verification_required; then call again with the code.
+effect: read
+input:
+  semester: { type: string, optional: true, max: 40, description: 'filter, e.g. "25-26-1" (one semester) or "25-26" (whole year); omit for all' }
+  code: { type: string, optional: true, min: 4, max: 8, description: SMS or 手机令牌 code when a previous call asked for one }
+  method: { enum: [sms, otp], optional: true, description: how the code was obtained; default sms }
+functions:
+  # parse.ts str / num: trimmed text; a plain finite number or null.
+  s: "(v) => trim(str(v))"
+  # (block scalars keep regex backslashes literal: the expression needs '\\d', YAML "…" would eat one)
+  n: |
+    (v) => s(v) == '' || test(s(v), '[,\\s¥￥元%]') ? null : num(s(v))
+  # display.rs fmt_semester: "25-26-1" → "25-26学年度1学期".
+  label: "(id) => split(id, '-').length == 3 ? split(id, '-')[0] + '-' + split(id, '-')[1] + '学年度' + split(id, '-')[2] + '学期' : id"
+  # A user's filter in the server's shape: "25-26-1", "2025-2026-1", "2025-2026学年第1学期", "25-26".
+  digits: |
+    (f) => matchAll(f, '\\d+').map(m => m[0])
+  yy: "(x) => x.length == 4 ? x.slice(2) : x"
+  normalize: |
+    (f) => digits(f).length < 2 ? trim(f)
+      : yy(digits(f)[0]) + '-' + yy(digits(f)[1]) + (digits(f)[2] ? '-' + digits(f)[2] : '')
+  semester: |
+    (id, list, gpas) => ({
+      id: id,
+      label: label(id),
+      gpa: n(gpas.find(g => s(g.xndxq) == id)?.gpa),
+      credits: round(sum(list, c => c.credits ?? 0), 1),
+      courses: list,
+    })
+steps:
+  - let: raw
+    value: "null"
+  - try:
+      - let: raw
+        ability: verify.treehole
+        args: "{ request: { url: '/chapi/api/course/score_v2' }, code: input.code, via: input.method ?? 'sms' }"
+    catch:
+      - check: "false"
+        error: "${startsWith(error.message, '验证失败') ? error.message : '获取成绩失败：' + error.message}"
+  - if: "raw.status == 'verification_required'"
+    then:
+      - return: "{ ...raw, message: raw.kind == 'course' ? '查看成绩需要二次验证：手机令牌验证码，或短信验证码' : raw.message }"
+  # verify.treehole hands back the whole envelope when it has no data.
+  - check: "typeOf(raw) == 'object' && typeOf(raw.success) == 'undefined'"
+    error: "获取成绩失败：${typeOf(raw) == 'object' ? raw.message ?? '没有成绩数据' : '没有成绩数据'}"
+  - let: courses
+    value: |
+      (raw.score?.cjxx ?? [])
+        .filter(c => typeOf(c) == 'object')
+        .map(c => ({ name: s(c.kcmc), credits: n(c.xf), score: s(c.xqcj), category: s(c.kclbmc) || null, semester: s(c.xnd) + '-' + s(c.xq) }))
+        .filter(c => c.name)
+  - let: gpas
+    value: "(raw.gpa?.data ?? []).filter(g => g && s(g.xndxq))"
+  # print_scores: semester order follows gpa.data; without it, first appearance in cjxx. Courses
+  # whose semester has no GPA row still get one.
+  - let: order
+    value: "unique([...(gpas.length ? gpas.map(g => s(g.xndxq)) : courses.map(c => c.semester)), ...courses.map(c => c.semester)])"
+  - let: all
+    value: |
+      order
+        .map(id => semester(id, courses.filter(c => c.semester == id), gpas))
+        .filter(x => x.courses.length || x.gpa != null)
+  - let: filter
+    value: "trim(input.semester ?? '')"
+  - let: picked
+    value: "filter ? all.filter(x => includes(x.id, normalize(filter))) : all"
+return: |
+  {
+    status: 'ok',
+    overallGpa: n(raw.score?.gpa?.gpa),
+    totalCredits: n(raw.score?.gpa?.xxxf),
+    semesters: picked.map(x => ({ semester: x.id, label: x.label, gpa: x.gpa, credits: x.credits, courses: x.courses.map(c => omit(c, 'semester')) })),
+    ...(filter && !picked.length ? { note: '没有找到学期 ' + filter + '；已有学期：' + (all.map(x => x.id).join('、') || '无') } : {}),
+  }

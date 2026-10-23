@@ -1,0 +1,23 @@
+# The GPA summary of listScores (same request and verification), per semester without courses.
+title: 查询绩点
+description: >-
+  GPA summary: overall GPA and total credits, plus each semester's GPA, credits and course count.
+  Sensitive: only when the user asks. May return verification_required; then call again with the code.
+effect: read
+input:
+  code: { type: string, optional: true, min: 4, max: 8, description: SMS or 手机令牌 code when a previous call asked for one }
+  method: { enum: [sms, otp], optional: true, description: how the code was obtained; default sms }
+steps:
+  - let: r
+    call: listScores
+    input: "{ code: input.code, method: input.method }"
+  - if: "r.status != 'ok'"
+    then:
+      - return: r
+return: |
+  {
+    status: 'ok',
+    overallGpa: r.overallGpa,
+    totalCredits: r.totalCredits,
+    semesters: r.semesters.map(x => ({ semester: x.semester, label: x.label, gpa: x.gpa, credits: x.credits, courseCount: x.courses.length })),
+  }

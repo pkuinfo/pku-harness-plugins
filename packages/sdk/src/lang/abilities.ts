@@ -77,8 +77,8 @@ async function treehole(args: Record<string, unknown>, env: AbilityEnv) {
   return res.data ?? res;
 }
 
-async function treeholeSendCode(_args: Record<string, unknown>, env: AbilityEnv) {
-  const pending = (await env.kv.get<Pending>('verify:pending')) ?? 'login';
+async function treeholeSendCode(args: Record<string, unknown>, env: AbilityEnv) {
+  const pending = (await env.kv.get<Pending>('verify:pending')) ?? (args.kind === 'course' ? 'course' : 'login');
   const url = pending === 'login' ? '/chapi/api/jwt_send_msg' : '/chapi/api/course/send_get_token_message';
   const r = await th(env, url, {});
   if (!r.success && !/未过期/.test(r.message ?? '')) throw new Error(`发送验证码失败：${r.message ?? '未知原因'}`);
@@ -91,7 +91,7 @@ const str = (v: unknown) => (typeof v === 'string' ? v : '');
 
 export const ABILITIES: Record<string, AbilityDef> = {
   'verify.treehole': { effect: 'read', description: 'Treehole request with SMS / OTP second factor handled { request, code?, via?: sms|otp, kind?: login|course }', run: treehole },
-  'verify.treeholeSendCode': { effect: 'write', description: 'Send the SMS code for the pending treehole check', run: treeholeSendCode },
+  'verify.treeholeSendCode': { effect: 'write', description: 'Send the SMS code for the pending treehole check { kind?: login|course when none is pending }', run: treeholeSendCode },
   'otp.code': { effect: 'read', description: 'Current IAAA 手机令牌 code, or null', run: async (_a, e) => e.services.campus.otp() },
   'todos.list': { effect: 'read', description: 'The user’s to-dos', run: async (_a, e) => e.services.todos.list() },
   'todos.add': { effect: 'write', description: 'Add a to-do { title, notes?, dueAt?, remind? }', run: async (a, e) => e.services.todos.add(a as never, 'plugin') },

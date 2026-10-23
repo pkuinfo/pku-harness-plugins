@@ -1,0 +1,66 @@
+{
+  "title": "总绩点",
+  "description": "总 GPA 和总学分；默认遮住数字，点一下才显示（成绩属于隐私）。",
+  "sizes": ["sm", "md"],
+  "defaultSize": "sm",
+  "bindings": {
+    "/gpa": { "tool": "gpa", "ttlMinutes": 720 }
+  },
+  "spec": {
+    "root": "root",
+    "elements": {
+      "root": { "type": "Column", "props": { "gap": "sm" }, "children": ["ready", "verify"] },
+      "ready": {
+        "type": "Column",
+        "props": { "gap": "sm" },
+        "visible": { "$state": "/gpa/status", "eq": "ok" },
+        "children": ["head", "masked", "value", "none"]
+      },
+      "head": { "type": "Row", "props": { "gap": "sm", "align": "between", "wrap": false }, "children": ["label", "show", "hide"] },
+      "label": { "type": "Text", "props": { "text": "总绩点", "tone": "muted", "size": "small" } },
+      "show": {
+        "type": "Button",
+        "props": { "label": "显示", "variant": "ghost" },
+        "visible": { "$state": "/shown", "not": true },
+        "on": { "press": { "action": "setState", "params": { "statePath": "/shown", "value": true } } }
+      },
+      "hide": {
+        "type": "Button",
+        "props": { "label": "隐藏", "variant": "ghost" },
+        "visible": { "$state": "/shown" },
+        "on": { "press": { "action": "setState", "params": { "statePath": "/shown", "value": false } } }
+      },
+      "masked": { "type": "Heading", "props": { "text": "•.•••", "size": "lg" }, "visible": { "$state": "/shown", "not": true } },
+      "value": {
+        "type": "Stat",
+        "props": {
+          "label": "4 分制",
+          "value": { "$state": "/gpa/overallGpa" },
+          "prefix": null,
+          "suffix": null,
+          "decimals": 3,
+          "delta": null,
+          "deltaTone": null,
+          "caption": { "$template": "已修 ${/gpa/totalCredits} 学分" },
+          "icon": null,
+          "size": "md"
+        },
+        "visible": [{ "$state": "/shown" }, { "$state": "/gpa/overallGpa", "neq": null }]
+      },
+      "none": { "type": "Heading", "props": { "text": "—", "size": "lg" }, "visible": [{ "$state": "/shown" }, { "$state": "/gpa/overallGpa", "eq": null }] },
+      "verify": {
+        "type": "Column",
+        "props": { "gap": "sm" },
+        "visible": { "$state": "/gpa/status", "eq": "verification_required" },
+        "children": ["verifyText", "verifyButton"]
+      },
+      "verifyText": { "type": "Text", "props": { "text": "查看成绩需要验证", "tone": "muted", "size": "small" } },
+      "verifyButton": {
+        "type": "Button",
+        "props": { "label": "去验证", "variant": "secondary" },
+        "on": { "press": { "action": "ask", "params": { "text": "帮我查一下总绩点" } } }
+      }
+    },
+    "state": { "gpa": null, "shown": false }
+  }
+}

@@ -1,0 +1,5 @@
+# 40077 course token, no 手机令牌 bound: ask for a code (pending kind stored for the next call).
+tool: gpa
+responses:
+  - { match: /chapi/api/course/score_v2, campus: treehole, body: { code: 40077, success: false, message: 需要验证 } }
+expect: {"status":"verification_required","kind":"course","methods":["otp","sms"],"message":"查看成绩需要二次验证：手机令牌验证码，或短信验证码","next":"Ask the user for the code (send an SMS first with the sendCode tool if they choose SMS), then call this tool again with code."}
