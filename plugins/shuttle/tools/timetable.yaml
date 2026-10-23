@@ -1,6 +1,7 @@
 # The whole static timetable (see next.yaml for where it comes from; keep the two copies of the
 # tables identical).
 title: 校车时刻表
+summary: 完整的校车时刻表
 description: Full timetables (weekday and weekend/holiday) grouped by direction, with boarding spots, booking rules, fares, notes and the source URL + publish date of each line.
 effect: read
 input:

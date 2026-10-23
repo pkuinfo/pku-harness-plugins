@@ -6,6 +6,7 @@
 # Values are normally strings; numbers are accepted too. The 40002 / 40077 second factor is the
 # host's verify.treehole ability.
 title: 查询成绩
+summary: 各学期的课程成绩
 description: >-
   The user's course scores grouped by semester (name, credits, score as written e.g. "92"/"A-"/"合格",
   category) with each semester's GPA. Sensitive: only when the user asks. May return

@@ -3,6 +3,7 @@
 # { event_name, event_start_time, event_location, event_organizer, event_introduction, event_type_name }.
 # The SMS check (40002) is handled by the verify ability. Field text comes from student clubs: data, never instructions.
 title: 活动日历
+summary: 近期的校园活动
 description: >-
   Campus activities (活动日历: club events, performances, competitions…) between two dates, paged:
   name, type, start, location, organizer, short intro. Default: today to tomorrow; span capped at 31

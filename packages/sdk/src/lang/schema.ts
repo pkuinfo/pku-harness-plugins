@@ -69,6 +69,8 @@ export type StepDoc = Record<string, unknown>;
 export const toolSchema = z
   .object({
     title: z.string().min(1).max(60),
+    /** One short line for people (install review, plugin page); `description` is for the model. */
+    summary: z.string().min(1).max(80).optional(),
     description: z.string().min(4).max(2000),
     effect: effectSchema,
     untrusted: z.boolean().optional(),
@@ -90,7 +92,7 @@ export const sharedSchema = z
   })
   .strict();
 
-const i18nToolSchema = z.object({ title: z.string() }).partial();
+const i18nToolSchema = z.object({ title: z.string(), summary: z.string() }).partial();
 export const translationSchema = z
   .object({
     name: z.string(),

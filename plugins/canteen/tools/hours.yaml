@@ -6,6 +6,7 @@
 # The grid is built here (not with tableRows) because the parser needs cell *identity*: two
 # adjacent cells with the same text are not one spanning cell.
 title: 开闭餐时间
+summary: 各食堂的开饭时间
 description: >-
   Opening hours per canteen and counter (早餐/午餐/晚餐 as published; continuous = one opening spanning those meals), notes, announced closures, the page date and whether it came from the live page, the cache or the bundled snapshot.
 effect: read

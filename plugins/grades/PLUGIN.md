@@ -23,7 +23,7 @@ i18n:
   en:
     name: Grades
     description: Your grades and GPA, semester by semester.
-    tools: { listScores: { title: Check grades }, gpa: { title: Check GPA }, sendCode: { title: Send verification code } }
+    tools: { listScores: { title: Check grades, summary: Your grades by semester }, gpa: { title: Check GPA, summary: Your overall GPA and credits }, sendCode: { title: Send verification code, summary: Text a treehole verification code to your phone } }
     widgets: { gpa: { title: Overall GPA, description: 'Your overall GPA and total credits; hidden until you tap, since grades are private.' } }
 ---
 

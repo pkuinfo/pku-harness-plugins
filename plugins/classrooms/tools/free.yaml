@@ -2,6 +2,7 @@
 # GET /publicQuery/classroomQuery/retrClassRoomFree.do?buildingName=<中文>&time=今天|明天|后天
 # → { success, rows: [{ room, cap, c1…c12 }] }; c<n> non-empty = period n is taken.
 title: 空闲教室
+summary: 查某栋楼现在哪些教室空着
 description: >-
   Classrooms free during every requested period: building, room, capacity, all free periods of
   that day (e.g. "1-2,5-12"). Buildings: 一教 二教 三教 四教 理教 文史 哲学 地学 国关 政管 (omit =

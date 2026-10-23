@@ -1,6 +1,7 @@
 # verify.rs handle_sms_verification / api.rs course_token_exchange_with_sms, as the host's
 # verify.treeholeSendCode ability (sends for whichever check the last call left pending).
 title: 发送验证码
+summary: 给绑定手机发送树洞验证码
 description: Send the SMS code that the last grades call asked for (to the phone bound to the account).
 effect: write
 steps:

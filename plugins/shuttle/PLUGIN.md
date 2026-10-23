@@ -25,7 +25,7 @@ i18n:
   en:
     name: Shuttle bus
     description: Timetables for the Yanyuan–Xinyanyuan (Changping) commuter shuttle and the Xinyanyuan–Bei’anhe metro express bus, with the next departure worked out for you.
-    tools: { next: { title: Next shuttle }, timetable: { title: Shuttle timetable } }
+    tools: { next: { title: Next shuttle, summary: Next shuttle between Yanyuan and the new campus }, timetable: { title: Shuttle timetable, summary: The full shuttle timetable } }
     widgets: { next: { title: Next shuttle, description: 'The next Yanyuan ⇄ Xinyanyuan commuter shuttles both ways with a countdown, refreshed every minute from the built-in timetable (no network needed).' } }
     commands: { shuttle: { description: Next shuttle, argHint: e.g. Yanyuan to Xinyanyuan, aliases: [bus], prompt: 'When is the next shuttle{{input}}' } }
     dataSources: { next: { title: Next shuttle } }

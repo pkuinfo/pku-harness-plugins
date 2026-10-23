@@ -3,6 +3,7 @@
 # their source and date (re-check each semester). The same tables are in timetable.yaml: a tool
 # file's constants are its own, so keep the two copies identical.
 title: 下一班校车
+summary: 燕园和新燕园之间的下一班车
 description: >-
   Next departures (Beijing time) from → to, searching today and tomorrow: date, time, minutes until, boarding spot, route, line. Places: 燕园/本部, 新燕园/昌平, 200号, 肖家河, 西二旗, 阳坊, 北安河(地铁). Without from/to: next runs both ways between 燕园 and 新燕园. `at` = "YYYY-MM-DD HH:mm" to plan ahead. Intermediate stops (肖家河, 西二旗) have no published times: those results are marked approx and show the origin's departure.
 effect: read

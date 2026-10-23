@@ -1,6 +1,7 @@
 # 餐饮中心「通知公告」list: <span class="gpArticleDate">2026-09-28</span><a href="….htm">标题</a>
 # items. Cached 6 hours in KV; on failure the last good copy, else the error.
 title: 餐饮中心通知
+summary: 餐饮中心的最新通知
 description: 'Latest 餐饮中心 notices (holiday arrangements, closures, reopenings): title, date, url. Read one with notices__read if that plugin is enabled.'
 effect: read
 input:

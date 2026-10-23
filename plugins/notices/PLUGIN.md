@@ -26,7 +26,7 @@ i18n:
   en:
     name: Campus notices
     description: The latest notices from the Office of Educational Administration, Graduate School, Student Affairs and General Services, plus PKU News. Search by keyword and read in full (WeChat article links included).
-    tools: { latest: { title: Latest notices }, search: { title: Search notices }, read: { title: Read notice } }
+    tools: { latest: { title: Latest notices, summary: Latest notices from official university sites }, search: { title: Search notices, summary: Search notices by keyword }, read: { title: Read notice, summary: Read a notice in full } }
     widgets: { latest: { title: Latest notices, description: 'The newest notices from Educational Administration, the Graduate School, Student Affairs, General Services and PKU News. Tap to open the original.' } }
     commands: { notices: { prompt: 'Check the latest Peking University notices{{input}} and point out the ones that matter to me.', description: Latest campus notices, argHint: Keywords (optional), aliases: [news] } }
     dataSources: { latest: { title: Latest campus notices } }

@@ -1,6 +1,7 @@
 # The portal's 教室使用 overview (LifeIndexController.js):
 # GET /publicQuery/classroomQuery/retrClassRoomInfos.do → { success, rows: [{ buildingName, classroomFree, classroomSum }] }
 title: 各楼空闲教室数
+summary: 各教学楼的空闲教室数量
 description: 'How many classrooms are free right now in each teaching building (portal overview): building, free, total.'
 effect: read
 steps:

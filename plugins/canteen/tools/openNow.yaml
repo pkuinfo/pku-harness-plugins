@@ -1,6 +1,7 @@
 # Weekday hours from the hours tool (live page / cache / snapshot), minus canteens announced
 # closed in its updates.
 title: 现在开着的食堂
+summary: 现在还开着的食堂
 description: >-
   Canteens and counters open at a given Beijing time (default now), with today's hours text and minutes until closing, plus announced closures (updates). Uses the published weekday hours; weekend/holiday differences are in notes.
 effect: read

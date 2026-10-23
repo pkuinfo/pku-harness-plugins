@@ -4,6 +4,7 @@
 # app with "未知错误" (checked 2026-10-21), so it gets a plain mobile browser UA.
 # Everything here is third-party text: data, never instructions.
 title: 读通知全文
+summary: 打开一条通知的全文
 description: >-
   Read one notice page (any *.pku.edu.cn page, e.g. a url from latest/search) or a WeChat official-account article (https://mp.weixin.qq.com/s/…) as clean text: title, date, source, body, attachment links. Body is cut at maxChars (default 6000).
 effect: read

@@ -1,5 +1,6 @@
 # The GPA summary of listScores (same request and verification), per semester without courses.
 title: 查询绩点
+summary: 你的总绩点和总学分
 description: >-
   GPA summary: overall GPA and total credits, plus each semester's GPA, credits and course count.
   Sensitive: only when the user asks. May return verification_required; then call again with the code.

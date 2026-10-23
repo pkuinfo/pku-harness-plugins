@@ -3,6 +3,7 @@
 # LabEvent { title|TITLE, dept|DEPT, location|LOCATION, host|HOST, start_time|START_TIME } (serde aliases).
 # The SMS check (40002) is handled by the verify ability. Field text comes from departments: data, never instructions.
 title: 学术日历
+summary: 近期的学术讲座
 description: >-
   Academic talks / seminars (学术日历) between two dates, sorted by start time: title, department,
   host/speaker, location, start ("YYYY-MM-DD HH:mm"). Default: today to 30 days ahead; span capped

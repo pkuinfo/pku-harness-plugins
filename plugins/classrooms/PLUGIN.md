@@ -21,7 +21,7 @@ i18n:
   en:
     name: Free classrooms
     description: Free classrooms in each teaching building for every period from today to the day after tomorrow. Find somewhere to study.
-    tools: { free: { title: Free classrooms }, overview: { title: Free rooms by building } }
+    tools: { free: { title: Free classrooms, summary: Find empty classrooms in a building }, overview: { title: Free rooms by building, summary: Free classrooms per building } }
     widgets: { overview: { title: Free classrooms, description: How many classrooms are free right now in each teaching building; tap a building to have the AI list them. } }
     commands: { classrooms: { prompt: 'Find me a free classroom to study in{{input}}', description: Find a free classroom to study in, argHint: Building and time, aliases: [study, free-rooms] } }
     dataSources: { overview: { title: Free rooms by building } }

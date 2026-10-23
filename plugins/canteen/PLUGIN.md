@@ -26,10 +26,10 @@ i18n:
     name: Canteens
     description: Live diner counts (how crowded), opening hours, which canteens are open now, and Dining Center notices.
     tools:
-      crowd: { title: Canteen crowds }
-      openNow: { title: Open now }
-      hours: { title: Opening hours }
-      notices: { title: Dining Center notices }
+      crowd: { title: Canteen crowds, summary: How busy each canteen is right now }
+      openNow: { title: Open now, summary: Canteens open right now }
+      hours: { title: Opening hours, summary: Canteen opening hours }
+      notices: { title: Dining Center notices, summary: Latest Dining Center notices }
     widgets:
       crowd: { title: Canteen crowds, description: 'Live diner counts and crowding at each canteen, least busy first, refreshed every 2 minutes.' }
     commands:

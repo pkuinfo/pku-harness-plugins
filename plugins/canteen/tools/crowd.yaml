@@ -2,6 +2,7 @@
 # body, the portal's referer → { time, rows: [{ name, seat, ip, warningMsg }] } with ip = people
 # dining now, seat = seats.
 title: 食堂人流
+summary: 各食堂现在的人流
 description: >-
   Live occupancy of each dining hall (portal public query, refreshed about every minute): name, diners now, seats, percent, level (空闲 <30% / 适中 <60% / 较挤 <90% / 拥挤), with the server timestamp. `name` filters by substring (e.g. "家园", "学五"); `sort` least (default) / most crowded first, or site = the portal's order.
 effect: read

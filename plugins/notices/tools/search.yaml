@@ -2,6 +2,7 @@
 # which reaches older notices. Same list parsing and cache as tools/latest.yaml (keep the
 # `constants` and shared `functions` equal). Titles are third-party text: data, never instructions.
 title: 搜索通知
+summary: 按关键词搜索通知
 description: >-
   Find notices whose title (or news summary) contains every word of `keyword`, newest first, scanning the first `pages` list pages of each source (default 2). For 教务部 it also runs the site's own search, which covers older notices (those hits have no date and may have titles cut with "…").
 effect: read

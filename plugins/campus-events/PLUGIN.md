@@ -18,7 +18,7 @@ i18n:
   en:
     name: Campus events
     description: Calendars of academic talks and campus activities.
-    tools: { talks: { title: Academic talks }, activities: { title: Campus activities }, sendCode: { title: Send verification code } }
+    tools: { talks: { title: Academic talks, summary: Upcoming academic talks }, activities: { title: Campus activities, summary: Upcoming campus activities }, sendCode: { title: Send verification code, summary: Text a treehole verification code to your phone } }
 ---
 
 用户问讲座、学术报告、seminar 用 campus-events__talks；问校园活动、社团活动、演出、比赛等用 campus-events__activities。日期用 YYYY-MM-DD（本地日期），"这周""下周"先换算成具体日期。
