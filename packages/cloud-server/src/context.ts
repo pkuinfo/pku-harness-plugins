@@ -7,6 +7,9 @@ import type { TokenSigner } from './auth/token';
 import type { Hub } from './channels/hub';
 import type { Config } from './config';
 import type { Storage } from './db/storage';
+import type { DocCache } from './fn/docs';
+import type { FnPolicy } from './fn/policy';
+import type { ResultCache } from './routes/fn';
 import type { RateLimiter, Take } from './limits';
 import type { Logger } from './log';
 import type { PageRegistry } from './pages';
@@ -19,6 +22,8 @@ export interface Deps {
   limiter: RateLimiter;
   hub: Hub;
   pages: PageRegistry;
+  /** Plugin server functions: policy, compiled documents, public results, outbound fetch. */
+  fn: { policy: FnPolicy; docs: DocCache; results: ResultCache; fetch: typeof fetch };
   log: Logger;
   /** Clock (ms); injectable for tests. */
   now: () => number;

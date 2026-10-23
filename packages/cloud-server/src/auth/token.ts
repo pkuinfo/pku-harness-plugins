@@ -56,6 +56,14 @@ export class TokenSigner {
     const r = tokenClaims.safeParse(this.open('d1', token, now));
     return r.success ? r.data : undefined;
   }
+  /**
+   * A plugin's view of a device (docs/CLOUD-FUNCTIONS.md §6): stable per (device, plugin), so two
+   * plugins can't correlate a user and the device id never reaches plugin scope.
+   * `base64url(HMAC(secret, "pseudonym" NUL plugin NUL deviceId))[:22]` (NULs make it unambiguous).
+   */
+  pseudonym(plugin: string, deviceId: string): string {
+    return toB64url(this.mac(`pseudonym\0${plugin}\0${deviceId}`)).slice(0, 22);
+  }
   signPeer(claims: PeerClaims): string {
     return this.sign('p1', claims);
   }

@@ -4,7 +4,7 @@
  */
 import { resolve } from 'node:path';
 
-import { DEFAULT_LIMITS, DEFAULT_POW_DIFFICULTY, type Limits, normaliseAudience } from '@pku-harness/cloud-protocol';
+import { DEFAULT_LIMITS, DEFAULT_POW_DIFFICULTY, type FunctionPolicy, type Limits, functionPolicySchema, normaliseAudience } from '@pku-harness/cloud-protocol';
 
 /** A token bucket: `limit` requests per `windowS`, refilled continuously. */
 export interface Rate {
@@ -29,6 +29,34 @@ export interface RateConfig {
   joins: Rate;
   /** Peer HTTP endpoints (send, mailbox, events), per (channel, peer). */
   peer: Rate;
+  /** POST /v1/fn, per (device, plugin) (limits.functions.callsPerMin). */
+  fn: Rate;
+  /** GET|POST /v1/p (public functions), per IP. */
+  fnPublic: Rate;
+}
+
+/** Plugin server functions (docs/CLOUD-FUNCTIONS.md; README.md § Server functions). */
+export interface FunctionsConfig {
+  /** Which plugins may run: registry-pinned hashes, the operator's list, or any document. */
+  policy: FunctionPolicy;
+  /** `CLOUD_FN_ALLOW` entries: `plugin@<hash>`, `plugin@*`, optionally `=<link>` (for /v1/p). */
+  allow: string[];
+  /** `CLOUD_FN_VERIFIED`: JSON `{ "<plugin>": ["<hash>", …] | { "link": "…", "hashes": [...] } }`. */
+  verifiedFile?: string;
+  /** `CLOUD_FN_LOCAL`: a folder of plugin folders (`<dir>/<id>/PLUGIN.md`) used instead of fetching. */
+  localDir?: string;
+  /** Operator secrets by env name (`CLOUD_SECRET_<PLUGIN_ID_UPPER_SNAKE>__<NAME>`). */
+  secrets: Record<string, string>;
+  /** Per plugin per day. */
+  callsPerDay: number;
+  requestsPerDay: number;
+  /** Per-run limits (docs/CLOUD-FUNCTIONS.md §3.3); a document's `server.limits` can only lower them. */
+  run: { steps: number; requests: number; wallMs: number; ops: number; resultBytes: number; responseBytes: number };
+  maxInputBytes: number;
+  /** Compiled documents kept (LRU). */
+  docCacheSize: number;
+  /** Public-function results kept (TTL from the function's `cache`). */
+  publicCacheSize: number;
 }
 
 export interface Config {
@@ -60,9 +88,24 @@ export interface Config {
   sseHeartbeatMs: number;
   /** Max request body for JSON endpoints. */
   maxBodyBytes: number;
+  functions: FunctionsConfig;
 }
 
 const perMin = (limit: number): Rate => ({ limit, windowS: 60 });
+
+export function defaultFunctions(env: Record<string, string | undefined> = process.env): FunctionsConfig {
+  return {
+    policy: env.NODE_ENV === 'production' ? 'allowlist' : 'open',
+    allow: [],
+    secrets: {},
+    callsPerDay: 50_000,
+    requestsPerDay: 20_000,
+    run: { steps: 100, requests: 20, wallMs: 10_000, ops: 50_000, resultBytes: 256_000, responseBytes: 2_000_000 },
+    maxInputBytes: 64 * 1024,
+    docCacheSize: 64,
+    publicCacheSize: 500,
+  };
+}
 
 export function defaultConfig(overrides: Partial<Omit<Config, 'rates'>> & { rates?: Partial<RateConfig> } = {}): Config {
   const port = overrides.port ?? 8787;
@@ -83,6 +126,7 @@ export function defaultConfig(overrides: Partial<Omit<Config, 'rates'>> & { rate
     maxFailedJoins: 5,
     sseHeartbeatMs: 15_000,
     maxBodyBytes: 128 * 1024,
+    functions: defaultFunctions(),
     ...overrides,
     rates: { ...defaultRates(limits), ...overrides.rates },
   };
@@ -98,6 +142,8 @@ function defaultRates(limits: Limits): RateConfig {
     publicInfo: perMin(60),
     joins: perMin(limits.joinsPerIpPerMin),
     peer: perMin(120),
+    fn: perMin(limits.functions?.callsPerMin ?? 60),
+    fnPublic: perMin(60),
   };
 }
 
@@ -130,5 +176,37 @@ export function configFromEnv(env: Record<string, string | undefined> = process.
     },
     pagesDir: env.CLOUD_PAGES_DIR ? resolve(env.CLOUD_PAGES_DIR) : base.pagesDir,
     trustProxy: env.CLOUD_TRUST_PROXY === '1' || env.CLOUD_TRUST_PROXY === 'true',
+    functions: functionsFromEnv(env),
   };
+}
+
+function functionsFromEnv(env: Record<string, string | undefined>): FunctionsConfig {
+  const base = defaultFunctions(env);
+  const policy = env.CLOUD_FN_POLICY ? functionPolicySchema.safeParse(env.CLOUD_FN_POLICY) : undefined;
+  if (policy && !policy.success) throw new Error('CLOUD_FN_POLICY must be verified, allowlist or open');
+  const secrets: Record<string, string> = {};
+  for (const [k, v] of Object.entries(env)) if (k.startsWith('CLOUD_SECRET_') && v) secrets[k] = v;
+  return {
+    ...base,
+    policy: policy?.data ?? base.policy,
+    allow: (env.CLOUD_FN_ALLOW ?? '')
+      .split(',')
+      .map((x) => x.trim())
+      .filter(Boolean),
+    verifiedFile: env.CLOUD_FN_VERIFIED ? resolve(env.CLOUD_FN_VERIFIED) : undefined,
+    localDir: env.CLOUD_FN_LOCAL ? resolve(env.CLOUD_FN_LOCAL) : undefined,
+    secrets,
+    callsPerDay: int(env.CLOUD_FN_CALLS_PER_DAY, 'CLOUD_FN_CALLS_PER_DAY') ?? base.callsPerDay,
+    requestsPerDay: int(env.CLOUD_FN_REQUESTS_PER_DAY, 'CLOUD_FN_REQUESTS_PER_DAY') ?? base.requestsPerDay,
+  };
+}
+
+/**
+ * `canteen-crowd` + `QWEATHER_KEY` → `CLOUD_SECRET_CANTEEN_CROWD__QWEATHER_KEY`. The double
+ * underscore keeps plugins apart: secret names can't contain `__`, so the last `__` is always
+ * the separator (with a single `_`, plugin `canteen` + `CROWD_KEY` would read `canteen-crowd`'s
+ * `KEY`).
+ */
+export function secretEnvName(plugin: string, name: string): string {
+  return `CLOUD_SECRET_${plugin.toUpperCase().replace(/-/g, '_')}__${name}`;
 }

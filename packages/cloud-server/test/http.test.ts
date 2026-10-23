@@ -13,7 +13,9 @@ describe('meta', () => {
     const r = await s.request(paths.meta());
     expect(r.status).toBe(200);
     const meta = metaResponse.parse(await r.json());
-    expect(meta.services).toEqual(['store', 'channels']);
+    expect(meta.services).toEqual(['store', 'channels', 'functions']);
+    expect(meta.serverFunctions).toEqual({ policy: 'open' });
+    expect(meta.limits.functions).toEqual({ callsPerMin: 60 });
     expect(meta.pow.difficulty).toBe(4);
     expect(meta.pages).toEqual([{ plugin: 'card-share', page: 'view' }]);
     expect(meta.limits.push).toBeUndefined();
@@ -127,8 +129,8 @@ describe('auth token', () => {
 describe('errors', () => {
   test('stage-6 endpoints return 501 errorBody; unknown paths 404; bad JSON 400; big bodies 413', async () => {
     s = await makeServer({ maxBodyBytes: 1024 });
+    expect((await s.request(paths.fn('card-share', 'x'), { method: 'POST' })).status).toBe(401);
     for (const [method, path] of [
-      ['POST', paths.fn('card-share', 'x')],
       ['POST', paths.pushTokens()],
       ['POST', paths.pushSchedule()],
       ['DELETE', paths.pushSchedule()],

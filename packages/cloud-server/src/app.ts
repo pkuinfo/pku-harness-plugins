@@ -16,13 +16,15 @@ import type { AppEnv, Deps, SocketData } from './context';
 import { SqliteStorage } from './db/sqlite';
 import type { Storage } from './db/storage';
 import { HttpError } from './errors';
+import { DocCache } from './fn/docs';
+import { FnPolicy } from './fn/policy';
 import { RateLimiter, applyRateLimitHeaders, limit } from './limits';
 import { type Logger, consoleLogger } from './log';
 import { PageRegistry, pageRoutes } from './pages';
 import { authRoutes } from './routes/auth';
 import { channelRoutes } from './routes/channels';
 import { deviceRoutes } from './routes/devices';
-import { fnRoutes } from './routes/fn';
+import { ResultCache, fnRoutes } from './routes/fn';
 import { mailboxRoutes } from './routes/mailbox';
 import { metaRoutes } from './routes/meta';
 import { peerRoutes } from './routes/peer';
@@ -38,12 +40,17 @@ export interface CloudServer {
   close(): void;
 }
 
-export async function createServer(config: Config, opts: { storage?: Storage; log?: Logger; now?: () => number } = {}): Promise<CloudServer> {
+export async function createServer(
+  config: Config,
+  opts: { storage?: Storage; log?: Logger; now?: () => number; /** Outbound HTTP for documents and server functions (tests: a fake). */ fetch?: typeof fetch } = {},
+): Promise<CloudServer> {
   const now = opts.now ?? Date.now;
   const log = opts.log ?? consoleLogger();
   const storage = opts.storage ?? new SqliteStorage(config.dbPath);
   const limiter = new RateLimiter(now);
   const hub = new Hub(storage, config, limiter, log, now);
+  const fnFetch = opts.fetch ?? fetch;
+  const fc = config.functions;
   const deps: Deps = {
     config,
     storage,
@@ -52,6 +59,12 @@ export async function createServer(config: Config, opts: { storage?: Storage; lo
     limiter,
     hub,
     pages: new PageRegistry(config.pagesDir),
+    fn: {
+      policy: new FnPolicy(fc),
+      docs: new DocCache({ fetch: fnFetch, localDir: fc.localDir, allowLocalHttp: fc.policy === 'open', max: fc.docCacheSize, now }),
+      results: new ResultCache(fc.publicCacheSize),
+      fetch: fnFetch,
+    },
     log,
     now,
     aud: normaliseAudience(config.publicURL),
@@ -94,7 +107,7 @@ export async function createServer(config: Config, opts: { storage?: Storage; lo
   channelRoutes(app, deps);
   mailboxRoutes(app, deps);
   peerRoutes(app, deps);
-  fnRoutes(app);
+  fnRoutes(app, deps);
   pushRoutes(app);
   pageRoutes(app, deps);
 

@@ -41,7 +41,7 @@ export interface TestServer extends CloudServer {
   request(path: string, init?: RequestInit & { json?: unknown; token?: string }): Promise<Response>;
 }
 
-export async function makeServer(opts: Partial<Omit<Config, 'rates'>> & { rates?: Partial<RateConfig> } = {}): Promise<TestServer> {
+export async function makeServer({ fetch, ...opts }: Partial<Omit<Config, 'rates'>> & { rates?: Partial<RateConfig>; fetch?: typeof globalThis.fetch } = {}): Promise<TestServer> {
   const clock = {
     now: Date.now(),
     advance(ms: number) {
@@ -50,7 +50,7 @@ export async function makeServer(opts: Partial<Omit<Config, 'rates'>> & { rates?
   };
   const log = memoryLogger();
   const config = defaultConfig({ dbPath: ':memory:', powDifficulty: 4, publicURL: PUBLIC_URL, pagesDir: pagesFixture(), trustProxy: true, gcIntervalMs: 3600_000, ...opts });
-  const s = await createServer(config, { log, now: () => clock.now });
+  const s = await createServer(config, { log, now: () => clock.now, fetch });
   return {
     ...s,
     clock,

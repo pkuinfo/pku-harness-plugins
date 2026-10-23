@@ -9,7 +9,7 @@ import { HttpError, readJson } from '../errors';
 import { limit } from '../limits';
 
 /** Services this server implements (meta + token minting). */
-export const OFFERED: CloudServiceName[] = ['store', 'channels'];
+export const OFFERED: CloudServiceName[] = ['store', 'channels', 'functions'];
 
 /**
  * Verify the device token and that the device still exists (a wipe revokes live tokens), and
@@ -41,7 +41,9 @@ export function authRoutes(app: Hono<AppEnv>, deps: Deps) {
     const svc = OFFERED.filter((s) => body.services.includes(s));
     if (svc.length === 0) throw new HttpError('unsupported', 'none of the requested services is offered');
     const exp = now + TOKEN_TTL_S * 1000;
-    const token = deps.tokens.signDevice({ sub: device.id, plg: body.plugin, svc, iat: now, exp });
+    // The doc claim was part of the signed challenge: the device consented to exactly this version.
+    const doc = svc.includes('functions') && body.doc ? { doc: body.doc } : {};
+    const token = deps.tokens.signDevice({ sub: device.id, plg: body.plugin, svc, iat: now, exp, ...doc });
     return c.json(authTokenResponse.parse({ token, expiresAt: exp }));
   });
 }

@@ -7,8 +7,8 @@ import { OFFERED } from './auth';
 
 export function metaRoutes(app: Hono<AppEnv>, deps: Deps) {
   app.get('/v1/meta', async (c) => {
-    // push/functions limits are advertised only once those services exist (stage 6).
-    const { push: _push, functions: _functions, ...limits } = deps.config.limits;
+    // push limits are advertised only once that service exists (stage 5).
+    const { push: _push, ...limits } = deps.config.limits;
     const body: MetaResponse = {
       protocol: PROTOCOL_VERSION,
       services: OFFERED,
@@ -16,6 +16,7 @@ export function metaRoutes(app: Hono<AppEnv>, deps: Deps) {
       pow: await deps.pow.advertise(deps.now()),
       pages: deps.pages.list(),
       functions: [],
+      serverFunctions: { policy: deps.fn.policy.policy },
       operator: deps.config.operator,
     };
     c.header('Cache-Control', 'no-cache');
