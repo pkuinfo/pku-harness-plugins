@@ -4,7 +4,7 @@ import { loadDocument, PluginDocError } from './load';
 import { manifestSchema } from './schema';
 import { SERVER_ABILITIES, serverSchema } from './server-schema';
 
-const md = (server: string) => `---\nspec: 1\nid: canteen-crowd\nname: 食堂人流\ndescription: Crowd levels in canteens.\nversion: 1.0.0\nauthor: pkuinfo\nserver:\n${server}\n---\n\nShared crowd reports.\n`;
+const md = (server: string) => `---\nspec: 1\nid: canteen-crowd\nname: 食堂人流\ndescription: Crowd levels in canteens.\nversion: 1.0.0\nauthor: pkuinfo\ncloud:\n  disclosure: { zh: ['你上报的食堂和拥挤程度（不含身份）'] }\nserver:\n${server}\n---\n\nShared crowd reports.\n`;
 const load = (server: string) => loadDocument(async (p) => (p === 'PLUGIN.md' ? md(server) : Promise.reject(new Error(`missing ${p}`))));
 const issuesOf = async (server: string) => {
   const e = await load(server).catch((x) => x as PluginDocError);

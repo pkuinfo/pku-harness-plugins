@@ -214,6 +214,12 @@ export function validateTool(manifest: Manifest, file: string, tool: ToolDoc, to
 
 // ---------------------------------------------------------------- loading
 
+/** `server.functions` as far as the phone needs it (the cloud server validates the rest). */
+export function serverFunctions(m: Manifest): Record<string, { effect?: string; title?: string; description?: string }> {
+  const fns = (m.server as { functions?: unknown } | undefined)?.functions;
+  return fns && typeof fns === 'object' ? (fns as Record<string, { effect?: string }>) : {};
+}
+
 /** Fetch a file relative to PLUGIN.md (the host supplies it: HTTP for links, fs for the CLI). */
 export type ReadFile = (path: string) => Promise<string>;
 
@@ -282,10 +288,17 @@ export async function loadDocument(read: ReadFile): Promise<PluginDocument> {
         if (!v.success) issues.push(...zodIssues(path, v.error));
         else {
           for (const [ptr, b] of Object.entries(v.data.bindings ?? {})) {
-            const short = b.tool.includes('.') ? b.tool.split('.').slice(1).join('.') : b.tool;
-            const own = !b.tool.includes('.') || b.tool.startsWith(`${manifest.id}.`);
-            if (own && !tools[short]) issues.push(`${path} › bindings.${ptr}: no tool '${b.tool}'`);
-            else if (own && tools[short]!.effect !== 'read') issues.push(`${path} › bindings.${ptr}: '${b.tool}' is not a read tool`);
+            if (b.fn) {
+              const fn = serverFunctions(manifest)[b.fn];
+              if (!fn) issues.push(`${path} › bindings.${ptr}: no server function '${b.fn}' (server.functions)`);
+              else if (fn.effect !== undefined && fn.effect !== 'read') issues.push(`${path} › bindings.${ptr}: server function '${b.fn}' is not read-only`);
+              continue;
+            }
+            const tool = b.tool!;
+            const short = tool.includes('.') ? tool.split('.').slice(1).join('.') : tool;
+            const own = !tool.includes('.') || tool.startsWith(`${manifest.id}.`);
+            if (own && !tools[short]) issues.push(`${path} › bindings.${ptr}: no tool '${tool}'`);
+            else if (own && tools[short]!.effect !== 'read') issues.push(`${path} › bindings.${ptr}: '${tool}' is not a read tool`);
           }
           out[name] = v.data;
         }
@@ -304,6 +317,9 @@ export async function loadDocument(read: ReadFile): Promise<PluginDocument> {
   }
   for (const s of manifest.settings ?? []) if (!screens[s.screen]) issues.push(`PLUGIN.md › settings: no screen '${s.screen}'`);
   if (manifest.remote && manifest.tools && Object.keys(manifest.tools).length) issues.push('PLUGIN.md: a remote (MCP) plugin has no tools of its own');
+  // Server functions send data to a server: the user must be told what, in the consent sheet.
+  const disclosure = (manifest.cloud as { disclosure?: { zh?: unknown[] } } | undefined)?.disclosure;
+  if (manifest.server && !disclosure?.zh?.length) issues.push("PLUGIN.md: a plugin with server: must say what leaves the device — cloud: { disclosure: { zh: ['…'], en: ['…'] } }");
 
   if (issues.length) throw new PluginDocError(issues);
   return { manifest, instructions: body, tools, widgets, screens, files };

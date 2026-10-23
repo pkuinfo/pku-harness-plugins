@@ -149,7 +149,18 @@ export const viewSchema = z
     bindings: z
       .record(
         z.string().regex(/^\//, 'a JSON pointer like /card'),
-        z.object({ tool: z.string(), args: z.record(z.string(), z.unknown()).optional(), path: z.string().optional(), ttlMinutes: z.number().min(0).max(1440).optional() }).strict(),
+        z
+          .object({
+            /** A read tool of this plugin (short or full id)… */
+            tool: z.string().optional(),
+            /** …or a read server function of this plugin (`server.functions`, CLOUD-FUNCTIONS.md). */
+            fn: z.string().optional(),
+            args: z.record(z.string(), z.unknown()).optional(),
+            path: z.string().optional(),
+            ttlMinutes: z.number().min(0).max(1440).optional(),
+          })
+          .strict()
+          .refine((b) => !!b.tool !== !!b.fn, 'a binding names either tool or fn'),
       )
       .optional(),
   })

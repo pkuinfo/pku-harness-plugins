@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 import type { Capability, PluginDef, PluginTranslation, ToolDef, ToolEffect } from '../plugin';
 import type { PluginScreenProps, PluginWidgetProps } from '../ui';
-import type { PluginDocument } from './load';
+import { serverFunctions, type PluginDocument } from './load';
 import { runTool, ToolFailure, type PublicFetch } from './run';
 import { durationMs, type FieldDef, type ViewDoc } from './schema';
 
@@ -73,8 +73,13 @@ function fullTool(pluginId: string, tool: string) {
   return tool.includes('.') ? tool : `${pluginId}.${tool}`;
 }
 
+/** The read tool that backs a `{ fn }` binding (widgets resolve bindings through tools). */
+export const fnToolName = (fn: string) => `fn_${fn.replace(/[^A-Za-z0-9_]/g, '_')}`.slice(0, 40);
+
 function viewComponent(pluginId: string, view: ViewDoc): ComponentType<PluginWidgetProps | PluginScreenProps> {
-  const bindings = Object.fromEntries(Object.entries(view.bindings ?? {}).map(([ptr, b]) => [ptr, { ...b, tool: fullTool(pluginId, b.tool) }]));
+  const bindings = Object.fromEntries(
+    Object.entries(view.bindings ?? {}).map(([ptr, { fn, tool, ...b }]) => [ptr, { ...b, tool: fn ? `${pluginId}.${fnToolName(fn)}` : fullTool(pluginId, tool!) }]),
+  );
   const spec = view.spec as Record<string, unknown> & { state?: Record<string, unknown> };
   function DocView({ host }: PluginWidgetProps | PluginScreenProps) {
     const data = host.useWidgetData({ spec, bindings });
@@ -107,7 +112,7 @@ export function compilePlugin(doc: PluginDocument, opts: CompileOptions): Plugin
   const requires = new Set<Capability>(m.requires ?? []);
   if (m.campus?.length) requires.add('campus-session');
   if (m.network?.length || m.remote) requires.add('network');
-  if (m.cloud) requires.add('cloud');
+  if (m.cloud || m.server) requires.add('cloud');
 
   const tools: Record<string, ToolDef> = {};
   for (const [name, t] of Object.entries(doc.tools)) {
@@ -128,6 +133,32 @@ export function compilePlugin(doc: PluginDocument, opts: CompileOptions): Plugin
     };
   }
 
+  // `{ fn }` bindings: one read tool per bound server function, calling it through ctx.cloud
+  // (non-interactive for widgets: a missing consent fails with consent_required, no sheet).
+  const fns = serverFunctions(m);
+  for (const view of [...Object.values(doc.widgets), ...Object.values(doc.screens)])
+    for (const b of Object.values(view.bindings ?? {})) {
+      if (!b.fn || tools[fnToolName(b.fn)]) continue;
+      const fn = b.fn;
+      tools[fnToolName(fn)] = {
+        title: fns[fn]?.title ?? fn,
+        description: `Server function ${fn} of this plugin (read).${fns[fn]?.description ? ` ${fns[fn]!.description}` : ''}`,
+        input: z.record(z.string(), z.unknown()),
+        effect: 'read',
+        untrusted: true,
+        execute: async (input, ctx) => {
+          if (!ctx.cloud) throw new Error('this plugin has no cloud connection');
+          return ctx.cloud.functions.invoke(fn, input ?? {}, { signal: ctx.signal });
+        },
+      };
+    }
+
+  // A server: section means the plugin uses server functions (CLOUD-FUNCTIONS.md); the
+  // disclosure is the author's (required by the validator).
+  const cloud = m.server
+    ? ({ protocol: 1, e2e: false, ...(m.cloud ?? {}), uses: [...new Set([...(((m.cloud as { uses?: string[] })?.uses) ?? []), 'functions'])] } as PluginDef['cloud'])
+    : (m.cloud as PluginDef['cloud']);
+
   const defaultModes: Partial<Record<ToolEffect, 'auto' | 'ask' | 'off'>> = { ...(m.defaultModes ?? {}) };
   if (!opts.verified)
     for (const e of Object.keys(STRICT) as ToolEffect[]) {
@@ -142,7 +173,7 @@ export function compilePlugin(doc: PluginDocument, opts: CompileOptions): Plugin
     version: m.version,
     icon: m.icon,
     requires: [...requires],
-    cloud: m.cloud as PluginDef['cloud'],
+    cloud,
     scopes: [...(m.network ?? []), ...(m.campus ?? []).map((s) => `campus:${s}`)],
     defaultModes,
     tools,

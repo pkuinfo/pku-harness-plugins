@@ -283,3 +283,30 @@ describe('compiling', () => {
     expect(verified.tools.get!.untrusted).toBe(false);
   });
 });
+
+describe('server functions on the phone', () => {
+  test('fn bindings get a backing read tool; server: derives cloud uses; disclosure required', async () => {
+    const base = (extra: string) => ({
+      'PLUGIN.md': md(`tools:\n  local: tools/local.yaml\nwidgets:\n  w: widgets/w.json\n${extra}`),
+      'tools/local.yaml': 'title: L\ndescription: Local tool.\neffect: read\nreturn: "1"\n',
+      'widgets/w.json': JSON.stringify({ title: 'W', spec: { root: 'a', elements: { a: { type: 'Text', props: { text: 'x' } } } }, bindings: { '/crowd': { fn: 'crowd' }, '/n': { tool: 'local' } } }),
+    });
+    const server = 'server:\n  functions:\n    crowd: { effect: read, access: public, return: "1" }';
+    const err = await doc(base(server)).catch((e) => e as PluginDocError);
+    expect((err as PluginDocError).issues.join('\n')).toContain('must say what leaves the device');
+
+    const d = await doc(base(`cloud:\n  disclosure: { zh: ['上报的拥挤程度'] }\n${server}`));
+    const calls: unknown[] = [];
+    const p = compilePlugin(d, { verified: true, fetch: async () => ({ status: 200, url: '', headers: {}, body: '' }) });
+    expect(p.cloud).toMatchObject({ protocol: 1, e2e: false, uses: ['functions'], disclosure: { zh: ['上报的拥挤程度'] } });
+    expect(p.requires).toContain('cloud');
+    const backing = p.tools.fn_crowd!;
+    expect(backing.effect).toBe('read');
+    const cloud = { functions: { invoke: async (fn: string, input: unknown) => (calls.push([fn, input]), { level: 'low' }) } };
+    expect(await backing.execute({}, { cloud } as never)).toEqual({ level: 'low' });
+    expect(calls).toEqual([['crowd', {}]]);
+
+    const bad = await doc({ ...base(`cloud:\n  disclosure: { zh: ['x'] }\n${server}`), 'widgets/w.json': JSON.stringify({ title: 'W', spec: { root: 'a', elements: {} }, bindings: { '/x': { fn: 'nope' } } }) }).catch((e) => e as PluginDocError);
+    expect((bad as PluginDocError).issues.join('\n')).toContain("no server function 'nope'");
+  });
+});
