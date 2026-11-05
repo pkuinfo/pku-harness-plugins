@@ -1,45 +1,20 @@
-import { definePlugin, defineTool, formatLocal, parseLocal, scheduleInputSchema, summarize, toTrigger, type HostServices, type Todo } from '@pku-harness/sdk';
+import { definePlugin, defineTool, todosForView } from '@pku-harness/sdk';
 import { z } from 'zod';
 
-const view = (services: HostServices, t: Todo) => {
-  const job = t.jobId ? services.scheduler.get(t.jobId) : undefined;
-  return {
-    id: t.id,
-    title: t.title,
-    notes: t.notes,
-    due: t.dueAt ? formatLocal(t.dueAt) : null,
-    done: !!t.doneAt,
-    overdue: !t.doneAt && t.dueAt != null && t.dueAt < Date.now(),
-    reminder: job ? summarize(job.trigger).schedule : null,
-  };
-};
+import { priorityInput, remindInput, repeatInput, resolveDue, toRemind, view } from './tools';
+import { TodoWidget } from './widget';
 
-const remindInput = z
-  .union([
-    z.object({ minutesBeforeDue: z.number().int().min(0).max(7 * 24 * 60) }),
-    z.object({ schedule: scheduleInputSchema }),
-  ])
-  .nullable()
-  .optional()
-  .describe('reminder: minutes before the due time, or any schedule (repeating allowed); null removes it');
-
-function toRemind(r: z.infer<typeof remindInput>, dueAt: number | null) {
-  if (r === undefined) return undefined;
-  if (r === null) return null;
-  if ('schedule' in r) return toTrigger(r.schedule);
-  if (dueAt == null) throw new Error('没有截止时间，无法按「提前 N 分钟」提醒');
-  return { type: 'at' as const, at: dueAt - r.minutesBeforeDue * 60_000 };
-}
+const actorSource = (actor: string) => (actor === 'agent' ? 'agent' : 'user') as 'agent' | 'user';
 
 export const todoPlugin = definePlugin({
   id: 'todo',
   name: '待办',
-  description: '待办事项，可设截止时间和准时提醒。',
-  version: '0.2.0',
+  description: '待办事项：截止时间、准时提醒、重要标记和重复待办，以及仪表盘小组件。',
+  version: '0.3.0',
   i18n: {
     en: {
       name: 'To-dos',
-      description: 'To-dos with due dates and on-time reminders.',
+      description: 'To-dos with due dates, on-time reminders, an important flag and repeats, plus a dashboard widget.',
       tools: {
         list: { title: 'View to-dos' },
         add: { title: 'Add to-do' },
@@ -47,73 +22,112 @@ export const todoPlugin = definePlugin({
         complete: { title: 'Complete to-do' },
         delete: { title: 'Delete to-do' },
       },
-      dataSources: { open: { title: 'Open to-dos' } },
+      dataSources: { open: { title: 'Open to-dos' }, today: { title: 'To-dos for today' } },
+      widgets: { today: { title: 'To-dos', description: 'What’s due today and overdue, with important ones flagged; tick items off right on the dashboard.' } },
     },
   },
   icon: 'todo',
   core: true,
   scopes: [],
-  instructions: '待办用 todo 工具管理。截止时间用本地 "YYYY-MM-DD HH:mm"。需要提醒时传 remind（如截止前 30 分钟，或任意重复规则）。',
+  instructions: `待办用 todo 工具管理。截止时间用本地 "YYYY-MM-DD HH:mm"。
+- 需要提醒时传 remind（如截止前 30 分钟 minutesBeforeDue: 30，或任意 schedule）。
+- 周期性的事（"每周一交周报"、"每天背单词"、"每 3 天浇花"）建一个重复待办：repeat { unit: 'week', weekdays: [1] } / { unit: 'day', interval: 1 } / { unit: 'day', interval: 3 }，due 写第一次的截止时间（没说时间就挑合理的，比如周报 18:00）。不要为每一次各建一个待办，也不要用重复提醒代替。完成后会自动生成下一次。
+- 用户说"重要"、"紧急"、"千万别忘" → priority: 'high'。
+- 问"今天要做什么" 用 list { view: 'today' }（逾期 + 今天到期 + 无日期的重要事项）；"接下来" 用 view: 'upcoming'。
+- 用户想在仪表盘看待办时，用 dashboard 的插件小组件 todo/today。`,
   dataSources: {
     open: { title: '未完成的待办', tool: 'list', ttlMs: 0 },
+    today: { title: '今天的待办', tool: 'list', args: { view: 'today' }, ttlMs: 0 },
+  },
+  contributes: {
+    widgets: {
+      today: {
+        title: '待办',
+        description: '今天到期和已逾期的待办，重要的带旗标；可以直接在仪表盘上勾选完成。',
+        sizes: ['sm', 'md'],
+        defaultSize: 'md',
+        component: TodoWidget,
+      },
+    },
   },
   tools: {
     list: defineTool({
       title: '查看待办',
-      description: 'List to-dos: open ones first (by due time), optionally including done ones.',
-      input: z.object({ includeDone: z.boolean().optional() }),
+      description:
+        "List to-dos. view 'today' = overdue + due today + undated high-priority ones; 'upcoming' = due after today; 'all' (default) = every open one. Each item has due, overdue, priority ('none'|'high'), repeat (text, or null) and reminder. includeDone appends finished ones (newest first).",
+      input: z.object({
+        view: z.enum(['today', 'upcoming', 'all']).optional(),
+        includeDone: z.boolean().optional(),
+      }),
       effect: 'read',
-      execute: async ({ includeDone }, ctx) => ctx.services.todos.list().filter((t) => includeDone || !t.doneAt).map((t) => view(ctx.services, t)),
+      execute: async ({ view: v, includeDone }, ctx) => {
+        const now = Date.now();
+        const all = ctx.services.todos.list();
+        const open = todosForView(all, v ?? 'all', now);
+        const done = includeDone ? all.filter((t) => t.doneAt).sort((a, b) => (b.doneAt ?? 0) - (a.doneAt ?? 0)) : [];
+        return [...open, ...done].map((t) => view(ctx.services, t, now));
+      },
     }),
     add: defineTool({
       title: '添加待办',
-      description: 'Add a to-do with optional notes, due time and reminder.',
+      description: 'Add a to-do with optional notes, due time, reminder, priority and repeat. For anything recurring, add ONE repeating to-do (repeat), not one per occurrence.',
       input: z.object({
         title: z.string().min(1),
         notes: z.string().optional(),
-        due: z.string().optional().describe('local "YYYY-MM-DD HH:mm"'),
+        due: z.string().optional().describe('local "YYYY-MM-DD HH:mm"; for a repeating to-do, the first instance'),
         remind: remindInput,
+        priority: priorityInput,
+        repeat: repeatInput,
       }),
       effect: 'write',
-      execute: async ({ title, notes, due, remind }, ctx) => {
-        const dueAt = due ? parseLocal(due) : null;
-        const todo = await ctx.services.todos.add({ title, notes, dueAt, remind: toRemind(remind, dueAt) }, ctx.actor === 'agent' ? 'agent' : 'user');
+      execute: async ({ title, notes, due, remind, priority, repeat }, ctx) => {
+        const r = resolveDue(undefined, due, repeat, Date.now());
+        const todo = await ctx.services.todos.add(
+          { title, notes, dueAt: r.dueAt, remind: toRemind(remind, r.dueAt), priority, repeat: r.repeat ?? null },
+          actorSource(ctx.actor),
+        );
         return view(ctx.services, todo);
       },
     }),
     update: defineTool({
       title: '修改待办',
-      description: 'Change a to-do. Only pass what changes; due: null clears the due time.',
+      description: 'Change a to-do. Only pass what changes; due: null clears the due time (and stops a repeat); repeat: null stops repeating; priority none/high.',
       input: z.object({
         id: z.string(),
         title: z.string().optional(),
         notes: z.string().nullable().optional(),
         due: z.string().nullable().optional(),
         remind: remindInput,
+        priority: priorityInput,
+        repeat: repeatInput,
       }),
       effect: 'write',
-      execute: async ({ id, title, notes, due, remind }, ctx) => {
+      execute: async ({ id, title, notes, due, remind, priority, repeat }, ctx) => {
         const cur = ctx.services.todos.get(id);
         if (!cur) throw new Error(`没有这个待办：${id}`);
-        const dueAt = due === undefined ? cur.dueAt : due ? parseLocal(due) : null;
+        const r = resolveDue(cur, due, repeat, Date.now());
         const todo = await ctx.services.todos.update(
           id,
-          { title, notes, dueAt: due === undefined ? undefined : dueAt, remind: toRemind(remind, dueAt) },
-          ctx.actor === 'agent' ? 'agent' : 'user',
+          { title, notes, dueAt: r.dueAt === cur.dueAt ? undefined : r.dueAt, remind: toRemind(remind, r.dueAt), priority, repeat: r.repeat },
+          actorSource(ctx.actor),
         );
         return view(ctx.services, todo);
       },
     }),
     complete: defineTool({
       title: '完成待办',
-      description: 'Mark a to-do done (or not done with done: false). Done pauses its reminder.',
+      description: 'Mark a to-do done (or not done with done: false). Done pauses its reminder. Completing a repeating to-do creates the next instance, returned as `next`.',
       input: z.object({ id: z.string(), done: z.boolean().optional() }),
       effect: 'write',
-      execute: async ({ id, done }, ctx) => view(ctx.services, await ctx.services.todos.setDone(id, done ?? true)),
+      execute: async ({ id, done }, ctx) => {
+        const todo = await ctx.services.todos.setDone(id, done ?? true);
+        const next = todo.doneAt && todo.nextId ? ctx.services.todos.get(todo.nextId) : undefined;
+        return { ...view(ctx.services, todo), ...(next ? { next: view(ctx.services, next) } : {}) };
+      },
     }),
     delete: defineTool({
       title: '删除待办',
-      description: 'Delete a to-do and its reminder.',
+      description: 'Delete a to-do and its reminder (only this instance of a repeating one).',
       input: z.object({ id: z.string() }),
       effect: 'write',
       execute: async ({ id }, ctx) => {
