@@ -1,0 +1,96 @@
+# Two days from a date; taken slots remove the periods they overlap.
+tool: availability
+input:
+  roomId: "924129433781145600"
+  date: 2026-10-19
+  days: 2
+now: 2026-10-18 09:00
+responses:
+  - match: /space/schedule
+    campus: bdkj
+    body:
+      - beginTime: 2026-10-19 20:40:00
+        endTime: 2026-10-19 21:30:00
+      - beginTime: 2026-10-20 14:00:00
+        endTime: 2026-10-20 16:00:00
+      - beginTime: x
+expect:
+  - date: 2026-10-19
+    free:
+      - period: 1
+        begin: 08:00
+        end: 08:50
+      - period: 2
+        begin: 09:00
+        end: 09:50
+      - period: 3
+        begin: 10:10
+        end: 11:00
+      - period: 4
+        begin: 11:10
+        end: 12:00
+      - period: 5
+        begin: 13:00
+        end: 13:50
+      - period: 6
+        begin: 14:00
+        end: 14:50
+      - period: 7
+        begin: 15:10
+        end: 16:00
+      - period: 8
+        begin: 16:10
+        end: 17:00
+      - period: 9
+        begin: 17:10
+        end: 18:00
+      - period: 10
+        begin: 18:40
+        end: 19:30
+      - period: 11
+        begin: 19:40
+        end: 20:30
+      - period: 13
+        begin: 21:40
+        end: 22:30
+    taken:
+      - begin: 2026-10-19 20:40:00
+        end: 2026-10-19 21:30:00
+  - date: 2026-10-20
+    free:
+      - period: 1
+        begin: 08:00
+        end: 08:50
+      - period: 2
+        begin: 09:00
+        end: 09:50
+      - period: 3
+        begin: 10:10
+        end: 11:00
+      - period: 4
+        begin: 11:10
+        end: 12:00
+      - period: 5
+        begin: 13:00
+        end: 13:50
+      - period: 8
+        begin: 16:10
+        end: 17:00
+      - period: 9
+        begin: 17:10
+        end: 18:00
+      - period: 10
+        begin: 18:40
+        end: 19:30
+      - period: 11
+        begin: 19:40
+        end: 20:30
+      - period: 12
+        begin: 20:40
+        end: 21:30
+      - period: 13
+        begin: 21:40
+        end: 22:30
+    taken:
+      - begin: 2026-10-20 14:00:00
+        end: 2026-10-20 16:00:00

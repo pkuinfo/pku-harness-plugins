@@ -1,0 +1,9 @@
+# The record is still active: the layer.msg is quoted.
+tool: cancel
+input:
+  id: "1234567"
+responses:
+  - match: /classRoom/cancelApply/1234567
+    campus: bdkj
+    file: applications-still.html
+expectError: 取消没有生效：当前状态不能取消

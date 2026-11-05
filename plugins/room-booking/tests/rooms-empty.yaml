@@ -1,0 +1,13 @@
+# A login page: no rooms read.
+tool: rooms
+responses:
+  - match: /space
+    campus: bdkj
+    body: <html><form action="/login">登录</form></html>
+  - match: /space/lockStatus
+    campus: bdkj
+    body:
+      "924129433781145600": 1
+      "924129433781145601": 0
+      x: y
+expectError: 没有从北大空间读到教室列表（页面结构可能又改了）

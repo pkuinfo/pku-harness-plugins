@@ -1,0 +1,8 @@
+# An empty name.
+tool: saveGroup
+input:
+  name: x
+  members:
+    - serial: "2000000000"
+      name: "  "
+expectError: 姓名应为 1–20 个字

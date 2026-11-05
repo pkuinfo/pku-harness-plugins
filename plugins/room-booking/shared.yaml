@@ -1,0 +1,228 @@
+# Constants and helpers every room-booking tool sees (PLUGIN.md shared:). Ported from src/parse.ts
+# and src/api.ts. 北大空间 was redesigned in 2026-10: rooms come from the /space page, free time
+# from /space/schedule; student check, submit and cancel are pkucli crates/bdkj/src/api.rs and are
+# not yet verified against the new site.
+constants:
+  PROFILE_MSG: 首次预约前需要在北大空间「个人信息」页完善资料（请在浏览器打开 https://bdkj.pku.edu.cn/personal 完成）
+  FORM: application/x-www-form-urlencoded; charset=UTF-8
+  # The site's own XHRs (api.ts XHR) for the JSON endpoints.
+  XHR: { x-requested-with: XMLHttpRequest, accept: 'application/json, text/javascript, */*; q=0.01' }
+  XHR_SPACE: { x-requested-with: XMLHttpRequest, accept: 'application/json, text/javascript, */*; q=0.01', referer: 'https://bdkj.pku.edu.cn/space' }
+  SPACE_REFERER: { referer: 'https://bdkj.pku.edu.cn/space' }
+  APPLY_REFERER: { referer: 'https://bdkj.pku.edu.cn/classRoom/apply' }
+  # Pinyin / long-name aliases of the three buildings the site lists (api.rs building_id).
+  BUILDING_ALIASES:
+    二教: [erjiao, 二教学楼, 第二教学楼]
+    四教: [sijiao, 四教学楼, 第四教学楼]
+    地学: [dixue, 地学楼]
+  # 13 bookable periods of 50 minutes, 08:00–22:30 (1–12 = the PKU class timetable, 13 = 21:40).
+  # Free/taken is decided by overlap, so a slightly off grid never shows a taken period as free.
+  PERIODS:
+    - ['08:00', '08:50']
+    - ['09:00', '09:50']
+    - ['10:10', '11:00']
+    - ['11:10', '12:00']
+    - ['13:00', '13:50']
+    - ['14:00', '14:50']
+    - ['15:10', '16:00']
+    - ['16:10', '17:00']
+    - ['17:10', '18:00']
+    - ['18:40', '19:30']
+    - ['19:40', '20:30']
+    - ['20:40', '21:30']
+    - ['21:40', '22:30']
+functions:
+  # ── responses (api.ts call) ──
+  pathOf: |
+    (u) => match(u ?? '', '^https?://[^/]+([^?#]*)', 1)
+  # An incomplete profile is bounced to 个人信息 (/personal), which no form submission gets past.
+  isProfilePage: |
+    (u) => profilePath(pathOf(u) ?? '')
+  profilePath: |
+    (p) => p == '/personal' || (startsWith(p, '/personal/') && !startsWith(p, '/personal/user'))
+  # First run of digits as a number (parse.ts int), null when none.
+  intIn: |
+    (s) => num(match(s ?? '', '\d+', 0))
+  lastOf: |
+    (l) => length(l) ? l[length(l) - 1] : null
+
+  # ── GET /space: building panels [data-building-id] and room cards .sp-card[data-room-id] ──
+  parseSpace: |
+    (doc) => spaceWith(doc, buildingsOf(doc), ownersOf(doc))
+  spaceWith: |
+    (doc, buildings, owners) => ({ buildings, rooms: roomCards(doc).map(c => roomOf(c, buildings, owners[c.attr('data-room-id')])) })
+  buildingsOf: |
+    (doc) => unique(
+      select(doc, '[data-building-id]')
+        .map(el => ({
+          id: el.attr('data-building-id') ?? '',
+          name: first(el, '.cr-panel-title')?.text ?? '',
+          code: match(first(el, '.sp-building-code')?.text ?? '', '\d+', 0) ?? '',
+          bookable: intIn(countText(first(el, '.cr-panel-count'))),
+        }))
+        .filter(b => b.id && b.name),
+      b => b.id)
+  # "共 <b>10</b> 间可预约"
+  countText: |
+    (c) => c == null ? null : (first(c, 'b')?.text ?? c.text)
+  # Room id → id of the innermost building panel holding the card (later panels in document
+  # order are nested deeper, so they win).
+  ownersOf: |
+    (doc) => fromEntries(
+      select(doc, '[data-building-id]')
+        .filter(p => p.attr('data-building-id'))
+        .flatMap(p => select(p, '.sp-card[data-room-id]').map(c => [c.attr('data-room-id') ?? '', p.attr('data-building-id')])))
+  roomCards: |
+    (doc) => unique(select(doc, '.sp-card[data-room-id]').filter(c => c.attr('data-room-id')), c => c.attr('data-room-id'))
+  roomOf: |
+    (c, buildings, ownerId) => roomWith(c, buildings, ownerId, first(c, '.sp-code')?.text ?? '', select(c, '.sp-features li').map(l => l.text), hrefOf(first(c, 'a.sp-btn-apply')))
+  # The card sits inside its building panel; else match the code prefix ("02514" → 02).
+  roomWith: |
+    (c, buildings, ownerId, code, lis, href) => roomFin(c, code, lis, href,
+      buildings.find(b => b.id == ownerId) ?? buildings.find(b => b.code && startsWith(code, b.code)) ?? null)
+  # Feature list: 5层 / 可容纳 N 人 / 至少 N 人起约 (the last matching line wins, as in parse.ts).
+  roomFin: |
+    (c, code, lis, href, b) => merge({
+      id: c.attr('data-room-id'),
+      name: (first(c, '.cr-room-name')?.text ?? '') || squash(c.attr('data-room-name') ?? ''),
+      code,
+      buildingId: b ? b.id : '',
+      building: b ? b.name : '',
+      floor: intIn(lastOf(lis.filter(t => !isCap(t) && !isMin(t) && test(t, '层|楼')))),
+      capacity: intIn(lastOf(lis.filter(t => isCap(t)))),
+      minPeople: intIn(lastOf(lis.filter(t => !isCap(t) && isMin(t)))),
+      door: devState(c, 'door'),
+      screen: devState(c, 'screen'),
+    }, href && !test(href, '(?i)^(#|javascript:)') ? { applyHref: href } : {})
+  isCap: |
+    (t) => test(t, '可容纳')
+  isMin: |
+    (t) => test(t, '起约|至少')
+  devState: |
+    (c, kind) => first(c, '[data-dev-kind="' + kind + '"] .sp-dev-state')?.text ?? ''
+  hrefOf: |
+    (a) => a == null ? null : a.attr('href')
+  # GET /space/lockStatus: { "<roomId>": 0|1|2 } (informative; mapping unverified). Junk → {}.
+  locksOf: |
+    (j) => typeOf(j) == 'object' ? fromEntries(entries(j).filter(e => typeOf(e[1]) == 'number')) : {}
+  withLocks: |
+    (rooms, locks) => rooms.map(r => keys(locks).includes(r.id) ? merge(r, { lockCode: locks[r.id] }) : r)
+  # The 去申请 page to open before applying (api.ts checkCanApply): null = nothing to check.
+  applyUrlOf: |
+    (href) => !href ? null
+      : test(href, '(?i)^https?://') && !test(href, '(?i)^https?://bdkj\.pku\.edu\.cn/') ? null
+      : test(href, '(?i)^https?:|^/') ? href : '/' + href
+
+  # ── buildings by name, code ("02" / "2") or pinyin (parse.ts matchBuilding) ──
+  matchBuilding: |
+    (query, buildings) => matchQ(replace(lower(trim(query)), '楼$', ''), trim(query), buildings)
+  matchQ: |
+    (q, raw, buildings) => !q ? null : buildings.find(b => bMatch(b, lower(b.name), q, raw)) ?? null
+  bMatch: |
+    (b, name, q, raw) => name == q || replace(name, '楼$', '') == q
+      || (b.code && num(q) != null && num(b.code) == num(q))
+      || aliasesOf(name).includes(q) || aliasesOf(name).includes(raw)
+  aliasesOf: |
+    (name) => secondOr(entries(BUILDING_ALIASES).find(e => includes(name, lower(e[0]))))
+  secondOr: |
+    (e) => e ? e[1] : []
+
+  # ── GET /space/schedule: taken slots; free periods per day ──
+  scheduleOf: |
+    (list) => list
+      .filter(h => typeOf(h) == 'object' && h.beginTime != null && h.endTime != null)
+      .map(h => ({ begin: str(h.beginTime), end: str(h.endTime) }))
+  # Periods that already started before nowStamp ("YYYY-MM-DD HH:mm:ss") are not offered.
+  freeSlots: |
+    (dates, taken, nowStamp) => dates.map(date => daySlots(date, taken.filter(s => startsWith(s.begin, date)), nowStamp))
+  daySlots: |
+    (date, dayTaken, nowStamp) => ({
+      date,
+      free: PERIODS
+        .map((p, i) => ({ period: i + 1, begin: date + ' ' + p[0] + ':00', end: date + ' ' + p[1] + ':00' }))
+        .filter(p => !(nowStamp && p.begin < nowStamp))
+        .filter(p => !dayTaken.some(s => overlaps(p.begin, p.end, s)))
+        .map(p => ({ period: p.period, begin: slice(p.begin, 11, 16), end: slice(p.end, 11, 16) })),
+      taken: dayTaken,
+    })
+  # Whether [begin, end) overlaps a taken slot; unreadable slot times never conflict.
+  overlaps: |
+    (begin, end, slot) => overlapN(begin, end, normTime(slot.begin), normTime(slot.end))
+  overlapN: |
+    (begin, end, b, e) => !!b && !!e && begin < e && b < end
+
+  # ── times: "YYYY-MM-DD HH:MM[:SS]" (or T-separated) → "YYYY-MM-DD HH:MM:SS", null if invalid ──
+  normTime: |
+    (s) => normParts(match(trim(str(s)), '^(\d{4})-(\d{1,2})-(\d{1,2})[ T](\d{1,2}):(\d{2})(?::(\d{2}))?$'))
+  normParts: |
+    (m) => !m || !validYmdhm(m) ? null
+      : m[1] + '-' + padStart(m[2], 2, '0') + '-' + padStart(m[3], 2, '0') + ' ' + padStart(m[4], 2, '0') + ':' + m[5] + ':' + (m[6] ?? '00')
+  # Calendar check as JS Date does it: the day must not roll over (minutes may, within the day).
+  validYmdhm: |
+    (m) => int(m[4]) <= 23 && sameDay(date(m[1] + '-' + m[2] + '-' + m[3] + ' ' + m[4] + ':' + m[5]), m)
+  sameDay: |
+    (ms, m) => ms != null && formatDate(ms, 'YYYY-M-D') == int(m[1]) + '-' + int(m[2]) + '-' + int(m[3])
+
+  # ── participants ({ serial: 学号, name: 姓名 }) ──
+  memberIssue: |
+    (list) => list.map(m =>
+        typeOf(m) != 'object' || typeOf(m.serial) != 'string' || typeOf(m.name) != 'string' ? '参与人要写成 { serial: 学号, name: 姓名 }'
+        : !test(trim(m.serial), '^\d{5,12}$') ? '学号应为数字'
+        : length(trim(m.name)) < 1 || length(trim(m.name)) > 20 ? '姓名应为 1–20 个字'
+        : null)
+      .find(x => !!x) ?? null
+  cleanMembers: |
+    (list) => list.map(m => ({ serial: trim(m.serial), name: trim(m.name) }))
+
+  # ── GET /classRoom: div#results > div.row (api.rs parse_applications), or div.cr-empty ──
+  isEmptyApps: |
+    (page) => test(page, 'class="[^"]*\bcr-empty\b') || includes(page, '暂无申请记录')
+  parseApplications: |
+    (page) => isEmptyApps(page) ? []
+      : select(html(page), 'div#results > div.row').map(row => appOf(row, row.outerHtml, spacedText(row))).filter(a => a.room)
+  # Text nodes joined with spaces, whitespace collapsed (the scraper's text().join(" ")).
+  spacedText: |
+    (row) => htmlText(replaceText(row.outerHtml, '<', ' <'))
+  appOf: |
+    (row, raw, text) => appWith(raw, text,
+      first(row, 'h5')?.text ?? '',
+      match(text, '(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})', 1) ?? '',
+      match(raw, '/classRoom/cancelApply/(\d+)', 1) ?? '',
+      trim(match(raw, 'color-red"><strong>([^<]+)', 1) ?? first(row, '.color-red strong')?.text ?? ''))
+  # Participants read "张三[ 未签到 ] 李四[ 未签到 ]": the token right before each "[".
+  appWith: |
+    (raw, text, room, appliedAt, id, rawStatus) => ({
+      id,
+      room,
+      status: statusOf(rawStatus),
+      applicant: appliedAt ? (match(split(text, appliedAt)[0], '(\S+)\s+申请\s*$', 1) ?? '') : '',
+      appliedAt,
+      time: match(text, '(\d{4}-\d{2}-\d{2} \d{2}:\d{2}\s*-\s*\d{2}:\d{2})', 1) ?? '',
+      reason: trim(match(raw, 'fa-comment-dots[^<]*</em>\s*([^<]+)', 1) ?? ''),
+      participants: split(text, ']').map(seg => match(seg, '(\S*)\s*\[[^\[]*$', 1) ?? '').filter(n => n && n != '申请'),
+      canCancel: !!id,
+    })
+  statusOf: |
+    (raw) => includes(raw, '申请成功') ? '申请成功' : includes(raw, '已取消') ? '申请已取消' : includes(raw, '已结束') ? '已结束' : raw || '未知'
+  # api.rs extract_layer_msg: the text of the page's first layer.msg("…").
+  layerMsg: |
+    (page) => match(page, 'layer\.msg\(["\']([^"\']+)["\']', 1)
+
+  # ── POST /classRoom/handle/submit (api.rs submit_apply) ──
+  # Form fields of the browser's step-4 submit, in order.
+  submitForm: |
+    (roomId, begin, end, reason, ps) => fromEntries([
+      ['id', ''], ['beginTime', begin], ['endTime', end], ['roomId', roomId], ['step', '3'], ['switchover', 'true'], ['reason', reason],
+      ...ps.flatMap((p, i) => [
+        ['students[' + i + '].studentId', p.id],
+        ['students[' + i + '].serial', p.serial],
+        ['students[' + i + '].name', p.name],
+        ['students[' + i + '].sort', str(i)]])])
+  # Success = handle/submit redirected to the /classRoom list; failure stays on /classRoom/apply
+  # with a layer.msg(...) (the final URL is the reliable signal).
+  submitOutcome: |
+    (finalUrl, body) => submitPath(replace(pathOf(finalUrl) ?? finalUrl, '/+$', ''))
+      ? { success: true, message: '预约提交成功' }
+      : { success: false, message: layerMsg(body) ?? '北大空间没有接受这次预约' }
+  submitPath: |
+    (p) => p == '/classRoom' || endsWith(p, '/classRoom')

@@ -1,0 +1,15 @@
+# End before begin.
+tool: reserve
+input:
+  roomId: " 924129433781145600 "
+  begin: 2026-10-21 15:00
+  end: 2026-10-21 14:00
+  reason: " 课题组讨论 "
+  participants:
+    - serial: "2000000000"
+      name: 张三
+    - serial: "2000000001"
+      name: " 李四 "
+    - serial: "2000000002"
+      name: 王五
+expectError: 结束时间要晚于开始时间，且在同一天

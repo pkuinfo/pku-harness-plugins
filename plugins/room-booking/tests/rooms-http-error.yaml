@@ -1,0 +1,14 @@
+# HTTP error.
+tool: rooms
+responses:
+  - match: /space
+    campus: bdkj
+    status: 502
+    body: bad gateway
+  - match: /space/lockStatus
+    campus: bdkj
+    body:
+      "924129433781145600": 1
+      "924129433781145601": 0
+      x: y
+expectError: 北大空间返回 HTTP 502

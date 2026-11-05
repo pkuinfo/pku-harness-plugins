@@ -164,17 +164,6 @@
         "zod": "^4.0.0",
       },
     },
-    "plugins/room-booking": {
-      "name": "@pku-harness/plugin-room-booking",
-      "version": "0.2.0",
-      "dependencies": {
-        "node-html-parser": "^9.0.4",
-      },
-      "peerDependencies": {
-        "@pku-harness/sdk": "*",
-        "zod": "^4.0.0",
-      },
-    },
     "plugins/schedule": {
       "name": "@pku-harness/plugin-schedule",
       "version": "0.1.0",
@@ -334,8 +323,6 @@
     "@pku-harness/plugin-openai-compatible": ["@pku-harness/plugin-openai-compatible@workspace:plugins/openai-compatible"],
 
     "@pku-harness/plugin-plugins": ["@pku-harness/plugin-plugins@workspace:plugins/plugins"],
-
-    "@pku-harness/plugin-room-booking": ["@pku-harness/plugin-room-booking@workspace:plugins/room-booking"],
 
     "@pku-harness/plugin-schedule": ["@pku-harness/plugin-schedule@workspace:plugins/schedule"],
 

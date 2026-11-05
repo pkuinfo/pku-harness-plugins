@@ -1,0 +1,8 @@
+# HTTP error.
+tool: reservations
+responses:
+  - match: /classRoom
+    campus: bdkj
+    status: 500
+    body: error
+expectError: 北大空间返回 HTTP 500

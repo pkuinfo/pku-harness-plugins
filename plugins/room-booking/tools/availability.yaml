@@ -1,0 +1,38 @@
+# GET /space/schedule?roomId&startDate: taken slots for the week from startDate (api.ts schedule),
+# turned into free periods per day (parse.ts freeSlots).
+title: 教室空闲时段
+summary: 查看一间研讨教室每天的空闲节次
+description: 'Free 50-minute periods of one room per day (13 periods 08:00–22:30; at most 2 consecutive per booking), plus the taken slots. Starts today or at `date`, for `days` days (max 7). Periods that already started are omitted.'
+effect: read
+input:
+  roomId: { type: string, trim: true, pattern: '^\d+$', description: room id from room-booking__rooms }
+  date: { type: string, pattern: '^\d{4}-\d{2}-\d{2}$', optional: true, description: 'YYYY-MM-DD, default today' }
+  days: { type: integer, min: 1, max: 7, default: 1, description: 'number of days from date, default 1' }
+steps:
+  - let: start
+    value: "input.date ?? formatDate(now, 'YYYY-MM-DD')"
+  - let: dates
+    value: "range(0, input.days).map(i => formatDate(addDays(date(start), i), 'YYYY-MM-DD'))"
+  - let: res
+    request:
+      campus: bdkj
+      url: /space/schedule
+      query: { roomId: '${input.roomId}', startDate: '${start}' }
+      headers: '${XHR_SPACE}'
+    as: response
+  - check: res.status < 400
+    error: 北大空间返回 HTTP ${res.status}
+  - check: "!isProfilePage(res.url)"
+    error: ${PROFILE_MSG}
+  # An HTML page here usually means the campus network or session is missing.
+  - let: parsed
+    value: "{ ok: false }"
+  - try:
+      - let: parsed
+        value: "{ ok: true, v: json(res.text) }"
+    catch: []
+  - check: parsed.ok
+    error: 已预约时段返回的不是数据（北大空间可能暂时不可用）
+  - check: isList(parsed.v)
+    error: 已预约时段格式不对
+return: "freeSlots(dates, scheduleOf(parsed.v), formatDate(now, 'YYYY-MM-DD HH:mm:ss'))"

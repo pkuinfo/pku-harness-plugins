@@ -1,0 +1,18 @@
+title: 删除参与人分组
+summary: 删除一个已保存的参与人分组
+description: Delete a saved participant group.
+effect: write
+input:
+  name: { type: string, trim: true, min: 1 }
+steps:
+  - let: groups
+    kv: get
+    key: groups
+    legacy: true
+  - if: "!keys(groups ?? {}).includes(input.name)"
+    then:
+      - return: "{ deleted: false, name: input.name }"
+  - kv: set
+    key: groups
+    value: omit(groups, input.name)
+return: "{ deleted: true, name: input.name }"

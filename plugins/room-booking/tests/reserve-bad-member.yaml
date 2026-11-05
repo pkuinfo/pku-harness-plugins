@@ -1,0 +1,15 @@
+# A participant without a numeric student id.
+tool: reserve
+input:
+  roomId: " 924129433781145600 "
+  begin: 2026-10-21 14:00
+  end: 2026-10-21 15:50
+  reason: " 课题组讨论 "
+  participants:
+    - serial: "2000000000"
+      name: 张三
+    - serial: x1
+      name: 李四
+    - serial: "2000000002"
+      name: 王五
+expectError: 学号应为数字

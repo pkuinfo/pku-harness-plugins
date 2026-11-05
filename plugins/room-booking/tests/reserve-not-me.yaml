@@ -1,0 +1,15 @@
+# The applicant must be one of the participants.
+tool: reserve
+input:
+  roomId: " 924129433781145600 "
+  begin: 2026-10-21 14:00
+  end: 2026-10-21 15:50
+  reason: " 课题组讨论 "
+  participants:
+    - serial: "2000000001"
+      name: " 李四 "
+    - serial: "2000000002"
+      name: 王五
+    - serial: "2000000009"
+      name: 某
+expectError: 参与人里要包含申请人本人（你的学号和姓名）

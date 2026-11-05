@@ -1,0 +1,16 @@
+# participants and group together.
+tool: reserve
+input:
+  roomId: " 924129433781145600 "
+  begin: 2026-10-21 14:00
+  end: 2026-10-21 15:50
+  reason: " 课题组讨论 "
+  participants:
+    - serial: "2000000000"
+      name: 张三
+    - serial: "2000000001"
+      name: " 李四 "
+    - serial: "2000000002"
+      name: 王五
+  group: 课题组
+expectError: 参与人二选一：participants（学号\+姓名列表）或 group（已保存的分组名）

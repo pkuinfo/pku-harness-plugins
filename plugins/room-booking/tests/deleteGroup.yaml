@@ -1,0 +1,18 @@
+# Deletes a legacy group.
+tool: deleteGroup
+input:
+  name: 课题组
+kv:
+  groups:
+    课题组:
+      - serial: "2000000000"
+        name: 张三
+      - serial: "2000000001"
+        name: 李四
+      - serial: "2000000002"
+        name: 王五
+      - serial: "2000000001"
+        name: 李四
+expect:
+  deleted: true
+  name: 课题组

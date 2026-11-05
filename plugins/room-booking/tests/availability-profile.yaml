@@ -1,0 +1,11 @@
+# Bounced to 个人信息.
+tool: availability
+input:
+  roomId: "924129433781145600"
+now: 2026-10-19 08:00
+responses:
+  - match: /space/schedule
+    campus: bdkj
+    url: https://bdkj.pku.edu.cn/personal
+    body: <html></html>
+expectError: 首次预约前需要在北大空间「个人信息」页完善资料（请在浏览器打开 https://bdkj\.pku\.edu\.cn/personal 完成）

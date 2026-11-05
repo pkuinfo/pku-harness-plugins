@@ -1,0 +1,67 @@
+# No account username: the applicant check is skipped (the site decides).
+tool: reserve
+input:
+  roomId: " 924129433781145600 "
+  begin: 2026-10-21 14:00
+  end: 2026-10-21 15:50
+  reason: " 课题组讨论 "
+  participants:
+    - serial: "2000000001"
+      name: " 李四 "
+    - serial: "2000000002"
+      name: 王五
+    - serial: "2000000009"
+      name: 某
+account:
+  signedIn: false
+  username: null
+responses:
+  - match: /space
+    campus: bdkj
+    url: https://bdkj.pku.edu.cn/space
+    file: space.html
+  - match: /space/apply?roomId=
+    campus: bdkj
+    body: ""
+  - match: /space/schedule
+    campus: bdkj
+    body: []
+  - match: seachStudent
+    campus: bdkj
+    body:
+      success: true
+      data:
+        id: "78"
+        serial: "2000000001"
+        name: 李四
+  - match: seachStudent
+    campus: bdkj
+    body:
+      success: true
+      data:
+        id: "79"
+        serial: "2000000002"
+        name: 王五
+  - match: seachStudent
+    campus: bdkj
+    body:
+      success: true
+      data:
+        id: 80
+        serial: "2000000009"
+        name: 某
+  - match: handle/submit
+    campus: bdkj
+    url: https://bdkj.pku.edu.cn/classRoom
+    body: <html><script>layer.msg("无关")</script></html>
+expect:
+  success: true
+  message: 预约提交成功
+  room: 二教514
+  roomId: "924129433781145600"
+  begin: 2026-10-21 14:00:00
+  end: 2026-10-21 15:50:00
+  participants:
+    - 2000000001 李四
+    - 2000000002 王五
+    - 2000000009 某

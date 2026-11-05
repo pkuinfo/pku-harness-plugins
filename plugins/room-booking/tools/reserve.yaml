@@ -1,0 +1,156 @@
+# Book a room (api.ts submit; api.rs submit_apply). Checked before anything is sent: party size
+# (≥3, the room's minimum and capacity, the applicant included), length (≤120 min), the room's
+# 去申请 page (an incomplete profile is redirected to /personal) and clashes with taken slots.
+# Every participant is verified by 学号 + 姓名, then the browser's step-4 form is posted; the
+# final URL after the redirect says whether it worked.
+title: 预约研讨教室
+summary: 预约一间研讨教室（一到两节）
+description: "Book a discussion room for one or two consecutive periods (times from room-booking__availability). Needs ≥3 participants (and at least the room's minimum party size) including the user, given explicitly (participants) or as a saved group. Each participant is verified by student id + name before submitting. Confirm details with the user first. NOTE: the submit step is the pre-2026 flow and is not yet verified against the redesigned site; if the user's 北大空间 profile is incomplete it fails with a message telling them to complete it in a browser."
+effect: write
+input:
+  roomId: { type: string, trim: true, pattern: '^\d+$', description: room id from room-booking__rooms }
+  begin: { type: string, trim: true, description: 'local time "YYYY-MM-DD HH:MM"' }
+  end: { type: string, trim: true, description: 'local time "YYYY-MM-DD HH:MM"' }
+  reason: { type: string, trim: true, min: 2, max: 100, description: '预约事由, e.g. 课题组讨论' }
+  participants: { type: array, items: { type: object }, min: 1, max: 30, optional: true, description: 'everyone attending, INCLUDING the applicant (the user), as [{ serial: 学号, name: 姓名 }]; at least 3 people' }
+  group: { type: string, trim: true, min: 1, optional: true, description: name of a saved participant group (room-booking__groups) instead of participants }
+steps:
+  # ── input (the TypeScript version's zod refinements) ──
+  - let: begin
+    value: normTime(input.begin)
+  - let: end
+    value: normTime(input.end)
+  - check: begin && end
+    error: 时间格式应为 YYYY-MM-DD HH:MM
+  - check: "!input.participants || !memberIssue(input.participants)"
+    error: ${memberIssue(input.participants)}
+  - check: "!!input.participants != !!input.group"
+    error: 参与人二选一：participants（学号+姓名列表）或 group（已保存的分组名）
+  - check: slice(begin, 0, 10) == slice(end, 0, 10) && begin < end
+    error: 结束时间要晚于开始时间，且在同一天
+  # ── participants ──
+  - let: members
+    value: "input.participants ? cleanMembers(input.participants) : []"
+  - if: input.group
+    then:
+      - let: groups
+        kv: get
+        key: groups
+        legacy: true
+      - let: members
+        value: (groups ?? {})[input.group] ?? null
+      - check: members
+        error: 没有名为「${input.group}」的分组，先用 room-booking__saveGroup 保存
+  - let: members
+    value: unique(members, m => m.serial)
+  - check: length(members) >= 3
+    error: 申请教室要求不少于 3 人（包含申请人），当前 ${length(members)} 人
+  - check: "!account.username || members.some(m => m.serial == account.username)"
+    error: 参与人里要包含申请人本人（你的学号和姓名）
+  - check: (date(end) - date(begin)) / 60000 <= 120
+    error: 一次最多预约连续 2 节（约 2 小时以内）
+  # ── the room ──
+  - let: page
+    request: { campus: bdkj, url: /space }
+    as: response
+  - check: page.status < 400
+    error: 北大空间返回 HTTP ${page.status}
+  - check: "!isProfilePage(page.url)"
+    error: ${PROFILE_MSG}
+  - let: space
+    value: parseSpace(html(page.text))
+  - check: length(space.rooms) > 0 || length(space.buildings) > 0
+    error: 没有从北大空间读到教室列表（页面结构可能又改了）
+  - let: room
+    value: space.rooms.find(r => r.id == input.roomId) ?? null
+  - check: room
+    error: 北大空间没有这个教室 id，先用 room-booking__rooms 查
+  - check: "!room.minPeople || length(members) >= room.minPeople"
+    error: ${room.building}${room.name} 至少 ${room.minPeople} 人起约，当前 ${length(members)} 人
+  - check: "!room.capacity || length(members) <= room.capacity"
+    error: ${room.building}${room.name} 最多容纳 ${room.capacity} 人，当前 ${length(members)} 人
+  # Open the room's 去申请 page the way the browser does (an incomplete profile lands on /personal).
+  - let: applyUrl
+    value: applyUrlOf(room.applyHref)
+  - if: applyUrl
+    then:
+      - let: ap
+        request: { campus: bdkj, url: '${applyUrl}', headers: '${SPACE_REFERER}' }
+        as: response
+      - check: ap.status < 400
+        error: 北大空间返回 HTTP ${ap.status}
+      - check: "!isProfilePage(ap.url)"
+        error: ${PROFILE_MSG}
+  # Taken slots of that week; if they can't be read, the site itself rejects a clash.
+  - let: taken
+    value: "[]"
+  - try:
+      - let: sr
+        request:
+          campus: bdkj
+          url: /space/schedule
+          query: { roomId: '${input.roomId}', startDate: '${slice(begin, 0, 10)}' }
+          headers: '${XHR_SPACE}'
+        as: response
+      - check: sr.status < 400 && !isProfilePage(sr.url)
+        error: schedule
+      - let: taken
+        value: scheduleOf(json(sr.text))
+    catch:
+      - let: taken
+        value: "[]"
+  - let: clash
+    value: taken.find(s => overlaps(begin, end, s)) ?? null
+  - check: "!clash"
+    error: 这个时段已被占用：${clash.begin} ~ ${clash.end}
+  # ── POST /classRoom/seachStudent per participant (api.rs search_student; contact fields dropped) ──
+  - let: verified
+    each: members
+    steps:
+      - let: r
+        request: { campus: bdkj, url: /classRoom/seachStudent, method: POST, headers: '${XHR}', form: { serial: '${item.serial}', name: '${item.name}' }, contentType: '${FORM}' }
+        as: response
+      - check: r.status < 400
+        error: 北大空间返回 HTTP ${r.status}
+      - check: "!isProfilePage(r.url)"
+        error: ${PROFILE_MSG}
+      - let: parsed
+        value: "{ ok: false }"
+      - try:
+          - let: parsed
+            value: "{ ok: true, v: json(r.text) }"
+        catch: []
+      - check: parsed.ok
+        error: 参与人 ${item.serial} ${item.name} 校验失败：查询参与人返回的不是数据（北大空间可能暂时不可用）
+      - check: parsed.v?.success
+        error: "参与人 ${item.serial} ${item.name} 校验失败：${parsed.v?.message || '查无此人'}"
+      - check: parsed.v.data && parsed.v.data.id != null
+        error: 参与人 ${item.serial} ${item.name} 校验失败：查询参与人没有返回数据
+      - return: "{ id: str(parsed.v.data.id), serial: str(parsed.v.data.serial), name: str(parsed.v.data.name) }"
+  # ── submit (handle/submit, step=3, switchover=true); the host follows the 302 ──
+  - let: res
+    request:
+      campus: bdkj
+      url: /classRoom/handle/submit
+      method: POST
+      headers: '${APPLY_REFERER}'
+      form: '${submitForm(input.roomId, begin, end, input.reason, verified)}'
+      contentType: '${FORM}'
+    as: response
+  - check: res.status < 400
+    error: 北大空间返回 HTTP ${res.status}
+  - check: "!isProfilePage(res.url)"
+    error: ${PROFILE_MSG}
+  - let: result
+    value: submitOutcome(res.url, res.text)
+  - check: result.success
+    error: 预约失败：${result.message}
+return: |
+  {
+    ...result,
+    room: room.building + room.name,
+    roomId: input.roomId,
+    begin,
+    end,
+    participants: verified.map(p => p.serial + ' ' + p.name),
+  }

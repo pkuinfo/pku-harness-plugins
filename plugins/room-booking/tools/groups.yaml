@@ -1,0 +1,12 @@
+# Participant groups (pkucli groups.rs) live in the plugin's KV; `legacy` reads the TypeScript
+# version's `groups` key until the first save.
+title: 参与人分组
+summary: 查看已保存的参与人分组
+description: Saved participant groups (name → members with student id and name).
+effect: read
+steps:
+  - let: groups
+    kv: get
+    key: groups
+    legacy: true
+return: groups ?? {}

@@ -1,0 +1,12 @@
+# The cancel page shows the list: the record now reads 申请已取消.
+tool: cancel
+input:
+  id: " 1234567 "
+responses:
+  - match: /classRoom/cancelApply/1234567
+    campus: bdkj
+    file: applications-cancelled.html
+expect:
+  cancelled: true
+  id: "1234567"
+  status: 申请已取消

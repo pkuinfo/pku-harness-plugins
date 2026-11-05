@@ -1,0 +1,39 @@
+# GET /classRoom/cancelApply/<id> (api.rs cancel_apply), then confirmed against the list: a stray
+# layer.msg alone is not proof (api.ts cancel).
+title: 取消研讨室预约
+summary: 取消一条研讨室预约
+description: Cancel one of my reservations by its id (from room-booking__reservations).
+effect: write
+input:
+  id: { type: string, trim: true, pattern: '^\d+$', description: id from room-booking__reservations }
+steps:
+  - let: res
+    request: { campus: bdkj, url: '/classRoom/cancelApply/${encode(input.id)}' }
+    as: response
+  - check: res.status < 400
+    error: 北大空间返回 HTTP ${res.status}
+  - check: "!isProfilePage(res.url)"
+    error: ${PROFILE_MSG}
+  - let: msg
+    value: layerMsg(res.text)
+  - let: list
+    value: "[]"
+  - if: includes(res.text, 'id="results"')
+    then:
+      - let: list
+        value: parseApplications(res.text)
+    else:
+      - let: lr
+        request: { campus: bdkj, url: /classRoom }
+        as: response
+      - check: lr.status < 400
+        error: 北大空间返回 HTTP ${lr.status}
+      - check: "!isProfilePage(lr.url)"
+        error: ${PROFILE_MSG}
+      - let: list
+        value: parseApplications(lr.text)
+  - let: after
+    value: list.find(a => a.id == input.id) ?? null
+  - check: "!(after && after.canCancel && after.status != '申请已取消')"
+    error: "取消没有生效${msg ? '：' + msg : ''}"
+return: "{ cancelled: true, id: input.id, status: after ? after.status : '申请已取消' }"

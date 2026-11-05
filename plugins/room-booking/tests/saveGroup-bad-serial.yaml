@@ -1,0 +1,8 @@
+# A student id that is not a number.
+tool: saveGroup
+input:
+  name: x
+  members:
+    - serial: abc
+      name: 张三
+expectError: 学号应为数字

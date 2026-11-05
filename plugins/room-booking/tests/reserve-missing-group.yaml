@@ -1,0 +1,9 @@
+# No such group.
+tool: reserve
+input:
+  roomId: " 924129433781145600 "
+  begin: 2026-10-21 14:00
+  end: 2026-10-21 15:50
+  reason: " 课题组讨论 "
+  group: 没有
+expectError: 没有名为「没有」的分组，先用 room-booking__saveGroup 保存

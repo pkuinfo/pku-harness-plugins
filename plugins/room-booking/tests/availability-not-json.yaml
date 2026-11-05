@@ -1,0 +1,10 @@
+# An HTML page instead of data.
+tool: availability
+input:
+  roomId: "924129433781145600"
+now: 2026-10-19 08:00
+responses:
+  - match: /space/schedule
+    campus: bdkj
+    body: <html>login</html>
+expectError: 已预约时段返回的不是数据（北大空间可能暂时不可用）

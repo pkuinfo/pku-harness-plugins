@@ -1,0 +1,28 @@
+# My records: id to cancel with, status, applicant, time, reason, participants.
+tool: reservations
+responses:
+  - match: /classRoom
+    campus: bdkj
+    file: applications.html
+expect:
+  - id: "1234567"
+    room: 二教201
+    status: 申请成功
+    applicant: 张三
+    appliedAt: 2026-10-18 10:00:00
+    time: 2026-10-20 14:00 - 16:00
+    reason: 课题组讨论
+    participants:
+      - 张三
+      - 李四
+      - 王五
+    canCancel: true
+  - id: ""
+    room: 四教301
+    status: 申请已取消
+    applicant: 张三
+    appliedAt: 2026-10-01 09:30:00
+    time: 2026-10-03 08:00 - 10:00
+    reason: ""
+    participants: []
+    canCancel: false

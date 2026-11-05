@@ -1,0 +1,31 @@
+# The period is taken.
+tool: reserve
+input:
+  roomId: " 924129433781145600 "
+  begin: 2026-10-20 15:10
+  end: 2026-10-20 16:50
+  reason: " 课题组讨论 "
+  participants:
+    - serial: "2000000000"
+      name: 张三
+    - serial: "2000000001"
+      name: " 李四 "
+    - serial: "2000000002"
+      name: 王五
+responses:
+  - match: /space
+    campus: bdkj
+    url: https://bdkj.pku.edu.cn/space
+    file: space.html
+  - match: /space/apply?roomId=
+    campus: bdkj
+    body: ""
+  - match: /space/schedule
+    campus: bdkj
+    body:
+      - beginTime: 2026-10-19 20:40:00
+        endTime: 2026-10-19 21:30:00
+      - beginTime: 2026-10-20 14:00:00
+        endTime: 2026-10-20 16:00:00
+      - beginTime: x
+expectError: 这个时段已被占用：2026-10-20 14:00:00 ~ 2026-10-20 16:00:00

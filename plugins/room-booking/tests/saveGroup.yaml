@@ -1,0 +1,23 @@
+# Adds to the legacy groups; members trimmed.
+tool: saveGroup
+input:
+  name: " 读书会 "
+  members:
+    - serial: " 2000000000 "
+      name: " 张三 "
+    - serial: "2000000003"
+      name: 赵六
+kv:
+  groups:
+    课题组:
+      - serial: "2000000000"
+        name: 张三
+      - serial: "2000000001"
+        name: 李四
+      - serial: "2000000002"
+        name: 王五
+      - serial: "2000000001"
+        name: 李四
+expect:
+  saved: 读书会
+  members: 2

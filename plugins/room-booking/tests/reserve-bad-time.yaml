@@ -1,0 +1,15 @@
+# Not a calendar date.
+tool: reserve
+input:
+  roomId: " 924129433781145600 "
+  begin: 2026-02-30 10:00
+  end: 2026-10-21 15:50
+  reason: " 课题组讨论 "
+  participants:
+    - serial: "2000000000"
+      name: 张三
+    - serial: "2000000001"
+      name: " 李四 "
+    - serial: "2000000002"
+      name: 王五
+expectError: 时间格式应为 YYYY-MM-DD HH:MM

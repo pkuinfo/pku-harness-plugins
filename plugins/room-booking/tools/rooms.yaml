@@ -1,0 +1,50 @@
+# GET /space (buildings + room cards), with /space/lockStatus codes attached when available
+# (api.ts space).
+title: 研讨教室列表
+summary: 列出二教、四教、地学楼的研讨教室
+description: 'Buildings and discussion rooms on 北大空间 (二教, 四教, 地学): room id, name, code, floor, capacity, minimum party size, door and screen state. Optional filters: building (name or number) and minCapacity.'
+effect: read
+input:
+  building: { type: string, trim: true, min: 1, optional: true, description: '二教, 四教 or 地学 (or 02 / 04 / 09)' }
+  minCapacity: { type: integer, min: 1, max: 200, optional: true, description: only rooms that hold at least this many people }
+steps:
+  - let: page
+    request: { campus: bdkj, url: /space }
+    as: response
+  - check: page.status < 400
+    error: 北大空间返回 HTTP ${page.status}
+  - check: "!isProfilePage(page.url)"
+    error: ${PROFILE_MSG}
+  # Lock codes are a bonus: any failure leaves them out.
+  - let: locks
+    value: "{}"
+  - try:
+      - let: lr
+        request: { campus: bdkj, url: /space/lockStatus, headers: '${XHR_SPACE}' }
+        as: response
+      - check: lr.status < 400 && !isProfilePage(lr.url)
+        error: lockStatus
+      - let: locks
+        value: locksOf(json(lr.text))
+    catch:
+      - let: locks
+        value: "{}"
+  - let: space
+    value: parseSpace(html(page.text))
+  - check: length(space.rooms) > 0 || length(space.buildings) > 0
+    error: 没有从北大空间读到教室列表（页面结构可能又改了）
+  - let: rooms
+    value: withLocks(space.rooms, locks)
+  - if: input.building
+    then:
+      - let: b
+        value: matchBuilding(input.building, space.buildings)
+      - check: b
+        error: "没有这栋楼：${input.building}。可选：${space.buildings.map(x => x.name).join('、') || '二教、四教、地学'}"
+      - let: rooms
+        value: rooms.filter(r => r.buildingId == b.id)
+  - if: input.minCapacity
+    then:
+      - let: rooms
+        value: rooms.filter(r => r.capacity == null || r.capacity >= input.minCapacity)
+return: "{ buildings: space.buildings, rooms: rooms.map(r => omit(r, 'applyHref')) }"

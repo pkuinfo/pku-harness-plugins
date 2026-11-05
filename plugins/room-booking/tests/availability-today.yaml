@@ -1,0 +1,23 @@
+# Today by default; periods that already started are dropped.
+tool: availability
+input:
+  roomId: " 924129433781145600"
+now: 2026-10-19 19:45
+responses:
+  - match: /space/schedule
+    campus: bdkj
+    body:
+      - beginTime: 2026-10-19 20:40:00
+        endTime: 2026-10-19 21:30:00
+      - beginTime: 2026-10-20 14:00:00
+        endTime: 2026-10-20 16:00:00
+      - beginTime: x
+expect:
+  - date: 2026-10-19
+    free:
+      - period: 13
+        begin: 21:40
+        end: 22:30
+    taken:
+      - begin: 2026-10-19 20:40:00
+        end: 2026-10-19 21:30:00

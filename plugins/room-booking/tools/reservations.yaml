@@ -1,0 +1,14 @@
+# GET /classRoom: my records (div.cr-empty → []) (api.ts listApplications).
+title: 我的研讨室预约
+summary: 查看我的研讨室预约记录
+description: 'My room reservations (newest first as listed by the site): room, time, status, participants, and the id to cancel with.'
+effect: read
+steps:
+  - let: res
+    request: { campus: bdkj, url: /classRoom }
+    as: response
+  - check: res.status < 400
+    error: 北大空间返回 HTTP ${res.status}
+  - check: "!isProfilePage(res.url)"
+    error: ${PROFILE_MSG}
+return: parseApplications(res.text)

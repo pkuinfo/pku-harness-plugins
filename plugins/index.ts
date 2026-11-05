@@ -10,7 +10,6 @@ import { financePlugin } from './finance/src';
 import { memoryPlugin } from './memory/src';
 import { openAICompatiblePlugin } from './openai-compatible/src';
 import { pluginsPlugin } from './plugins/src';
-import { roomBookingPlugin } from './room-booking/src';
 import { schedulePlugin } from './schedule/src';
 import { schedulerPlugin } from './scheduler/src';
 import { timetablePlugin } from './timetable/src';
@@ -40,7 +39,6 @@ export const builtinPlugins: PluginDef[] = [
   cardSharePlugin,
   coursesPlugin,
   financePlugin,
-  roomBookingPlugin,
   memoryPlugin,
   pluginsPlugin,
   deepseekPlugin,

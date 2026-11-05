@@ -1,0 +1,7 @@
+# 暂无申请记录.
+tool: reservations
+responses:
+  - match: /classRoom
+    campus: bdkj
+    file: applications-empty.html
+expect: []

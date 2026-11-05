@@ -1,0 +1,11 @@
+# JSON that is not a list.
+tool: availability
+input:
+  roomId: "924129433781145600"
+now: 2026-10-19 08:00
+responses:
+  - match: /space/schedule
+    campus: bdkj
+    body:
+      error: 1
+expectError: 已预约时段格式不对

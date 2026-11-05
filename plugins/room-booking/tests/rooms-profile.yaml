@@ -1,0 +1,14 @@
+# Bounced to 个人信息: the profile must be completed in a browser.
+tool: rooms
+responses:
+  - match: /space
+    campus: bdkj
+    url: https://bdkj.pku.edu.cn/personal?from=space
+    body: <html>个人信息</html>
+  - match: /space/lockStatus
+    campus: bdkj
+    body:
+      "924129433781145600": 1
+      "924129433781145601": 0
+      x: y
+expectError: 首次预约前需要在北大空间「个人信息」页完善资料（请在浏览器打开 https://bdkj\.pku\.edu\.cn/personal 完成）

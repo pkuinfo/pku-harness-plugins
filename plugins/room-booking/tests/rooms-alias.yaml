@@ -1,0 +1,40 @@
+# Building by long name (地学楼).
+tool: rooms
+input:
+  building: 地学楼
+responses:
+  - match: /space
+    campus: bdkj
+    url: https://bdkj.pku.edu.cn/space
+    file: space.html
+  - match: /space/lockStatus
+    campus: bdkj
+    body:
+      "924129433781145600": 1
+      "924129433781145601": 0
+      x: y
+expect:
+  buildings:
+    - id: "924128798427975680"
+      name: 二教
+      code: "02"
+      bookable: 10
+    - id: "924128697978589184"
+      name: 四教
+      code: "04"
+      bookable: 1
+    - id: "924129024664539136"
+      name: 地学
+      code: "09"
+      bookable: 0
+  rooms:
+    - id: "7"
+      name: "101"
+      code: "09101"
+      buildingId: "924129024664539136"
+      building: 地学
+      floor: 1
+      capacity: 8
+      minPeople: 3
+      door: 关门
+      screen: 正常
