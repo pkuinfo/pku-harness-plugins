@@ -1,0 +1,6 @@
+# Default method is sms → the SMS course-token endpoint; no message → "验证码不正确".
+tool: sync
+input: { code: " 123456 " }
+responses:
+  - { match: /chapi/api/course/mobile_message_get_token, campus: treehole, body: { success: false } }
+expectError: ^验证失败：验证码不正确$

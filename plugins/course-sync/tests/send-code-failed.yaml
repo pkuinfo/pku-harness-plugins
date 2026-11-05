@@ -1,0 +1,4 @@
+tool: sendCode
+responses:
+  - { match: /chapi/api/course/send_get_token_message, campus: treehole, body: { code: 40004, success: false, message: 发送太频繁 } }
+expectError: ^发送验证码失败：发送太频繁$

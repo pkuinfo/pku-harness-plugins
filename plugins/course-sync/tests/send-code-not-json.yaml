@@ -1,0 +1,4 @@
+tool: sendCode
+responses:
+  - { match: /chapi/api/course/send_get_token_message, campus: treehole, body: '<html>busy</html>' }
+expectError: ^树洞返回了无法解析的内容（HTTP 200）$

@@ -1,0 +1,220 @@
+{
+  "title": "教务课表",
+  "description": "同步按钮和需要时的验证步骤；与 agent 调用的是同一组工具。",
+  "bindings": {
+    "/status": { "tool": "status", "ttlMinutes": 1 }
+  },
+  "strings": {
+    "zh-Hans": {
+      "lang": "zh-Hans",
+      "subtitle": "来自树洞课表",
+      "signInFirst": "先登录校园账号",
+      "signInWhy": "课表来自学校系统，需要用你的校园账号登录。",
+      "goSignIn": "去登录",
+      "footer": "同步会替换之前同步的课，你手动添加的课不受影响。",
+      "syncedClasses": "已同步的课",
+      "classesUnit": " 节",
+      "lastSync": "上次同步",
+      "never": "从未",
+      "verifyNeeded": "需要验证",
+      "loginWhy": "树洞需要短信验证（首次登录或定期验证）",
+      "courseWhy": "查看课表需要二次验证：手机令牌验证码，或短信验证码",
+      "otp": "手机令牌",
+      "sms": "短信",
+      "sendSms": "发送短信验证码",
+      "otpCode": "手机令牌验证码",
+      "smsCode": "短信验证码",
+      "codePlaceholder": "6 位数字",
+      "verifyAndSync": "验证并同步",
+      "resync": "重新同步",
+      "sync": "同步课表",
+      "syncedBefore": "已同步 ",
+      "syncedAfter": " 节课到日程",
+      "sent": "验证码已发送到绑定手机",
+      "stillValid": "之前的验证码还有效"
+    },
+    "en": {
+      "lang": "en",
+      "subtitle": "From the Treehole timetable",
+      "signInFirst": "Sign in to your campus account first",
+      "signInWhy": "Your timetable comes from the university’s systems, so sign in with your campus account.",
+      "goSignIn": "Sign in",
+      "footer": "Syncing replaces classes from the last sync. Classes you added yourself stay as they are.",
+      "syncedClasses": "Synced classes",
+      "classesUnit": "",
+      "lastSync": "Last synced",
+      "never": "Never",
+      "verifyNeeded": "Verification needed",
+      "loginWhy": "Treehole needs SMS verification (first sign-in or a periodic check)",
+      "courseWhy": "Viewing the timetable needs a second check: an authenticator code or an SMS code",
+      "otp": "Authenticator",
+      "sms": "SMS",
+      "sendSms": "Send SMS code",
+      "otpCode": "Authenticator code",
+      "smsCode": "SMS code",
+      "codePlaceholder": "6 digits",
+      "verifyAndSync": "Verify and sync",
+      "resync": "Sync again",
+      "sync": "Sync timetable",
+      "syncedBefore": "Classes synced to Schedule: ",
+      "syncedAfter": "",
+      "sent": "Code sent to the phone on your account",
+      "stillValid": "Your previous code is still valid"
+    }
+  },
+  "spec": {
+    "root": "root",
+    "elements": {
+      "root": { "type": "Column", "props": { "gap": "lg" }, "children": ["signedOut", "signedIn"] },
+
+      "signedOut": {
+        "type": "Column",
+        "props": { "gap": "md" },
+        "visible": { "$state": "/status/signedIn", "not": true },
+        "children": ["signInTitle", "signInWhy", "signInButton"]
+      },
+      "signInTitle": { "type": "Heading", "props": { "text": { "$state": "/t/signInFirst" }, "size": "md" } },
+      "signInWhy": { "type": "Text", "props": { "text": { "$state": "/t/signInWhy" }, "tone": "muted", "size": "body" } },
+      "signInButton": {
+        "type": "Button",
+        "props": { "label": { "$state": "/t/goSignIn" }, "variant": "primary" },
+        "on": { "press": { "action": "navigate", "params": { "href": "/campus" } } }
+      },
+
+      "signedIn": {
+        "type": "Column",
+        "props": { "gap": "lg" },
+        "visible": { "$state": "/status/signedIn" },
+        "children": ["subtitle", "summary", "footer", "syncButton", "verify", "synced", "error"]
+      },
+      "subtitle": { "type": "Text", "props": { "text": { "$state": "/t/subtitle" }, "tone": "muted", "size": "small" } },
+      "summary": { "type": "Card", "props": { "title": null, "subtitle": null }, "children": ["countRow", "lastRow"] },
+      "countRow": {
+        "type": "ListItem",
+        "props": { "title": { "$state": "/t/syncedClasses" }, "subtitle": null, "value": { "$template": "${/status/count}${/t/classesUnit}" }, "icon": "book" }
+      },
+      "lastRow": {
+        "type": "ListItem",
+        "props": {
+          "title": { "$state": "/t/lastSync" },
+          "subtitle": null,
+          "value": {
+            "$cond": { "$state": "/status/lastSync" },
+            "$then": { "$cond": { "$state": "/t/lang", "eq": "en" }, "$then": { "$state": "/status/lastSync/en" }, "$else": { "$state": "/status/lastSync/zh" } },
+            "$else": { "$state": "/t/never" }
+          },
+          "icon": "clock"
+        }
+      },
+      "footer": { "type": "Text", "props": { "text": { "$state": "/t/footer" }, "tone": "muted", "size": "small" } },
+
+      "syncButton": {
+        "type": "Button",
+        "props": {
+          "label": { "$cond": { "$state": "/status/count", "gt": 0 }, "$then": { "$state": "/t/resync" }, "$else": { "$state": "/t/sync" } },
+          "variant": "primary"
+        },
+        "visible": { "$state": "/result/sync/status", "neq": "verification_required" },
+        "on": {
+          "press": [
+            { "action": "setState", "params": { "statePath": "/form/code", "value": "" } },
+            { "action": "setState", "params": { "statePath": "/form/method", "value": "otp" } },
+            { "action": "setState", "params": { "statePath": "/result/send", "value": null } },
+            { "action": "callTool", "params": { "tool": "course-sync.sync", "input": {}, "resultPath": "/result/sync", "errorPath": "/error" } }
+          ]
+        }
+      },
+
+      "verify": {
+        "type": "Column",
+        "props": { "gap": "md" },
+        "visible": { "$state": "/result/sync/status", "eq": "verification_required" },
+        "children": ["verifyTitle", "loginWhy", "courseWhy", "method", "send", "code", "check", "sent", "stillValid"]
+      },
+      "verifyTitle": { "type": "Heading", "props": { "text": { "$state": "/t/verifyNeeded" }, "size": "md" } },
+      "loginWhy": {
+        "type": "Text",
+        "props": { "text": { "$state": "/t/loginWhy" }, "tone": "muted", "size": "body" },
+        "visible": { "$state": "/result/sync/kind", "eq": "login" }
+      },
+      "courseWhy": {
+        "type": "Text",
+        "props": { "text": { "$state": "/t/courseWhy" }, "tone": "muted", "size": "body" },
+        "visible": { "$state": "/result/sync/kind", "neq": "login" }
+      },
+      "method": {
+        "type": "Choice",
+        "props": {
+          "label": null,
+          "options": [
+            { "label": { "$state": "/t/otp" }, "value": "otp", "hint": null },
+            { "label": { "$state": "/t/sms" }, "value": "sms", "hint": null }
+          ],
+          "value": { "$bindState": "/form/method" }
+        },
+        "visible": { "$state": "/result/sync/kind", "neq": "login" }
+      },
+      "send": {
+        "type": "Button",
+        "props": { "label": { "$state": "/t/sendSms" }, "variant": "secondary" },
+        "visible": { "$or": [{ "$state": "/result/sync/kind", "eq": "login" }, { "$state": "/form/method", "eq": "sms" }] },
+        "on": {
+          "press": [
+            { "action": "callTool", "params": { "tool": "course-sync.sendCode", "input": {}, "resultPath": "/result/send", "errorPath": "/error" } },
+            { "action": "smsCode", "params": { "statePath": "/form/code" } }
+          ]
+        }
+      },
+      "code": {
+        "type": "TextField",
+        "props": {
+          "label": {
+            "$cond": { "$or": [{ "$state": "/result/sync/kind", "eq": "login" }, { "$state": "/form/method", "eq": "sms" }] },
+            "$then": { "$state": "/t/smsCode" },
+            "$else": { "$state": "/t/otpCode" }
+          },
+          "placeholder": { "$state": "/t/codePlaceholder" },
+          "value": { "$bindState": "/form/code" },
+          "keyboard": "number"
+        }
+      },
+      "check": {
+        "type": "Button",
+        "props": { "label": { "$state": "/t/verifyAndSync" }, "variant": "primary" },
+        "visible": { "$state": "/form/code" },
+        "on": {
+          "press": {
+            "action": "callTool",
+            "params": {
+              "tool": "course-sync.sync",
+              "input": {
+                "code": { "$state": "/form/code" },
+                "method": { "$cond": { "$state": "/result/sync/kind", "eq": "login" }, "$then": "sms", "$else": { "$state": "/form/method" } }
+              },
+              "resultPath": "/result/sync",
+              "errorPath": "/error"
+            }
+          }
+        }
+      },
+      "sent": {
+        "type": "Text",
+        "props": { "text": { "$state": "/t/sent" }, "tone": "muted", "size": "small" },
+        "visible": [{ "$state": "/result/send/sent" }, { "$state": "/result/send/sent", "eq": "验证码已发送到绑定手机" }, { "$state": "/error", "not": true }]
+      },
+      "stillValid": {
+        "type": "Text",
+        "props": { "text": { "$state": "/t/stillValid" }, "tone": "muted", "size": "small" },
+        "visible": [{ "$state": "/result/send/sent" }, { "$state": "/result/send/sent", "neq": "验证码已发送到绑定手机" }, { "$state": "/error", "not": true }]
+      },
+
+      "synced": {
+        "type": "Text",
+        "props": { "text": { "$template": "${/t/syncedBefore}${/result/sync/count}${/t/syncedAfter}" }, "tone": "up", "size": "body" },
+        "visible": [{ "$state": "/result/sync/status", "eq": "synced" }, { "$state": "/error", "not": true }]
+      },
+      "error": { "type": "Text", "props": { "text": { "$state": "/error" }, "tone": "down", "size": "small" }, "visible": { "$state": "/error" } }
+    },
+    "state": { "status": null, "form": { "code": "", "method": "otp" }, "result": { "sync": null, "send": null }, "error": null }
+  }
+}

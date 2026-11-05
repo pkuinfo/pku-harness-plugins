@@ -1,0 +1,5 @@
+# success without data.course.
+tool: sync
+responses:
+  - { match: /chapi/api/getCoursetable_v2, campus: treehole, body: { code: 20000, success: true, data: { other: 1 } } }
+expectError: ^获取课表失败：没有课表数据$

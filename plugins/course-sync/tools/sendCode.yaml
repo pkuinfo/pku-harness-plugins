@@ -1,0 +1,18 @@
+# verify.rs handle_sms_verification / api.rs course_token_exchange_with_sms, as the host's
+# verify.treeholeSendCode ability (sends for whichever check the last sync left pending; the
+# course token when none is). "还未过期": an earlier code is still valid.
+title: 发送验证码
+summary: 给绑定手机发送课表验证码
+description: Send the SMS code that the last sync asked for (to the phone bound to the account).
+effect: write
+steps:
+  - let: r
+    value: "null"
+  - try:
+      - let: r
+        ability: verify.treeholeSendCode
+        args: "{ kind: 'course' }"
+    catch:
+      - check: "false"
+        error: "${unparsable(error.message) ?? error.message}"
+return: "{ sent: r.message }"

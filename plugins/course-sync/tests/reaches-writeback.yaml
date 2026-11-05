@@ -1,0 +1,16 @@
+# Parsing and the class-times request run to the timetable write-back, which recorded tests can't
+# supply (no timetable service): the parsed result and write-back are checked in the parity test.
+tool: sync
+now: 2026-11-05 08:00
+responses:
+  - match: /chapi/api/getCoursetable_v2
+    campus: treehole
+    body:
+      code: 20000
+      success: true
+      data:
+        course:
+          - { timeNum: 第一节, mon: { courseName: '高等数学<br>上课信息：1-16周 理教107<br>考试信息：待定', sty: 'background-color: lightgreen' }, wed: null }
+          - { timeNum: 第二节, mon: { courseName: '高等数学<br>上课信息：1-16周 理教107<br>考试信息：待定' } }
+  - { match: /chapi/api/v3/classtimes/user_class_times, campus: treehole, body: { code: 20000, success: true, data: { list: [{ name: 第一节, time_period: '8:00-8:50' }] } } }
+expectError: timetable

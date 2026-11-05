@@ -1,0 +1,8 @@
+# Constants and functions every course-sync tool sees (PLUGIN.md shared:).
+functions:
+  # api.ts call(): a body that isn't JSON → "树洞返回了无法解析的内容（HTTP n）". The runner says
+  # "<host> did not return JSON (HTTP n: …)"; other messages pass through.
+  unparsable: |
+    (msg) => test(msg, 'did not return JSON \(HTTP \d+')
+      ? '树洞返回了无法解析的内容（HTTP ' + match(msg, 'did not return JSON \(HTTP (\d+)', 1) + '）'
+      : null

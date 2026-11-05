@@ -1,0 +1,5 @@
+# A non-2xx status fails in the runner before the body is read (TS parsed the body: here "树洞返回了无法解析的内容（HTTP 502）").
+tool: sendCode
+responses:
+  - { match: /chapi/api/course/send_get_token_message, campus: treehole, status: 502, body: 'Bad gateway' }
+expectError: ^HTTP 502 from treehole$

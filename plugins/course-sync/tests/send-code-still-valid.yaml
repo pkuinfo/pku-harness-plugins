@@ -1,0 +1,5 @@
+tool: sendCode
+kv: { 'verify:pending': course }
+responses:
+  - { match: /chapi/api/course/send_get_token_message, campus: treehole, body: { code: 40003, success: false, message: 验证码还未过期 } }
+expect: { sent: 之前的验证码还有效（验证码还未过期） }

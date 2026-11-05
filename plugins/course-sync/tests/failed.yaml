@@ -1,0 +1,4 @@
+tool: sync
+responses:
+  - { match: /chapi/api/getCoursetable_v2, campus: treehole, body: { code: 50000, success: false, message: 服务器繁忙 } }
+expectError: ^获取课表失败：服务器繁忙$

@@ -1,0 +1,5 @@
+# success without data: the envelope's message is shown.
+tool: sync
+responses:
+  - { match: /chapi/api/getCoursetable_v2, campus: treehole, body: { code: 20000, success: true, message: 本学期暂无课表 } }
+expectError: ^获取课表失败：本学期暂无课表$

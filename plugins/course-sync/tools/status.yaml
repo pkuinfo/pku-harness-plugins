@@ -1,0 +1,29 @@
+# What the screen shows above the sync button (the TS screen read services.campus.status(),
+# services.timetable and kv 'lastSync' directly). `legacy: true` reads lastSync as the TS plugin
+# stored it, so the date survives the port.
+title: 课表同步状态
+summary: 已同步的课数和上次同步时间
+description: Whether the campus account is signed in, how many synced classes are in the timetable and when the last sync ran (used by the course-sync screen; rarely needed in chat).
+effect: read
+functions:
+  clock: "(ms) => formatDate(ms, 'HH:mm')"
+  # sdk format.ts formatRelative, both languages (the screen picks one).
+  relative: |
+    (ms, en) => now - ms < 60000 ? (en ? 'Just now' : '刚刚')
+      : now - ms < 3600000 ? (en ? floor((now - ms) / 60000) + ' min ago' : floor((now - ms) / 60000) + ' 分钟前')
+      : daysBetween(now, ms) == 0 ? clock(ms)
+      : daysBetween(now, ms) == -1 ? (en ? 'Yesterday ' : '昨天 ') + clock(ms)
+      : formatDate(ms, en ? 'YYYY-MM-DD HH:mm' : 'M月D日 HH:mm')
+steps:
+  - let: tt
+    ability: timetable.get
+  - let: last
+    kv: get
+    key: lastSync
+    legacy: true
+return: |
+  {
+    signedIn: account.signedIn,
+    count: tt.courses.filter(c => c.source == 'campus').length,
+    lastSync: typeOf(last?.at) == 'number' ? { at: last.at, count: last.count, zh: relative(last.at, false), en: relative(last.at, true) } : null,
+  }

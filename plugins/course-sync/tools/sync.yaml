@@ -1,0 +1,188 @@
+# Treehole course table → the shared timetable (pkucli crates/treehole/src/api.rs get_coursetable
+# + get_class_times; the TS plugin's src/parse.ts and src/index.ts).
+#
+# GET /chapi/api/getCoursetable_v2: `data.course` is one row per period (`timeNum` "第一节" …),
+# each with `mon`…`sun` = { courseName, sty }, courseName "Name<br>上课信息：…<br>考试信息：…".
+# Consecutive periods of one course on one day merge into a meeting. Period times come from
+# POST /chapi/api/v3/classtimes/user_class_times ({ list: [{ name: "第一节", time_period:
+# "08:00-08:50" }] }) over PKU's standard 本科生作息. The 40002 / 40077 second factor (and the
+# 手机令牌 auto-redeem) is the host's verify.treehole ability.
+#
+# Write-back: every course with source "campus" is removed, then each meeting with known times is
+# added with source "campus"; hand-added courses are never touched.
+title: 同步教务课表
+summary: 把本学期的课导入日程（替换上次同步的课）
+description: >-
+  Import this semester's classes from PKU into the timetable (replaces earlier synced classes,
+  keeps manual ones). May return verification_required; then call again with the code.
+effect: write
+input:
+  code: { type: string, trim: true, optional: true, min: 4, max: 8, description: SMS or 手机令牌 code when a previous call asked for one }
+  method: { enum: [sms, otp], optional: true, description: how the code was obtained; default sms }
+constants:
+  DAYS: [mon, tue, wed, thu, fri, sat, sun]
+  # JS weekday of each column: 0 = Sunday … 6 = Saturday.
+  JS_DAY: [1, 2, 3, 4, 5, 6, 0]
+  WEEKDAY: [周日, 周一, 周二, 周三, 周四, 周五, 周六]
+  NUMERALS: 一二三四五六七八九
+  # PKU's standard period times (本科生作息), used when classtimes is missing or unparsable.
+  DEFAULT_PERIODS:
+    '1': ['08:00', '08:50']
+    '2': ['09:00', '09:50']
+    '3': ['10:10', '11:00']
+    '4': ['11:10', '12:00']
+    '5': ['13:00', '13:50']
+    '6': ['14:00', '14:50']
+    '7': ['15:10', '16:00']
+    '8': ['16:10', '17:00']
+    '9': ['17:10', '18:00']
+    '10': ['18:40', '19:30']
+    '11': ['19:40', '20:30']
+    '12': ['20:40', '21:30']
+functions:
+  # verify.treehole's errors in the TS wording: a code that didn't redeem stays "验证失败：…", an
+  # unparsable body is api.ts's message, anything else is "获取课表失败：…" (the ability says
+  # "未知错误" where the TS said "没有课表数据").
+  failure: |
+    (msg) => startsWith(msg, '验证失败') ? msg
+      : unparsable(msg) ?? '获取课表失败：' + (msg == '未知错误' ? '没有课表数据' : msg)
+
+  # ---- parse.ts periodOf: "第一节" / "第十二节" / "3" → period number (null when unreadable).
+  digit: "(c) => indexOf(NUMERALS, c) + 1"
+  periodClean: |
+    (label) => replace(str(label), '[第节\s]', '')
+  periodParts: "(s) => match(s, '^(?:([一二三四五六七八九])?十)?([一二三四五六七八九])?$')"
+  periodOfClean: |
+    (s, m) => test(s, '^\d+$') ? num(s)
+      : s == '十' ? 10
+      : m == null || s == '' ? null
+      : ((includes(s, '十') ? (m[1] ? digit(m[1]) : 1) : 0) * 10 + (m[2] ? digit(m[2]) : 0)) || null
+  periodOf: "(label) => periodOfClean(periodClean(label), periodParts(periodClean(label)))"
+
+  # ---- parse.ts weeksOf: "1-16周", "1-15周(单)", "2-16周双" → teaching weeks (null when absent).
+  weeksFrom: |
+    (m) => m == null ? null
+      : range(min(num(m[1]), num(m[2])), max(num(m[1]), num(m[2])) + 1)
+          .filter(w => m[3] == '单' ? w % 2 == 1 : m[3] == '双' ? w % 2 == 0 : true)
+  weeksOf: |
+    (info) => !info ? null : weeksFrom(match(info, '(\d+)\s*-\s*(\d+)\s*周\s*[(（]?\s*([单双])?'))
+
+  # ---- parse.ts locationOf: the last "short building name + 2–4 digit number" in the class info
+  # ("理教107", "物理楼北547", "二教 203"); text without a room number has none.
+  roomOf: "(rooms) => rooms.length ? rooms[rooms.length - 1][1] + rooms[rooms.length - 1][2] : null"
+  locationOf: |
+    (info) => !info ? null
+      : roomOf(matchAll(info, '([一-龥A-Za-z]{1,8}?)\s?(\d{2,4})(?![\d周节])').filter(m => !test(m[1], '^(第|共|周|每)')))
+
+  # ---- parse.ts cell: "Name<br>上课信息：…<br>考试信息：…" → { name, info }.
+  strip: "(h) => squash(replace(replace(h, '<[^>]+>', ' '), '&nbsp;', ' '))"
+  infoOf: |
+    (p) => p == null ? null : (replace(p, '^上课信息[:：]\s*', '') || null)
+  cellOf: "(parts) => ({ name: strip(parts[0] ?? ''), info: infoOf(parts.map(p => strip(p)).find(p => startsWith(p, '上课信息'))) })"
+  cell: |
+    (raw) => cellOf(split(raw, '(?i)<br\s*/?>', true))
+
+  # ---- parse.ts parseCourseTable: per day, walk the periods and merge consecutive ones.
+  meeting: "(c, wd, period) => ({ name: c.name, weekday: wd, firstPeriod: period, lastPeriod: period, info: c.info, weeks: weeksOf(c.info), location: locationOf(c.info) })"
+  rawOf: "(row, day) => row[day]?.courseName ?? ''"
+  slots: "(rows, day) => rows.map((row, i) => ({ period: periodOf(row.timeNum ?? '') ?? (i + 1), c: rawOf(row, day) ? cell(rawOf(row, day)) : null }))"
+  fold: |
+    (acc, x, wd) => acc.open && x.c && x.c.name == acc.open.name && acc.open.lastPeriod == x.period - 1
+      ? { out: acc.out, open: { ...acc.open, lastPeriod: x.period } }
+      : { out: acc.open ? [...acc.out, acc.open] : acc.out, open: x.c?.name ? meeting(x.c, wd, x.period) : null }
+  closeOut: "(acc) => acc.open ? [...acc.out, acc.open] : acc.out"
+  dayMeetings: "(rows, d) => closeOut(slots(rows, DAYS[d]).reduce((acc, x) => fold(acc, x, JS_DAY[d]), { out: [], open: null }))"
+  parseCourseTable: "(rows) => range(0, 7).flatMap(d => dayMeetings(rows, d))"
+
+  # ---- parse.ts periodTimes: server times over the defaults; "8:00" → "08:00".
+  pad: "(t) => t.length == 4 ? '0' + t : t"
+  timeEntry: |
+    (t) => [periodOf(t.name ?? ''), match(str(t.time_period ?? ''), '(\d{1,2}:\d{2})\D+(\d{1,2}:\d{2})')]
+  withTime: "(out, e) => e[0] && e[1] ? { ...out, [e[0]]: [pad(e[1][1]), pad(e[1][2])] } : out"
+  periodTimes: "(list) => (list ?? []).reduce((out, t) => withTime(out, timeEntry(t)), DEFAULT_PERIODS)"
+  startOf: "(times, p) => (times[p] ?? [])[0]"
+  endOf: "(times, p) => (times[p] ?? [])[1]"
+steps:
+  - let: raw
+    value: "null"
+  - try:
+      - let: raw
+        ability: verify.treehole
+        args: "{ request: { url: '/chapi/api/getCoursetable_v2' }, code: input.code, via: input.method ?? 'sms' }"
+    catch:
+      - check: "false"
+        error: "${failure(error.message)}"
+  - if: "raw.status == 'verification_required'"
+    then:
+      - return: "{ ...raw, message: raw.kind == 'course' ? '查看课表需要二次验证：手机令牌验证码，或短信验证码' : raw.message }"
+  # verify.treehole hands back the whole envelope when it has no data.
+  - check: "typeOf(raw) == 'object' && typeOf(raw.success) == 'undefined' && raw.course"
+    error: "获取课表失败：${typeOf(raw) == 'object' && typeOf(raw.success) != 'undefined' ? raw.message ?? '没有课表数据' : '没有课表数据'}"
+  - let: meetings
+    value: "parseCourseTable(raw.course)"
+  # Any failure here (request, non-JSON, odd shape) falls back to the standard times, as in TS.
+  - let: times
+    value: "periodTimes(null)"
+  - try:
+      - let: ct
+        request: { campus: treehole, url: /chapi/api/v3/classtimes/user_class_times, method: POST, json: {} }
+        as: json
+      - let: times
+        value: "periodTimes(ct?.data?.list)"
+    catch:
+      - let: times
+        value: "periodTimes(null)"
+  # Replace the last sync: remove every "campus" course, then add the meetings.
+  - let: before
+    ability: timetable.get
+  - let: removed
+    each: "chunk(before.courses.filter(c => c.source == 'campus'), 50)"
+    steps:
+      - let: batch
+        value: item
+      - let: done
+        each: batch
+        steps:
+          - ability: timetable.remove
+            args: "{ id: item.id }"
+  - let: after
+    ability: timetable.get
+  - let: base
+    value: after.courses.length
+  - let: names
+    value: "unique(meetings.map(m => m.name))"
+  # Meetings whose periods have no known time are left out (counted in courses, not in count).
+  - let: toAdd
+    value: |
+      meetings
+        .filter(m => startOf(times, m.firstPeriod) && endOf(times, m.lastPeriod))
+        .map(m => ({
+          name: m.name,
+          weekday: m.weekday,
+          start: startOf(times, m.firstPeriod),
+          end: endOf(times, m.lastPeriod),
+          location: m.location,
+          teacher: null,
+          weeks: m.weeks,
+          color: (base + names.indexOf(m.name)) % 8,
+          source: 'campus',
+        }))
+  - let: added
+    each: "chunk(toAdd, 50)"
+    steps:
+      - let: batch
+        value: item
+      - let: done
+        each: batch
+        steps:
+          - ability: timetable.upsert
+            args: "{ course: item }"
+  - kv: set
+    key: lastSync
+    value: "{ at: now, count: toAdd.length }"
+return: |
+  {
+    status: 'synced',
+    count: toAdd.length,
+    courses: meetings.map(m => ({ name: m.name, day: WEEKDAY[m.weekday], periods: m.firstPeriod + '-' + m.lastPeriod, location: m.location, info: m.info })),
+  }

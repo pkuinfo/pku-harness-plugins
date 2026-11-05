@@ -1,0 +1,5 @@
+tool: sendCode
+kv: { 'verify:pending': login }
+responses:
+  - { match: /chapi/api/jwt_send_msg, campus: treehole, body: { code: 20000, success: true } }
+expect: { sent: 验证码已发送到绑定手机 }

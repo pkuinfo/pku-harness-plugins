@@ -1,0 +1,4 @@
+tool: sync
+responses:
+  - { match: /chapi/api/getCoursetable_v2, campus: treehole, body: '<html>login</html>' }
+expectError: ^树洞返回了无法解析的内容（HTTP 200）$

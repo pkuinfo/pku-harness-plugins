@@ -3,7 +3,6 @@ import type { PluginDef } from '@pku-harness/sdk';
 import { authenticatorPlugin } from './authenticator/src';
 import { calendarPlugin } from './calendar/src';
 import { cardSharePlugin } from './card-share/src';
-import { courseSyncPlugin } from './course-sync/src';
 import { coursesPlugin } from './courses/src';
 import { dashboardPlugin } from './dashboard/src';
 import { deepseekPlugin } from './deepseek/src';
@@ -35,7 +34,6 @@ export const builtinPlugins: PluginDef[] = [
   todoPlugin,
   schedulePlugin,
   timetablePlugin,
-  courseSyncPlugin,
   authenticatorPlugin,
   calendarPlugin,
   walletPlugin,

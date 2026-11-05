@@ -1,0 +1,7 @@
+# A pending login check redeems through jwt_msg_verify whatever method says.
+tool: sync
+input: { code: "123456", method: otp }
+kv: { 'verify:pending': login }
+responses:
+  - { match: /chapi/api/jwt_msg_verify, campus: treehole, body: { success: false, message: 验证码已过期 } }
+expectError: ^验证失败：验证码已过期$
