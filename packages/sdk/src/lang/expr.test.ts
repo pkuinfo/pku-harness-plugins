@@ -162,3 +162,17 @@ describe('additions from the course-catalog port', () => {
     ]);
   });
 });
+
+describe('base64', () => {
+  test('UTF-8 round trip, padding and URL-safe input', () => {
+    expect(ev("base64('a')")).toBe('YQ==');
+    expect(ev("base64('ab')")).toBe('YWI=');
+    expect(ev("base64('abc')")).toBe('YWJj');
+    expect(ev("base64('张三')")).toBe(Buffer.from('张三').toString('base64'));
+    expect(ev("base64('😀')")).toBe(Buffer.from('😀').toString('base64'));
+    expect(ev("unbase64(base64('学号 2000000000 😀'))")).toBe('学号 2000000000 😀');
+    expect(ev("unbase64('fn5-')")).toBe('~~~');
+    expect(ev("unbase64('Pz8_')")).toBe('???');
+    expect(ev("unbase64('/w==')")).toBe('\uFFFD');
+  });
+});

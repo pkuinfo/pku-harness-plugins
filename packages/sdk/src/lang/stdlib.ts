@@ -435,6 +435,8 @@ const fns: Record<string, Impl> = {
       return str(s);
     }
   },
+  base64: (_c, [s]) => base64(str(s)),
+  unbase64: (_c, [s]) => unbase64(str(s)),
 
   // json
   json: (_c, [s]) => {
@@ -484,6 +486,63 @@ const fns: Record<string, Impl> = {
   isList: (_c, [x]) => Array.isArray(x),
   typeOf: (_c, [x]) => (x === null ? 'null' : Array.isArray(x) ? 'list' : isNode(x) ? 'node' : typeof x),
 };
+
+
+const B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+
+function utf8(s: string): number[] {
+  const out: number[] = [];
+  for (const ch of s) {
+    const c = ch.codePointAt(0)!;
+    if (c < 0x80) out.push(c);
+    else if (c < 0x800) out.push(0xc0 | (c >> 6), 0x80 | (c & 63));
+    else if (c < 0x10000) out.push(0xe0 | (c >> 12), 0x80 | ((c >> 6) & 63), 0x80 | (c & 63));
+    else out.push(0xf0 | (c >> 18), 0x80 | ((c >> 12) & 63), 0x80 | ((c >> 6) & 63), 0x80 | (c & 63));
+  }
+  return out;
+}
+
+function fromUtf8(b: number[]): string {
+  let out = '';
+  for (let i = 0; i < b.length; ) {
+    const c = b[i]!;
+    const n = c < 0x80 ? 1 : c >= 0xf8 ? 0 : c >= 0xf0 ? 4 : c >= 0xe0 ? 3 : c >= 0xc0 ? 2 : 0;
+    const cont = Array.from({ length: Math.max(0, n - 1) }, (_, k) => b[i + 1 + k]);
+    if (!n || cont.some((x) => x == null || (x & 0xc0) !== 0x80)) {
+      out += '\uFFFD';
+      i += 1;
+      continue;
+    }
+    const cp = cont.reduce<number>((acc, x) => (acc << 6) | (x! & 63), n === 1 ? c : c & (0xff >> (n + 1)));
+    out += cp > 0x10ffff ? '\uFFFD' : String.fromCodePoint(cp);
+    i += n;
+  }
+  return out;
+}
+
+/** Base64 of the UTF-8 bytes of a string (written out: no btoa/Buffer/TextEncoder on every runtime). */
+function base64(s: string): string {
+  const b = utf8(s);
+  let out = '';
+  for (let i = 0; i < b.length; i += 3) {
+    const n = (b[i]! << 16) | ((b[i + 1] ?? 0) << 8) | (b[i + 2] ?? 0);
+    out += B64[(n >> 18) & 63]! + B64[(n >> 12) & 63]! + (i + 1 < b.length ? B64[(n >> 6) & 63] : '=') + (i + 2 < b.length ? B64[n & 63] : '=');
+  }
+  return out;
+}
+
+/** Inverse of base64 (standard or URL-safe alphabet), decoded as UTF-8. */
+function unbase64(s: string): string {
+  const clean = s.replace(/-/g, '+').replace(/_/g, '/').replace(/[^A-Za-z0-9+/]/g, '');
+  const bytes: number[] = [];
+  for (let i = 0; i < clean.length; i += 4) {
+    const n = [0, 1, 2, 3].reduce((acc, k) => (acc << 6) | Math.max(0, B64.indexOf(clean[i + k] ?? 'A')), 0);
+    bytes.push((n >> 16) & 255);
+    if (i + 2 < clean.length) bytes.push((n >> 8) & 255);
+    if (i + 3 < clean.length) bytes.push(n & 255);
+  }
+  return fromUtf8(bytes);
+}
 
 export const STDLIB: Record<string, Fn> = Object.fromEntries(Object.entries(fns).map(([name, impl]) => [name, builtin(name, impl)]));
 export const STDLIB_NAMES = Object.keys(fns);

@@ -56,7 +56,7 @@ regexes are strings; start with (?i) for case-insensitive. // and /* */ comments
 strings: str trim squash lower upper split replace(s, re, with) replaceText match(s, re, group?) matchAll matchAt (with index) test startsWith endsWith padStart clip(s, n) fmt('{a}', obj)
 numbers: num(x, fallback) int round(x, digits) fixed abs floor ceil yuan(fen)
 dates (Beijing time, ms): date(text) formatDate(ms, 'YYYY-MM-DD HH:mm W') addDays addMinutes daysBetween startOfDay minutesOf('HH:mm'|ms) weekday (1=Mon)
-urls/json: url(base, path) query(url, name) encode decode json(text) path(v, 'a.b[0]')
+urls/json: url(base, path) query(url, name) encode decode base64(s) unbase64(s) (UTF-8) json(text) path(v, 'a.b[0]')
 html: html(text, url?) select(node, css) first(node, css) node.text node.html node.attrs attr(node, name) data(node, name) children parent tableRows(node, {header, cells}) options(select) htmlText(s) htmlLines(node|s) without(node, css) largestText(node)
 
 ## Limits per run
