@@ -107,6 +107,17 @@ export const strings = defineStrings({
     custom: '自定义',
     customHint: (schedule: string) => `${schedule}（可在对话里让 AI 修改）`,
     needDue: '先设置截止时间才能提醒',
+    important: '重要',
+    importantHint: '带旗标；没有截止时间也会出现在「今天」',
+    repeatTodo: '重复',
+    repeatModes: [
+      { label: '不重复', value: 'none' },
+      { label: '按天', value: 'day' },
+      { label: '按周', value: 'week' },
+    ],
+    repeatHint: '完成后自动生成下一次，提醒随之顺延',
+    repeatNeedsDue: '没有截止时间：从下一个符合的日子 09:00 开始',
+    groups: { overdue: '已逾期', today: '今天', upcoming: '之后', undated: '无日期' },
     // Reminder form
     units: [
       { label: '按天', value: 'day' },
@@ -279,6 +290,17 @@ export const strings = defineStrings({
     custom: 'Custom',
     customHint: (schedule: string) => `${schedule} (ask the AI in chat to change it)`,
     needDue: 'Set a due time to get a reminder',
+    important: 'Important',
+    importantHint: 'Flagged, and listed under Today even without a due date',
+    repeatTodo: 'Repeat',
+    repeatModes: [
+      { label: 'Never', value: 'none' },
+      { label: 'Daily', value: 'day' },
+      { label: 'Weekly', value: 'week' },
+    ],
+    repeatHint: 'Completing it creates the next one; its reminder moves along',
+    repeatNeedsDue: 'No due time: starts on the next matching day at 09:00',
+    groups: { overdue: 'Overdue', today: 'Today', upcoming: 'Later', undated: 'No date' },
     units: [
       { label: 'Daily', value: 'day' },
       { label: 'Weekly', value: 'week' },
