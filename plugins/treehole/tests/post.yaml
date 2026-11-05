@@ -1,0 +1,13 @@
+# Recorded treehole responses (shapes from pkucli docs/treehole-api.md); parity-checked against the TS plugin.
+tool: post
+input:
+  text: "  今天的落日好美  "
+  fold: true
+now: 2026-11-05 10:00
+responses:
+  - match: /hole/post
+    campus: treehole
+    body: { code: 20000, success: true, message: success, data: { pid: 8140000 } }
+expect:
+  status: posted
+  pid: 8140000

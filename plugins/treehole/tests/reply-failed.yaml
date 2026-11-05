@@ -1,0 +1,11 @@
+# Recorded treehole responses (shapes from pkucli docs/treehole-api.md); parity-checked against the TS plugin.
+tool: reply
+input:
+  pid: 8132392
+  text: x
+now: 2026-11-05 10:00
+responses:
+  - match: /comment/post
+    campus: treehole
+    body: { code: 40300, success: false, message: 发言过于频繁 }
+expectError: ^树洞：发言过于频繁$

@@ -1,0 +1,23 @@
+# api.rs follow_hole: POST /chapi/api/v3/hole/attention { pid, switch: 1 }.
+title: 关注树洞
+summary: 关注一个树洞帖子，有新回复时收到通知
+description: 'Follow a hole (api.rs follow_hole: hole/attention switch=1) so it shows in treehole__followed and the user gets reply notifications.'
+effect: write
+input:
+  pid: { type: integer, min: 1, description: 'hole id (the number after #)' }
+  code: { type: string, optional: true, trim: true, min: 4, max: 8, description: 'SMS code, only when a previous call returned verification_required' }
+steps:
+  - let: r
+    value: "null"
+  - try:
+      - let: r
+        ability: verify.treehole
+        args: "{ request: { url: '/chapi/api/v3/hole/attention', method: 'POST', json: { pid: input.pid, switch: 1 } }, code: input.code, via: 'sms', kind: 'login' }"
+    catch:
+      - check: "false"
+        error: "${failure(error.message)}"
+  - if: "obj(r).status == 'verification_required'"
+    then:
+      - return: VERIFY
+# verify.treehole hands back the whole envelope when there is no data; its message is the server's note.
+return: "{ status: 'ok', pid: input.pid, followed: true, message: obj(r).success == true ? r.message ?? '' : '' }"

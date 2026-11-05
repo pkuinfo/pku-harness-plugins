@@ -5,7 +5,7 @@ import type { Capability, PluginDef, PluginTranslation, ToolDef, ToolEffect } fr
 import type { PluginScreenProps, PluginWidgetProps } from '../ui';
 import { serverFunctions, type PluginDocument } from './load';
 import { runTool, ToolFailure, type PublicFetch } from './run';
-import { durationMs, type FieldDef, type ViewDoc } from './schema';
+import { durationMs, type FieldDef, type ToolDoc, type ViewDoc } from './schema';
 
 /**
  * Compile a validated plugin document into an ordinary `PluginDef`
@@ -76,23 +76,35 @@ function fullTool(pluginId: string, tool: string) {
 /** The read tool that backs a `{ fn }` binding (widgets resolve bindings through tools). */
 export const fnToolName = (fn: string) => `fn_${fn.replace(/[^A-Za-z0-9_]/g, '_')}`.slice(0, 40);
 
-/** `{ "$param": "pid" }` in binding args → the screen's route parameter (`/p/<plugin>/<screen>?pid=…`). */
-function withParams(v: unknown, params: Record<string, string | undefined>): unknown {
+/**
+ * `{ "$param": "pid" }` in binding args → the screen's route parameter (`/p/<plugin>/<screen>?pid=…`).
+ * Route parameters are strings; when the bound tool's input field is a number, a numeric string
+ * becomes a number.
+ */
+function withParams(v: unknown, params: Record<string, string | undefined>, fields?: Record<string, FieldDef>, field?: string): unknown {
   if (Array.isArray(v)) return v.map((x) => withParams(x, params));
   if (v && typeof v === 'object') {
     const o = v as Record<string, unknown>;
-    if (typeof o.$param === 'string' && Object.keys(o).length === 1) return params[o.$param] ?? null;
-    return Object.fromEntries(Object.entries(o).map(([k, x]) => [k, withParams(x, params)]));
+    if (typeof o.$param === 'string' && Object.keys(o).length === 1) {
+      const raw = params[o.$param] ?? null;
+      const type = field ? fields?.[field]?.type : undefined;
+      if (raw !== null && (type === 'integer' || type === 'number') && /^-?\d+(\.\d+)?$/.test(raw)) return Number(raw);
+      return raw;
+    }
+    return Object.fromEntries(Object.entries(o).map(([k, x]) => [k, withParams(x, params, fields, k)]));
   }
   return v;
 }
+
+/** `{name}` in a screen title → its route parameter (e.g. "树洞 #{pid}"). */
+const titleWith = (title: string, params: Record<string, string | undefined>) => title.replace(/\{(\w+)\}/g, (_, k: string) => params[k] ?? '');
 
 /**
  * A widget or screen document rendered by the host's GenUI. Its state is the spec's state plus:
  * the bound data, `/params` (screen route parameters), `/size` (widget size) and `/t` (the
  * view's `strings` in the app language, zh-Hans fallback).
  */
-function viewComponent(pluginId: string, view: ViewDoc): ComponentType<PluginWidgetProps | PluginScreenProps> {
+function viewComponent(pluginId: string, view: ViewDoc, tools: Record<string, ToolDoc> = {}): ComponentType<PluginWidgetProps | PluginScreenProps> {
   const spec = view.spec as Record<string, unknown> & { state?: Record<string, unknown> };
   function DocView(props: PluginWidgetProps | PluginScreenProps) {
     const { host } = props;
@@ -105,7 +117,11 @@ function viewComponent(pluginId: string, view: ViewDoc): ComponentType<PluginWid
         Object.fromEntries(
           Object.entries(view.bindings ?? {}).map(([ptr, { fn, tool, args, ...b }]) => [
             ptr,
-            { ...b, ...(args ? { args: withParams(args, params) as Record<string, unknown> } : {}), tool: fn ? `${pluginId}.${fnToolName(fn)}` : fullTool(pluginId, tool!) },
+            {
+              ...b,
+              ...(args ? { args: withParams(args, params, tool && !tool.includes('.') ? tools[tool]?.input : undefined) as Record<string, unknown> } : {}),
+              tool: fn ? `${pluginId}.${fnToolName(fn)}` : fullTool(pluginId, tool!),
+            },
           ]),
         ),
       // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -121,11 +137,12 @@ function viewComponent(pluginId: string, view: ViewDoc): ComponentType<PluginWid
   return DocView;
 }
 
-function screenComponent(pluginId: string, view: ViewDoc): ComponentType<PluginScreenProps> {
-  const Body = viewComponent(pluginId, view) as ComponentType<PluginScreenProps>;
+function screenComponent(pluginId: string, view: ViewDoc, tools: Record<string, ToolDoc>, enTitle?: string): ComponentType<PluginScreenProps> {
+  const Body = viewComponent(pluginId, view, tools) as ComponentType<PluginScreenProps>;
   function DocScreen(props: PluginScreenProps) {
     const { Screen } = props.host.components;
-    return createElement(Screen, { title: view.title, back: true, children: createElement(Body, props) });
+    const title = props.host.useLocale() === 'en' && enTitle ? enTitle : view.title;
+    return createElement(Screen, { title: titleWith(title, props.params ?? {}), back: true, children: createElement(Body, props) });
   }
   return DocScreen;
 }
@@ -227,10 +244,10 @@ export function compilePlugin(doc: PluginDocument, opts: CompileOptions): Plugin
       commands: m.commands ? Object.fromEntries(Object.entries(m.commands).map(([k, c]) => [k, { description: c.description, aliases: c.aliases, argHint: c.argHint, prompt: c.prompt }])) : undefined,
       widgets: Object.keys(doc.widgets).length
         ? Object.fromEntries(
-            Object.entries(doc.widgets).map(([k, v]) => [k, { title: v.title, description: v.description ?? v.title, sizes: v.sizes, defaultSize: v.defaultSize, component: viewComponent(m.id, v) as ComponentType<PluginWidgetProps> }]),
+            Object.entries(doc.widgets).map(([k, v]) => [k, { title: v.title, description: v.description ?? v.title, sizes: v.sizes, defaultSize: v.defaultSize, component: viewComponent(m.id, v, doc.tools) as ComponentType<PluginWidgetProps> }]),
           )
         : undefined,
-      screens: Object.keys(doc.screens).length ? Object.fromEntries(Object.entries(doc.screens).map(([k, v]) => [k, { title: v.title, presentation: v.presentation, component: screenComponent(m.id, v) }])) : undefined,
+      screens: Object.keys(doc.screens).length ? Object.fromEntries(Object.entries(doc.screens).map(([k, v]) => [k, { title: v.title, presentation: v.presentation, component: screenComponent(m.id, v, doc.tools, m.i18n?.en?.screens?.[k]?.title) }])) : undefined,
       settings: m.settings,
     },
     i18n: translation(doc) ? { en: translation(doc) } : undefined,

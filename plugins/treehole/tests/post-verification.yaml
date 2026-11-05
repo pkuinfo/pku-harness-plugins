@@ -1,0 +1,15 @@
+# Recorded treehole responses (shapes from pkucli docs/treehole-api.md); parity-checked against the TS plugin.
+tool: post
+input:
+  text: hi
+now: 2026-11-05 10:00
+responses:
+  - match: /hole/post
+    campus: treehole
+    body: { code: 40002, success: false, message: 请进行短信验证 }
+expect:
+  status: verification_required
+  kind: login
+  methods:
+    - sms
+  message: 树洞需要短信验证（首次登录或定期验证）。先调用 treehole__sendCode 发送验证码，再带上 code 重试。

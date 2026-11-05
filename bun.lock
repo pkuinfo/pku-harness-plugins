@@ -220,16 +220,6 @@
         "zod": "^4.0.0",
       },
     },
-    "plugins/treehole": {
-      "name": "@pku-harness/plugin-treehole",
-      "version": "0.1.0",
-      "peerDependencies": {
-        "@pku-harness/sdk": "*",
-        "react": "*",
-        "react-native": "*",
-        "zod": "^4.0.0",
-      },
-    },
     "plugins/ui": {
       "name": "@pku-harness/plugin-ui",
       "version": "0.2.0",
@@ -366,8 +356,6 @@
     "@pku-harness/plugin-timetable": ["@pku-harness/plugin-timetable@workspace:plugins/timetable"],
 
     "@pku-harness/plugin-todo": ["@pku-harness/plugin-todo@workspace:plugins/todo"],
-
-    "@pku-harness/plugin-treehole": ["@pku-harness/plugin-treehole@workspace:plugins/treehole"],
 
     "@pku-harness/plugin-ui": ["@pku-harness/plugin-ui@workspace:plugins/ui"],
 

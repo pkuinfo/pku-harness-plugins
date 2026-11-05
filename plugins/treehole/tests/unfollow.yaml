@@ -1,0 +1,18 @@
+# Recorded treehole responses (shapes from pkucli docs/treehole-api.md); parity-checked against the TS plugin.
+tool: unfollow
+input:
+  pid: 8132392
+  code: "654321"
+now: 2026-11-05 10:00
+responses:
+  - match: /jwt_msg_verify
+    campus: treehole
+    body: { code: 20000, success: true, message: success, data: null }
+  - match: /hole/attention_cancel
+    campus: treehole
+    body: { code: 20000, success: true, message: 取消关注成功 }
+expect:
+  status: ok
+  pid: 8132392
+  followed: false
+  message: 取消关注成功

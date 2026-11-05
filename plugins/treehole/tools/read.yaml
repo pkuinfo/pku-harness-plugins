@@ -1,0 +1,67 @@
+# api.rs get_hole: GET /chapi/api/v3/hole/one?pid=… → { hole, list: [comment], total }.
+# hole/one carries only the first 10 comments; the web app pages the rest through comment/list
+# (treehole.pku.edu.cn/ch/web bundle: getReplyList { pid, page, limit, sort }). Paging stops at
+# a short page, after COMMENT_PAGES pages, or once commentLimit comments are in.
+title: 读树洞帖子
+summary: 读一个树洞帖子和它的全部评论
+description: 'One hole with its comments, oldest first (api.rs get_hole: hole/one). commentLimit caps how many comments are returned.'
+effect: read
+untrusted: true
+input:
+  pid: { type: integer, min: 1, description: 'hole id (the number after #)' }
+  commentLimit: { type: integer, min: 1, max: 500, default: 100, description: default 100 }
+  code: { type: string, optional: true, trim: true, min: 4, max: 8, description: 'SMS code, only when a previous call returned verification_required' }
+steps:
+  - let: data
+    value: "null"
+  - try:
+      - let: data
+        ability: verify.treehole
+        args: "{ request: { url: '/chapi/api/v3/hole/one?pid=' + input.pid + '&comment_stream=1' }, code: input.code, via: 'sms', kind: 'login' }"
+    catch:
+      - check: "false"
+        error: "${failure(error.message)}"
+  - if: "obj(data).status == 'verification_required'"
+    then:
+      - return: VERIFY
+  - check: "typeOf(obj(data).hole) == 'object' || typeOf(obj(data).hole) == 'list'"
+    error: 树洞返回的数据缺少帖子内容
+  - let: h
+    value: parseHole(data.hole)
+  - let: all
+    value: comments(data, 'list')
+  - if: "all.length < input.commentLimit && all.length < h.replies"
+    then:
+      # Each page's envelope is kept; a failed or short page ends the paging, so only the last
+      # one can be bad (checked below, as v3() did per page).
+      - let: pages
+        paginate:
+          start: "1"
+          request:
+            campus: treehole
+            url: /chapi/api/v3/comment/list?pid=${input.pid}&page=${cursor}&limit=${COMMENT_PAGE}&sort=0&comment_stream=1
+          as: json
+          items: "[page]"
+          next: |
+            obj(page).code != SMS_CHECK && obj(page).success && hasList(page.data)
+              && page.data.list.length == COMMENT_PAGE && (pageIndex + 1) * COMMENT_PAGE < input.commentLimit
+              ? cursor + 1 : null
+          max: 10
+      - let: bad
+        value: "pages.find(p => obj(p).code == SMS_CHECK || !obj(p).success)"
+      - if: "bad && bad.code == SMS_CHECK"
+        then:
+          - return: VERIFY
+      - check: "!bad"
+        error: "树洞：${obj(bad).message || '请求失败（code ' + (obj(bad).code ?? '?') + '）'}"
+      - let: all
+        value: "pages.flatMap(p => comments(p.data, 'list'))"
+return: |
+  {
+    status: 'ok',
+    note: UNTRUSTED,
+    hole: hole(h, 2000),
+    totalComments: max(h.replies, all.length),
+    comments: all.slice(0, input.commentLimit).map(c => comment(c, 1000)),
+    ...(all.length > input.commentLimit || h.replies > all.length ? { truncated: true } : {}),
+  }

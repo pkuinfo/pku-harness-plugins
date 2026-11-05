@@ -1,0 +1,13 @@
+# Recorded treehole responses (shapes from pkucli docs/treehole-api.md); parity-checked against the TS plugin.
+tool: reply
+input:
+  pid: 8132392
+  text: " 同问 "
+now: 2026-11-05 10:00
+responses:
+  - match: /comment/post
+    campus: treehole
+    body: { code: 20000, success: true, message: success, data: null }
+expect:
+  status: posted
+  pid: 8132392

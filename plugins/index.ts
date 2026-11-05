@@ -16,7 +16,6 @@ import { schedulePlugin } from './schedule/src';
 import { schedulerPlugin } from './scheduler/src';
 import { timetablePlugin } from './timetable/src';
 import { todoPlugin } from './todo/src';
-import { treeholePlugin } from './treehole/src';
 import { uiPlugin } from './ui/src';
 import { walletPlugin } from './wallet/src';
 
@@ -42,7 +41,6 @@ export const builtinPlugins: PluginDef[] = [
   walletPlugin,
   cardSharePlugin,
   coursesPlugin,
-  treeholePlugin,
   financePlugin,
   roomBookingPlugin,
   memoryPlugin,

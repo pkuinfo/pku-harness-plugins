@@ -1,0 +1,11 @@
+# verify.rs handle_sms_verification: POST /chapi/api/jwt_send_msg, as the host's
+# verify.treeholeSendCode ability ("还未过期" = the last code still works).
+title: 发送树洞验证码
+summary: 给绑定手机发送树洞短信验证码
+description: Send the treehole SMS verification code to the phone bound to the account, after a call returned verification_required.
+effect: write
+steps:
+  - let: r
+    ability: verify.treeholeSendCode
+    args: "{ kind: 'login' }"
+return: "{ sent: r.message }"

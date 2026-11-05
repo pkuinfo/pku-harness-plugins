@@ -1,0 +1,23 @@
+# api.rs unfollow_hole: POST /chapi/api/v3/hole/attention_cancel { pid }.
+title: 取消关注树洞
+summary: 取消关注一个树洞帖子
+description: 'Stop following a hole (api.rs unfollow_hole: hole/attention_cancel).'
+effect: write
+input:
+  pid: { type: integer, min: 1, description: 'hole id (the number after #)' }
+  code: { type: string, optional: true, trim: true, min: 4, max: 8, description: 'SMS code, only when a previous call returned verification_required' }
+steps:
+  - let: r
+    value: "null"
+  - try:
+      - let: r
+        ability: verify.treehole
+        args: "{ request: { url: '/chapi/api/v3/hole/attention_cancel', method: 'POST', json: { pid: input.pid } }, code: input.code, via: 'sms', kind: 'login' }"
+    catch:
+      - check: "false"
+        error: "${failure(error.message)}"
+  - if: "obj(r).status == 'verification_required'"
+    then:
+      - return: VERIFY
+# verify.treehole hands back the whole envelope when there is no data; its message is the server's note.
+return: "{ status: 'ok', pid: input.pid, followed: false, message: obj(r).success == true ? r.message ?? '' : '' }"

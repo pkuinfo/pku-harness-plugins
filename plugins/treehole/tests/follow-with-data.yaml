@@ -1,0 +1,14 @@
+# Recorded treehole responses (shapes from pkucli docs/treehole-api.md); parity-checked against the TS plugin.
+tool: follow
+input:
+  pid: 5
+now: 2026-11-05 10:00
+responses:
+  - match: /hole/attention
+    campus: treehole
+    body: { code: 20000, success: true, message: 关注成功, data: { pid: 5 } }
+expect:
+  status: ok
+  pid: 5
+  followed: true
+  message: ""

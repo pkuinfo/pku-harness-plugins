@@ -1,0 +1,10 @@
+# Recorded treehole responses (shapes from pkucli docs/treehole-api.md); parity-checked against the TS plugin.
+tool: unfollow
+input:
+  pid: 8132392
+now: 2026-11-05 10:00
+responses:
+  - match: /hole/attention_cancel
+    campus: treehole
+    body: { code: 40400, success: false, message: 帖子不存在 }
+expectError: ^树洞：帖子不存在$

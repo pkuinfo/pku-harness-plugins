@@ -1,0 +1,8 @@
+# Recorded treehole responses (shapes from pkucli docs/treehole-api.md); parity-checked against the TS plugin.
+tool: latest
+now: 2026-11-05 10:00
+responses:
+  - match: /hole/list_comments
+    campus: treehole
+    body: { code: 40100, success: false, message: 登录已过期 }
+expectError: ^树洞：登录已过期$

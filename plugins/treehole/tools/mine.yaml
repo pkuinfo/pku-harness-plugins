@@ -1,0 +1,26 @@
+# api.rs my_holes: GET /chapi/api/v3/hole/my_list → { list: [hole] }. The user's own posts
+# (the TS plugin did not mark this tool untrusted either).
+title: 我的树洞
+summary: 你自己发过的树洞帖子
+description: 'Holes the user posted (api.rs my_holes: hole/my_list), newest first.'
+effect: read
+input:
+  page: { type: integer, min: 1, max: 50, default: 1, description: default 1 }
+  limit: { type: integer, min: 1, max: 30, default: 10, description: default 10 }
+  code: { type: string, optional: true, trim: true, min: 4, max: 8, description: 'SMS code, only when a previous call returned verification_required' }
+steps:
+  - let: data
+    value: "null"
+  - try:
+      - let: data
+        ability: verify.treehole
+        args: "{ request: { url: '/chapi/api/v3/hole/my_list?page=' + input.page + '&limit=' + input.limit }, code: input.code, via: 'sms', kind: 'login' }"
+    catch:
+      - check: "false"
+        error: "${failure(error.message)}"
+  - if: "obj(data).status == 'verification_required'"
+    then:
+      - return: VERIFY
+  - check: hasList(data)
+    error: 树洞返回的数据缺少帖子列表
+return: "{ status: 'ok', page: input.page, holes: data.list.map(v => hole(parseHole(v), 500)) }"

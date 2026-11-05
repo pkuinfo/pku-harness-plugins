@@ -1,0 +1,37 @@
+# api.rs list_follow: GET /chapi/api/v3/hole/list_comments?…&is_follow=1 with 3 comment previews per hole.
+# The SMS check (40002) and code redemption are the host's verify.treehole ability.
+title: 关注的树洞
+summary: 你关注的树洞帖子的最新动态
+description: Holes the user follows (关注), newest activity first, each with up to 3 comment previews.
+effect: read
+untrusted: true
+input:
+  page: { type: integer, min: 1, max: 50, default: 1, description: default 1 }
+  limit: { type: integer, min: 1, max: 30, default: 10, description: default 10 }
+  code: { type: string, optional: true, trim: true, min: 4, max: 8, description: 'SMS code, only when a previous call returned verification_required' }
+steps:
+  - let: data
+    value: "null"
+  - try:
+      - let: data
+        ability: verify.treehole
+        args: "{ request: { url: '/chapi/api/v3/hole/list_comments?page=' + input.page + '&limit=' + input.limit + '&comment_limit=3&comment_stream=1&is_follow=1' }, code: input.code, via: 'sms', kind: 'login' }"
+    catch:
+      - check: "false"
+        error: "${failure(error.message)}"
+  - if: "obj(data).status == 'verification_required'"
+    then:
+      - return: VERIFY
+  - check: hasList(data)
+    error: 树洞返回的数据缺少帖子列表
+return: |
+  {
+    status: 'ok',
+    page: input.page,
+    note: UNTRUSTED,
+    // api.rs HoleListItem: previews in comment_list (the `comments` alias is accepted too).
+    holes: data.list.map(v => ({
+      ...hole(parseHole(v), 500),
+      comments: comments(v, typeOf(obj(v).comment_list) == 'list' ? 'comment_list' : 'comments').map(c => comment(c, 200)),
+    })),
+  }

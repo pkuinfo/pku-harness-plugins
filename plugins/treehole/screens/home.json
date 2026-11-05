@@ -1,0 +1,108 @@
+{
+  "title": "树洞",
+  "description": "最新 20 条树洞，点按读全文；需要时在这里完成短信验证。",
+  "bindings": {
+    "/feed": { "tool": "latest", "args": { "limit": 20 }, "ttlMinutes": 5 }
+  },
+  "strings": {
+    "zh-Hans": {
+      "replies": " 回复",
+      "images": " 图",
+      "smsNeeded": "需要短信验证",
+      "verifyWhy": "树洞需要确认是你本人。点下面的按钮把验证码发到账号绑定的手机，允许读取这条短信后会自动填好；也可以手动输入。",
+      "sendSms": "发送短信验证码",
+      "smsCode": "短信验证码",
+      "codePlaceholder": "6 位数字",
+      "verify": "验证",
+      "sent": "验证码已发送到绑定手机",
+      "stillValid": "之前的验证码还有效，可以直接输入",
+      "empty": "暂时没有新帖子"
+    },
+    "en": {
+      "replies": " replies",
+      "images": " images",
+      "smsNeeded": "SMS verification needed",
+      "verifyWhy": "Treehole wants to confirm it’s you. Send a code to the phone on your account; allow reading that SMS and the code fills in by itself, or type it.",
+      "sendSms": "Send SMS code",
+      "smsCode": "SMS code",
+      "codePlaceholder": "6 digits",
+      "verify": "Verify",
+      "sent": "Code sent to the phone on your account",
+      "stillValid": "Your previous code is still valid; enter it here",
+      "empty": "No new posts yet"
+    }
+  },
+  "spec": {
+    "root": "root",
+    "elements": {
+      "root": { "type": "Column", "props": { "gap": "md" }, "children": ["list", "empty", "verify"] },
+      "list": {
+        "type": "Column",
+        "props": { "gap": "sm" },
+        "visible": { "$state": "/feed/status", "eq": "ok" },
+        "repeat": { "statePath": "/feed/holes", "key": "pid" },
+        "children": ["hole"]
+      },
+      "hole": {
+        "type": "ListItem",
+        "props": {
+          "title": { "$item": "text" },
+          "subtitle": { "$template": "#${pid} · ${time} · ${replies}${/t/replies}" },
+          "value": { "$cond": { "$item": "images" }, "$then": { "$template": "${images}${/t/images}" }, "$else": null },
+          "icon": null
+        },
+        "on": { "press": { "action": "navigate", "params": { "href": { "$template": "/p/treehole/hole?pid=${pid}" } } } }
+      },
+      "empty": {
+        "type": "Text",
+        "props": { "text": { "$state": "/t/empty" }, "tone": "muted", "size": "small" },
+        "visible": [{ "$state": "/feed/status", "eq": "ok" }, { "$state": "/feed/holes/0", "not": true }]
+      },
+      "verify": {
+        "type": "Column",
+        "props": { "gap": "md" },
+        "visible": { "$state": "/feed/status", "eq": "verification_required" },
+        "children": ["verifyTitle", "verifyWhy", "send", "code", "check", "sent", "stillValid", "error"]
+      },
+      "verifyTitle": { "type": "Heading", "props": { "text": { "$state": "/t/smsNeeded" }, "size": "md" } },
+      "verifyWhy": { "type": "Text", "props": { "text": { "$state": "/t/verifyWhy" }, "tone": "muted", "size": "body" } },
+      "send": {
+        "type": "Button",
+        "props": { "label": { "$state": "/t/sendSms" }, "variant": "secondary" },
+        "on": {
+          "press": [
+            { "action": "callTool", "params": { "tool": "treehole.sendCode", "input": {}, "resultPath": "/result/send", "errorPath": "/error" } },
+            { "action": "smsCode", "params": { "statePath": "/form/code" } }
+          ]
+        }
+      },
+      "code": {
+        "type": "TextField",
+        "props": { "label": { "$state": "/t/smsCode" }, "placeholder": { "$state": "/t/codePlaceholder" }, "value": { "$bindState": "/form/code" }, "keyboard": "number" }
+      },
+      "check": {
+        "type": "Button",
+        "props": { "label": { "$state": "/t/verify" }, "variant": "primary" },
+        "visible": { "$state": "/form/code" },
+        "on": {
+          "press": {
+            "action": "callTool",
+            "params": { "tool": "treehole.latest", "input": { "limit": 20, "code": { "$state": "/form/code" } }, "errorPath": "/error" }
+          }
+        }
+      },
+      "sent": {
+        "type": "Text",
+        "props": { "text": { "$state": "/t/sent" }, "tone": "muted", "size": "small" },
+        "visible": [{ "$state": "/result/send/sent" }, { "$state": "/result/send/sent", "eq": "验证码已发送到绑定手机" }, { "$state": "/error", "not": true }]
+      },
+      "stillValid": {
+        "type": "Text",
+        "props": { "text": { "$state": "/t/stillValid" }, "tone": "muted", "size": "small" },
+        "visible": [{ "$state": "/result/send/sent" }, { "$state": "/result/send/sent", "neq": "验证码已发送到绑定手机" }, { "$state": "/error", "not": true }]
+      },
+      "error": { "type": "Text", "props": { "text": { "$state": "/error" }, "tone": "down", "size": "small" }, "visible": { "$state": "/error" } }
+    },
+    "state": { "feed": null, "form": { "code": "" }, "result": null, "error": null }
+  }
+}

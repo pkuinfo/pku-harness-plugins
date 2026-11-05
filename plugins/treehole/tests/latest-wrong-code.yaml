@@ -1,0 +1,10 @@
+# Recorded treehole responses (shapes from pkucli docs/treehole-api.md); parity-checked against the TS plugin.
+tool: latest
+input:
+  code: "123456"
+now: 2026-11-05 10:00
+responses:
+  - match: /jwt_msg_verify
+    campus: treehole
+    body: { code: 40001, success: false, message: 验证码错误 }
+expectError: ^验证失败：验证码错误$

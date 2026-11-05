@@ -1,0 +1,8 @@
+# Recorded treehole responses (shapes from pkucli docs/treehole-api.md); parity-checked against the TS plugin.
+tool: mine
+now: 2026-11-05 10:00
+responses:
+  - match: /hole/my_list
+    campus: treehole
+    body: { code: 20000, success: true, message: success, data: null }
+expectError: ^树洞返回的数据缺少帖子列表$

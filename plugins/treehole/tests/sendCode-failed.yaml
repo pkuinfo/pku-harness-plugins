@@ -1,0 +1,8 @@
+# Recorded treehole responses (shapes from pkucli docs/treehole-api.md); parity-checked against the TS plugin.
+tool: sendCode
+now: 2026-11-05 10:00
+responses:
+  - match: /jwt_send_msg
+    campus: treehole
+    body: { code: 40004, success: false, message: 发送过于频繁 }
+expectError: ^发送验证码失败：发送过于频繁$

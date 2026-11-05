@@ -1,0 +1,10 @@
+# Recorded treehole responses (shapes from pkucli docs/treehole-api.md); parity-checked against the TS plugin.
+tool: search
+input:
+  keyword: x
+now: 2026-11-05 10:00
+responses:
+  - match: /hole/list?keyword=
+    campus: treehole
+    body: { code: 500, success: false, message: 服务器错误 }
+expectError: ^树洞：服务器错误$

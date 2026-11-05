@@ -1,0 +1,143 @@
+{
+  "title": "树洞 #{pid}",
+  "description": "一个树洞帖子和它的评论（最多 100 条），可以关注或取消关注。打开方式：/p/treehole/hole?pid=…",
+  "bindings": {
+    "/hole": { "tool": "read", "args": { "pid": { "$param": "pid" } }, "ttlMinutes": 2 }
+  },
+  "strings": {
+    "zh-Hans": {
+      "likes": " 赞",
+      "replies": " 回复",
+      "imagesInApp": " 图（请在树洞查看）",
+      "follow": "关注",
+      "following": "已关注 · 取消关注",
+      "replyTo": "Re ",
+      "truncated": "回复较多，只显示了前面一部分",
+      "smsNeeded": "需要短信验证",
+      "verifyWhy": "树洞需要确认是你本人。点下面的按钮把验证码发到账号绑定的手机，允许读取这条短信后会自动填好；也可以手动输入。",
+      "sendSms": "发送短信验证码",
+      "smsCode": "短信验证码",
+      "codePlaceholder": "6 位数字",
+      "verify": "验证",
+      "sent": "验证码已发送到绑定手机",
+      "stillValid": "之前的验证码还有效，可以直接输入"
+    },
+    "en": {
+      "likes": " likes",
+      "replies": " replies",
+      "imagesInApp": " images (view in Treehole)",
+      "follow": "Follow",
+      "following": "Following · Unfollow",
+      "replyTo": "Re ",
+      "truncated": "Long thread: only the first replies are shown",
+      "smsNeeded": "SMS verification needed",
+      "verifyWhy": "Treehole wants to confirm it’s you. Send a code to the phone on your account; allow reading that SMS and the code fills in by itself, or type it.",
+      "sendSms": "Send SMS code",
+      "smsCode": "SMS code",
+      "codePlaceholder": "6 digits",
+      "verify": "Verify",
+      "sent": "Code sent to the phone on your account",
+      "stillValid": "Your previous code is still valid; enter it here"
+    }
+  },
+  "spec": {
+    "root": "root",
+    "elements": {
+      "root": { "type": "Column", "props": { "gap": "md" }, "children": ["thread", "verify"] },
+      "thread": {
+        "type": "Column",
+        "props": { "gap": "md" },
+        "visible": { "$state": "/hole/status", "eq": "ok" },
+        "children": ["post", "followRow", "comments", "truncated"]
+      },
+      "post": {
+        "type": "Card",
+        "props": {
+          "title": { "$template": "#${/hole/hole/pid}" },
+          "subtitle": { "$template": "${/hole/hole/time} · ${/hole/hole/likes}${/t/likes} · ${/hole/totalComments}${/t/replies}" }
+        },
+        "children": ["postText", "postImages"]
+      },
+      "postText": { "type": "Text", "props": { "text": { "$state": "/hole/hole/text" }, "tone": null, "size": "body" } },
+      "postImages": {
+        "type": "Text",
+        "props": { "text": { "$template": "${/hole/hole/images}${/t/imagesInApp}" }, "tone": "muted", "size": "small" },
+        "visible": { "$state": "/hole/hole/images" }
+      },
+      "followRow": { "type": "Row", "props": { "gap": "sm", "align": "start", "wrap": true }, "children": ["follow", "unfollow", "followError"] },
+      "follow": {
+        "type": "Button",
+        "props": { "label": { "$state": "/t/follow" }, "variant": "primary" },
+        "visible": { "$state": "/hole/hole/followed", "not": true },
+        "on": { "press": { "action": "callTool", "params": { "tool": "treehole.follow", "input": { "pid": { "$state": "/hole/hole/pid" } }, "resultPath": "/result/follow", "errorPath": "/error" } } }
+      },
+      "unfollow": {
+        "type": "Button",
+        "props": { "label": { "$state": "/t/following" }, "variant": "secondary" },
+        "visible": { "$state": "/hole/hole/followed" },
+        "on": { "press": { "action": "callTool", "params": { "tool": "treehole.unfollow", "input": { "pid": { "$state": "/hole/hole/pid" } }, "resultPath": "/result/follow", "errorPath": "/error" } } }
+      },
+      "followError": { "type": "Text", "props": { "text": { "$state": "/error" }, "tone": "down", "size": "small" }, "visible": { "$state": "/error" } },
+      "comments": {
+        "type": "Column",
+        "props": { "gap": "md" },
+        "repeat": { "statePath": "/hole/comments", "key": "cid" },
+        "children": ["comment"]
+      },
+      "comment": { "type": "Column", "props": { "gap": "sm" }, "children": ["commentMeta", "commentQuote", "commentText"] },
+      "commentMeta": { "type": "Text", "props": { "text": { "$template": "${name} · ${time}" }, "tone": "muted", "size": "small" } },
+      "commentQuote": {
+        "type": "Text",
+        "props": { "text": { "$template": "${/t/replyTo}${replyTo/name}：${replyTo/text}" }, "tone": "muted", "size": "small" },
+        "visible": { "$item": "replyTo" }
+      },
+      "commentText": { "type": "Text", "props": { "text": { "$item": "text" }, "tone": null, "size": "body" } },
+      "truncated": { "type": "Text", "props": { "text": { "$state": "/t/truncated" }, "tone": "muted", "size": "small" }, "visible": { "$state": "/hole/truncated" } },
+      "verify": {
+        "type": "Column",
+        "props": { "gap": "md" },
+        "visible": { "$state": "/hole/status", "eq": "verification_required" },
+        "children": ["verifyTitle", "verifyWhy", "send", "code", "check", "sent", "stillValid", "verifyError"]
+      },
+      "verifyTitle": { "type": "Heading", "props": { "text": { "$state": "/t/smsNeeded" }, "size": "md" } },
+      "verifyWhy": { "type": "Text", "props": { "text": { "$state": "/t/verifyWhy" }, "tone": "muted", "size": "body" } },
+      "send": {
+        "type": "Button",
+        "props": { "label": { "$state": "/t/sendSms" }, "variant": "secondary" },
+        "on": {
+          "press": [
+            { "action": "callTool", "params": { "tool": "treehole.sendCode", "input": {}, "resultPath": "/result/send", "errorPath": "/error" } },
+            { "action": "smsCode", "params": { "statePath": "/form/code" } }
+          ]
+        }
+      },
+      "code": {
+        "type": "TextField",
+        "props": { "label": { "$state": "/t/smsCode" }, "placeholder": { "$state": "/t/codePlaceholder" }, "value": { "$bindState": "/form/code" }, "keyboard": "number" }
+      },
+      "check": {
+        "type": "Button",
+        "props": { "label": { "$state": "/t/verify" }, "variant": "primary" },
+        "visible": { "$state": "/form/code" },
+        "on": {
+          "press": {
+            "action": "callTool",
+            "params": { "tool": "treehole.latest", "input": { "limit": 1, "code": { "$state": "/form/code" } }, "errorPath": "/error" }
+          }
+        }
+      },
+      "sent": {
+        "type": "Text",
+        "props": { "text": { "$state": "/t/sent" }, "tone": "muted", "size": "small" },
+        "visible": [{ "$state": "/result/send/sent" }, { "$state": "/result/send/sent", "eq": "验证码已发送到绑定手机" }, { "$state": "/error", "not": true }]
+      },
+      "stillValid": {
+        "type": "Text",
+        "props": { "text": { "$state": "/t/stillValid" }, "tone": "muted", "size": "small" },
+        "visible": [{ "$state": "/result/send/sent" }, { "$state": "/result/send/sent", "neq": "验证码已发送到绑定手机" }, { "$state": "/error", "not": true }]
+      },
+      "verifyError": { "type": "Text", "props": { "text": { "$state": "/error" }, "tone": "down", "size": "small" }, "visible": { "$state": "/error" } }
+    },
+    "state": { "hole": null, "form": { "code": "" }, "result": null, "error": null }
+  }
+}

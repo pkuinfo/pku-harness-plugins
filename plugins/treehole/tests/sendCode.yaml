@@ -1,0 +1,9 @@
+# Recorded treehole responses (shapes from pkucli docs/treehole-api.md); parity-checked against the TS plugin.
+tool: sendCode
+now: 2026-11-05 10:00
+responses:
+  - match: /jwt_send_msg
+    campus: treehole
+    body: { code: 20000, success: true, message: success, data: null }
+expect:
+  sent: 验证码已发送到绑定手机

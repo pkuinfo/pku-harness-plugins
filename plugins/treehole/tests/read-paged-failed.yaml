@@ -1,0 +1,13 @@
+# Recorded treehole responses (shapes from pkucli docs/treehole-api.md); parity-checked against the TS plugin.
+tool: read
+input:
+  pid: 8132392
+now: 2026-11-05 10:00
+responses:
+  - match: /hole/one
+    campus: treehole
+    body: { code: 20000, success: true, message: success, data: { hole: { pid: 8132392, text: 有没有人知道理教的自习室几点关门, type: text, timestamp: 1775469368, hidden: 0, reply: 140, likenum: 5, anonymous: 1, is_top: 0, tags_ids: "", media_ids: "101,102", reward_cost: 0, is_follow: 1, tread_num: 2, tags_info: [ { tag_name: 求助 }, { id: 3 } ], attention_info: [] }, list: [] } }
+  - match: page=1&
+    campus: treehole
+    body: { code: 500, success: false }
+expectError: ^树洞：请求失败（code 500）$
