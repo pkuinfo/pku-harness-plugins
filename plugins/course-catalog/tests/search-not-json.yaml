@@ -1,0 +1,6 @@
+tool: search
+input: { teacher: 张三 }
+now: 2026-10-23 14:20
+responses:
+  - { match: courseSearch_do.php, body: '<html>维护中</html>' }
+expectError: ^教务部返回的不是课程数据，网站可能在维护$

@@ -1,0 +1,8 @@
+# Department options cached a day ago: no form request.
+tool: search
+input: { department: 物理, weekday: 3 }
+now: 2026-10-23 14:20
+kv: { 'doc:deanOptions': { v: { at: 1792650000000, departments: [{ value: "00048", label: 信息科学技术学院 }, { value: "00004", label: 物理学院 }], semesters: [{ value: 26-27-1, label: 26-27学年 第1学期 }] } } }
+responses:
+  - { match: courseSearch_do.php, file: dean-dept.json, headers: { content-type: text/html } }
+expect: {"semester":"26-27-1","total":4,"returned":1,"truncated":false,"courses":[{"courseId":"04830220","name":"计算机系统导论","category":"专业必修","classNo":"2","credit":"5","teacher":"王五(副教授)","department":"信息科学技术学院","schedule":"星期一(第5节-第6节) 星期三(第5节-第6节)","sessions":[{"weekday":1,"periods":[5,6],"start":"13:00","end":"14:50","weeks":"1-15","weekType":"every","room":null},{"weekday":3,"periods":[5,6],"start":"13:00","end":"14:50","weeks":"1-15","weekType":"every","room":null}],"weeks":"1-15"}]}

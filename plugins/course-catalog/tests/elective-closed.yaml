@@ -1,0 +1,5 @@
+tool: searchElective
+input: { category: english }
+responses:
+  - { match: getCurriculmByForm.do, campus: elective, file: elective-closed.html }
+expectError: ^选课网没有返回课程查询结果（可能不在选课开放时间）$

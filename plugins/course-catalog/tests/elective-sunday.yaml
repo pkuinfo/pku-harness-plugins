@@ -1,0 +1,7 @@
+# weekday 7 = Sunday (JS 0).
+tool: searchElective
+input: { category: pub_choice, weekday: 7, maxPages: 2 }
+responses:
+  - { match: getCurriculmByForm.do, campus: elective, file: elective-page1.html }
+  - { match: queryCurriculum.jsp, campus: elective, file: elective-page2.html }
+expect: {"matched":1,"returned":1,"pagesRead":2,"totalPages":2,"truncated":false,"courses":[{"courseId":"00132380","name":"数据结构与算法","category":"专业课","classNo":"1","credit":"3","teacher":"钱七","department":"信息科学技术学院","schedule":"1~16周 单周周日10~12节; 1~16周 每周周四1~2节","sessions":[{"weekday":0,"periods":[10,12],"start":"18:40","end":"21:30","weeks":"1-16","weekType":"odd","room":"二教101"},{"weekday":4,"periods":[1,2],"start":"08:00","end":"09:50","weeks":"1-16","weekType":"every","room":"二教102"}],"classroom":"二教101, 二教102","weeks":"1~16周"}]}

@@ -361,6 +361,9 @@ const fns: Record<string, Impl> = {
     return group == null ? matchGroups(m) : (m.groups && typeof group === 'string' ? m.groups[group] : m[Number(group)]) ?? null;
   },
   matchAll: (_c, [s, pattern]) => [...str(s).matchAll(re(pattern, 'g'))].slice(0, 5000).map(matchGroups),
+  /** Every match with its position: [{ text, index, groups }] (groups: list, or named object). */
+  matchAt: (_c, [s, pattern]) =>
+    [...str(s).matchAll(re(pattern, 'g'))].slice(0, 5000).map((m) => ({ text: m[0], index: m.index ?? 0, groups: m.groups ? { ...m.groups } : m.slice(1) })),
   test: (_c, [s, pattern]) => re(pattern).test(str(s)),
   startsWith: (_c, [s, x]) => str(s).startsWith(str(x)),
   endsWith: (_c, [s, x]) => str(s).endsWith(str(x)),

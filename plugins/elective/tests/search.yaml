@@ -1,0 +1,11 @@
+# Walks all 3 pages; case-insensitive substring over name, teacher, code, department.
+tool: search
+input: {"query":"数据"}
+now: 2026-09-10 10:00
+responses:
+  - {"match":"HelpController.jpf","file":"home.html","campus":"elective"}
+  - {"match":"SupplyCancel.do","file":"supply-cancel.html","campus":"elective"}
+  - {"match":"electableListGrid;0","file":"supplement-1.html","campus":"elective"}
+  - {"match":"electableListGrid;20","file":"supplement-2.html","campus":"elective"}
+  - {"match":"electableListGrid;40","file":"supplement-3.html","campus":"elective"}
+expect: {"program":"single","query":"数据","searchedPages":3,"totalPages":3,"truncated":false,"matches":[{"code":"C10","name":"数据库概论","teacher":"Smith","classId":"1","credit":"2.0","category":"通选","department":"信息科学技术学院","info":"周二 7~8 节 理教 203","quota":"60/60/2","limit":60,"elected":60,"waitlist":2,"remaining":0,"full":true,"page":1},{"code":"C21","name":"数据挖掘","teacher":"孙九","classId":"1","credit":"2.0","category":"通选","department":"信息科学技术学院","info":"周二 7~8 节 理教 203","quota":"40/39","limit":40,"elected":39,"remaining":1,"full":false,"page":2},{"code":"C31","name":"大数据导论","teacher":"DATA Lab","classId":"1","credit":"2.0","category":"通选","department":"数学科学学院","info":"周二 7~8 节 理教 203","quota":"30/45","limit":30,"elected":45,"remaining":0,"full":true,"page":3}]}

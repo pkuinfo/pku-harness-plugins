@@ -1,0 +1,3 @@
+tool: search
+input: { name: '  ', teacher: '' }
+expectError: ^请至少给出课程名、教师或院系中的一个$

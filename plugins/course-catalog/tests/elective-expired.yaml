@@ -1,0 +1,5 @@
+tool: searchElective
+input: { category: gym }
+responses:
+  - { match: getCurriculmByForm.do, campus: elective, file: elective-expired.html }
+expectError: ^选课网会话已失效，请稍后重试$

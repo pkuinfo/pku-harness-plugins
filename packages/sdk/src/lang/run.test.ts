@@ -310,3 +310,33 @@ describe('server functions on the phone', () => {
     expect((bad as PluginDocError).issues.join('\n')).toContain("no server function 'nope'");
   });
 });
+
+describe('signed-in account', () => {
+  test('plugins with campus services see account { signedIn, username }; others do not', async () => {
+    const withCampus = await doc({ 'PLUGIN.md': md('campus: [elective]\ntools:\n  who: tools/who.yaml'), 'tools/who.yaml': 'title: W\ndescription: Who is signed in.\neffect: read\nreturn: account\n' });
+    const status = () => ({ signedIn: true, username: '2100012345', name: '某某' });
+    const p = compilePlugin(withCampus, { verified: true, fetch: async () => ({ status: 200, url: '', headers: {}, body: '' }) });
+    expect(await p.tools.who!.execute({}, { services: { campus: { status } }, kv: {} } as never)).toEqual({ signedIn: true, username: '2100012345' });
+
+    const noCampus = await doc({ 'PLUGIN.md': md('tools:\n  who: tools/who.yaml'), 'tools/who.yaml': 'title: W\ndescription: Who is signed in.\neffect: read\nreturn: account\n' });
+    const q = compilePlugin(noCampus, { verified: true, fetch: async () => ({ status: 200, url: '', headers: {}, body: '' }) });
+    await expect(q.tools.who!.execute({}, { services: { campus: { status } }, kv: {} } as never)).rejects.toThrow(/unknown name 'account'/);
+  });
+});
+
+
+describe('request fields that evaluate to null', () => {
+  test('are left out instead of being sent as "null"', async () => {
+    const d = await doc({
+      'PLUGIN.md': md('network: [api.example.com]\ntools:\n  t: tools/t.yaml'),
+      'tools/t.yaml': "title: T\ndescription: GET or POST.\neffect: read\ninput:\n  q: { type: string, optional: true }\nsteps:\n  - let: r\n    request: { url: 'https://api.example.com/x', method: \"${input.q ? 'POST' : null}\", body: '${input.q ?? null}', contentType: \"${input.q ? 'text/plain' : null}\" }\n    as: text\nreturn: r\n",
+    });
+    const { env, seen } = replayEnv(d, [{ match: '/x', body: 'a' }, { match: '/x', body: 'b' }]);
+    await runTool(env, 't', {});
+    await runTool(env, 't', { q: 'hi' });
+    expect(seen.map((s) => [s.method, s.body ?? null])).toEqual([
+      ['GET', null],
+      ['POST', 'hi'],
+    ]);
+  });
+});

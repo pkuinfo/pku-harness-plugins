@@ -24,7 +24,7 @@ export function memoryKV(init: Record<string, unknown> = {}): KV & { data: Map<s
   } as KV & { data: Map<string, unknown> };
 }
 
-export function replayEnv(doc: PluginDocument, responses: Recorded[], opts: { now?: number; kv?: Record<string, unknown>; services?: Partial<HostServices> } = {}) {
+export function replayEnv(doc: PluginDocument, responses: Recorded[], opts: { now?: number; kv?: Record<string, unknown>; services?: Partial<HostServices>; account?: { signedIn: boolean; username: string | null } } = {}) {
   const pool = [...responses];
   const seen: SeenRequest[] = [];
   const take = (campus: string | undefined, url: string) => {
@@ -50,7 +50,9 @@ export function replayEnv(doc: PluginDocument, responses: Recorded[], opts: { no
     },
   } as unknown as HostServices;
   const kv = memoryKV(opts.kv);
-  const env: RunEnv = { manifest: doc.manifest, tools: doc.tools, services, kv, fetch, now: opts.now === undefined ? undefined : () => opts.now! };
+  // Same as compilePlugin: plugins with campus services see the signed-in account.
+  const account = opts.account ?? { signedIn: true, username: '2000000000' };
+  const env: RunEnv = { manifest: doc.manifest, tools: doc.tools, services, kv, fetch, now: opts.now === undefined ? undefined : () => opts.now!, scope: doc.manifest.campus?.length ? { account } : undefined };
   return { env, seen, kv, unused: () => pool };
 }
 
@@ -58,7 +60,7 @@ export function replayEnv(doc: PluginDocument, responses: Recorded[], opts: { no
 export async function runRecorded(doc: PluginDocument, t: TestDoc, files: Record<string, string> = {}) {
   const responses: Recorded[] = (t.responses ?? []).map((r) => (r.file ? { ...r, text: files[r.file] ?? '' } : r));
   const now = t.now === undefined ? undefined : typeof t.now === 'number' ? t.now : Date.parse(t.now.includes('T') || /[zZ+]/.test(t.now) ? t.now : `${t.now.replace(' ', 'T')}+08:00`);
-  const { env, seen } = replayEnv(doc, responses, { now, kv: t.kv });
+  const { env, seen } = replayEnv(doc, responses, { now, kv: t.kv, account: t.account });
   // Validate and default the input exactly as the app does before a tool runs.
   const input = inputZod(doc.tools[t.tool]?.input).parse(t.input ?? {}) as Record<string, unknown>;
   const result = await runTool(env, t.tool, input);

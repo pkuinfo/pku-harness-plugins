@@ -1,0 +1,27 @@
+# showResults.do (api.rs get_results): the first table.datagrid.
+title: 选课结果
+summary: 本学期的选课结果（已选上、未选上、待抽签）
+description: 'My election results this term (showResults): each course with class number, teacher, classroom/time info and result (e.g. 已选上, 未选上, 待抽签).'
+effect: read
+input:
+  program: { enum: [major, minor], optional: true, description: 'dual-degree accounts only: major = 主修 (default), minor = 辅双/双学位; ignored otherwise' }
+steps:
+  - let: res
+    request:
+      campus: elective
+      url: '${SHOW_RESULTS}'
+      headers: '${headersFor(HELP_CONTROLLER)}'
+    as: response
+  - check: "res.status < 400"
+    error: 选课网返回 HTTP ${res.status}
+  - let: doc
+    value: html(res.text)
+  - let: rows
+    value: parseResults(doc)
+  - check: "rows != null"
+    error: "${missing(doc, '选课结果')}"
+return: |
+  {
+    program: programOf(res),
+    courses: rows.map(c => ({ ...base(c), hours: c.hours, classroom: c.info, result: c.status })),
+  }

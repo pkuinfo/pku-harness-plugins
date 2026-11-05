@@ -1,0 +1,56 @@
+# 补退选 (api.rs get_supply_cancel + get_supplements): the entry page gives the page count and the
+# courses already elected; supplement.jsp?netui_row=electableListGrid;<20·index> one list page.
+title: 补退选课程
+summary: 补退选课程列表和余量（按页，含已选课程）
+description: 'One page (20 courses) of the supplementary election (补退选) list with quota, elected count and remaining seats, plus totalPages and the courses I already elected. Only works during the election period. Read-only: never elects.'
+effect: read
+input:
+  page: { type: integer, min: 1, optional: true, description: '1-based page, default 1' }
+  onlyAvailable: { type: boolean, optional: true, description: drop full courses }
+  program: { enum: [major, minor], optional: true, description: 'dual-degree accounts only: major = 主修 (default), minor = 辅双/双学位; ignored otherwise' }
+steps:
+  # The student id `xh` the supplement pages take (api.rs uses the login username).
+  - check: account.username
+    error: 还没有登录校园账号（设置 → 校园账号）
+  - let: xh
+    value: account.username
+  - let: entry
+    request:
+      campus: elective
+      url: "${SUPPLY_CANCEL}?xh=${encode(xh)}"
+      headers: '${headersFor(HELP_CONTROLLER)}'
+    as: response
+  - check: "entry.status < 400"
+    error: 选课网返回 HTTP ${entry.status}
+  - let: entryDoc
+    value: html(entry.text)
+  - let: totalPages
+    value: parseTotalPages(entryDoc)
+  - let: page
+    value: input.page ?? 1
+  - check: "page <= totalPages"
+    error: 页码 ${page} 超出范围（共 ${totalPages} 页）
+  - let: res
+    request:
+      campus: elective
+      url: "${SUPPLEMENT}?xh=${encode(xh)}&netui_row=electableListGrid;${(page - 1) * PAGE_SIZE}"
+      headers: '${headersFor(SUPPLY_CANCEL)}'
+    as: response
+  - check: "res.status < 400"
+    error: 选课网返回 HTTP ${res.status}
+  - let: doc
+    value: html(res.text)
+  - let: rows
+    value: parseSupplements(doc)
+  - check: "rows != null"
+    error: "${missing(doc, '补退选课程列表')}"
+  - let: courses
+    value: supplementRows(rows, page - 1)
+return: |
+  {
+    program: programOf(entry),
+    totalPages,
+    elected: electedOf(entryDoc),
+    page,
+    courses: input.onlyAvailable ? courses.filter(c => c.full != true) : courses,
+  }

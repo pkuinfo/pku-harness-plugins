@@ -43,8 +43,8 @@ sms.awaitCode, files.pick, crypto.sha256 {text}, cloud.call {fn, input}. The too
 ## Expressions and templates
 Expression fields (value, each, if, check, return, items, next, from, call input, ability args,
 functions) hold one expression: a safe JS subset — literals, objects/arrays with spread, . ?. [],
-+ - * / %, == != (strict), < <= > >=, && || ?? !, a ? b : c, arrow functions as arguments.
-No assignment, no new, no globals. In scope: input, constants, functions, now (ms), bound lets,
++ - * / %, == != (strict, but null == undefined), < <= > >=, && || ?? !, a ? b : c, arrow functions as arguments.
+No assignment, no new, no globals. In scope: input, constants, functions, now (ms), account ({ signedIn, username }: plugins that declare campus only), bound lets,
 item/index in each. Unbound names are errors (bind optional values first).
 Every other string is a template: "text \${expr}"; exactly "\${expr}" keeps the value's type.
 YAML: quote an expression containing ": " or starting with { [ ' " (or use a | block).
@@ -53,7 +53,7 @@ stdlib (also as methods, x.f(...)):
 lists: map filter find findIndex some every flatMap reduce(l, (acc, x) => …, init) flat slice concat includes indexOf join reverse sort sortBy(l, f, desc) groupBy unique sum count min max range(a, b) chunk zip length compactRanges
 objects: keys values entries fromEntries pick omit merge
 regexes are strings; start with (?i) for case-insensitive. // and /* */ comments work inside expressions.
-strings: str trim squash lower upper split replace(s, re, with) replaceText match(s, re, group?) matchAll test startsWith endsWith padStart clip(s, n) fmt('{a}', obj)
+strings: str trim squash lower upper split replace(s, re, with) replaceText match(s, re, group?) matchAll matchAt (with index) test startsWith endsWith padStart clip(s, n) fmt('{a}', obj)
 numbers: num(x, fallback) int round(x, digits) fixed abs floor ceil yuan(fen)
 dates (Beijing time, ms): date(text) formatDate(ms, 'YYYY-MM-DD HH:mm W') addDays addMinutes daysBetween startOfDay minutesOf('HH:mm'|ms) weekday (1=Mon)
 urls/json: url(base, path) query(url, name) encode decode json(text) path(v, 'a.b[0]')

@@ -1,0 +1,6 @@
+# A results table with no courses.
+tool: results
+now: 2026-09-10 10:00
+responses:
+  - {"match":"showResults.do","file":"results-empty.html","campus":"elective"}
+expect: {"program":"single","courses":[]}

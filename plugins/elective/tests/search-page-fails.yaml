@@ -1,0 +1,10 @@
+# A list page without the table fails the search.
+tool: search
+input: {"query":"数据"}
+now: 2026-09-10 10:00
+responses:
+  - {"match":"HelpController.jpf","file":"home.html","campus":"elective"}
+  - {"match":"SupplyCancel.do","file":"supply-cancel.html","campus":"elective"}
+  - {"match":"electableListGrid;0","file":"supplement-1.html","campus":"elective"}
+  - {"match":"electableListGrid;20","file":"not-open.html","campus":"elective"}
+expectError: '选课网没有返回补退选课程列表'

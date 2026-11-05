@@ -1,0 +1,7 @@
+# Cached 8 days ago (stale) and the site fails: the old copy is used.
+tool: departments
+now: 2026-10-23 14:20
+kv: { 'doc:deanOptions': { v: { at: 1792045200000, departments: [{ value: "00048", label: 信息科学技术学院 }, { value: "00004", label: 物理学院 }], semesters: [{ value: 26-27-1, label: 26-27学年 第1学期 }] } } }
+responses:
+  - { match: service/web/courseSearch.php, status: 500, body: oops }
+expect: {"departments":[{"code":"00048","name":"信息科学技术学院"},{"code":"00004","name":"物理学院"}],"semesters":[{"code":"26-27-1","name":"26-27学年 第1学期"}],"current":"26-27-1"}

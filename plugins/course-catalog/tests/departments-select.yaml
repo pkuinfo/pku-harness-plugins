@@ -1,0 +1,7 @@
+# The older <select> form (matched by id); the query is trimmed.
+tool: departments
+input: { query: ' 学院 ' }
+now: 2026-10-23 14:20
+responses:
+  - { match: service/web/courseSearch.php, file: dean-form-select.html }
+expect: {"departments":[{"code":"00048","name":"信息科学技术学院"},{"code":"00001","name":"数学科学学院"},{"code":"00004","name":"物理学院"}],"semesters":[{"code":"25-26-2","name":"25-26学年第2学期"},{"code":"25-26-1","name":"25-26学年第1学期"}],"current":"26-27-1"}

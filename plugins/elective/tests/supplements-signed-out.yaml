@@ -1,0 +1,4 @@
+# Not signed in: the supplement pages need the student ID.
+tool: supplements
+account: { signedIn: false, username: null }
+expectError: 还没有登录校园账号

@@ -150,3 +150,15 @@ describe('html helpers from the notices port', () => {
     expect(ev("text(without(html('<div><h1>T</h1><p>body</p></div>'), 'h1'))")).toBe('body');
   });
 });
+
+describe('additions from the course-catalog port', () => {
+  test('\\u escapes, null == undefined, matchAt', () => {
+    expect(ev("'a\\u00a0b'")).toBe('a b');
+    expect(ev('o.missing == null', { o: {} })).toBe(true);
+    expect(ev('0 == null')).toBe(false);
+    expect(ev("matchAt('x1y22', '\\d+')")).toEqual([
+      { text: '1', index: 1, groups: [] },
+      { text: '22', index: 3, groups: [] },
+    ]);
+  });
+});

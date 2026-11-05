@@ -1,0 +1,6 @@
+# '请重新登录' anywhere in the page means the session is gone, even with a table.
+tool: searchElective
+input: { category: gym }
+responses:
+  - { match: getCurriculmByForm.do, campus: elective, body: '<html><table class="datagrid"><tr><th>x</th></tr></table>请重新登录</html>' }
+expectError: ^选课网会话已失效，请稍后重试$

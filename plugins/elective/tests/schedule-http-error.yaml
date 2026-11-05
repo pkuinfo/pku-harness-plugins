@@ -1,0 +1,6 @@
+# HTTP errors from the site fail the tool.
+tool: schedule
+now: 2026-09-10 10:00
+responses:
+  - {"match":"HelpController.jpf","status":502,"body":"Bad Gateway","campus":"elective"}
+expectError: '选课网返回 HTTP 502'

@@ -1,0 +1,7 @@
+# Page 2 fails after page 1: the whole query fails, as in the TypeScript plugin.
+tool: searchElective
+input: { category: speciality }
+responses:
+  - { match: getCurriculmByForm.do, campus: elective, file: elective-page1.html }
+  - { match: queryCurriculum.jsp, campus: elective, file: elective-closed.html }
+expectError: ^选课网没有返回课程查询结果（可能不在选课开放时间）$

@@ -1,0 +1,6 @@
+# The 2026 span dropdown; 全部 (0) and options without a code are skipped.
+tool: departments
+now: 2026-10-23 14:20
+responses:
+  - { match: service/web/courseSearch.php, file: dean-form.html }
+expect: {"departments":[{"code":"00001","name":"数学科学学院"},{"code":"00004","name":"物理学院"},{"code":"00048","name":"信息科学技术学院"},{"code":"00086","name":"工学院"},{"code":"00010","name":"环境科学与工程学院"},{"code":"00015","name":"法学院"}],"semesters":[{"code":"25-26-3","name":"25-26学年 第3学期"},{"code":"26-27-1","name":"26-27学年 第1学期"},{"code":"25-26-2","name":"25-26学年 第2学期"}],"current":"26-27-1"}

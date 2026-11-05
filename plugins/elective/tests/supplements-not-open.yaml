@@ -1,0 +1,8 @@
+# Outside the election period: no list table.
+tool: supplements
+now: 2026-09-10 10:00
+responses:
+  - {"match":"HelpController.jpf","file":"home.html","campus":"elective"}
+  - {"match":"SupplyCancel.do","file":"not-open.html","campus":"elective"}
+  - {"match":"supplement.jsp","file":"not-open.html","campus":"elective"}
+expectError: '选课网没有返回补退选课程列表，页面提示：「目前不是补退选时间'

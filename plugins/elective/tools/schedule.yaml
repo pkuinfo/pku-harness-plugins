@@ -1,0 +1,17 @@
+# 选课网首页 HelpController.jpf: the election schedule table and any notice (api.ts schedule).
+title: 选课阶段
+summary: 选课各阶段及时间，以及选课网的提示
+description: 'The 选课网 home page: the election schedule (预选 / 补退选 phases with dates) and any site notice. Use it to tell whether add/drop is open now.'
+effect: read
+steps:
+  - let: res
+    request:
+      campus: elective
+      url: '${HELP_CONTROLLER}'
+      headers: '${headersFor(HOME)}'
+    as: response
+  - check: "res.status < 400"
+    error: 选课网返回 HTTP ${res.status}
+  - let: doc
+    value: html(res.text)
+return: "{ notice: parseNotice(doc), rows: tableRowsOf(doc), text: pageText(doc) }"

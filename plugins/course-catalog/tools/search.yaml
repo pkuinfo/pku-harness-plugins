@@ -1,0 +1,118 @@
+# 教务部课表查询 (pkucli crates/claspider/src/dean.rs): POST courseSearch_do.php with the form,
+# 10 rows per page at `startrow` → { status, count, courselist: [{ kch, kcmc, kctxm, kkxsmc, jxbh,
+# xf, qzz, sksj, teacher, bz }] } (sksj / teacher / bz are HTML). pkucli walks every page; a phone
+# fetches only enough pages for `limit` rows (3 in flight). No cookies; the captcha is only
+# checked in the browser.
+title: 搜索全校课程
+summary: 按课程名、教师或院系搜索某学期的全校开课
+description: >-
+  Search the PKU course catalog (教务部课表查询, public, no login) by course name keyword, teacher
+  and/or department. Returns course id, class no., credit, teacher, department, category, weeks and
+  sessions (weekday 0=Sun..6=Sat, periods, start/end time). No classroom here: use searchElective
+  for rooms. Give at least one of name / teacher / department.
+effect: read
+input:
+  name: { type: string, optional: true, trim: true, description: 'course name keyword, e.g. "高等数学"' }
+  teacher: { type: string, optional: true, trim: true, description: teacher's name }
+  department: { type: string, optional: true, trim: true, description: 'department name (e.g. "信息科学技术学院") or code (e.g. "00048")' }
+  semester: { type: string, optional: true, pattern: '^\d{2}-\d{2}-[123]$', description: 'e.g. "25-26-1"; default the current semester' }
+  weekday: { type: integer, optional: true, min: 1, max: 7, description: 'only courses meeting on this day, 1 = Monday … 7 = Sunday' }
+  limit: { type: integer, optional: true, min: 1, max: 100, description: 'max results, default 30' }
+steps:
+  - check: input.name || input.teacher || input.department
+    error: 请至少给出课程名、教师或院系中的一个
+  - let: sem
+    value: input.semester ?? semesterCode(now)
+  - let: d
+    value: input.department ?? ''
+  - let: code
+    value: "test(d, '^\\d+$') ? d : null"
+  - let: deptFilter
+    value: "null"
+  - let: deptNote
+    value: "null"
+  - if: d && !code
+    then:
+      - let: departments
+        value: "[]"
+      - try:
+          - let: opts
+            call: departments
+            input: "{}"
+          - let: departments
+            value: opts.departments
+        catch: []
+      - let: hits
+        value: "departments.filter(o => o.name == d || includes(o.name, d) || includes(d, o.name))"
+      - let: exact
+        value: "hits.find(o => o.name == d) ?? hits[0]"
+      - if: exact
+        then:
+          - let: code
+            value: exact.code
+          - if: "length(hits) > 1 && exact.name != d"
+            then:
+              - let: deptNote
+                value: "'院系\"' + d + '\"匹配到多个，已使用\"' + exact.name + '\"：' + hits.map(h => h.name).join('、')"
+        else:
+          # Unknown name: filter locally on 开课单位 instead.
+          - check: input.name || input.teacher
+            error: 没有找到院系"${d}"，可以先用 course-catalog__departments 查看院系列表
+          - let: deptFilter
+            value: d
+  - let: lim
+    value: input.limit ?? 30
+  # Local filters need a wider fetch to still return `max` matches.
+  - let: fetchLimit
+    value: "input.weekday || deptFilter ? min(100, lim * 3) : lim"
+  - let: head
+    each: "[0]"
+    steps: &page
+      - let: res
+        request:
+          url: ${DEAN_BASE}/courseSearch_do.php
+          method: POST
+          headers: '${DEAN_HEADERS}'
+          form:
+            coursename: ${input.name ?? ''}
+            teachername: ${input.teacher ?? ''}
+            yearandseme: ${sem}
+            coursetype: '0'
+            yuanxi: ${code ?? '0'}
+            startrow: ${str(item * 10)}
+          contentType: application/x-www-form-urlencoded; charset=UTF-8
+          timeout: 15s
+        as: response
+      - check: "res.status >= 200 && res.status < 300"
+        error: 教务部网站返回 HTTP ${res.status}
+      - let: data
+        value: "null"
+      - try:
+          - let: data
+            value: json(res.text)
+        catch:
+          - check: "false"
+            error: 教务部返回的不是课程数据，网站可能在维护
+      - check: data?.status == 'ok'
+        error: 教务部返回错误：${data?.status ?? '未知'}
+    return: "{ count: num(data.count, 0) || 0, courses: deanCourses(data) }"
+  - let: pages
+    value: ceil(min(head[0].count, fetchLimit) / 10)
+  - let: rest
+    each: range(1, pages)
+    concurrency: 3
+    steps: *page
+    return: "{ count: num(data.count, 0) || 0, courses: deanCourses(data) }"
+  - let: courses
+    value: "[...head[0].courses, ...rest.flatMap(p => p.courses)].slice(0, fetchLimit)"
+  - let: list
+    value: "byWeekday(courses, input.weekday).filter(c => !deptFilter || includes(c.department, deptFilter)).slice(0, lim)"
+return: |
+  {
+    semester: sem,
+    total: head[0].count,
+    returned: length(list),
+    truncated: head[0].count > length(courses),
+    ...(deptNote ? { note: deptNote } : {}),
+    courses: list.map(compact),
+  }

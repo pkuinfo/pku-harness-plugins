@@ -1,0 +1,8 @@
+# A page past the last one.
+tool: supplements
+input: {"page":5}
+now: 2026-09-10 10:00
+responses:
+  - {"match":"HelpController.jpf","file":"home.html","campus":"elective"}
+  - {"match":"SupplyCancel.do","file":"supply-cancel.html","campus":"elective"}
+expectError: '页码 5 超出范围（共 3 页）'

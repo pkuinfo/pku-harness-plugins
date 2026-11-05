@@ -1,0 +1,9 @@
+# Page 2, full courses dropped.
+tool: supplements
+input: {"page":2,"onlyAvailable":true,"program":"minor"}
+now: 2026-09-10 10:00
+responses:
+  - {"match":"HelpController.jpf","file":"home.html","campus":"elective"}
+  - {"match":"SupplyCancel.do","file":"supply-cancel.html","campus":"elective"}
+  - {"match":"electableListGrid;20","file":"supplement-2.html","campus":"elective"}
+expect: {"program":"single","totalPages":3,"elected":[{"code":"04830041","name":"数据结构与算法","teacher":"张三","classId":"1","credit":"3.0","category":"专业必修","department":"信息科学技术学院","quota":"120 / 118","limit":120,"elected":118,"remaining":2,"full":false,"grade":"2024级"},{"code":"04831410","name":"操作系统","teacher":"陈七","classId":"2","credit":"4.0","category":"专业必修","department":"信息科学技术学院","quota":"100/100/3","limit":100,"elected":100,"waitlist":3,"remaining":0,"full":true}],"page":2,"courses":[{"code":"C21","name":"数据挖掘","teacher":"孙九","classId":"1","credit":"2.0","category":"通选","department":"信息科学技术学院","info":"周二 7~8 节 理教 203","quota":"40/39","limit":40,"elected":39,"remaining":1,"full":false,"page":2}]}

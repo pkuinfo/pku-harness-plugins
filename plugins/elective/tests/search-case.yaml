@@ -1,0 +1,11 @@
+# Case-insensitive match on the teacher field.
+tool: search
+input: {"query":"SMITH"}
+now: 2026-09-10 10:00
+responses:
+  - {"match":"HelpController.jpf","file":"home.html","campus":"elective"}
+  - {"match":"SupplyCancel.do","file":"supply-cancel.html","campus":"elective"}
+  - {"match":"electableListGrid;0","file":"supplement-1.html","campus":"elective"}
+  - {"match":"electableListGrid;20","file":"supplement-2.html","campus":"elective"}
+  - {"match":"electableListGrid;40","file":"supplement-3.html","campus":"elective"}
+expect: {"program":"single","query":"SMITH","searchedPages":3,"totalPages":3,"truncated":false,"matches":[{"code":"C10","name":"数据库概论","teacher":"Smith","classId":"1","credit":"2.0","category":"通选","department":"信息科学技术学院","info":"周二 7~8 节 理教 203","quota":"60/60/2","limit":60,"elected":60,"waitlist":2,"remaining":0,"full":true,"page":1}]}

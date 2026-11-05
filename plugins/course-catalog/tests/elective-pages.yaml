@@ -1,0 +1,6 @@
+# 7 pages but maxPages 1, limit 2: truncated.
+tool: searchElective
+input: { category: tsk_choice, maxPages: 1, limit: 2 }
+responses:
+  - { match: getCurriculmByForm.do, campus: elective, file: elective-page1-of7.html }
+expect: {"matched":6,"returned":2,"pagesRead":1,"totalPages":7,"truncated":true,"courses":[{"courseId":"04830220","name":"计算机系统导论","category":"专业课","classNo":"1","credit":"5","teacher":"张三","department":"信息科学技术学院","schedule":"1~15周 每周周二3~4节","sessions":[{"weekday":2,"periods":[3,4],"start":"10:10","end":"12:00","weeks":"1-15","weekType":"every","room":"理教107"}],"classroom":"理教107","weeks":"1~15周","remark":"英文授课 双语"},{"courseId":"04830220","name":"计算机系统导论","category":"专业课","classNo":"2","credit":"5","teacher":"王五","department":"信息科学技术学院","schedule":"1~15周 每周周三1~2节; 1~15周 每周周一3~4节","sessions":[{"weekday":3,"periods":[1,2],"start":"08:00","end":"09:50","weeks":"1-15","weekType":"every","room":"三教201"},{"weekday":1,"periods":[3,4],"start":"10:10","end":"12:00","weeks":"1-15","weekType":"every","room":"三教201"}],"classroom":"三教201","weeks":"1~15周"}]}

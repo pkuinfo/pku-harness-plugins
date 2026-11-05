@@ -1,0 +1,10 @@
+# The options page fails and nothing is cached: the name becomes a local filter.
+tool: search
+input: { name: 计算机, department: 工学 }
+now: 2026-10-23 14:20
+responses:
+  - { match: service/web/courseSearch.php, status: 503, body: busy }
+  - { match: courseSearch_do.php, file: dean-page1.json, headers: { content-type: text/html } }
+  - { match: courseSearch_do.php, file: dean-page2.json, headers: { content-type: text/html } }
+  - { match: courseSearch_do.php, file: dean-page3.json, headers: { content-type: text/html } }
+expect: {"semester":"26-27-1","total":23,"returned":2,"truncated":false,"courses":[{"courseId":"01034560","name":"计算机辅助设计","category":"专业选修","classNo":"1","credit":"3","teacher":"周九","department":"工学院","schedule":"星期二(第10节-第11节)","sessions":[{"weekday":2,"periods":[10,11],"start":"18:40","end":"20:30","weeks":"2-16","weekType":"every","room":null}],"weeks":"2-16"},{"courseId":"01034570","name":"计算机控制","category":"专业选修","classNo":"1","credit":"3","teacher":"沈七","department":"工学院","schedule":"星期二(第1节-第2节)","sessions":[{"weekday":2,"periods":[1,2],"start":"08:00","end":"09:50","weeks":"1-15","weekType":"every","room":null}],"weeks":"1-15"}]}

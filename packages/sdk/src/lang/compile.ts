@@ -107,6 +107,15 @@ function translation(doc: PluginDocument): PluginTranslation | undefined {
   return rest as PluginTranslation;
 }
 
+function accountOf(services: { campus?: { status?: () => { signedIn: boolean; username: string | null } } }) {
+  try {
+    const st = services.campus?.status?.();
+    return { signedIn: !!st?.signedIn, username: st?.username ?? null };
+  } catch {
+    return { signedIn: false, username: null };
+  }
+}
+
 export function compilePlugin(doc: PluginDocument, opts: CompileOptions): PluginDef {
   const m = doc.manifest;
   const requires = new Set<Capability>(m.requires ?? []);
@@ -125,7 +134,10 @@ export function compilePlugin(doc: PluginDocument, opts: CompileOptions): Plugin
       userOnly: t.userOnly,
       execute: async (input, ctx) => {
         try {
-          return await runTool({ manifest: m, tools: doc.tools, services: ctx.services, kv: ctx.kv, fetch: opts.fetch, signal: ctx.signal, cloud: ctx.cloud }, name, input as Record<string, unknown>);
+          // Plugins that declare campus services may read who is signed in (the student ID some
+          // campus pages need, e.g. elective's xh); never the password or the holder's name.
+          const scope = m.campus?.length ? { account: accountOf(ctx.services) } : undefined;
+          return await runTool({ manifest: m, tools: doc.tools, services: ctx.services, kv: ctx.kv, fetch: opts.fetch, signal: ctx.signal, cloud: ctx.cloud, scope }, name, input as Record<string, unknown>);
         } catch (e) {
           throw e instanceof ToolFailure ? new Error(e.message) : e;
         }

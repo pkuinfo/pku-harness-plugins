@@ -1,0 +1,152 @@
+# Constants and functions every course-catalog tool sees (PLUGIN.md shared:). Parsing ported
+# from pkucli crates/claspider: dean.rs (教务部课表查询, public JSON with HTML fields, 10 rows per
+# page, no classroom), elective_query.rs (选课网「添加其它课程」HTML, has classrooms), model.rs.
+constants:
+  DEAN_BASE: https://dean.pku.edu.cn/service/web
+  DEAN_HEADERS:
+    user-agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36
+    referer: https://dean.pku.edu.cn/service/web/courseSearch.php
+    origin: https://dean.pku.edu.cn
+    x-requested-with: XMLHttpRequest
+  # 院系/学期 choices from the dean search form, cached a week.
+  OPTIONS_TTL: 604800000
+  # PKU's standard period times (本科生作息), as in course-sync's DEFAULT_PERIODS.
+  PERIODS:
+    '1': ['08:00', '08:50']
+    '2': ['09:00', '09:50']
+    '3': ['10:10', '11:00']
+    '4': ['11:10', '12:00']
+    '5': ['13:00', '13:50']
+    '6': ['14:00', '14:50']
+    '7': ['15:10', '16:00']
+    '8': ['16:10', '17:00']
+    '9': ['17:10', '18:00']
+    '10': ['18:40', '19:30']
+    '11': ['19:40', '20:30']
+    '12': ['20:40', '21:30']
+  # Weekdays use JS numbering (0 = Sunday … 6 = Saturday), like the SDK timetable.
+  CN_DAY: { 一: 1, 二: 2, 三: 3, 四: 4, 五: 5, 六: 6, 日: 0, 天: 0 }
+  WEEK_TYPE: { 每周: every, 单周: odd, 双周: even }
+  # dean.rs: "<p>星期二(第3节-第4节)</p><p>星期四(第1节-第2节)(单周)</p>"; weeks come from 起止周.
+  DEAN_SLOT: '星期([一二三四五六日天])\s*[（(]?\s*第\s*(\d{1,2})\s*节\s*(?:[-~—至]\s*第?\s*(\d{1,2})\s*节)?\s*[)）]?\s*(?:[（(]?\s*(每周|单周|双周)\s*[)）]?)?'
+  # elective_query.rs: "1~15周 每周周二5~6节 理教310". The outer group keeps the whole slot when
+  # splitting, so a split yields [before, slot, 6 groups, after, slot, 6 groups, after, …].
+  ELECTIVE_SLOT: '((\d{1,2})~(\d{1,2})周\s*((?:每周|单周|双周)?)周([一二三四五六日])(\d{1,2})~(\d{1,2})节)'
+functions:
+  # 1 = Monday … 7 = Sunday (what the model and users say) → JS weekday.
+  byWeekday: '(courses, wd) => !wd ? courses : courses.filter(c => c.sessions.some(s => s.weekday == wd % 7))'
+  # Fewer tokens: drop the source and empty fields.
+  compact: |
+    (c) => fromEntries(entries(c).filter(e => e[0] != 'source' && e[1] != '' && !(isList(e[1]) && !length(e[1]))))
+  session: |
+    (day, a, b, weeks, type, room) => sessionOf(CN_DAY[day], min(a, b), max(a, b), weeks, type, room)
+  sessionOf: |
+    (wd, p1, p2, weeks, type, room) => ({
+      weekday: wd,
+      periods: [p1, p2],
+      start: PERIODS[p1]?.[0] ?? null,
+      end: PERIODS[p2]?.[1] ?? null,
+      weeks,
+      weekType: WEEK_TYPE[type ?? ''] ?? 'every',
+      room,
+    })
+  # dean.rs strip_html: tags → spaces, a few entities, whitespace collapsed.
+  stripHtml: |
+    (s) => trim(replace(replaceText(replaceText(replaceText(replaceText(replace(s, '<[^>]+>', ' '), '&nbsp;', ' '), '&amp;', '&'), '&lt;', '<'), '&gt;', '>'), '\s+', ' '))
+  # Dean semester code ("25-26-1") for a time: Aug–Jan = first semester, Feb–Jul = second.
+  semesterCode: |
+    (ms) => semesterOf(num(formatDate(ms, 'YYYY')) % 100, num(formatDate(ms, 'M')))
+  semesterOf: |
+    (y, m) => m >= 8 ? yy(y) + '-' + yy(y + 1) + '-1' : m == 1 ? yy(y - 1) + '-' + yy(y) + '-1' : yy(y - 1) + '-' + yy(y) + '-2'
+  yy: "(n) => padStart(str((n + 100) % 100), 2, '0')"
+
+  # ── 教务部 (dean.rs) ──
+  deanSchedule: |
+    (sksj, weeks) => matchAll(stripHtml(sksj), DEAN_SLOT).map(m => session(m[1], num(m[2]), num(m[3] ?? m[2]), weeks, m[4], null))
+  # One parsed page of courseSearch_do.php (data = the JSON; status checked by the caller).
+  deanCourses: |
+    (data) => (data.courselist ?? []).map(c => deanCourse(c, trim(c.qzz ?? '')))
+  deanCourse: |
+    (c, weeks) => ({
+      courseId: c.kch ?? '',
+      name: c.kcmc ?? '',
+      category: c.kctxm ?? '',
+      classNo: c.jxbh ?? '',
+      credit: c.xf ?? '',
+      teacher: stripHtml(c.teacher ?? ''),
+      department: c.kkxsmc ?? '',
+      schedule: stripHtml(c.sksj ?? ''),
+      sessions: deanSchedule(c.sksj ?? '', weeks || null),
+      // dean.rs extract_classroom_from_remark: rooms aren't in the dean data.
+      classroom: '',
+      weeks,
+      remark: stripHtml(c.bz ?? ''),
+      source: 'dean',
+    })
+  # `<select>` options on the dean search page (院系 yuanxi, 学期 yearandseme), matched by name or
+  # id; the 2026 redesign uses `<span class="<name>" data="<value>">label</span>` instead. Skips 全部 (0).
+  selectOptions: |
+    (doc, name) => optionsOf(find(select(doc, 'select'), s => attr(s, 'name') == name || attr(s, 'id') == name), doc, name)
+  optionsOf: |
+    (sel, doc, name) => (sel
+        ? select(sel, 'option').map(o => ({ value: attr(o, 'value') ?? '', label: o.rawText }))
+        : select(doc, 'span.' + name).map(o => ({ value: attr(o, 'data') ?? '', label: o.rawText })))
+      .map(o => ({ value: trim(o.value), label: trim(o.label) }))
+      .filter(o => o.value && o.value != '0' && o.label)
+
+  # ── 选课网 (elective_query.rs) ──
+  # The query form fields (fetch_all / page_url), keys already URL-encoded.
+  queryFields: |
+    (category, dept) => 'wlw-radio_button_group_key%3A%7BactionForm.courseSettingType%7D=' + category + '&'
+      + '%7BactionForm.courseID%7D=&'
+      + '%7BactionForm.courseName%7D=&'
+      + 'wlw-select_key%3A%7BactionForm.deptID%7DOldValue=true&'
+      + 'wlw-select_key%3A%7BactionForm.deptID%7D=' + dept + '&'
+      + 'wlw-select_key%3A%7BactionForm.courseDay%7DOldValue=true&'
+      + 'wlw-select_key%3A%7BactionForm.courseDay%7D=&'
+      + 'wlw-select_key%3A%7BactionForm.courseTime%7DOldValue=true&'
+      + 'wlw-select_key%3A%7BactionForm.courseTime%7D=&'
+      + 'wlw-checkbox_key%3A%7BactionForm.queryDateFlag%7DOldValue=false&'
+      + 'deptIdHide=' + dept
+  # parse_time_and_room. A room number glued to the next "N~M周" is split off first (3+ digit
+  # room, 1–2 digit week): "… 三教2011~15周 …" → "… 三教201 1~15周 …".
+  timeAndRoom: |
+    (input) => !input ? { schedule: '', classroom: '', weeks: '', sessions: [] }
+      : slotsOf(split(replace(input, '(\d{3,}?)(\d{1,2}~\d{1,2}周)', '$1 $2'), ELECTIVE_SLOT, true))
+  slotsOf: |
+    (parts) => length(parts) == 1 ? { schedule: parts[0], classroom: '', weeks: '', sessions: [] }
+      : slotsTable(range(0, (length(parts) - 1) / 8).map(i => ({ m: slice(parts, 8 * i + 1, 8 * i + 8), room: roomOf(parts[8 * i + 8]) })))
+  roomOf: "(raw) => trim(split(split(split(raw, '考试')[0], '(备注')[0], '（备注')[0])"
+  slotsTable: |
+    (slots) => ({
+      schedule: slots.map(s => s.m[0]).join('; '),
+      // Vec::dedup: consecutive duplicates only.
+      classroom: reduce(slots, (acc, s) => s.room && acc[length(acc) - 1] != s.room ? [...acc, s.room] : acc, []).join(', '),
+      weeks: slots[0].m[1] + '~' + slots[0].m[2] + '周',
+      sessions: slots.map(s => session(s.m[4], num(s.m[5]), num(s.m[6]), s.m[1] + '-' + s.m[2], s.m[3] || null, s.room || null)),
+    })
+  # parse_total_pages: "Page 1 of 7" in the page text.
+  totalPages: "(text) => num(match(text, 'Page\\s*\\d+\\s*of\\s*(\\d+)', 1), 0) || 1"
+  # parse_course_table: `table.datagrid`, header row skipped, rows with < 10 cells (pager) skipped.
+  # Columns: 课程号 课程名 类别 学分 教师 班号 开课单位 专业 年级 上课时间及教室 限数/已选 自选P/NP 备注 …
+  electiveCourses: |
+    (table) => select(table, 'tr').slice(1)
+      .map(r => select(r, 'td').map(td => trim(replaceText(td.rawText, ' ', ' '))))
+      .filter(cells => length(cells) >= 10)
+      .map(cells => electiveCourse(cells, timeAndRoom(cells[9] ?? '')))
+  electiveCourse: |
+    (cells, t) => ({
+      courseId: cells[0],
+      name: cells[1],
+      category: cells[2],
+      classNo: cells[5] ?? '',
+      credit: cells[3] ?? '',
+      teacher: cells[4] ?? '',
+      department: cells[6] ?? '',
+      schedule: t.schedule,
+      sessions: t.sessions,
+      classroom: t.classroom,
+      weeks: t.weeks,
+      remark: cells[12] ?? '',
+      source: 'elective',
+    })

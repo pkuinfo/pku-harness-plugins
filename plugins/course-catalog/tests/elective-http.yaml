@@ -1,0 +1,5 @@
+tool: searchElective
+input: { category: english }
+responses:
+  - { match: getCurriculmByForm.do, campus: elective, status: 500, body: error }
+expectError: ^选课网返回 HTTP 500$

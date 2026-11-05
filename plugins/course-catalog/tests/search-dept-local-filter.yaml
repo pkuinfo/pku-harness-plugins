@@ -1,0 +1,10 @@
+# An unknown department name with a course name: filtered locally on 开课单位 (3 pages for 30 × 3).
+tool: search
+input: { name: 计算机, department: 计算中心 }
+now: 2026-10-23 14:20
+responses:
+  - { match: service/web/courseSearch.php, file: dean-form.html }
+  - { match: courseSearch_do.php, file: dean-page1.json, headers: { content-type: text/html } }
+  - { match: courseSearch_do.php, file: dean-page2.json, headers: { content-type: text/html } }
+  - { match: courseSearch_do.php, file: dean-page3.json, headers: { content-type: text/html } }
+expect: {"semester":"26-27-1","total":23,"returned":4,"truncated":false,"courses":[{"courseId":"00132380","name":"计算机基础（文科）","category":"通识核心课","classNo":"1","credit":"2","teacher":"钱七","department":"计算中心","schedule":"星期日（第10节-第12节）","sessions":[{"weekday":0,"periods":[10,12],"start":"18:40","end":"21:30","weeks":null,"weekType":"every","room":null}]},{"courseId":"00132381","name":"计算机应用","category":"全校任选","classNo":"3","credit":"2","teacher":"孙八","department":"计算中心","schedule":"星期三(第5节)","sessions":[{"weekday":3,"periods":[5,5],"start":"13:00","end":"13:50","weeks":"1-8","weekType":"every","room":null}],"weeks":"1-8"},{"courseId":"00132383","name":"计算机文化","category":"全校任选","classNo":"2","credit":"2","teacher":"卫五","department":"计算中心","schedule":"星期二(第7节-第8节)","sessions":[{"weekday":2,"periods":[7,8],"start":"15:10","end":"17:00","weeks":"1-15","weekType":"every","room":null}],"weeks":"1-15"},{"courseId":"00132384","name":"计算机实践","category":"全校任选","classNo":"4","credit":"2","teacher":"秦一","department":"计算中心","schedule":"星期日(第1节-第4节)","sessions":[{"weekday":0,"periods":[1,4],"start":"08:00","end":"12:00","weeks":"1-15","weekType":"every","room":null}],"weeks":"1-15"}]}

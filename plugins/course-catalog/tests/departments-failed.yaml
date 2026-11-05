@@ -1,0 +1,5 @@
+tool: departments
+now: 2026-10-23 14:20
+responses:
+  - { match: service/web/courseSearch.php, status: 500, body: oops }
+expectError: ^教务部网站返回 HTTP 500$

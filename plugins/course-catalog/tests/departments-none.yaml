@@ -1,0 +1,6 @@
+# Neither a <select> nor the span dropdown: the site changed.
+tool: departments
+now: 2026-10-23 14:20
+responses:
+  - { match: service/web/courseSearch.php, file: dean-form-redesigned.html }
+expectError: ^教务部页面里没找到院系列表，网站可能已改版$

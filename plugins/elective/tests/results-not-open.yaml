@@ -1,0 +1,6 @@
+# No datagrid: the msgTips notice is quoted.
+tool: results
+now: 2026-09-10 10:00
+responses:
+  - {"match":"showResults.do","file":"not-open.html","campus":"elective"}
+expectError: '选课网没有返回选课结果，页面提示：「目前不是补退选时间'

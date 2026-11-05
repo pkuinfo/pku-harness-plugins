@@ -1,0 +1,6 @@
+tool: search
+input: { teacher: 张三 }
+now: 2026-10-23 14:20
+responses:
+  - { match: courseSearch_do.php, body: { status: error } }
+expectError: ^教务部返回错误：error$

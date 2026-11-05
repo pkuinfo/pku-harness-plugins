@@ -1,0 +1,6 @@
+# No recognisable header: pkucli's column positions.
+tool: results
+now: 2026-09-10 10:00
+responses:
+  - {"match":"showResults.do","file":"results-positions.html","headers":{"x-elective-program":"single"},"campus":"elective"}
+expect: {"program":"single","courses":[{"code":"C1","name":"课A","teacher":"王五","classId":"3","credit":"2","category":"通识","department":"历史学系","hours":"2","classroom":"地点","result":"未选上"}]}

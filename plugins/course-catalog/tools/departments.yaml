@@ -1,0 +1,51 @@
+# 院系 and 学期 choices from the dean search form (`yuanxi`, `yearandseme`), cached a week in KV
+# (`deanOptions`); a failed fetch falls back to an older cached copy. `search` calls this tool to
+# resolve department names.
+title: 院系与学期列表
+summary: 课程搜索可用的院系代码和学期代码
+description: Department codes and semester codes accepted by course-catalog search (from the dean search form). Optional name filter.
+effect: read
+input:
+  query: { type: string, optional: true, trim: true, description: filter departments by name }
+steps:
+  - let: cached
+    kv: get
+    key: deanOptions
+  - let: opts
+    value: "null"
+  - if: "cached && now - cached.at < OPTIONS_TTL && length(cached.departments)"
+    then:
+      - let: opts
+        value: cached
+    else:
+      - try:
+          - let: res
+            request:
+              url: ${DEAN_BASE}/courseSearch.php
+              headers: '${DEAN_HEADERS}'
+              timeout: 15s
+            as: response
+          - check: "res.status >= 200 && res.status < 300"
+            error: 教务部网站返回 HTTP ${res.status}
+          - let: page
+            value: html(res.text)
+          - let: opts
+            value: "{ at: now, departments: selectOptions(page, 'yuanxi'), semesters: selectOptions(page, 'yearandseme') }"
+          - if: length(opts.departments)
+            then:
+              - kv: set
+                key: deanOptions
+                value: opts
+        catch:
+          - check: cached
+            error: ${error.message}
+          - let: opts
+            value: cached
+  - check: length(opts.departments)
+    error: 教务部页面里没找到院系列表，网站可能已改版
+return: |
+  {
+    departments: (input.query ? opts.departments.filter(d => includes(d.label, input.query)) : opts.departments).map(d => ({ code: d.value, name: d.label })),
+    semesters: opts.semesters.map(s => ({ code: s.value, name: s.label })),
+    current: semesterCode(now),
+  }

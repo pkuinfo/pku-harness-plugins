@@ -1,0 +1,11 @@
+# Only courses with seats (full ones dropped); matches the department; the query is trimmed for matching, echoed as given.
+tool: search
+input: {"query":" 信息科学 ","onlyAvailable":true}
+now: 2026-09-10 10:00
+responses:
+  - {"match":"HelpController.jpf","file":"home.html","campus":"elective"}
+  - {"match":"SupplyCancel.do","file":"supply-cancel.html","campus":"elective"}
+  - {"match":"electableListGrid;0","file":"supplement-1.html","campus":"elective"}
+  - {"match":"electableListGrid;20","file":"supplement-2.html","campus":"elective"}
+  - {"match":"electableListGrid;40","file":"supplement-3.html","campus":"elective"}
+expect: {"program":"single","query":" 信息科学 ","searchedPages":3,"totalPages":3,"truncated":false,"matches":[{"code":"C21","name":"数据挖掘","teacher":"孙九","classId":"1","credit":"2.0","category":"通选","department":"信息科学技术学院","info":"周二 7~8 节 理教 203","quota":"40/39","limit":40,"elected":39,"remaining":1,"full":false,"page":2}]}

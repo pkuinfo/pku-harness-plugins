@@ -1,0 +1,7 @@
+# No hits; in January the default semester is still the autumn one.
+tool: search
+input: { name: 不存在的课 }
+now: 2027-01-05 09:00
+responses:
+  - { match: courseSearch_do.php, file: dean-empty.json }
+expect: {"semester":"26-27-1","total":0,"returned":0,"truncated":false,"courses":[]}

@@ -181,6 +181,8 @@ export const testSchema = z.object({
   input: z.record(z.string(), z.unknown()).optional(),
   now: z.union([z.string(), z.number()]).optional(),
   kv: z.record(z.string(), z.unknown()).optional(),
+  /** The signed-in account the tool sees (plugins with campus services); default: signed in. */
+  account: z.object({ signedIn: z.boolean(), username: z.string().nullable() }).optional(),
   responses: z
     .array(
       z.object({

@@ -141,6 +141,9 @@ async function request(run: Run, raw: unknown, as: unknown, scope: Scope): Promi
     tscope.set('secrets', { ...run.env.secrets });
   }
   const req = templateDeep(raw, tscope, run.ctx) as RequestDoc;
+  // A field whose template evaluated to null/undefined is left out (not sent as "null"), so one
+  // step can switch between GET and POST, with and without a body.
+  for (const k of Object.keys(req ?? {}) as (keyof RequestDoc)[]) if (req[k] == null) delete req[k];
   if (!req || typeof req.url !== 'string') throw new ToolFailure('request needs a url');
   const method = (req.method ?? (req.json !== undefined || req.form || req.body !== undefined ? 'POST' : 'GET')).toUpperCase();
   if (method !== 'GET' && method !== 'POST') throw new ToolFailure(`method ${method} is not supported (GET or POST)`);

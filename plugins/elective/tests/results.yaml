@@ -1,0 +1,7 @@
+# Results by header label; dual-degree program read back from the response header; empty 课程号 dropped.
+tool: results
+input: {"program":"major"}
+now: 2026-09-10 10:00
+responses:
+  - {"match":"showResults.do","file":"results.html","headers":{"x-elective-program":"major"},"campus":"elective"}
+expect: {"program":"major","courses":[{"code":"04830041","name":"数据结构与算法","teacher":"张三","classId":"1","credit":"3.0","category":"专业必修","department":"信息科学技术学院","hours":"3.0","classroom":"周一 1~2 节 理教 107","result":"已选上"},{"code":"00132380","name":"高等数学 (B)","teacher":"李四","classId":"2","credit":"5.0","category":"公共基础","department":"数学科学学院","hours":"5.0","classroom":"周三 3~4 节 二教 101","result":"待抽签"},{"name":"无课号课程","teacher":"王五","classId":"1","credit":"2.0","category":"通识","department":"历史学系","hours":"2.0","classroom":"","result":"未选上"}]}

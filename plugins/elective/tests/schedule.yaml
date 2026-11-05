@@ -1,0 +1,6 @@
+# Home page: schedule rows (innermost tables only, empty rows dropped), notice = title, visible text without scripts.
+tool: schedule
+now: 2026-09-10 10:00
+responses:
+  - {"match":"HelpController.jpf","file":"home.html","campus":"elective"}
+expect: {"notice":"北京大学选课网","rows":[["帮助","选课结果","补退选"],["阶段","开始时间","结束时间"],["预选","2026-08-25 13:00","2026-08-28 17:00"],["补退选","2026-09-09 13:00","2026-09-12 17:00"]],"text":"帮助 选课结果 补退选 阶段开始时间结束时间 预选2026-08-25 13:002026-08-28 17:00 补退选2026-09-09 13:002026-09-12 17:00 请同学们按时 选课。"}

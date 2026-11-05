@@ -1,0 +1,6 @@
+tool: search
+input: { department: 外星学院 }
+now: 2026-10-23 14:20
+responses:
+  - { match: service/web/courseSearch.php, file: dean-form.html }
+expectError: ^没有找到院系"外星学院"，可以先用 course-catalog__departments 查看院系列表$

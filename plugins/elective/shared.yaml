@@ -1,0 +1,114 @@
+# 选课网 page parsing, shared by every tool (PLUGIN.md shared:). Ported from the TypeScript plugin
+# (src/parse.ts), which follows pkucli crates/elective/src/api.rs (`parse_datagrid_table`,
+# `parse_supplement_table`, `parse_total_pages`). Columns are mapped by header label when the
+# table has a recognisable header row, else by pkucli's positions.
+constants:
+  ROOT: https://elective.pku.edu.cn/elective2008/edu/pku/stu/elective/controller
+  HOME: https://elective.pku.edu.cn/elective2008/
+  HELP_CONTROLLER: https://elective.pku.edu.cn/elective2008/edu/pku/stu/elective/controller/help/HelpController.jpf
+  SHOW_RESULTS: https://elective.pku.edu.cn/elective2008/edu/pku/stu/elective/controller/electiveWork/showResults.do
+  SUPPLY_CANCEL: https://elective.pku.edu.cn/elective2008/edu/pku/stu/elective/controller/supplement/SupplyCancel.do
+  SUPPLEMENT: https://elective.pku.edu.cn/elective2008/edu/pku/stu/elective/controller/supplement/supplement.jsp
+  # Courses per supplement page (api.rs get_supplements: netui_row=electableListGrid;page*20).
+  PAGE_SIZE: 20
+  # Bounded crawl for search: pkucli get_all_supplements walks every page; a phone stops here.
+  MAX_SEARCH_PAGES: 25
+  FIELDS: [code, name, category, credit, hours, teacher, classId, department, info, status]
+  # Header labels per field, most specific first.
+  LABELS:
+    code: [课程号]
+    name: [课程名]
+    category: [课程类别, 类别]
+    credit: [学分]
+    hours: [周学时]
+    teacher: [教师]
+    classId: [班号]
+    department: [开课单位]
+    info: [教室信息, 上课考试信息, 上课/考试信息, 年级]
+    status: [选课结果, 限数/已选, 限数]
+  # pkucli's positions: cells[0] 课程号, cells[1..=9] the rest (api.rs CourseData).
+  POSITIONS: { code: 0, name: 1, category: 2, credit: 3, hours: 4, teacher: 5, classId: 6, department: 7, info: 8, status: 9 }
+functions:
+  # Cell text: entities decoded, nbsp and whitespace runs collapsed.
+  cellText: "(el) => el ? squash(replace(el.text, '&nbsp;', ' ')) : ''"
+  # The program the page shows, from the host's elective adapter header (single | major | minor).
+  programOf: |
+    (res) => includes(['major', 'minor'], res.headers['x-elective-program']) ? res.headers['x-elective-program'] : 'single'
+  # Request headers of every page; x-elective-program only when the user picked one.
+  headersFor: "(referer) => ({ referer, 'cache-control': 'max-age=0', 'x-elective-program': input.program })"
+  # ── tables (parse.ts readRows / headerMap) ──
+  colOf: "(labels, opts) => opts.map(l => labels.findIndex(x => includes(x, l))).find(i => i >= 0) ?? -1"
+  mapOk: "(map) => map.name >= 0 ? map : null"
+  headerMapOf: "(labels) => mapOk(fromEntries(FIELDS.map(f => [f, colOf(labels, LABELS[f])])))"
+  headerMap: |
+    (header) => header ? headerMapOf(select(header, 'th, td').map(c => replace(cellText(c), '\s', ''))) : null
+  # One cell by field: header column, else (supplements) status at max(len-3, 9) like
+  # parse_supplement_table, else pkucli's position when there is no recognisable header.
+  cellAt: |
+    (cells, map, field, supplement) =>
+      map && map[field] >= 0 ? cells[map[field]] ?? ''
+      : field == 'status' && supplement ? cells[max(cells.length - 3, 9)] ?? ''
+      : map ? '' : cells[POSITIONS[field]] ?? ''
+  rowsMapped: |
+    (trs, map, supplement) => trs.slice(1)
+      .map(row => select(row, 'td').map(cellText))
+      // pagination rows and the like (api.rs: <= 3 cells), then the 10-column minimum
+      .filter(cells => cells.length >= 10)
+      .map(cells => fromEntries(FIELDS.map(f => [f, cellAt(cells, map, f, supplement)])))
+      .filter(c => c.name)
+  rowsWith: "(trs, supplement) => rowsMapped(trs, headerMap(trs[0]), supplement)"
+  rowsOf: "(table, supplement) => rowsWith(select(table, 'tr'), supplement)"
+  grids: "(doc) => select(doc, 'table.datagrid')"
+  # showResults.do / supplement.jsp: first table.datagrid (null when absent).
+  parseResults: "(doc) => grids(doc)[0] ? rowsOf(grids(doc)[0], false) : null"
+  parseSupplements: "(doc) => grids(doc)[0] ? rowsOf(grids(doc)[0], true) : null"
+  # SupplyCancel.do: already elected courses, second table.datagrid.
+  parseElected: "(doc) => grids(doc)[1] ? rowsOf(grids(doc)[1], false) : []"
+  # Pager "Page 1 of 12" in tr[align=right] > td (multi-digit; defaults to 1).
+  parseTotalPages: |
+    (doc) => select(doc, 'tr[align="right"] > td').map(td => num(match(cellText(td), 'Page\s*\d+\s*of\s*(\d+)', 1))).find(n => n > 0) ?? 1
+  # The site's own message (td#msgTips), #errInfo, or the page title.
+  clipMsg: "(msg) => msg ? msg.slice(0, 200) : null"
+  parseNotice: |
+    (doc) => clipMsg(cellText(first(doc, 'td#msgTips')) || cellText(first(doc, '#errInfo')) || cellText(first(doc, 'title')))
+  # A page without the expected table: usually "not the election period" or a site notice.
+  missingMsg: |
+    (notice, what) => '选课网没有返回' + what + (notice ? '，页面提示：「' + notice + '」' : '') + '（可能当前不在选课阶段）'
+  missing: "(doc, what) => missingMsg(parseNotice(doc), what)"
+  # ── quota "限数/已选[/候补]" (api.rs SupplementCourse::is_full: full when elected >= limit) ──
+  # JS Number() of one part: '' is 0, anything but a plain decimal is not a number.
+  quotaNum: |
+    (s) => trim(s) == '' ? 0 : test(trim(s), '^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$') ? num(trim(s)) : null
+  quotaOf: |
+    (p, status) => p.length < 2 || p[0] == null || p[1] == null || trim(status) == '' ? null : {
+      limit: p[0],
+      elected: p[1],
+      waitlist: p[2] ?? null,
+      remaining: max(p[0] - p[1], 0),
+      full: p[1] >= p[0],
+    }
+  parseQuota: "(status) => quotaOf(split(status, '/').map(quotaNum), status)"
+  # ── result shapes (api.ts base / withQuota) ──
+  base: |
+    (c) => ({ ...(c.code ? { code: c.code } : {}), name: c.name, teacher: c.teacher, classId: c.classId, credit: c.credit, category: c.category, department: c.department })
+  withQ: |
+    (c, q) => ({
+      ...base(c),
+      ...(c.info ? { info: c.info } : {}),
+      quota: c.status,
+      ...(q ? { limit: q.limit, elected: q.elected, ...(q.waitlist != null ? { waitlist: q.waitlist } : {}), remaining: q.remaining, full: q.full } : {}),
+    })
+  withQuota: "(c) => withQ(c, parseQuota(c.status))"
+  # SupplyCancel.do's elected list: 年级 is reported as grade instead of info.
+  electedOf: |
+    (doc) => parseElected(doc).map(c => ({ ...omit(withQuota(c), 'info'), ...(c.info ? { grade: c.info } : {}) }))
+  # Rows of one supplement.jsp page (0-based index) → courses with quota and their 1-based page.
+  supplementRows: "(rows, index) => rows.map(c => ({ ...withQuota(c), page: index + 1 }))"
+  # ── schedule page ──
+  # Visible rows of every table (innermost rows only), non-empty trimmed cells, 60 rows max.
+  tableRowsOf: |
+    (doc) => select(doc, 'tr').filter(tr => !first(tr, 'tr')).map(tr => select(tr, 'td, th').map(cellText).filter(x => x)).filter(r => r.length).slice(0, 60)
+  # Visible page text, whitespace-collapsed (scripts and styles dropped), 600 chars max.
+  textOf: "(d) => cellText(first(d, 'body') ?? d).slice(0, 600)"
+  pageText: "(doc) => textOf(without(doc, 'script, style'))"
+  # ── student id ──

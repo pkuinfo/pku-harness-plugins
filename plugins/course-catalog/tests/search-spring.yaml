@@ -1,0 +1,7 @@
+# March: the spring semester (25-26-2).
+tool: search
+input: { name: 计算机, limit: 3 }
+now: 2026-03-01 09:00
+responses:
+  - { match: courseSearch_do.php, file: dean-page1.json, headers: { content-type: text/html } }
+expect: {"semester":"25-26-2","total":23,"returned":3,"truncated":true,"courses":[{"courseId":"04830220","name":"计算机系统导论","category":"专业必修","classNo":"1","credit":"5","teacher":"张三(教授) 李四","department":"信息科学技术学院","schedule":"星期二(第3节-第4节) 星期四(第1节-第2节)(单周)","sessions":[{"weekday":2,"periods":[3,4],"start":"10:10","end":"12:00","weeks":"1-15","weekType":"every","room":null},{"weekday":4,"periods":[1,2],"start":"08:00","end":"09:50","weeks":"1-15","weekType":"odd","room":null}],"weeks":"1-15","remark":"需先修程序设计"},{"courseId":"04830220","name":"计算机系统导论","category":"专业必修","classNo":"2","credit":"5","teacher":"王五(副教授)","department":"信息科学技术学院","schedule":"星期一(第5节-第6节) 星期三(第5节-第6节)","sessions":[{"weekday":1,"periods":[5,6],"start":"13:00","end":"14:50","weeks":"1-15","weekType":"every","room":null},{"weekday":3,"periods":[5,6],"start":"13:00","end":"14:50","weeks":"1-15","weekType":"every","room":null}],"weeks":"1-15"},{"courseId":"04831410","name":"计算机网络","category":"专业限选","classNo":"1","credit":"3","teacher":"赵六","department":"信息科学技术学院","schedule":"星期五(第7节-第8节)双周","sessions":[{"weekday":5,"periods":[7,8],"start":"15:10","end":"17:00","weeks":"1-16","weekType":"even","room":null}],"weeks":"1-16","remark":"英文授课 &<讨论>"}]}

@@ -1,0 +1,60 @@
+# Search the 补退选 list (api.rs get_all_supplements, bounded): walks supplement.jsp page by page,
+# sequentially like pkucli, up to MAX_SEARCH_PAGES pages.
+title: 搜索补退选课程
+summary: 按课程名、教师或课程号搜索补退选课程
+description: 'Search the 补退选 list by course name, teacher, course code or department (substring, case-insensitive). Walks the list page by page (up to 25 pages), so it takes a few seconds; truncated=true means later pages were not searched.'
+effect: read
+input:
+  query: { type: string, min: 1, description: 'e.g. "数据结构", a teacher name, or a course code' }
+  onlyAvailable: { type: boolean, optional: true, description: only courses with seats left }
+  program: { enum: [major, minor], optional: true, description: 'dual-degree accounts only: major = 主修 (default), minor = 辅双/双学位; ignored otherwise' }
+steps:
+  # The student id `xh` the supplement pages take (api.rs uses the login username).
+  - check: account.username
+    error: 还没有登录校园账号（设置 → 校园账号）
+  - let: xh
+    value: account.username
+  - let: entry
+    request:
+      campus: elective
+      url: "${SUPPLY_CANCEL}?xh=${encode(xh)}"
+      headers: '${headersFor(HELP_CONTROLLER)}'
+    as: response
+  - check: "entry.status < 400"
+    error: 选课网返回 HTTP ${entry.status}
+  - let: totalPages
+    value: parseTotalPages(html(entry.text))
+  - let: pages
+    value: min(totalPages, MAX_SEARCH_PAGES)
+  - let: q
+    value: lower(trim(input.query))
+  - let: found
+    each: range(pages)
+    steps:
+      - let: res
+        request:
+          campus: elective
+          url: "${SUPPLEMENT}?xh=${encode(xh)}&netui_row=electableListGrid;${item * PAGE_SIZE}"
+          headers: '${headersFor(SUPPLY_CANCEL)}'
+        as: response
+      - check: "res.status < 400"
+        error: 选课网返回 HTTP ${res.status}
+      - let: doc
+        value: html(res.text)
+      - let: rows
+        value: parseSupplements(doc)
+      - check: "rows != null"
+        error: "${missing(doc, '补退选课程列表')}"
+    return: |
+      supplementRows(rows, item).filter(c =>
+        includes(lower(c.name + ' ' + c.teacher + ' ' + (c.code ?? '') + ' ' + c.department), q)
+        && (!input.onlyAvailable || c.full != true))
+return: |
+  {
+    program: programOf(entry),
+    query: input.query,
+    searchedPages: pages,
+    totalPages,
+    truncated: totalPages > pages,
+    matches: found.flat(),
+  }

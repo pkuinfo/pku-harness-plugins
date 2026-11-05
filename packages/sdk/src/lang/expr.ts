@@ -65,6 +65,11 @@ function tokenize(src: string): Tok[] {
           const e = src[j + 1];
           // Known escapes as in JS; any other keeps its backslash, so regexes like '\d+' survive
           // one round of YAML unescaping (unlike JS, where '\d' === 'd').
+          if (e === 'u' && /^[0-9a-fA-F]{4}$/.test(src.slice(j + 2, j + 6))) {
+            s += String.fromCharCode(parseInt(src.slice(j + 2, j + 6), 16));
+            j += 6;
+            continue;
+          }
           s += e === 'n' ? '\n' : e === 't' ? '\t' : e === 'r' ? '\r' : e === '\\' || e === "'" || e === '"' ? e : `\\${e ?? ''}`;
           j += 2;
         } else s += src[j++];
@@ -471,10 +476,11 @@ export function evaluate(node: Node, scope: Scope, ctx: EvalContext): unknown {
       const a = evaluate(node.a, scope, ctx) as never;
       const b = evaluate(node.b, scope, ctx) as never;
       switch (node.op) {
+        // Strict, except that null and undefined are equal (`x == null` checks for "no value").
         case '==':
-          return a === b;
+          return a === b || (a == null && b == null);
         case '!=':
-          return a !== b;
+          return !(a === b || (a == null && b == null));
         case '<':
           return a < b;
         case '<=':

@@ -1,0 +1,84 @@
+# 选课网「添加其它课程」 (pkucli crates/claspider/src/elective_query.rs fetch_all): POST the query
+# form for page 1, then GET `queryCurriculum.jsp` pages of 100, one at a time. Bounded to
+# `maxPages`; the name filter is applied locally, as in pkucli.
+title: 选课网查课（含教室）
+summary: 在选课网按课程分类查课，含上课教室
+description: >-
+  Query the elective system's course list (选课网「添加其它课程」, needs the signed-in campus account)
+  by category, optionally a department code and a name keyword. Unlike search it includes
+  classrooms per session. Categories: speciality 专业课, politics 政治, english 英语, gym 体育,
+  tsk_choice 通识, pub_choice 公选, liberal_computer 计算机基础, ldjyk 劳动教育, szxzxbx 思政选择性必修,
+  education_plan_bk 培养方案. Slow (100 rows per page); only works while the elective system is open.
+effect: read
+input:
+  category: { enum: [speciality, politics, english, gym, tsk_choice, pub_choice, liberal_computer, ldjyk, szxzxbx, education_plan_bk], description: course category }
+  name: { type: string, optional: true, trim: true, description: course name keyword (filtered locally) }
+  department: { type: string, optional: true, pattern: '^\d*$', description: 'department code, e.g. "00048" (see departments)' }
+  weekday: { type: integer, optional: true, min: 1, max: 7, description: 1 = Monday … 7 = Sunday }
+  maxPages: { type: integer, optional: true, min: 1, max: 10, description: 'pages of 100 to read, default 3' }
+  limit: { type: integer, optional: true, min: 1, max: 100, description: 'max results, default 30' }
+constants:
+  BASE: https://elective.pku.edu.cn/elective2008/edu/pku/stu/elective/controller
+  PAGE_SIZE: 100
+steps:
+  - let: fields
+    value: queryFields(input.category, encode(input.department ?? ''))
+  - let: head
+    each: "[0]"
+    steps: &page
+      - if: item == 0
+        then:
+          - let: res
+            request:
+              campus: elective
+              url: ${BASE}/courseQuery/getCurriculmByForm.do
+              method: POST
+              headers: { referer: '${BASE}/help/HelpController.jpf' }
+              body: ${fields}
+              contentType: application/x-www-form-urlencoded
+            as: response
+        else:
+          - let: res
+            request:
+              campus: elective
+              url: ${BASE}/courseQuery/queryCurriculum.jsp?netui_pagesize=syllabusListGrid%3B${PAGE_SIZE}&netui_row=syllabusListGrid%3B${item * PAGE_SIZE}&${fields}
+              headers: { referer: '${BASE}/courseQuery/CourseQueryController.jpf' }
+            as: response
+      - check: res.status < 400
+        error: 选课网返回 HTTP ${res.status}
+      - check: "!includes(res.text, '请重新登录')"
+        error: 选课网会话已失效，请稍后重试
+      - let: doc
+        value: html(res.text)
+      - let: table
+        value: first(doc, 'table.datagrid')
+      - if: "!table"
+        then:
+          - check: "!test(res.text, '尚未登录|会话超时|请重新登录')"
+            error: 选课网会话已失效，请稍后重试
+          - check: "false"
+            error: 选课网没有返回课程查询结果（可能不在选课开放时间）
+    return: "{ courses: electiveCourses(table), totalPages: totalPages(doc.rawText) }"
+  - let: last
+    value: min(head[0].totalPages, input.maxPages ?? 3)
+  - let: rest
+    each: range(1, last)
+    steps: *page
+    return: "{ courses: electiveCourses(table), totalPages: totalPages(doc.rawText) }"
+  - let: all
+    value: "[...head[0].courses, ...rest.flatMap(p => p.courses)]"
+  - let: list
+    value: "byWeekday(input.name ? all.filter(c => includes(c.name, input.name)) : all, input.weekday)"
+  - let: lim
+    value: input.limit ?? 30
+  - let: pagesRead
+    value: max(1, last)
+return: |
+  {
+    matched: length(list),
+    returned: min(lim, length(list)),
+    pagesRead,
+    totalPages: head[0].totalPages,
+    truncated: pagesRead < head[0].totalPages || length(list) > lim,
+    courses: list.slice(0, lim).map(compact),
+  }

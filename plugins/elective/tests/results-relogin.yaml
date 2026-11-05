@@ -1,0 +1,6 @@
+# A "请重新登录" page that got past the adapter: #errInfo is quoted.
+tool: results
+now: 2026-09-10 10:00
+responses:
+  - {"match":"showResults.do","file":"relogin.html","campus":"elective"}
+expectError: '页面提示：「您的会话已失效，请重新登录」'

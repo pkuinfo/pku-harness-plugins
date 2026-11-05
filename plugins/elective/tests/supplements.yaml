@@ -1,0 +1,8 @@
+# Page 1 (default): entry page count + elected courses, list page with quotas; xh from the home page menu.
+tool: supplements
+now: 2026-09-10 10:00
+responses:
+  - {"match":"HelpController.jpf","file":"home.html","campus":"elective"}
+  - {"match":"SupplyCancel.do","file":"supply-cancel.html","headers":{"x-elective-program":"minor"},"campus":"elective"}
+  - {"match":"electableListGrid;0","file":"supplement-1.html","campus":"elective"}
+expect: {"program":"minor","totalPages":3,"elected":[{"code":"04830041","name":"数据结构与算法","teacher":"张三","classId":"1","credit":"3.0","category":"专业必修","department":"信息科学技术学院","quota":"120 / 118","limit":120,"elected":118,"remaining":2,"full":false,"grade":"2024级"},{"code":"04831410","name":"操作系统","teacher":"陈七","classId":"2","credit":"4.0","category":"专业必修","department":"信息科学技术学院","quota":"100/100/3","limit":100,"elected":100,"waitlist":3,"remaining":0,"full":true}],"page":1,"courses":[{"code":"C9","name":"人工智能引论","teacher":"赵六","classId":"1","credit":"2.0","category":"通选","department":"智能学院","info":"周二 7~8 节 理教 203","quota":"150 / 120","limit":150,"elected":120,"remaining":30,"full":false,"page":1},{"code":"C10","name":"数据库概论","teacher":"Smith","classId":"1","credit":"2.0","category":"通选","department":"信息科学技术学院","info":"周二 7~8 节 理教 203","quota":"60/60/2","limit":60,"elected":60,"waitlist":2,"remaining":0,"full":true,"page":1},{"code":"C11","name":"中国古代史","teacher":"钱八","classId":"1","credit":"2.0","category":"通选","department":"历史学系","info":"周二 7~8 节 理教 203","quota":"80/","limit":80,"elected":0,"remaining":80,"full":false,"page":1}]}

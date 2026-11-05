@@ -1,0 +1,8 @@
+# No header: status at max(len-3, 9) (api.rs parse_supplement_table).
+tool: supplements
+now: 2026-09-10 10:00
+responses:
+  - {"match":"HelpController.jpf","file":"home.html","campus":"elective"}
+  - {"match":"SupplyCancel.do","file":"supply-cancel-empty.html","campus":"elective"}
+  - {"match":"supplement.jsp","file":"supplement-positions.html","campus":"elective"}
+expect: {"program":"single","totalPages":1,"elected":[],"page":1,"courses":[{"code":"C9","name":"人工智能引论","teacher":"赵六","classId":"1","credit":"2.0","category":"通选","department":"智能学院","info":"2026级","quota":"100/100/5","limit":100,"elected":100,"waitlist":5,"remaining":0,"full":true,"page":1}]}
