@@ -1,0 +1,11 @@
+# reimbursements-no-entry (recorded from the TypeScript plugin's behaviour)
+tool: reimbursements
+now: 2026-10-20 12:00
+responses:
+  - match: /YBX/loadRolesMenu.action
+    campus: cwfw
+    body: x
+  - match: /WFManager/home3.jsp
+    campus: cwfw
+    body: <div></div>
+expectError: 财务门户主页里没有找到对应的子系统入口，请稍后重试

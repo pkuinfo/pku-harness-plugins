@@ -1,0 +1,12 @@
+# pendingPayments-none (recorded from the TypeScript plugin's behaviour)
+tool: pendingPayments
+now: 2026-10-20 12:00
+responses:
+  - match: pay/pay/waitingPay/getWaitingPayList/10001/2000000000/undefined
+    campus: cwpay
+    body: '{"messageCode":"0","message":"成功","data":[]}'
+expect:
+  items: []
+  totalUnpaid: 0
+  count: 0
+  nothingDue: true

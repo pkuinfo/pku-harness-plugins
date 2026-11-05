@@ -1,0 +1,83 @@
+# 学费住宿费 (tuitionAndDormPay page, chunk-34087c56): find the project among the payable projects
+# (categories + one level of folders, as 更多应用 lists them; chunk-3f0f2878), then
+# getTuitionAndDormList/<idserial>/<projectId>; idserial = 学号 = the campus username.
+title: 学费住宿费查询
+summary: 每学年学费、住宿费的应缴、已缴和未缴
+description: >-
+  Tuition and dorm fees on the PKU payment platform (收费平台 cwpay.pku.edu.cn): one row per academic year and fee type with amount due, paid and unpaid (yuan), plus totals. Use for "did I pay my tuition", "how much do I still owe". Read-only; paying happens on the platform itself.
+effect: read
+input: {}
+functions:
+  # getProjectTypeAndProjectInfoListInit/<schoolCode> → categories {id, name, children[]}; a child
+  # with type "1" is a folder (getProjectTypeAndProjectInfoList/<id>). proModelUrl names the
+  # payment page: tuitionAndDorm, bathRecharge, eCardRecharge, net, common, …
+  catLabel: "(c, category) => category || clean(c.name ?? c.projectName, 40)"
+  flattenProjects: |
+    (cats, category) => ({
+      projects: flatMap(cats ?? [], (c) => map(filter(c.children ?? [], (p) => p?.id != null && p.type != '1'), (p) => ({ id: str(p.id), name: clean(p.projectName ?? p.name, 60), kind: clean(p.proModelUrl, 40), category: catLabel(c, category) }))),
+      folders: flatMap(cats ?? [], (c) => map(filter(c.children ?? [], (p) => p?.id != null && p.type == '1'), (p) => ({ id: str(p.id), category: catLabel(c, category) + '>' + clean(p.name ?? p.projectName, 40) }))),
+    })
+  isTuition: "(p) => p.kind == 'tuitionAndDorm' || test(p.name, '学.*宿|学费|住宿费')"
+  # getTuitionAndDormList answers {messageCode "0001", message "无欠费##", data null} when nothing
+  # is owed (seen live 2026-10-23): an empty list, not an error.
+  noDebt: "(env) => env != NOT_JSON && str(env?.messageCode ?? '') == '0001' && test(str(env?.message ?? ''), '无欠费')"
+  # One row per 学年 × 费用类型; shouldpay − paid is unpaid.
+  tuitionItem: |
+    (r, due, paid) => ({ year: clean(r.academicYear, 20), item: clean(r.feeTypeName, 40), due: due, paid: paid, unpaid: due != null ? round(due - (paid ?? 0), 2) : null, note: clean(r.note, 80) })
+  total: "(items, k) => round(reduce(items, (a, i) => a + max(0, i[k] ?? 0), 0), 2)"
+steps:
+  - let: cats
+    request:
+      campus: cwpay
+      url: "${'pay/pay/cos/merchant/getProjectTypeAndProjectInfoListInit/' + SCHOOL}"
+      method: GET
+      contentType: '${JSON_CT}'
+    as: response
+  - check: payErr(cats, '缴费项目') == null
+    error: ${payErr(cats, '缴费项目')}
+  - let: top
+    value: flattenProjects(payData(cats) ?? [], '')
+  - let: nested
+    each: slice(top.folders, 0, 12)
+    concurrency: 4
+    steps:
+      - let: sub
+        value: "[]"
+      - try:
+          - let: fr
+            request:
+              campus: cwpay
+              url: "${'pay/pay/cos/merchant/getProjectTypeAndProjectInfoList/' + item.id}"
+              method: GET
+              contentType: '${JSON_CT}'
+            as: response
+          - if: payErr(fr, '缴费项目') == null
+            then:
+              - let: sub
+                value: "flattenProjects([{ children: payData(fr) ?? [] }], item.category).projects"
+        catch: []
+    return: sub
+  - let: project
+    value: "find([...top.projects, ...flat(nested)], (p) => isTuition(p)) ?? null"
+  - check: project != null
+    error: 收费平台目前没有开放“学费住宿费”缴费项目
+  - check: account.username
+    error: 还没有登录校园账号
+  - let: res
+    request:
+      campus: cwpay
+      url: "${'pay/web/tuitionAndDorm/getTuitionAndDormList/' + encode(account.username) + '/' + encode(project.id)}"
+      method: GET
+      contentType: '${JSON_CT}'
+    as: response
+  - let: none
+    value: "!(res.status >= 500 && !startsWith(trim(res.text), '{')) && noDebt(json(res.text, NOT_JSON))"
+  - check: none || payErr(res, '学费住宿费') == null
+    error: ${payErr(res, '学费住宿费')}
+  - let: rows
+    value: "none || !isList(payData(res)) ? [] : payData(res)"
+  - let: items
+    value: "map(rows, (r) => tuitionItem(r, yuanOf(r.shouldpay), yuanOf(r.paid)))"
+  - let: totals
+    value: "{ due: total(items, 'due'), paid: total(items, 'paid'), unpaid: total(items, 'unpaid') }"
+return: "{ project: project.name, items: items, totals: totals, settled: totals.unpaid <= 0 }"

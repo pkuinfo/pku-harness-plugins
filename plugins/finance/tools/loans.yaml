@@ -1,0 +1,147 @@
+# 借款查询 (pkucli crates/cwfw queries.rs; window 6320, form 6241, grid 6243): one query per
+# 查询功能 option (default "1"), after the window's beforeLoad procedure.
+title: 个人借款查询
+summary: 你在财务处还没核销的借款（暂借款）
+description: >-
+  The user's outstanding advances (个人未核销借款 / 暂借款) at the finance office: firstDate, summary, project, clearNo (核销号), firstAmount, cleared, balance (yuan still to settle by reimbursement or repayment). Empty list = nothing outstanding. Sensitive personal data: call only when the user asks, answer only what was asked, and never put the amounts on the dashboard, in notifications, memory or other plugins unless the user explicitly asks. Works only on the PKU campus network.
+effect: read
+input: {}
+functions:
+  # Grid 6243: first_clr_date, sabstract, uni_prj_order, clr_order, first_jf_amt, nxt_amt 已核销, jf_amt 余额, unino, pid.
+  loanOf: |
+    (r) => ({
+      firstDate: dateOnly(cell(r, 0)),
+      summary: cell(r, 1),
+      project: cell(r, 2),
+      clearNo: cell(r, 3),
+      firstAmount: amount(cell(r, 4)),
+      cleared: amount(cell(r, 5)),
+      balance: amount(cell(r, 6)),
+    })
+steps:
+  # openCwbs: userContext from loadRolesMenu (+ loadInitFunction, best effort).
+  - let: menu
+    request:
+      campus: cwfw
+      url: '${CWFW}/WF_CWBS/loadRolesMenu.action'
+      method: POST
+      contentType: '${FORM}'
+      headers: { x-requested-with: XMLHttpRequest }
+      body: ''
+    as: response
+  - check: menu.status < 400
+    error: 财务门户返回 HTTP ${menu.status}（loadRolesMenu.action）
+  - let: ctx0
+    value: parseUserContext(menu.text)
+  - check: ctx0 != null
+    error: 财务门户会话未建立（没有拿到用户信息），请稍后重试
+  - let: init
+    value: "{}"
+  - try:
+      - let: initText
+        request:
+          campus: cwfw
+          url: '${CWFW}/WF_CWBS/loadInitFunction.action'
+          method: POST
+          contentType: '${FORM}'
+          headers: { x-requested-with: XMLHttpRequest }
+          body: ''
+        as: text
+      - let: init
+        value: initVars(initText)
+    catch: []
+  - let: uid
+    value: uidOf(ctx0)
+  - check: uid != ''
+    error: 财务门户没有返回学号/工号
+  - let: base
+    value: "merge(ctx0, init, { '0-USERINFO.USERID': uid, '0-UNINO': uid })"
+  - let: defRes
+    request:
+      campus: cwfw
+      url: '${CWFW}/WF_CWBS/loadDefinition.action'
+      method: POST
+      contentType: '${FORM}'
+      headers: "${wfHeaders('WF_CWBS')}"
+      body: "${loadWindow(uid, '6320')}"
+    as: response
+  - check: defRes.status < 400
+    error: 财务门户返回 HTTP ${defRes.status}（loadDefinition.action）
+  - let: def
+    value: defRes.text
+  - let: fe
+    value: mapEntry(def, 'bindMap', 'd.func')
+  - let: opts
+    value: "fe == null || startsWith(fe.head, '@$') ? [] : parseOptions(fe.head)"
+  - if: "fe != null && startsWith(fe.head, '@$')"
+    then:
+      - let: bres
+        request:
+          campus: cwfw
+          url: '${CWFW}/WF_CWBS/common_getBindingDataBackend.action'
+          method: POST
+          contentType: '${FORM}'
+          headers: "${wfHeaders('WF_CWBS')}"
+          body: "${binding(uid, slice(fe.head, 2), cvstr(fe.params, [], base))}"
+        as: response
+      - check: bres.status < 400
+        error: 财务门户返回 HTTP ${bres.status}（common_getBindingDataBackend.action）
+      - let: opts
+        value: parseOptions(bres.text)
+  - let: options
+    value: "length(opts) > 0 ? opts : [['1', '']]"
+  - let: before
+    value: beforeLoadProc(def)
+  - if: before != null
+    then:
+      - try:
+          - request:
+              campus: cwfw
+              url: '${CWFW}/WF_CWBS/commonUpdate_responseButtonEvent.action'
+              method: POST
+              contentType: '${FORM}'
+              headers: "${wfHeaders('WF_CWBS')}"
+              body: "${buttonBody(uid, before.hash, buildArgs(before.params, [], base), base)}"
+            as: text
+        catch: []
+  - let: proc
+    value: findProc(def, '6241-d.func')
+  - let: perOption
+    each: options
+    steps:
+      - check: proc != null
+        error: 没能解析财务门户的查询页面（系统可能已改版）
+      - let: form
+        value: "[['d.func', item[0]]]"
+      - let: ctx
+        value: seedForm(base, 'WF_CWBS', '6241', form, 239)
+      - let: btn
+        request:
+          campus: cwfw
+          url: '${CWFW}/WF_CWBS/commonUpdate_responseButtonEvent.action'
+          method: POST
+          contentType: '${FORM}'
+          headers: "${wfHeaders('WF_CWBS')}"
+          body: "${buttonBody(uid, proc.hash, buildArgs(proc.params, form, ctx), ctx)}"
+        as: response
+      - check: btn.status < 400
+        error: 财务门户返回 HTTP ${btn.status}（commonUpdate_responseButtonEvent.action）
+      - check: buttonOk(trim(btn.text))
+        error: ${refused(trim(btn.text))}
+      - let: q
+        request:
+          campus: cwfw
+          url: '${CWFW}/WF_CWBS/commonQuery_doQuery.action'
+          method: POST
+          contentType: '${FORM}'
+          headers: "${wfHeaders('WF_CWBS')}"
+          body: "${doQueryBody(uid, '6243', 'to_number(t.pid) ASC', 500)}"
+        as: response
+      - check: q.status < 400
+        error: 财务门户返回 HTTP ${q.status}（commonQuery_doQuery.action）
+      - check: gridErr(q.text) == null
+        error: ${gridErr(q.text)}
+    return: "map(filter(gridRows(q.text), (r) => !isTotal(r)), (r) => loanOf(r))"
+  - let: loans
+    value: flat(perOption)
+return: "{ count: length(loans), balance: round(sum(loans, (l) => l.balance ?? 0), 2), loans: loans }"

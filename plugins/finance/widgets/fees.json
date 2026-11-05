@@ -1,0 +1,61 @@
+{
+  "title": "学费住宿费",
+  "description": "收费平台上学费、住宿费的未缴金额（全部已缴时显示“已缴清”）。",
+  "sizes": ["sm", "md"],
+  "defaultSize": "sm",
+  "bindings": {
+    "/fees": { "tool": "tuitionFees", "ttlMinutes": 360 }
+  },
+  "strings": {
+    "zh-Hans": { "title": "学费住宿费", "titleUnpaid": "学费住宿费未缴", "allPaid": "已缴清", "unpaid": "未缴" },
+    "en": { "title": "Tuition and housing", "titleUnpaid": "Unpaid tuition and housing", "allPaid": "All paid", "unpaid": "Unpaid" }
+  },
+  "spec": {
+    "root": "root",
+    "elements": {
+      "root": { "type": "Column", "props": { "gap": "sm" }, "children": ["label", "paid", "amount", "owing"] },
+      "label": {
+        "type": "Text",
+        "props": {
+          "text": { "$cond": { "$state": "/fees/settled", "eq": false }, "$then": { "$state": "/t/titleUnpaid" }, "$else": { "$state": "/t/title" } },
+          "tone": "muted",
+          "size": "small"
+        }
+      },
+      "paid": {
+        "type": "Badge",
+        "props": { "label": { "$state": "/t/allPaid" }, "tone": "up" },
+        "visible": { "$state": "/fees/settled", "eq": true }
+      },
+      "amount": {
+        "type": "Stat",
+        "props": {
+          "label": { "$state": "/t/unpaid" },
+          "value": { "$state": "/fees/totals/unpaid" },
+          "prefix": "¥",
+          "suffix": null,
+          "decimals": 2,
+          "delta": null,
+          "deltaTone": null,
+          "caption": null,
+          "icon": null,
+          "size": "md"
+        },
+        "visible": { "$state": "/fees/settled", "eq": false }
+      },
+      "owing": {
+        "type": "Row",
+        "props": { "gap": "sm", "align": "start", "wrap": true },
+        "visible": [{ "$state": "/size", "eq": "md" }, { "$state": "/fees/settled", "eq": false }],
+        "repeat": { "statePath": "/fees/items" },
+        "children": ["owingItem"]
+      },
+      "owingItem": {
+        "type": "Badge",
+        "props": { "label": { "$template": "${year} ${item}" }, "tone": "warn" },
+        "visible": { "$item": "unpaid", "gt": 0 }
+      }
+    },
+    "state": { "fees": null }
+  }
+}

@@ -1,0 +1,46 @@
+# rewards-summary-past-year (recorded from the TypeScript plugin's behaviour)
+tool: rewards
+now: 2026-10-20 12:00
+input:
+  year: 2025
+  monthFrom: 3
+  summaryOnly: true
+responses:
+  - match: /WF_CWBS/loadRolesMenu.action
+    campus: cwfw
+    body: <input type="hidden" id="userContext" value="[{_@0-USERINFO.USERID_@:_@2000000000_@,_@0-USERINFO.USERNAME_@:_@张三_@,_@0-ROLEID_@:3,}]" />
+  - match: /WF_CWBS/loadInitFunction.action
+    campus: cwfw
+    body: '[{"varname":"showzerogz","data":"N"},{"varname":"deptno","data":"00127"}]'
+  - match: /WF_CWBS/loadDefinition.action
+    campus: cwfw
+    body: var wg={btns:[{name:"查询",procs:["`$d22613f13d5012bca16310d4bf2f08c3:#5743-d.year#;#5743-d.month_2#"],x:1}]}
+  - match: /WF_CWBS/commonUpdate_responseButtonEvent.action
+    campus: cwfw
+    body: pass
+  - match: /WF_CWBS/commonQuery_doQuery.action
+    campus: cwfw
+    body: |-
+      {total:1,page:1,records:3,rows:[
+          {id:"5746_0",cell:["&#21161;&#25945;&#37228;&#37329;","2026001234","&#21171;&#21153;","1,200.00","40.00","1,160.00","2026-03-02","2026-03-10","&#26446;&#32769;&#24072;","","&#29289;&#29702;&#23398;&#38498;"]},
+          {id:"5746_1",cell:["&#30740;&#31350;&#29983;&#21161;&#23398;&#37329;","2026000001","&#22870;&#21161;","800.00","0.00","800.00","2026-09-25","",""," ","&#30740;&#31350;&#29983;&#38498;"]},
+          {id:"5746_2",cell:["&#24635;&#35745;","","","2,000.00","40.00","1,960.00","","","","",""]}]}
+expect:
+  range: 2025-03..2025-12
+  count: 2
+  pending: 1
+  totals:
+    gross: 2000
+    tax: 40
+    net: 1960
+  byMonth:
+    - month: 2026-03
+      count: 1
+      gross: 1200
+      tax: 40
+      net: 1160
+    - month: 2026-09
+      count: 1
+      gross: 800
+      tax: 0
+      net: 800

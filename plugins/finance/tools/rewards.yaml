@@ -1,0 +1,224 @@
+# 个人酬金查询 (pkucli crates/cwfw commands.rs cmd_reward, api.rs query_reward): userContext from
+# loadRolesMenu (+ loadInitFunction), then loadDefinition(5802) → per-session proc hash →
+# commonUpdate_responseButtonEvent (filter) → commonQuery_doQuery(5746). One portal query per
+# calendar year; a since/until range fetches the months it touches and cuts by date.
+title: 个人酬金查询
+summary: 学校发给你的酬金、劳务费、助学金等，按月汇总
+description: >-
+  Money paid to the user by PKU through the finance office: TA/RA pay (助教/助研/助管费), labour fees (劳务费), stipends, scholarships. Each record: item (what it is for), payingUnit (发放部门, the unit paying), submittedBy (经办人, who filed it), gross / tax / net (yuan), status (paid, or pending = entered but not paid out yet), paidAt, enteredAt, payoutMethod (usually the bank). Use for "who paid me / what money came in this week / this month". Pass since/until (YYYY-MM-DD) for exact ranges such as this week; otherwise year + months. Returns totals and byMonth too. Sensitive personal data: call only when the user asks. Works only on the PKU campus network.
+effect: read
+input:
+  since: { type: string, optional: true, pattern: '^\d{4}-\d{2}-\d{2}$', description: 'YYYY-MM-DD: records paid (or, if pending, entered) on/after this date; e.g. Monday of this week' }
+  until: { type: string, optional: true, pattern: '^\d{4}-\d{2}-\d{2}$', description: 'YYYY-MM-DD: on/before this date; default today' }
+  year: { type: integer, optional: true, min: 2000, max: 2100, description: calendar year when not using since/until; default this year }
+  monthFrom: { type: integer, optional: true, min: 1, max: 12, description: first month (1-12); default 1 }
+  monthTo: { type: integer, optional: true, min: 1, max: 12, description: 'last month (1-12); default the current month this year, 12 for past years' }
+  summaryOnly: { type: boolean, optional: true, description: 'true: totals and byMonth only, without the per-payment records' }
+functions:
+  # api.rs set_reward_filter: the `cmd` the server evaluates; data0 order matches the button binding.
+  rewardCmd: |
+    (proc, uid, y, from, to) => ({
+      check_func: 'escape',
+      proc0: proc,
+      data0: [
+        { name: 'd.year', value: str(y), type: 'CHAR' },
+        { name: 'd.month_2', value: pad2(to), type: 'CHAR' },
+        { name: 'd.month_1', value: pad2(from), type: 'CHAR' },
+        { name: 'd.funcno', value: '9-gz1', type: 'CHAR' },
+        { name: 'd.dbcode', value: 'gz1', type: 'CHAR' },
+        { name: 'SHOWPUBRWD', value: 'Y', type: 'char' },
+        { name: 'REWARDCOLNUM', value: '15', type: 'char' },
+        { name: 'userinfo.userid', value: uid, type: 'CHAR' },
+        { name: 'currentyear', value: formatDate(now, 'YYYY'), type: 'CHAR' },
+        { name: 'currentmonth', value: formatDate(now, 'MM'), type: 'CHAR' },
+      ],
+    })
+  # context.rs seed_reward_query_context + the 5743-D.* fields set_reward_filter sets.
+  rewardContext: |
+    (base, uid, y, from, to) => merge(base, {
+      '0-USERINFO.USERID': uid,
+      '0-UNINO': uid,
+      CURRMENUNODEID: 220,
+      'WF_CWBS$5743-D.FUNCNO': '9-gz1',
+      'WF_CWBS$5743-D.DBCODE': 'gz1',
+      'WF_CWBS$5743-D.YEAR_S': 'gz1',
+      'WF_CWBS$5743-D.YEAR': str(y),
+      'WF_CWBS$5743-D.MONTH_1': pad2(from),
+      'WF_CWBS$5743-D.MONTH_2': pad2(to),
+      '0-CURRFUNC': 5743,
+      '0-CURRBTN': '查询',
+      '0-CURRFUNCTYPE': '3',
+    })
+  # display.rs render_reward_query, grid 5746: 0 项目/名称, 1 项目代码, 2 发放类型, 3 发放金额,
+  # 4 扣税金额, 5 实发金额, 6 录入时间, 7 发放时间, 8 经办人, 10 发放部门. The last row is
+  # usually 总计.
+  rewardRecord: "(r) => rewardRow(r, cell(r, 7), test(cell(r, 7), '^\\d{4}[-/.年]\\d{1,2}'))"
+  rewardRow: |
+    (r, paid, isDate) => ({
+      item: cell(r, 0),
+      projectCode: cell(r, 1),
+      payoutMethod: cell(r, 2),
+      gross: amount(cell(r, 3)),
+      tax: amount(cell(r, 4)),
+      net: amount(cell(r, 5)),
+      status: isDate ? 'paid' : 'pending',
+      paidAt: isDate ? paid : null,
+      enteredAt: cell(r, 6),
+      submittedBy: cell(r, 8),
+      payingUnit: cell(r, 10),
+    })
+  hasTotal: "(rows) => length(rows) > 0 && includes(cell(rows[length(rows) - 1], 0), '总计')"
+  rewardRecords: "(rows) => rewardSplit(rows, hasTotal(rows))"
+  rewardSplit: |
+    (rows, total) => rewardResult(map(total ? slice(rows, 0, length(rows) - 1) : rows, (r) => rewardRecord(r)), total ? rows[length(rows) - 1] : null)
+  rewardResult: |
+    (records, last) => ({
+      records: records,
+      totals: last != null ? { gross: amount(cell(last, 3)), tax: amount(cell(last, 4)), net: amount(cell(last, 5)) } : rewardTotals(records),
+    })
+  # Gross / tax / net sums (null when there are no records, or no values).
+  rewardTotals: "(rs) => length(rs) == 0 ? null : { gross: sumKey(rs, 'gross'), tax: sumKey(rs, 'tax'), net: sumKey(rs, 'net') }"
+  sumKey: "(rs, k) => sumVals(filter(map(rs, (r) => r[k]), (v) => v != null))"
+  sumVals: "(vs) => length(vs) == 0 ? null : round(reduce(vs, (a, b) => a + b, 0), 2)"
+  # The date a record counts on: when it was paid, or when it was entered if not paid yet.
+  rewardDate: "(r) => replace(replace(r.paidAt ?? r.enteredAt, '[/.年月]', '-'), '日$', '')"
+  between: "(rs, since, until) => filter(rs, (r) => inRange(slice(rewardDate(r), 0, 10), since, until))"
+  inRange: "(d, since, until) => (!since || d >= since) && (!until || d <= until)"
+  # 酬金按月汇总: by the 发放时间 month (else 录入时间), oldest first.
+  monthOf: "(r) => monthKey(match(r.paidAt ?? r.enteredAt, '^(\\d{4})[-/.年](\\d{1,2})'))"
+  monthKey: "(m) => m == null ? '未知' : m[1] + '-' + padStart(m[2], 2, '0')"
+  byMonth: "(rs) => sortBy(map(entries(groupBy(rs, (r) => monthOf(r))), (e) => monthTotal(e[0], e[1])), (m) => m.month)"
+  monthTotal: |
+    (month, list) => ({
+      month: month,
+      count: length(list),
+      gross: reduce(list, (a, r) => round(a + (r.gross ?? 0), 2), 0),
+      tax: reduce(list, (a, r) => round(a + (r.tax ?? 0), 2), 0),
+      net: reduce(list, (a, r) => round(a + (r.net ?? 0), 2), 0),
+    })
+steps:
+  - let: ranged
+    value: "!!(input.since || input.until)"
+  - let: end
+    value: "input.until ?? today()"
+  - let: start
+    value: "input.since ?? slice(end, 0, 4) + '-01-01'"
+  - let: y
+    value: "input.year ?? thisYear()"
+  - let: from
+    value: "input.monthFrom ?? 1"
+  - let: to
+    value: "input.monthTo ?? (y == thisYear() ? thisMonth() : 12)"
+  - if: ranged
+    then:
+      - check: start <= end
+        error: 起始日期 ${start} 不能晚于结束日期 ${end}
+    else:
+      - check: y <= thisYear()
+        error: ${y} 年还没有到，没有记录
+      - check: from <= to
+        error: 起始月份 ${from} 不能大于结束月份 ${to}
+  # The portal queries by year and month: one query per year the range touches.
+  - let: queries
+    value: |
+      ranged
+        ? map(range(int(slice(start, 0, 4)), min(int(slice(end, 0, 4)), thisYear()) + 1), (yy) => ({
+            y: yy,
+            from: yy == int(slice(start, 0, 4)) ? int(slice(start, 5, 7)) : 1,
+            to: yy == int(slice(end, 0, 4)) ? int(slice(end, 5, 7)) : 12,
+          }))
+        : [{ y: y, from: from, to: to }]
+  - let: results
+    each: queries
+    steps:
+      - let: menu
+        request:
+          campus: cwfw
+          url: '${CWFW}/WF_CWBS/loadRolesMenu.action'
+          method: POST
+          contentType: '${FORM}'
+          headers: { x-requested-with: XMLHttpRequest }
+          body: ''
+        as: response
+      - check: menu.status < 400
+        error: 财务门户返回 HTTP ${menu.status}（loadRolesMenu.action）
+      - let: ctx0
+        value: parseUserContext(menu.text)
+      - check: ctx0 != null
+        error: 财务门户会话未建立（没有拿到用户信息），请稍后重试
+      - let: init
+        value: "{}"
+      - try:
+          - let: initText
+            request:
+              campus: cwfw
+              url: '${CWFW}/WF_CWBS/loadInitFunction.action'
+              method: POST
+              contentType: '${FORM}'
+              headers: { x-requested-with: XMLHttpRequest }
+              body: ''
+            as: text
+          - let: init
+            value: initVars(initText)
+        catch: []
+      - let: uid
+        value: uidOf(ctx0)
+      - check: uid != ''
+        error: 财务门户没有返回学号/工号
+      - let: def
+        request:
+          campus: cwfw
+          url: '${CWFW}/WF_CWBS/loadDefinition.action'
+          method: POST
+          contentType: '${FORM}'
+          headers: "${wfHeaders('WF_CWBS')}"
+          body: "${loadWindow(uid, '5802')}"
+        as: response
+      - check: def.status < 400
+        error: 财务门户返回 HTTP ${def.status}（loadDefinition.action）
+      - let: proc
+        value: "match(def.text, 'procs:\\[\"(`\\$[a-f0-9]{32}):', 1)"
+      - check: proc != null
+        error: 没能解析财务门户的“个人酬金查询”页面（系统可能已改版）
+      - let: update
+        request:
+          campus: cwfw
+          url: '${CWFW}/WF_CWBS/commonUpdate_responseButtonEvent.action'
+          method: POST
+          contentType: '${FORM}'
+          headers: "${wfHeaders('WF_CWBS')}"
+          body: "${wfBody(uid, [ ['cmd', str(merge(rewardCmd(proc, uid, item.y, item.from, item.to), WF_EMPTY))], ['projid', 'WF_CWBS'], ['userContext', str(rewardContext(merge(ctx0, init), uid, item.y, item.from, item.to))], ['async', 'false'], ])}"
+        as: response
+      - check: update.status < 400
+        error: 财务门户返回 HTTP ${update.status}（commonUpdate_responseButtonEvent.action）
+      # "pass" on success; `$$$SYS_ERROR$$$…` when rejected (other bodies count as success, as in pkucli).
+      - check: "!includes(update.text, 'SYS_ERROR')"
+        error: 财务门户拒绝了查询条件，请稍后重试
+      - let: q
+        request:
+          campus: cwfw
+          url: '${CWFW}/WF_CWBS/commonQuery_doQuery.action'
+          method: POST
+          contentType: '${FORM}'
+          headers: "${wfHeaders('WF_CWBS')}"
+          body: "${wfBody(uid, [ ['funcno', '5746'], ['projid', 'WF_CWBS'], ['needcount', 'true'], ['_search', 'false'], ['nd', str(now)], ['rows', '500'], ['page', '0'], ['sidx', 'to_number(rr.pid) ASC'], ['sord', ''], ['userData', str({ '0-USERINFO.USERID': uid, '0-UNINO': uid })], ['itemArr', ''], ['sectionArr', ''], ])}"
+        as: response
+      - check: q.status < 400
+        error: 财务门户返回 HTTP ${q.status}（commonQuery_doQuery.action）
+      - check: gridErr(q.text) == null
+        error: ${gridErr(q.text)}
+    return: rewardRecords(gridRows(q.text))
+  - let: records
+    value: "ranged ? between(flatMap(results, (r) => r.records), start, end) : results[0].records"
+  - let: totals
+    value: "ranged ? rewardTotals(records) : results[0].totals"
+  - let: summary
+    value: |
+      {
+        range: ranged ? start + '..' + end : y + '-' + pad2(from) + '..' + y + '-' + pad2(to),
+        count: length(records),
+        pending: count(records, (r) => r.status == 'pending'),
+        totals: totals,
+        byMonth: byMonth(records),
+      }
+return: "input.summaryOnly ? summary : merge(summary, { records: records })"

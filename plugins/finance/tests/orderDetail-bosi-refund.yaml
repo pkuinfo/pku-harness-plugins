@@ -1,0 +1,33 @@
+# orderDetail-bosi-refund (recorded from the TypeScript plugin's behaviour)
+tool: orderDetail
+now: 2026-10-20 12:00
+input:
+  orderNo: "26090100000000000001"
+responses:
+  - match: /pay/web/order/pageOrderlist
+    campus: cwpay
+    body: '{"messageCode":"0","message":"成功","data":{"total":1,"records":[{"id":"o-1","orderNo":"26090100000000000001","projectName":null,"amount":5000,"createDate":"2026-09-01 15:41:37","displayStatus":"103","billNo":"E0001","billType":"BOSI","receiptMust":"YES","productDesc":"校园卡充值&","refundAmount":1000,"tradeChannel":"99"}]}}'
+  - match: common/com/dict/getDictDatasByTypes/TRADE_DISPLAY_STATUS/10001/PAY
+    campus: cwpay
+    body: '{"messageCode":"8100","message":"服务异常","data":""}'
+  - match: pay/pay/orderTrade/getOrderById/o-1
+    campus: cwpay
+    body: '{"messageCode":"8100","message":"服务异常","data":""}'
+  - match: /pay/pay/invoiced/getCouldEBillPicUrl
+    campus: cwpay
+    body: '{"messageCode":"0","message":"成功","data":"https://x.example/1"}'
+expect:
+  orderNo: "26090100000000000001"
+  project: 校园卡充值
+  amount: 50
+  payable: null
+  refunded: 10
+  status: 已付款
+  createdAt: 2026-09-01 15:41:37
+  closedAt: ""
+  paidBy: 渠道 99
+  invoice:
+    required: true
+    issued: true
+    billType: BOSI
+    url: https://x.example/1

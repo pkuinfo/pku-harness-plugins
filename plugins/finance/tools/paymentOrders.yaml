@@ -1,0 +1,51 @@
+# 我的订单 (orderList page, chunk-8158cdf6): /pay/web/order/pageOrderlist, newest first, with
+# the TRADE_DISPLAY_STATUS dict for the status names (the fallback table when it fails).
+title: 缴费订单记录
+summary: 你在收费平台上的缴费订单和状态
+description: >-
+  Orders on the PKU payment platform (收费平台): tuition, bath card, network fee, campus card top-ups and other fees paid there, newest first, with amount (yuan), created time and status (待支付 / 已付款 / …). Optional date range (order creation date) and project name filter.
+effect: read
+input:
+  from: { type: string, optional: true, pattern: '^\d{4}-\d{2}-\d{2}$', description: 'YYYY-MM-DD, orders created on/after' }
+  to: { type: string, optional: true, pattern: '^\d{4}-\d{2}-\d{2}$', description: 'YYYY-MM-DD, orders created on/before' }
+  project: { type: string, optional: true, max: 30, description: 'project name keyword, e.g. 学费 / 浴卡' }
+  limit: { type: integer, optional: true, min: 1, max: 50, description: default 20 }
+functions:
+  orderOf: |
+    (o, names) => ({
+      orderNo: clean(o.orderNo, 40),
+      project: clean(o.projectName, 60),
+      amount: yuanOf(o.amount),
+      createdAt: clean(o.createDate, 20),
+      status: statusName(names, str(o.displayStatus ?? '')),
+      invoiced: !!o.billNo,
+    })
+  orderRecords: "(data, names) => orderList(isList(data?.records) ? data.records : [], data, names)"
+  orderList: "(records, data, names) => ({ total: num(data?.total ?? length(records)) || length(records), orders: map(records, (o) => orderOf(o, names)) })"
+steps:
+  - let: res
+    request:
+      campus: cwpay
+      url: "${'/pay/web/order/pageOrderlist'}"
+      method: POST
+      contentType: '${JSON_CT}'
+      body: "${str(orderBody(1, input.limit ?? 20, input.from, input.to, input.project))}"
+    as: response
+  - check: payErr(res, '订单记录') == null
+    error: ${payErr(res, '订单记录')}
+  - let: names
+    value: statusDict(null)
+  - try:
+      - let: dict
+        request:
+          campus: cwpay
+          url: "${'common/com/dict/getDictDatasByTypes/TRADE_DISPLAY_STATUS/' + SCHOOL + '/PAY'}"
+          method: GET
+          contentType: '${JSON_CT}'
+        as: response
+      - if: payErr(dict, '订单状态') == null
+        then:
+          - let: names
+            value: statusDict(payData(dict))
+    catch: []
+return: orderRecords(payData(res), names)

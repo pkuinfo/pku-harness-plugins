@@ -1,0 +1,9 @@
+# foreignRemittances-bad-amounts (recorded from the TypeScript plugin's behaviour)
+tool: foreignRemittances
+now: 2026-10-20 12:00
+input:
+  keyword: x y
+  min: 5
+  max: 1
+responses: []
+expectError: 最大金额不能小于最小金额

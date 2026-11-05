@@ -1,0 +1,24 @@
+# paymentProjects-search-label (recorded from the TypeScript plugin's behaviour)
+tool: paymentProjects
+now: 2026-10-20 12:00
+input:
+  search: 其他缴费
+responses:
+  - match: pay/project/getAllProjectNoType
+    campus: cwpay
+    file: cwpay-catalog.json
+expect:
+  total: 4
+  matched: 1
+  suspended: 0
+  projects:
+    - id: c-car
+      name: 校内居民车证缴费
+      nameEn: Resident parking permit
+      kind: common
+      kindLabel: 其他缴费
+      standardAmount: 540
+      open: true
+      suspendedNote: null
+      invoiceRequired: false
+  truncated: false

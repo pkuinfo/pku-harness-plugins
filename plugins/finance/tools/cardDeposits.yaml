@@ -1,0 +1,105 @@
+# 银行入卡-我的入卡 (pkucli crates/cwfw queries.rs; window 7987, form 15030, grid 15028). The
+# 查询 button has no procedure: the grid SQL reads the form values from the userContext.
+title: 我的入卡
+summary: 学校打到你银行卡的每一笔，含入卡状态
+description: >-
+  Payments the university sent to the user's own bank card (银行入卡-我的入卡): each with summary (what it is for), unit (发放部门, who paid), handler (经办人), amount / paid (入卡金额) / tax (yuan), status (支付状态) and errorCode when the transfer failed (e.g. wrong card). Use for "who sent me money", "did the money reach my card". Only payments routed through the 银行入卡 channel appear here; stipends and TA/RA pay usually show up in rewards / monthlyIncome instead, so an empty list next to paid rewards is normal and says nothing about the card. Date range defaults to Jan 1 of this year .. today. Sensitive personal data: call only when the user asks, answer only what was asked, and never put the amounts on the dashboard, in notifications, memory or other plugins unless the user explicitly asks. Works only on the PKU campus network.
+effect: read
+input:
+  since: { type: string, optional: true, pattern: '^\d{4}-\d{2}-\d{2}$', description: YYYY-MM-DD; default Jan 1 this year }
+  until: { type: string, optional: true, pattern: '^\d{4}-\d{2}-\d{2}$', description: YYYY-MM-DD; default today }
+functions:
+  # Grid 15028: req_no, req_name 经办人, depart 发放部门, remark 摘要, amt, paid_amt 入卡金额, tax, status, caozuo, errir_id.
+  deposit: |
+    (r) => ({
+      reqNo: cell(r, 0),
+      handler: cell(r, 1),
+      unit: cell(r, 2),
+      summary: cell(r, 3),
+      amount: amount(cell(r, 4)),
+      paid: amount(cell(r, 5)),
+      tax: amount(cell(r, 6)),
+      status: cell(r, 7),
+      errorCode: cell(r, 9),
+    })
+steps:
+  - let: end
+    value: input.until ?? today()
+  - let: start
+    value: "input.since ?? thisYear() + '-01-01'"
+  - check: start <= end
+    error: 起始日期 ${start} 不能晚于结束日期 ${end}
+  # openCwbs: userContext from loadRolesMenu (+ loadInitFunction, best effort).
+  - let: menu
+    request:
+      campus: cwfw
+      url: '${CWFW}/WF_CWBS/loadRolesMenu.action'
+      method: POST
+      contentType: '${FORM}'
+      headers: { x-requested-with: XMLHttpRequest }
+      body: ''
+    as: response
+  - check: menu.status < 400
+    error: 财务门户返回 HTTP ${menu.status}（loadRolesMenu.action）
+  - let: ctx0
+    value: parseUserContext(menu.text)
+  - check: ctx0 != null
+    error: 财务门户会话未建立（没有拿到用户信息），请稍后重试
+  - let: init
+    value: "{}"
+  - try:
+      - let: initText
+        request:
+          campus: cwfw
+          url: '${CWFW}/WF_CWBS/loadInitFunction.action'
+          method: POST
+          contentType: '${FORM}'
+          headers: { x-requested-with: XMLHttpRequest }
+          body: ''
+        as: text
+      - let: init
+        value: initVars(initText)
+    catch: []
+  - let: uid
+    value: uidOf(ctx0)
+  - check: uid != ''
+    error: 财务门户没有返回学号/工号
+  - let: base
+    value: "merge(ctx0, init, { '0-USERINFO.USERID': uid, '0-UNINO': uid })"
+  - let: form
+    value: "[['d.req_no', ''], ['d.jbrno', ''], ['d.status', ''], ['d.date1', start], ['d.date2', end], ['d.min_amt', ''], ['d.max_amt', '']]"
+  - let: ctx
+    value: "merge(seedForm(base, 'WF_CWBS', '15030', form, 271), { '0-REFFUNC15028': 15030, '0-CURRWIN': 7987 })"
+  - try:
+      - request:
+          campus: cwfw
+          url: '${CWFW}/WF_CWBS/common_updateUserContext.action'
+          method: POST
+          contentType: '${FORM}'
+          headers: "${wfHeaders('WF_CWBS')}"
+          body: "${wfBody(uid, [['userContext', str(ctx)]])}"
+        as: text
+    catch: []
+  - let: q
+    request:
+      campus: cwfw
+      url: '${CWFW}/WF_CWBS/commonQuery_doQuery.action'
+      method: POST
+      contentType: '${FORM}'
+      headers: "${wfHeaders('WF_CWBS')}"
+      body: "${doQueryBody(uid, '15028', '', 500, ctx)}"
+    as: response
+  - check: q.status < 400
+    error: 财务门户返回 HTTP ${q.status}（commonQuery_doQuery.action）
+  - check: gridErr(q.text) == null
+    error: ${gridErr(q.text)}
+  - let: records
+    value: "map(filter(gridRows(q.text), (r) => !isTotal(r)), (r) => deposit(r))"
+return: |
+  {
+    range: start + '..' + end,
+    count: length(records),
+    paidTotal: round(sum(records, (r) => r.paid ?? 0), 2),
+    failed: count(records, (r) => r.errorCode),
+    records: records,
+  }

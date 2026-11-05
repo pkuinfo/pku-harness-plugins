@@ -1,0 +1,14 @@
+# tuitionFees-other-0001 (recorded from the TypeScript plugin's behaviour)
+tool: tuitionFees
+now: 2026-10-20 12:00
+responses:
+  - match: pay/pay/cos/merchant/getProjectTypeAndProjectInfoListInit/10001
+    campus: cwpay
+    file: cwpay-projects.json
+  - match: pay/pay/cos/merchant/getProjectTypeAndProjectInfoList/f-more
+    campus: cwpay
+    body: '{"messageCode":"8100","message":"服务异常","data":""}'
+  - match: pay/web/tuitionAndDorm/getTuitionAndDormList/2000000000/p-tuition
+    campus: cwpay
+    body: '{"messageCode":"0001","message":"其他错误"}'
+expectError: 收费平台：其他错误（学费住宿费）

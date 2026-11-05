@@ -1,0 +1,9 @@
+# foreignRemittances-bad-months (recorded from the TypeScript plugin's behaviour)
+tool: foreignRemittances
+now: 2026-10-20 12:00
+input:
+  keyword: x y
+  since: 2026-05
+  until: 2026-01
+responses: []
+expectError: 起始年月不能晚于结束年月

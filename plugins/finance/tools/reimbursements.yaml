@@ -1,0 +1,109 @@
+# 智能报销 (YBX subsystem, projid WF_YBX) home page, window 6 (pkucli crates/cwfw queries.rs
+# reimburse_stats): its beforeLoad procedure answers `pass;local(0-<COUNTER>_count:…;…)`. Enters
+# the subsystem from home3.jsp first when it has no session yet (login.rs enter_subsystem).
+title: 报销进度概览
+summary: 你的报销单各状态有几笔、多少钱
+description: >-
+  Reimbursement claims in the 智能报销 system, counted by state with totals (yuan): all, draft, approving (审批中), toDeliver (待投递: print and hand in), toBook (待入账: finance office processing), returned (被退回/待补充), paymentFailed, awaitingMyApproval, unusedInvoices (票夹), history. Summary only, no per-claim detail. Use for "where is my reimbursement", "was anything returned". Sensitive personal data: call only when the user asks, answer only what was asked, and never put the amounts on the dashboard, in notifications, memory or other plugins unless the user explicitly asks. Works only on the PKU campus network.
+effect: read
+input: {}
+constants:
+  # Counter prefixes on the 智能报销 home page.
+  REIMBURSE_KEYS:
+    - [BX_YBXALL, all, 全部报销单]
+    - [BX_YBXCG, draft, 草稿]
+    - [BX_YBXSPZ, approving, 审批中]
+    - [BX_DTD, toDeliver, 待投递]
+    - [BX_YBXWC, toBook, 待入账（财务处理中）]
+    - [BX_YBXTH, returned, 被退回/待补充]
+    - [BX_YBXZFSB, paymentFailed, 支付失败]
+    - [V2_dsp, awaitingMyApproval, 待我审批]
+    - [tks, unusedInvoices, 票夹中待报销票据]
+    - [BX_HIS, history, 历史报销单（含网报）]
+  ATTENTION: [returned, paymentFailed, toDeliver, awaitingMyApproval]
+functions:
+  ybx: "(uid, action, fields) => wfPost('YBX', uid, action, fields)"
+  # Names vary in case (`_count` / `_COUNT`) and one is misspelt (`_AMOUT`).
+  statFind: |
+    (local, prefix, sfx) => statVal(find(entries(local), (e) => startsWith(e[0], prefix + '_') && includes(sfx, lower(slice(e[0], length(prefix) + 1)))))
+  statVal: "(e) => e == null ? null : amount(e[1])"
+  reimburseStats: |
+    (local) => filter(map(REIMBURSE_KEYS, (k) => ({ key: k[1], label: k[2], count: statFind(local, k[0], ['count']), amount: statFind(local, k[0], ['amt', 'amount', 'amout']) })), (s) => s.count != null || s.amount != null)
+steps:
+  - let: probe
+    request:
+      campus: cwfw
+      url: '${CWFW}/YBX/loadRolesMenu.action'
+      method: POST
+      contentType: '${FORM}'
+      headers: { x-requested-with: XMLHttpRequest }
+      body: ''
+    as: response
+  - check: probe.status < 400
+    error: 财务门户返回 HTTP ${probe.status}（loadRolesMenu.action）
+  - let: ctx
+    value: parseUserContext(probe.text)
+  - if: ctx == null
+    then:
+      - let: home
+        request: { campus: cwfw, url: 'https://cwfw.pku.edu.cn/WFManager/home3.jsp' }
+        as: response
+      - let: entry
+        value: subsystemEntry(home.text, 'WF_YBX')
+      - check: entry != null
+        error: 财务门户主页里没有找到对应的子系统入口，请稍后重试
+      - let: entered
+        request: { campus: cwfw, url: '${entry}', headers: { referer: 'https://cwfw.pku.edu.cn/WFManager/home3.jsp' } }
+        as: response
+      - check: entered.status < 400
+        error: 进入财务子系统失败（HTTP ${entered.status}）
+      - let: again
+        request:
+          campus: cwfw
+          url: '${CWFW}/YBX/loadRolesMenu.action'
+          method: POST
+          contentType: '${FORM}'
+          headers: { x-requested-with: XMLHttpRequest }
+          body: ''
+        as: response
+      - check: again.status < 400
+        error: 财务门户返回 HTTP ${again.status}（loadRolesMenu.action）
+      - let: ctx
+        value: parseUserContext(again.text)
+  - check: ctx != null
+    error: 进入智能报销系统失败，请稍后重试
+  - let: uid
+    value: uidOf(ctx)
+  - let: defRes
+    request:
+      campus: cwfw
+      url: '${CWFW}/YBX/loadDefinition.action'
+      method: POST
+      contentType: '${FORM}'
+      headers: "${wfHeaders('YBX')}"
+      body: "${wfBody(uid, [['projid', 'WF_YBX'], ['winno', '6'], ['type', 'W']])}"
+    as: response
+  - check: defRes.status < 400
+    error: 财务门户返回 HTTP ${defRes.status}（loadDefinition.action）
+  - let: proc
+    value: beforeLoadProc(defRes.text)
+  - check: proc != null
+    error: 没能解析智能报销首页（系统可能已改版）
+  - let: args
+    value: "map(buildArgs(proc.params, [], ctx), (a) => lower(a.name) == 'userinfo.userid' && !a.value ? merge(a, { value: uid }) : a)"
+  - let: btn
+    request:
+      campus: cwfw
+      url: '${CWFW}/YBX/commonUpdate_responseButtonEvent.action'
+      method: POST
+      contentType: '${FORM}'
+      headers: "${wfHeaders('YBX')}"
+      body: "${wfBody(uid, buttonFields(buttonCmd(proc.hash, args, null), 'WF_YBX', ctx))}"
+    as: response
+  - check: btn.status < 400
+    error: 财务门户返回 HTTP ${btn.status}（commonUpdate_responseButtonEvent.action）
+  - check: buttonOk(trim(btn.text))
+    error: ${refused(trim(btn.text))}
+  - let: stats
+    value: reimburseStats(parseLocal(trim(btn.text)))
+return: "{ stats: stats, needsAttention: map(filter(stats, (s) => includes(ATTENTION, s.key) && (s.count ?? 0) > 0), (s) => s.key) }"

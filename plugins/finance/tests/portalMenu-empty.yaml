@@ -1,0 +1,14 @@
+# portalMenu-empty (recorded from the TypeScript plugin's behaviour)
+tool: portalMenu
+now: 2026-10-20 12:00
+responses:
+  - match: /WF_CWBS/loadRolesMenu.action
+    campus: cwfw
+    body: <input type="hidden" id="userContext" value="[{_@0-USERINFO.USERID_@:_@2000000000_@,_@0-USERINFO.USERNAME_@:_@张三_@,_@0-ROLEID_@:3,}]" />
+  - match: /WF_CWBS/loadInitFunction.action
+    campus: cwfw
+    body: '[{"varname":"showzerogz","data":"N"},{"varname":"deptno","data":"00127"}]'
+  - match: /WF_CWBS/loadMenu.action
+    campus: cwfw
+    body: <div/>
+expectError: 没有拿到财务门户菜单（会话可能已过期）

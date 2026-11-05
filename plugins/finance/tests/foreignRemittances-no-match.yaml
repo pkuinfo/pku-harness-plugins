@@ -1,0 +1,22 @@
+# foreignRemittances-no-match (recorded from the TypeScript plugin's behaviour)
+tool: foreignRemittances
+now: 2026-10-20 12:00
+input:
+  keyword: nobody
+responses:
+  - match: /WF_CWBS/loadRolesMenu.action
+    campus: cwfw
+    body: <input type="hidden" id="userContext" value="[{_@0-USERINFO.USERID_@:_@2000000000_@,_@0-USERINFO.USERNAME_@:_@张三_@,_@0-ROLEID_@:3,}]" />
+  - match: /WF_CWBS/loadInitFunction.action
+    campus: cwfw
+    body: '[{"varname":"showzerogz","data":"N"},{"varname":"deptno","data":"00127"}]'
+  - match: /WF_CWBS/loadDefinition.action
+    campus: cwfw
+    file: cwfw-window-7600.txt
+  - match: /WF_CWBS/commonUpdate_responseButtonEvent.action
+    campus: cwfw
+    body: 没有合适的结果
+expect:
+  count: 0
+  records: []
+  truncated: false

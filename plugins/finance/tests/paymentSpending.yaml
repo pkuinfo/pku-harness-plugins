@@ -1,0 +1,35 @@
+# paymentSpending (recorded from the TypeScript plugin's behaviour)
+tool: paymentSpending
+now: 2026-10-20 12:00
+responses:
+  - match: /pay/web/order/pageOrderlist
+    campus: cwpay
+    body: '{"messageCode":"0","message":"成功","data":{"total":7,"records":[{"projectName":"浴卡充值","amount":5000,"createDate":"2026-10-02 10:00:00","displayStatus":"103"},{"projectName":"浴卡充值","amount":3000,"createDate":"2026-09-02 10:00:00","displayStatus":"103"},{"projectName":"网费充值","amount":2000,"refundAmount":500,"createDate":"2026-09-05 10:00:00","displayStatus":"107"},{"projectName":"学费住宿费","amount":500000,"createDate":"2026-08-24 10:00:00","displayStatus":"005"},{"projectName":"会议费","amount":1000,"createDate":"2026-10-03 10:00:00","displayStatus":"101"},{"productDesc":"校园卡就诊账户充值&","amount":10000,"createDate":"2026-09-01 10:00:00","displayStatus":"108"},{"productDesc":"就诊&","amount":333,"createDate":"","displayStatus":107}]}}'
+expect:
+  range: …..…
+  orders: 7
+  paid:
+    count: 4
+    total: 98.33
+  pending: 1
+  byProject:
+    - project: 浴卡充值
+      count: 2
+      total: 80
+    - project: 网费充值
+      count: 1
+      total: 15
+    - project: 就诊
+      count: 1
+      total: 3.33
+  byMonth:
+    - month: 2026-09
+      count: 2
+      total: 45
+    - month: 2026-10
+      count: 1
+      total: 50
+    - month: 未知
+      count: 1
+      total: 3.33
+  truncated: false

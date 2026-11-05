@@ -1,0 +1,22 @@
+# pendingPayments (recorded from the TypeScript plugin's behaviour)
+tool: pendingPayments
+now: 2026-10-20 12:00
+responses:
+  - match: pay/pay/waitingPay/getWaitingPayList/10001/2000000000/undefined
+    campus: cwpay
+    file: cwpay-pending.json
+expect:
+  items:
+    - project: 教材费
+      batch: 2026秋季教材
+      due: 320.5
+      unpaid: 320.5
+      partialAllowed: false
+    - project: 会议注册费
+      batch: 第一批
+      due: 1000
+      unpaid: 400
+      partialAllowed: true
+  totalUnpaid: 720.5
+  count: 2
+  nothingDue: false

@@ -1,0 +1,8 @@
+# rewards-bad-months (recorded from the TypeScript plugin's behaviour)
+tool: rewards
+now: 2026-10-20 12:00
+input:
+  monthFrom: 9
+  monthTo: 3
+responses: []
+expectError: 起始月份 9 不能大于结束月份 3

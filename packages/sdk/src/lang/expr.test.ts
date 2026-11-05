@@ -176,3 +176,14 @@ describe('base64', () => {
     expect(ev("unbase64('/w==')")).toBe('\uFFFD');
   });
 });
+
+describe('json', () => {
+  test('parses, and falls back only when asked', () => {
+    expect(ev(`json('{"a":[1]}').a[0]`)).toBe(1);
+    expect(ev("json('nope', 'bad')")).toBe('bad');
+    expect(ev("json('nope', null)")).toBeNull();
+    expect(ev("json('null', 'bad')")).toBeNull();
+    expect(ev("'x'.json(0)")).toBe(0);
+    expect(() => ev("json('nope')")).toThrow('not valid JSON');
+  });
+});

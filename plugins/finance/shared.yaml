@@ -1,0 +1,225 @@
+# Constants and helpers every finance tool sees (PLUGIN.md shared:). Ported from the TypeScript
+# plugin (src/encrypt.ts, parse.ts, cwfw-wf.ts, cwfw-queries.ts, cwpay-parse.ts,
+# cwpay-extra-parse.ts), which followed pkucli crates/cwfw (encrypt.rs, context.rs, api.rs, wf.rs,
+# queries.rs, display.rs) and the cwpay.pku.edu.cn mobile bundle (2026-10-21/23).
+constants:
+  CWFW: https://cwfw.pku.edu.cn
+  FORM: application/x-www-form-urlencoded; charset=UTF-8
+  JSON_CT: application/json;charset=UTF-8
+  # picList.randomStr charset (jquery.picList.js): the salt the server strips again.
+  SALT: poiuytrewqasdfghjklmnbvcxzQWERTYUIOPLKJHGFDSAZXCVBNM123456789
+  # wf.rs: every button/check command carries these workflow fields, empty.
+  WF_EMPTY: { wfName: '', wfAct: '', wfNodeId: '', wfState: '', wfUniKey: '', wfVars: '', wfKeyVal: '', wfComment: '', wfCollab: '', wfPdf: '' }
+  # 北京大学收费平台 settings.js: schoolCode, dataSource.
+  SCHOOL: '10001'
+  NOT_JSON: "\u0001not json"
+  # TRADE_DISPLAY_STATUS as the live dict listed it (2026-10-23); the live dict still overrides.
+  ORDER_STATUS: { '101': 待支付, '102': 支付中, '103': 已付款, '104': 支付失败, '107': 部分退款, '108': 全额退款, '005': 已过期, '006': 已取消 }
+  # proModelUrl → the payment page `/<kind>Pay`; labels for the kinds seen live.
+  KIND_LABELS:
+    tuitionAndDorm: 学费住宿费
+    bathRecharge: 浴卡充值
+    net: 网费
+    eCardRecharge: 一卡通充值
+    hospital: 校园卡就诊账户
+    party: 党费
+    medicalParty: 党费（医学部）
+    union: 工会会费
+    carFaculty: 车证
+    carCooperation: 车证
+    heating: 供暖费
+    xiaojiaheRecharge: 肖家河租金
+    newPark: 中关新园
+    scene: 现场/窗口收费
+    common: 其他缴费
+    meeting: 会议费
+  # pay/channel/getChannelList {schoolCode, partnerId "PT000004"} as listed live (2026-10-23).
+  PAY_CHANNELS: { '01': 支付宝, '02': 微信, '08': 建行网银, '09': 建行大额转账, '61': 中行外卡, '71': 数字货币 }
+functions:
+  pad2: "(n) => padStart(str(n), 2, '0')"
+  today: "() => formatDate(now, 'YYYY-MM-DD')"
+  thisYear: "() => int(formatDate(now, 'YYYY'))"
+  thisMonth: "() => int(formatDate(now, 'MM'))"
+
+  # ── request-body encoding (encrypt.ts / encrypt.rs, after picList.encode / encode2) ──
+  # encrypt(x) = encode(encode2(x)); encode2 = base64(utf8); encode(x) = mirror(base64(x + salt)) + "eEc".
+  # mirror swaps b[t] ↔ b[len-1-t] for even t < len/2. Done on whole strings (zip + one regex
+  # per half) so it costs the same few operations at any length: A = first half, R = the last
+  # half reversed; zipped "A0 R0 A1 R1 …", groups of four give A' = R0 A1 … and the reversed
+  # tail R' = A0 R1 …; a trailing pair (odd half) gives R0 / A0.
+  mirror: "(s) => mirrorHalf(s, floor(length(s) / 2))"
+  mirrorHalf: |
+    (s, h) => mirrorZip(s, h, join(flat(zip(split(slice(s, 0, h), ''), reverse(split(slice(s, length(s) - h), '')))), ''))
+  mirrorZip: |
+    (s, h, z) => replace(z, '(.)(.)(.)(.)|(.)(.)', '$2$3$6')
+      + slice(s, h, length(s) - h)
+      + join(reverse(split(replace(z, '(.)(.)(.)(.)|(.)(.)', '$1$4$5'), '')), '')
+  # The salt only has to vary (the server strips it); derived from `now` and the field's position
+  # so recorded tests stay deterministic.
+  salt: "(k) => slice(SALT + SALT, (floor(now / 1000) + k * 7) % 61, (floor(now / 1000) + k * 7) % 61 + 5)"
+  wfEncode: "(s, k) => mirror(base64(s + salt(k))) + 'eEc'"
+  encrypt: "(s, k) => wfEncode(base64(str(s)), k ?? 0)"
+  # encrypt.rs encrypt_form: urlencoded body with every key and value encrypted.
+  encryptForm: "(pairs) => join(map(pairs, (p, i) => encode(encrypt(p[0], 2 * i)) + '=' + encode(encrypt(p[1], 2 * i + 1))), '&')"
+
+  # ── cwfw requests (cwfw-wf.ts Wf.raw / Wf.post; path WF_CWBS = 网上查询, YBX = 智能报销) ──
+  # Each request is { campus: cwfw, url: <CWFW>/<path>/<action>, method: POST, contentType: FORM,
+  # headers: wfHeaders(path), body: <one of the bodies below> }. loadRolesMenu / loadInitFunction /
+  # loadMenu send an empty body with only the x-requested-with header.
+  wfHeaders: |
+    (path) => ({ 'x-requested-with': 'XMLHttpRequest', accept: 'application/json, text/javascript, */*; q=0.01', origin: CWFW, referer: CWFW + '/' + path + '/main.jsp' })
+  # wf.rs post_encrypted: `a=<uid>` first, then the fields, all encrypted.
+  wfBody: "(uid, fields) => encryptForm([['a', uid], ...fields])"
+  # loadDefinition.action
+  loadWindow: "(uid, winno) => wfBody(uid, [['projid', 'WF_CWBS'], ['winno', winno], ['type', 'W']])"
+  # common_getBindingDataBackend.action: a select's options, `value:label;value:label`.
+  binding: "(uid, sqlid, cv) => wfBody(uid, [['sqlid', sqlid], ['cvstr', cv], ['projid', 'WF_CWBS']])"
+  # commonUpdate_responseButtonEvent.action
+  buttonFields: "(cmd, projid, ctx) => [['cmd', str(merge(cmd, WF_EMPTY))], ['projid', projid], ['userContext', str(ctx)], ['async', 'false']]"
+  # A `funcMap` trigger: the server computes one field from others.
+  checkBody: "(uid, hash, data, ctx) => wfBody(uid, buttonFields({ check_func: hash, check_data: data }, 'WF_CWBS', ctx))"
+  # Run a button's stored procedure (optionally with its check_func).
+  buttonCmd: |
+    (proc, data0, chk) => chk ? { check_func: chk.hash, check_data: chk.data, proc0: proc, data0: data0 } : { check_func: 'escape', proc0: proc, data0: data0 }
+  buttonBody: "(uid, proc, data0, ctx, chk) => wfBody(uid, buttonFields(buttonCmd(proc, data0, chk), 'WF_CWBS', ctx))"
+  # crossfieldrebuild.action: the dynamic columns of a cross table.
+  crossBody: "(uid, funcno, ctx) => wfBody(uid, [['projId', 'WF_CWBS'], ['funcno', funcno], ['dynColSwitch', 'true'], ['data', str(ctx)]])"
+  # commonQuery_doQuery.action: grid rows; without userData only the user id is sent (the button
+  # already set the session).
+  doQueryBody: |
+    (uid, funcno, sidx, rows, userData) => wfBody(uid, [
+      ['_search', 'false'], ['nd', str(now)], ['rows', str(rows)], ['page', '1'], ['sidx', sidx], ['sord', ''],
+      ['userData', str(userData ?? { '0-USERINFO.USERID': uid, '0-UNINO': uid })], ['itemArr', ''], ['sectionArr', ''],
+      ['funcno', funcno], ['projid', 'WF_CWBS'], ['needcount', 'true'],
+    ])
+  # `pass`, `pass;local(…)`, `success: 执行成功.` and `[{…` all count as success.
+  buttonOk: "(t) => test(t, '(?i)^pass$') || startsWith(t, 'pass;') || startsWith(t, 'success') || startsWith(t, '[{')"
+  refused: "(t) => '财务门户拒绝了查询：' + slice(htmlText(t), 0, 120)"
+
+  # ── cwfw parsers (parse.ts, cwfw-wf.ts) ──
+  # context.rs fetch_user_context: `<input id="userContext" value="[{_@KEY_@:_@VALUE_@,…}]">`,
+  # `_@` = `"`, trailing commas allowed. null when absent (no session).
+  parseUserContext: |
+    (html) => ctxFrom(match(html, 'id="userContext"[^>]*value="(\[\{[^"]*\}\])"', 1))
+  ctxFrom: |
+    (raw) => raw == null ? null : firstObj(json(replace(replaceText(raw, '_@', '"'), ',(\s*[}\]])', '$1'), null))
+  firstObj: "(l) => isList(l) && l[0] != null && typeOf(l[0]) == 'object' ? l[0] : null"
+  # context.rs load_init_function: `[{varname, data}]` merged as `0-<VARNAME>` (failure is not fatal).
+  initVars: "(body) => initList(json(body, null))"
+  initList: |
+    (list) => isList(list) ? fromEntries(map(filter(list, (v) => v?.varname), (v) => ['0-' + upper(v.varname), v.data ?? null])) : {}
+  uidOf: "(ctx) => str(ctx['0-USERINFO.USERID'] ?? '') || (account.username ?? '')"
+  # api.rs normalize_js_object: quote bare keys (`{total:1,rows:[{id:"…"}]}`).
+  normalizeJs: "(raw) => replace(raw, '([{,])\\s*([A-Za-z_][A-Za-z0-9_]*)\\s*:', '$1\"$2\":')"
+  # api.rs DoQueryResp::parse: the grid, or NOT_JSON (check gridErr first).
+  grid: "(text) => json(normalizeJs(trim(text)), NOT_JSON)"
+  gridErr: |
+    (text) => includes(text, 'SYS_ERROR') ? '财务系统返回错误，请稍后再试' : grid(text) == NOT_JSON ? '财务系统返回了无法识别的数据（会话可能已过期）' : null
+  # Grid rows as lists of cell texts: entities decoded (`&#20167;` → 仇), trimmed. Decoded once
+  # per row; mappers read them with cell(row, i).
+  gridRows: "(text) => map(grid(text)?.rows ?? [], (r) => map(r?.cell ?? [], (x) => trim(htmlText(str(x ?? '')))))"
+  cell: "(c, i) => c[i] ?? ''"
+  dateOnly: "(s) => split(s, '\\s+', true)[0] ?? ''"
+  isTotal: "(c) => some(slice(c, 0, 2), (x) => includes(x, '合计') || includes(x, '总计'))"
+  # "1,234.50" / "" → number | null.
+  amount: "(s) => amountOf(replace(s ?? '', '[,，\\s¥]', ''))"
+  amountOf: "(t) => t == '' ? null : num(t)"
+
+  # ── window definitions (cwfw-wf.ts; the hashes change per session, so they are parsed every time) ──
+  procRef: "(hash, params) => ({ hash: hash, params: map(split(params, ';'), (p) => replace(p, '^#|#$', '')) })"
+  # All button procedures (`procs:[…]`; not `beforeLoadProcs`).
+  procs: |
+    (def) => flatMap(matchAll(def, 'procs:\[([^\]]*)\]'), (l) => map(matchAll(l[1], '"(`\$[a-f0-9]{32}):([^"]*)"'), (m) => procRef(m[1], m[2])))
+  firstIs: "(p, first) => lower(p.params[0] ?? '') == lower(first)"
+  findProc: "(def, first) => find(procs(def), (p) => firstIs(p, first)) ?? null"
+  findCheck: |
+    (def, first) => find(map(matchAll(def, 'check_func:"(`\$[a-f0-9]{32}):([^"]*)"'), (m) => procRef(m[1], m[2])), (p) => firstIs(p, first)) ?? null
+  beforeLoadProc: "(def) => beforeRef(match(def, 'beforeLoadProcs:\\[\"(`\\$[a-f0-9]{32}):([^\"]*)\"'))"
+  beforeRef: "(m) => m ? procRef(m[1], m[2]) : null"
+  # A field's `funcMap` / `bindMap` entry: "`$hash|#5574-d.incometype#,#5574-d.funcno#" → { head, params }.
+  mapEntry: |
+    (def, mapName, field) => entryOf(find(map(matchAll(def, mapName + ':\{([^}]*)\}'), (b) => match(b[1], '"' + replace(field, '[.]', '\\.') + '":"([^"]*)"', 1)), (raw) => raw != null))
+  entryOf: |
+    (raw) => raw == null ? null : indexOf(raw, '|') < 0 ? { head: raw, params: [] } : {
+      head: slice(raw, 0, indexOf(raw, '|')),
+      params: filter(map(split(slice(raw, indexOf(raw, '|') + 1), ','), (p) => replace(trim(p), '^#|#$', '')), (p) => p != ''),
+    }
+  # `value:label;value:label` → [[value, label]].
+  parseOptions: |
+    (s) => filter(map(split(s, ';'), (kv) => indexOf(kv, ':') > 0 ? [trim(slice(kv, 0, indexOf(kv, ':'))), trim(slice(kv, indexOf(kv, ':') + 1))] : null), (x) => x != null && x[0] != '')
+  optionList: "(options) => join(map(options, (o) => o[0] + ' ' + o[1]), ', ')"
+  # `pass;local(0-a:1;0-b:x;)` → { a: "1", b: "x" }.
+  parseLocal: |
+    (s) => localPairs(match(s, '(?s)local\((.*)\)', 1) ?? match(s, '(?s)local\((.*)$', 1))
+  localPairs: |
+    (inner) => inner == null ? {} : fromEntries(map(filter(split(inner, ';'), (kv) => indexOf(kv, ':') > 0), (kv) => [replace(trim(slice(kv, 0, indexOf(kv, ':'))), '^0-', ''), trim(slice(kv, indexOf(kv, ':') + 1))]))
+  # crossfieldrebuild.action → [field, title] in cell order; null when it has no prjfields.
+  crossFields: "(j) => j?.prjfields ? crossOf(j.prjfields, crossNames(j.colModel)) : null"
+  crossNames: |
+    (cm) => fromEntries(flatMap(values(cm ?? {}), (m) => map(filter(m?.data ?? [], (c) => c?.colName), (c) => [c.colName, c.name ?? ''])))
+  crossOf: "(fields, names) => map(split(fields, ','), (f) => [trim(f), names[trim(f)] ?? ''])"
+  # loadMenu.action → entries.
+  parseMenu: |
+    (html) => map(matchAll(html, "globalMenuEvent'\)\('([^']*)','(\d+)','([^']*)'\).*?setData\('currMenuNodeId',(\d+)\)"), (m) => ({ title: m[1], winno: m[2], group: m[3], nodeId: m[4] }))
+  # login.rs extract_entry: a subsystem tile's url on home3.jsp (minus WINOPEN), relative to /WFManager/.
+  subsystemEntry: |
+    (html, pid) => entryUrl(match(html, 'id="' + pid + '"\s+url="([^"]+)"', 1))
+  entryUrl: "(raw) => raw == null ? null : entryRel(replace(replaceText(raw, '&amp;', '&'), '^WINOPEN', ''))"
+  entryRel: |
+    (rel) => test(rel, '(?i)^https?://') ? rel : startsWith(rel, '/') ? CWFW + rel : entryDots(rel, match(rel, '^((?:\.\.?/)*)', 1) ?? '')
+  entryDots: "(rel, dots) => CWFW + '/' + (includes(dots, '../') ? '' : 'WFManager/') + slice(rel, length(dots))"
+
+  # ── arguments and context (wf.rs build_args / seed_form) ──
+  # `<func>-<field>` from the form (case-insensitive), `0-<var>` from userContext `0-<VAR>`
+  # (all-caps names are sent as "char"), empty parameter → empty name and value.
+  buildArgs: "(params, form, ctx) => map(params, (p) => buildArg(p, form, ctx))"
+  buildArg: |
+    (p, form, ctx) => p == '' ? { name: '', value: '', type: 'CHAR' }
+      : indexOf(p, '-') > 0 ? argOf(slice(p, 0, indexOf(p, '-')), slice(p, indexOf(p, '-') + 1), form, ctx)
+      : argOf('0', p, form, ctx)
+  argOf: |
+    (scope, name, form, ctx) => scope == '0'
+      ? { name: name, value: str(ctx['0-' + upper(name)]), type: name == upper(name) ? 'char' : 'CHAR' }
+      : { name: name, value: (find(form, (f) => lower(f[0]) == lower(name)) ?? [])[1] ?? '', type: 'CHAR' }
+  # cvstr for getBindingDataBackend: `#0-USERINFO.USERID#::<uid>$$…`.
+  cvstr: "(params, form, ctx) => join(map(buildArgs(params, form, ctx), (a, i) => '#' + params[i] + '#::' + a.value), '$$')"
+  # Form fields into userContext as `<projid>$<func>-<FIELD>`, plus the current function/button.
+  seedForm: |
+    (ctx, projid, func, form, node) => merge(ctx, fromEntries(map(form, (f) => [projid + '$' + func + '-' + upper(f[0]), f[1]])),
+      { '0-CURRFUNC': int(func), '0-CURRBTN': '查询', '0-CURRFUNCTYPE': '3' }, node == null ? {} : { CURRMENUNODEID: node })
+
+  # ── cwpay (cwpay.ts / cwpay-parse.ts): `{messageCode, message, data}`, "0" / "6003" = ok ──
+  # Requests: { campus: cwpay, url, method, contentType: JSON_CT, body?: JSON } with `as: response`.
+  # The error message of one platform answer (`as: response`), or null when it is fine.
+  payErr: |
+    (r, what) => r.status >= 500 && !startsWith(trim(r.text), '{') ? '收费平台暂时不可用（HTTP ' + r.status + '）' : envErr(json(r.text, NOT_JSON), what)
+  envErr: |
+    (env, what) => env == NOT_JSON ? '收费平台返回了无法识别的内容（' + what + '）'
+      : str(env?.messageCode ?? '') == '0' || str(env?.messageCode ?? '') == '6003' ? null
+      : '收费平台：' + ((typeOf(env?.data) == 'string' && env.data) || env?.message || '请求失败') + '（' + what + '）'
+  payData: "(r) => json(r.text)?.data"
+  # Amounts are in fen.
+  yuanOf: |
+    (fen) => fenNum(typeOf(fen) == 'number' ? fen : typeOf(fen) == 'string' && trim(fen) != '' ? num(fen) : null)
+  fenNum: "(n) => n == null ? null : round(n) / 100"
+  # Untrusted server text: strip tags / control characters, single spaces, capped.
+  clean: |
+    (s, max) => slice(trim(replace(replace(replace(str(s), '<[^>]*>', ''), '[\u0000-\u001f\u007f]', ' '), '\s+', ' ')), 0, max ?? 120)
+  statusName: "(names, code) => names[code] ?? (code != '' ? '状态 ' + code : '未知')"
+  # getDictDatasByTypes/TRADE_DISPLAY_STATUS → names (the fallback table, overridden and extended).
+  statusDict: |
+    (data) => merge(ORDER_STATUS, isList(data?.TRADE_DISPLAY_STATUS) ? fromEntries(map(filter(data.TRADE_DISPLAY_STATUS, (d) => d?.key != null && d.value), (d) => [str(d.key), clean(d.value, 20)])) : {})
+  orderBody: |
+    (page, size, from, to, project) => ({ pageCurrent: page, pageSize: size, projectName: project ?? '', projectId: '', displayStatus: '', startCreateDate: from ?? '', endCreateDate: to ?? '', schoolCode: SCHOOL })
+  pageRecords: "(r) => isList(payData(r)?.records) ? payData(r).records : []"
+  # Walk /pay/web/order/pageOrderlist (newest first, pages of 50) with `paginate`: the cursor
+  # carries the page number, how many orders were seen and the total. Stops at an error page
+  # (checked afterwards with payErr), a short page, the total, or when `want` (an order number)
+  # turned up.
+  nextOrders: |
+    (page, cursor, want) => payErr(page, '订单记录') != null ? null : nextOrdersOf(pageRecords(page), cursor, num(payData(page)?.total ?? 0) || cursor.total, want)
+  nextOrdersOf: |
+    (records, cursor, total, want) => (want != null && some(records, (o) => o.orderNo == want)) || length(records) < 50 || cursor.seen + length(records) >= total
+      ? null
+      : { page: cursor.page + 1, seen: cursor.seen + length(records), total: total }
+  firstErr: "(pages, what) => find(map(pages, (p) => payErr(p, what)), (e) => e != null) ?? null"

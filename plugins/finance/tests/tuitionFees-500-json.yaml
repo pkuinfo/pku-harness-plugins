@@ -1,0 +1,9 @@
+# tuitionFees-500-json (recorded from the TypeScript plugin's behaviour)
+tool: tuitionFees
+now: 2026-10-20 12:00
+responses:
+  - match: pay/pay/cos/merchant/getProjectTypeAndProjectInfoListInit/10001
+    campus: cwpay
+    status: 500
+    body: '{"messageCode":"1","data":"项目未开放"}'
+expectError: 收费平台：项目未开放（缴费项目）

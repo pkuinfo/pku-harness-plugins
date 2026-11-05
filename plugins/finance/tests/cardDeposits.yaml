@@ -1,0 +1,41 @@
+# cardDeposits (recorded from the TypeScript plugin's behaviour)
+tool: cardDeposits
+now: 2026-10-20 12:00
+responses:
+  - match: /WF_CWBS/loadRolesMenu.action
+    campus: cwfw
+    body: <input type="hidden" id="userContext" value="[{_@0-USERINFO.USERID_@:_@2000000000_@,_@0-USERINFO.USERNAME_@:_@张三_@,_@0-ROLEID_@:3,}]" />
+  - match: /WF_CWBS/loadInitFunction.action
+    campus: cwfw
+    body: not json
+  - match: /WF_CWBS/common_updateUserContext.action
+    campus: cwfw
+    status: 500
+    body: x
+  - match: /WF_CWBS/commonQuery_doQuery.action
+    campus: cwfw
+    body: '{total:1,page:1,records:3,rows:[{id:"15028_0",cell:["YY0001","&#24352;&#32769;&#24072;","&#29289;&#29702;&#23398;&#38498;","&#21161;&#25945;&#36153;","1,500.00","1500.00","0.00","&#24050;&#25903;&#20184;","",""]},{id:"15028_1",cell:["YY0002","&#29579;&#32769;&#24072;","&#21270;&#23398;","&#21171;&#21153;","200","","0","&#22833;&#36133;","","E01"]},{id:"15028_2",cell:["&#21512;&#35745;","","","","1700","1500","0","","",""]}]}'
+expect:
+  range: 2026-01-01..2026-10-20
+  count: 2
+  paidTotal: 1500
+  failed: 1
+  records:
+    - reqNo: YY0001
+      handler: 张老师
+      unit: 物理学院
+      summary: 助教费
+      amount: 1500
+      paid: 1500
+      tax: 0
+      status: 已支付
+      errorCode: ""
+    - reqNo: YY0002
+      handler: 王老师
+      unit: 化学
+      summary: 劳务
+      amount: 200
+      paid: null
+      tax: 0
+      status: 失败
+      errorCode: E01

@@ -1,0 +1,46 @@
+# loans-static-options (recorded from the TypeScript plugin's behaviour)
+tool: loans
+now: 2026-10-20 12:00
+responses:
+  - match: /WF_CWBS/loadRolesMenu.action
+    campus: cwfw
+    body: <input type="hidden" id="userContext" value="[{_@0-USERINFO.USERID_@:_@2000000000_@,_@0-USERINFO.USERNAME_@:_@张三_@,_@0-ROLEID_@:3,}]" />
+  - match: /WF_CWBS/loadInitFunction.action
+    campus: cwfw
+    body: '[{"varname":"showzerogz","data":"N"},{"varname":"deptno","data":"00127"}]'
+  - match: /WF_CWBS/loadDefinition.action
+    campus: cwfw
+    body: '{mainWinno:6320,wins:[{winno:6320,funcno:6241,func_btns:[{caption:"查询",procs:["`$aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:#6241-d.func#;#0-userinfo.userid#;#0-DEPTNO#"]}],beforeLoadProcs:["`$bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb:#0-userinfo.userid#"]}],funcs:[{funcno:"6241",funcMap:{"d.func":""},bindMap:{"d.func":"1:a;3:b"}}]}'
+  - match: /WF_CWBS/commonUpdate_responseButtonEvent.action
+    campus: cwfw
+    body: refused
+  - match: /WF_CWBS/commonUpdate_responseButtonEvent.action
+    campus: cwfw
+    body: pass
+  - match: /WF_CWBS/commonQuery_doQuery.action
+    campus: cwfw
+    body: '{total:1,page:1,records:1,rows:[{id:"6243_0",cell:["2026-03-01 00:00:00.0","&#20250;&#35758;&#26242;&#20511;&#27454;","P001","H0001","5000","3000","2000","2000000000","1"]}]}'
+  - match: /WF_CWBS/commonUpdate_responseButtonEvent.action
+    campus: cwfw
+    body: pass
+  - match: /WF_CWBS/commonQuery_doQuery.action
+    campus: cwfw
+    body: '{total:1,page:1,records:1,rows:[{id:"6243_0",cell:["2026-03-01 00:00:00.0","&#20250;&#35758;&#26242;&#20511;&#27454;","P001","H0001","5000","3000","2000","2000000000","1"]}]}'
+expect:
+  count: 2
+  balance: 4000
+  loans:
+    - firstDate: 2026-03-01
+      summary: 会议暂借款
+      project: P001
+      clearNo: H0001
+      firstAmount: 5000
+      cleared: 3000
+      balance: 2000
+    - firstDate: 2026-03-01
+      summary: 会议暂借款
+      project: P001
+      clearNo: H0001
+      firstAmount: 5000
+      cleared: 3000
+      balance: 2000

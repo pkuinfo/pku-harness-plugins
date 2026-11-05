@@ -1,0 +1,39 @@
+# tuitionFees-in-folder (recorded from the TypeScript plugin's behaviour)
+tool: tuitionFees
+now: 2026-10-20 12:00
+responses:
+  - match: pay/pay/cos/merchant/getProjectTypeAndProjectInfoListInit/10001
+    campus: cwpay
+    body: '{"messageCode":"0","message":"成功","data":[{"id":"t","name":"缴费","children":[{"id":"f1","name":"其他","type":"1"},null]}]}'
+  - match: pay/pay/cos/merchant/getProjectTypeAndProjectInfoList/f1
+    campus: cwpay
+    body: '{"messageCode":"0","message":"成功","data":[{"id":"x","projectName":"研究生学费","proModelUrl":"common"}]}'
+  - match: pay/web/tuitionAndDorm/getTuitionAndDormList/2000000000/x
+    campus: cwpay
+    file: cwpay-tuition.json
+expect:
+  project: 研究生学费
+  items:
+    - year: 2026-2027
+      item: 学费
+      due: 5000
+      paid: 0
+      unpaid: 5000
+      note: ""
+    - year: 2026-2027
+      item: 住宿费
+      due: 1200
+      paid: 1200
+      unpaid: 0
+      note: ""
+    - year: 2025-2026
+      item: 学费
+      due: 5000
+      paid: 5000
+      unpaid: 0
+      note: 已缴
+  totals:
+    due: 11200
+    paid: 6200
+    unpaid: 5000
+  settled: false

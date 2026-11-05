@@ -1,0 +1,39 @@
+# payrollIssued-kind-project (recorded from the TypeScript plugin's behaviour)
+tool: payrollIssued
+now: 2026-10-20 12:00
+input:
+  kind: 0
+  project: P001
+  since: 2026-02-01
+responses:
+  - match: /WF_CWBS/loadRolesMenu.action
+    campus: cwfw
+    body: <input type="hidden" id="userContext" value="[{_@0-USERINFO.USERID_@:_@2000000000_@,_@0-USERINFO.USERNAME_@:_@张三_@,_@0-ROLEID_@:3,}]" />
+  - match: /WF_CWBS/loadInitFunction.action
+    campus: cwfw
+    body: '[{"varname":"showzerogz","data":"N"},{"varname":"deptno","data":"00127"}]'
+  - match: /WF_CWBS/loadDefinition.action
+    campus: cwfw
+    body: '{funcs:[],wins:[{func_btns:[{procs:["`$dddddddddddddddddddddddddddddddd:#7181-t.stype#;#0-userinfo.userid#;;#0-CURRFUNCTYPE#"]}]}]}'
+  - match: /WF_CWBS/commonUpdate_responseButtonEvent.action
+    campus: cwfw
+    body: "success: 执行成功."
+  - match: /WF_CWBS/commonQuery_doQuery.action
+    campus: cwfw
+    body: '{total:1,page:1,records:2,rows:[{id:"7183_0",cell:["2026-09","V-12-3","&#21171;&#21153;&#36153;","P001","&#31034;&#20363;&#39033;&#30446;","800","S001","&#36523;&#20221;&#35777;","110101200001010000","6222000000000000000","&#26576;&#38134;&#34892;","&#26446;&#22235;","&#23398;&#29983;","800","&#36716;&#21345;","2026","0","1","R1","1"]},{id:"7183_1",cell:["&#24635;&#35745;","","","","","800"]}]}'
+expect:
+  kind: 学生发放
+  range: 2026-02-01..2026-10-20
+  count: 1
+  records:
+    - date: 2026-09
+      voucher: V-12-3
+      summary: 劳务费
+      projectCode: P001
+      projectName: 示例项目
+      amount: 800
+      payee: 李四
+      personType: 学生
+      gross: 800
+      method: 转卡
+  truncated: false

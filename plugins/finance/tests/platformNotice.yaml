@@ -1,0 +1,12 @@
+# platformNotice (recorded from the TypeScript plugin's behaviour)
+tool: platformNotice
+now: 2026-10-20 12:00
+responses:
+  - match: common/com/notice/getStuNotice
+    campus: cwpay
+    file: cwpay-notice.json
+expect:
+  notice:
+    title: 系统维护通知
+    content: 本周六 0:00-6:00 系统维护 期间暂停缴费
+    updatedAt: 2026-10-20 09:00:00

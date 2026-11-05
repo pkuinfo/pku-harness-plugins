@@ -1,0 +1,109 @@
+# 汇率查询 (pkucli crates/cwfw queries.rs; window 7700 → 7722, form 13562, grid 13583).
+title: 外币汇率查询
+summary: 财务部使用的外币汇率（每 100 外币折合人民币）
+description: >-
+  Exchange rates the PKU finance office uses (中行折算价), as yuan per 100 units of the foreign currency, one row per day. currency is the Chinese name (美元, 欧元, 英镑, 日元, 港币, 澳大利亚元, 加拿大元, 瑞士法郎, 新加坡元, 韩国元, …, or 全部). Default range: the last 30 days. Works only on the PKU campus network.
+effect: read
+input:
+  currency: { type: string, optional: true, min: 1, max: 10, description: Chinese currency name; default 美元 }
+  since: { type: string, optional: true, pattern: '^\d{4}-\d{2}-\d{2}$', description: YYYY-MM-DD; default 30 days ago }
+  until: { type: string, optional: true, pattern: '^\d{4}-\d{2}-\d{2}$', description: YYYY-MM-DD; default today }
+steps:
+  - let: end
+    value: input.until ?? today()
+  - let: start
+    value: "input.since ?? formatDate(addDays(now, -30), 'YYYY-MM-DD')"
+  - check: start <= end
+    error: 起始日期 ${start} 不能晚于结束日期 ${end}
+  # openCwbs: userContext from loadRolesMenu (+ loadInitFunction, best effort).
+  - let: menu
+    request:
+      campus: cwfw
+      url: '${CWFW}/WF_CWBS/loadRolesMenu.action'
+      method: POST
+      contentType: '${FORM}'
+      headers: { x-requested-with: XMLHttpRequest }
+      body: ''
+    as: response
+  - check: menu.status < 400
+    error: 财务门户返回 HTTP ${menu.status}（loadRolesMenu.action）
+  - let: ctx0
+    value: parseUserContext(menu.text)
+  - check: ctx0 != null
+    error: 财务门户会话未建立（没有拿到用户信息），请稍后重试
+  - let: init
+    value: "{}"
+  - try:
+      - let: initText
+        request:
+          campus: cwfw
+          url: '${CWFW}/WF_CWBS/loadInitFunction.action'
+          method: POST
+          contentType: '${FORM}'
+          headers: { x-requested-with: XMLHttpRequest }
+          body: ''
+        as: text
+      - let: init
+        value: initVars(initText)
+    catch: []
+  - let: uid
+    value: uidOf(ctx0)
+  - check: uid != ''
+    error: 财务门户没有返回学号/工号
+  - let: base
+    value: "merge(ctx0, init, { '0-USERINFO.USERID': uid, '0-UNINO': uid })"
+  - let: defRes
+    request:
+      campus: cwfw
+      url: '${CWFW}/WF_CWBS/loadDefinition.action'
+      method: POST
+      contentType: '${FORM}'
+      headers: "${wfHeaders('WF_CWBS')}"
+      body: "${loadWindow(uid, '7700')}"
+    as: response
+  - check: defRes.status < 400
+    error: 财务门户返回 HTTP ${defRes.status}（loadDefinition.action）
+  - let: proc
+    value: findProc(defRes.text, '13562-t.start')
+  - check: proc != null
+    error: 没能解析财务门户的查询页面（系统可能已改版）
+  - let: form
+    value: "[['t.start', start], ['t.end', end], ['t.btype', input.currency ?? '美元']]"
+  - let: ctx
+    value: seedForm(base, 'WF_CWBS', '13562', form, 253)
+  - let: btn
+    request:
+      campus: cwfw
+      url: '${CWFW}/WF_CWBS/commonUpdate_responseButtonEvent.action'
+      method: POST
+      contentType: '${FORM}'
+      headers: "${wfHeaders('WF_CWBS')}"
+      body: "${buttonBody(uid, proc.hash, buildArgs(proc.params, form, ctx), ctx)}"
+    as: response
+  - check: btn.status < 400
+    error: 财务门户返回 HTTP ${btn.status}（commonUpdate_responseButtonEvent.action）
+  - check: buttonOk(trim(btn.text))
+    error: ${refused(trim(btn.text))}
+  - let: q
+    request:
+      campus: cwfw
+      url: '${CWFW}/WF_CWBS/commonQuery_doQuery.action'
+      method: POST
+      contentType: '${FORM}'
+      headers: "${wfHeaders('WF_CWBS')}"
+      body: "${doQueryBody(uid, '13583', '', 2000)}"
+    as: response
+  - check: q.status < 400
+    error: 财务门户返回 HTTP ${q.status}（commonQuery_doQuery.action）
+  - check: gridErr(q.text) == null
+    error: ${gridErr(q.text)}
+  # Grid 13583: wh_type, create_date, wh_rate (中行折算价 per 100 units).
+  - let: rates
+    value: "map(gridRows(q.text), (r) => ({ currency: cell(r, 0), date: dateOnly(cell(r, 1)), ratePer100: amount(cell(r, 2)) }))"
+return: |
+  {
+    range: start + '..' + end,
+    unit: 'CNY per 100',
+    latest: length(rates) > 0 ? rates[length(rates) - 1] : null,
+    rates: slice(rates, -60),
+  }

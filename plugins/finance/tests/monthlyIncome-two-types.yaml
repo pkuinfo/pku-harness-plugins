@@ -1,0 +1,108 @@
+# monthlyIncome-two-types (recorded from the TypeScript plugin's behaviour)
+tool: monthlyIncome
+now: 2026-10-20 12:00
+responses:
+  - match: /WF_CWBS/loadRolesMenu.action
+    campus: cwfw
+    body: <input type="hidden" id="userContext" value="[{_@0-USERINFO.USERID_@:_@2000000000_@,_@0-USERINFO.USERNAME_@:_@张三_@,_@0-ROLEID_@:3,}]" />
+  - match: /WF_CWBS/loadInitFunction.action
+    campus: cwfw
+    body: '[{"varname":"showzerogz","data":"N"},{"varname":"deptno","data":"00127"}]'
+  - match: /WF_CWBS/loadDefinition.action
+    campus: cwfw
+    file: cwfw-window-5609.txt
+  - match: /WF_CWBS/common_getBindingDataBackend.action
+    campus: cwfw
+    body: 6:奖学金类;7:生活补贴
+  - match: /WF_CWBS/common_getBindingDataBackend.action
+    campus: cwfw
+    body: A:助学金;B:奖学金
+  - match: /WF_CWBS/commonUpdate_responseButtonEvent.action
+    campus: cwfw
+    body: B
+  - match: /WF_CWBS/commonUpdate_responseButtonEvent.action
+    campus: cwfw
+    body: GZB
+  - match: /WF_CWBS/commonUpdate_responseButtonEvent.action
+    campus: cwfw
+    body: GZ1
+  - match: /WF_CWBS/commonUpdate_responseButtonEvent.action
+    campus: cwfw
+    body: "1"
+  - match: /WF_CWBS/commonUpdate_responseButtonEvent.action
+    campus: cwfw
+    body: error
+  - match: /WF_CWBS/commonUpdate_responseButtonEvent.action
+    campus: cwfw
+    body: pass
+  - match: /WF_CWBS/crossfieldrebuild.action
+    campus: cwfw
+    body: '{"prjfields":"qq.ym,mon9,mon10,sum,qq.ord,qq.gztype,qq.remark,qq.itemcode,qq.unino","colModel":{"x":{"data":[{"colName":"mon9","name":"9月"}]}}}'
+  - match: /WF_CWBS/commonQuery_doQuery.action
+    campus: cwfw
+    body: '{total:1,page:1,records:3,rows:[{id:"6160_0",cell:["&#30740;&#31350;&#29983;&#22870;&#23398;&#37329;","1200","800","2000","9","","","A01","2000000000"]},{id:"6160_1",cell:["","1","","1","","","","",""]},{id:"6160_2",cell:["&#29983;&#27963;&#34917;&#36148;","","300.5","300.5","9","","","A02","2000000000"]}]}'
+  - match: /WF_CWBS/commonUpdate_responseButtonEvent.action
+    campus: cwfw
+    body: GZA
+  - match: /WF_CWBS/commonUpdate_responseButtonEvent.action
+    campus: cwfw
+    body: GZ1
+  - match: /WF_CWBS/commonUpdate_responseButtonEvent.action
+    campus: cwfw
+    body: "1"
+  - match: /WF_CWBS/commonUpdate_responseButtonEvent.action
+    campus: cwfw
+    body: error
+  - match: /WF_CWBS/commonUpdate_responseButtonEvent.action
+    campus: cwfw
+    body: pass
+  - match: /WF_CWBS/crossfieldrebuild.action
+    campus: cwfw
+    body: '{"prjfields":"qq.ym,mon9,mon10,sum,qq.ord,qq.gztype,qq.remark,qq.itemcode,qq.unino","colModel":{"x":{"data":[{"colName":"mon9","name":"9月"}]}}}'
+  - match: /WF_CWBS/commonQuery_doQuery.action
+    campus: cwfw
+    body: '{total:1,page:1,records:3,rows:[{id:"6160_0",cell:["&#30740;&#31350;&#29983;&#22870;&#23398;&#37329;","1200","800","2000","9","","","A01","2000000000"]},{id:"6160_1",cell:["","1","","1","","","","",""]},{id:"6160_2",cell:["&#29983;&#27963;&#34917;&#36148;","","300.5","300.5","9","","","A02","2000000000"]}]}'
+  - match: /WF_CWBS/common_getBindingDataBackend.action
+    campus: cwfw
+    body: ""
+  - match: /WF_CWBS/commonUpdate_responseButtonEvent.action
+    campus: cwfw
+    body: error
+expect:
+  range: 2026-01..2026-10
+  total: 4601
+  sections:
+    - code: "6"
+      title: 奖学金类 · 奖学金
+      items:
+        - name: 研究生奖学金
+          months:
+            - month: 9
+              amount: 1200
+            - month: 10
+              amount: 800
+          total: 2000
+          itemCode: A01
+        - name: 生活补贴
+          months:
+            - month: 10
+              amount: 300.5
+          total: 300.5
+          itemCode: A02
+    - code: "6"
+      title: 奖学金类 · 助学金
+      items:
+        - name: 研究生奖学金
+          months:
+            - month: 9
+              amount: 1200
+            - month: 10
+              amount: 800
+          total: 2000
+          itemCode: A01
+        - name: 生活补贴
+          months:
+            - month: 10
+              amount: 300.5
+          total: 300.5
+          itemCode: A02

@@ -1,0 +1,56 @@
+# 全部应用: POST pay/project/getAllProjectNoType {schoolCode}: every project with its suspension
+# state (live 2026-10-23, about 160 rows). payamt in fen.
+title: 收费平台缴费项目目录
+summary: 收费平台能交哪些费用、现在是否开放
+description: >-
+  Every payment project on the PKU payment platform (about 160: tuition, bath card, network fee, party/union dues, parking permits, heating, library copying, conference and exam fees, donations …) with kind, open (false while the platform has suspended it), suspendedNote (the maintenance notice while suspended), standardAmount (yuan, when fixed) and invoiceRequired. Filter by keyword (Chinese or English name) or kind. Use for "can I pay X online / is tuition payment open now". Read-only.
+effect: read
+input:
+  search: { type: string, optional: true, max: 30, description: 'keyword in the project name, e.g. 车证 / 党费 / library' }
+  kind: { type: string, optional: true, max: 30, description: 'exact kind (proModelUrl), e.g. tuitionAndDorm, bathRecharge, net, party, common, scene' }
+  onlyOpen: { type: boolean, optional: true, description: 'true: only projects open for payment now' }
+  limit: { type: integer, optional: true, min: 1, max: 100, description: default 40 }
+functions:
+  catalogOf: "(p) => catalogRow(p, clean(p.proModelUrl, 40), yuanOf(p.payamt), p.isSuspend == 'YES')"
+  catalogRow: |
+    (p, kind, fen, suspended) => ({
+      id: str(p.id),
+      name: clean(p.projectName, 60),
+      nameEn: clean(p.engName, 80),
+      kind: kind,
+      kindLabel: KIND_LABELS[kind] ?? kind,
+      standardAmount: fen != null && fen > 0 ? fen : null,
+      open: (p.status ?? 'YES') == 'YES' && !suspended,
+      suspendedNote: suspended ? (clean(p.suspendTip, 200) || null) : null,
+      invoiceRequired: p.receiptMust == 'YES',
+    })
+  # Keyword (name, English name or kind label) and kind filter.
+  hit: |
+    (p, q, kind) => (!kind || p.kind == kind) && (!q || includes(lower(p.name), q) || includes(lower(p.nameEn), q) || includes(lower(p.kindLabel), q))
+steps:
+  - let: res
+    request:
+      campus: cwpay
+      url: "${'pay/project/getAllProjectNoType'}"
+      method: POST
+      contentType: '${JSON_CT}'
+      body: "${str({ schoolCode: SCHOOL })}"
+    as: response
+  - check: payErr(res, '缴费项目') == null
+    error: ${payErr(res, '缴费项目')}
+  - let: all
+    value: "map(filter(isList(payData(res)) ? payData(res) : [], (p) => p?.id != null && (p.projectName ?? '') != ''), (p) => catalogOf(p))"
+  - let: q
+    value: "lower(trim(input.search ?? ''))"
+  - let: hits
+    value: "filter(all, (p) => hit(p, q, input.kind) && (!input.onlyOpen || p.open))"
+  - let: cap
+    value: input.limit ?? 40
+return: |
+  {
+    total: length(all),
+    matched: length(hits),
+    suspended: count(hits, (p) => !p.open),
+    projects: slice(hits, 0, cap),
+    truncated: length(hits) > cap,
+  }

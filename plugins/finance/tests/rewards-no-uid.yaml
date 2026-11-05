@@ -1,0 +1,14 @@
+# rewards-no-uid (recorded from the TypeScript plugin's behaviour)
+tool: rewards
+now: 2026-10-20 12:00
+account:
+  signedIn: false
+  username: null
+responses:
+  - match: /WF_CWBS/loadRolesMenu.action
+    campus: cwfw
+    body: <input id="userContext" value="[{_@0-ROLEID_@:3}]" />
+  - match: /WF_CWBS/loadInitFunction.action
+    campus: cwfw
+    body: '[{"varname":"showzerogz","data":"N"},{"varname":"deptno","data":"00127"}]'
+expectError: 财务门户没有返回学号/工号

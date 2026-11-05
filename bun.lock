@@ -129,16 +129,6 @@
         "zod": "^4.0.0",
       },
     },
-    "plugins/finance": {
-      "name": "@pku-harness/plugin-finance",
-      "version": "0.3.0",
-      "peerDependencies": {
-        "@pku-harness/sdk": "*",
-        "react": "*",
-        "react-native": "*",
-        "zod": "^4.0.0",
-      },
-    },
     "plugins/ledger": {
       "name": "@pku-harness/plugin-ledger",
       "version": "1.0.0",
@@ -325,8 +315,6 @@
     "@pku-harness/plugin-dashboard": ["@pku-harness/plugin-dashboard@workspace:plugins/dashboard"],
 
     "@pku-harness/plugin-deepseek": ["@pku-harness/plugin-deepseek@workspace:plugins/deepseek"],
-
-    "@pku-harness/plugin-finance": ["@pku-harness/plugin-finance@workspace:plugins/finance"],
 
     "@pku-harness/plugin-ledger": ["@pku-harness/plugin-ledger@workspace:plugins/ledger"],
 

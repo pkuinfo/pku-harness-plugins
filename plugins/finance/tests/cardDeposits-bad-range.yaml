@@ -1,0 +1,7 @@
+# cardDeposits-bad-range (recorded from the TypeScript plugin's behaviour)
+tool: cardDeposits
+now: 2026-10-20 12:00
+input:
+  since: 2026-12-01
+responses: []
+expectError: 起始日期 2026-12-01 不能晚于结束日期 2026-10-20

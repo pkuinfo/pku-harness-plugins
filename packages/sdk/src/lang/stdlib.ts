@@ -439,10 +439,12 @@ const fns: Record<string, Impl> = {
   unbase64: (_c, [s]) => unbase64(str(s)),
 
   // json
-  json: (_c, [s]) => {
+  /** `json(text, fallback)`: the fallback instead of an error when the text isn't JSON. */
+  json: (_c, a) => {
     try {
-      return JSON.parse(str(s));
+      return JSON.parse(str(a[0]));
     } catch {
+      if (a.length > 1) return a[1];
       throw new ExprError('json(): not valid JSON');
     }
   },

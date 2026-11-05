@@ -1,0 +1,7 @@
+# monthlyIncome-future-year (recorded from the TypeScript plugin's behaviour)
+tool: monthlyIncome
+now: 2026-10-20 12:00
+input:
+  year: 2030
+responses: []
+expectError: 2030 年还没有到，没有记录

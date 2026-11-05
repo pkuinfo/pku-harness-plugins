@@ -1,0 +1,49 @@
+# paymentProjects (recorded from the TypeScript plugin's behaviour)
+tool: paymentProjects
+now: 2026-10-20 12:00
+responses:
+  - match: pay/project/getAllProjectNoType
+    campus: cwpay
+    file: cwpay-catalog.json
+expect:
+  total: 4
+  matched: 4
+  suspended: 1
+  projects:
+    - id: c-tuition
+      name: 学费住宿费
+      nameEn: Tuition and accommodation
+      kind: tuitionAndDorm
+      kindLabel: 学费住宿费
+      standardAmount: null
+      open: false
+      suspendedNote: 今日上午 8:30 起开展批量扣款，线上交费临时关闭。
+      invoiceRequired: false
+    - id: c-bath
+      name: 浴卡充值
+      nameEn: Bath card recharge
+      kind: bathRecharge
+      kindLabel: 浴卡充值
+      standardAmount: null
+      open: true
+      suspendedNote: null
+      invoiceRequired: true
+    - id: c-car
+      name: 校内居民车证缴费
+      nameEn: Resident parking permit
+      kind: common
+      kindLabel: 其他缴费
+      standardAmount: 540
+      open: true
+      suspendedNote: null
+      invoiceRequired: false
+    - id: c-copy
+      name: 图书馆复印打印费
+      nameEn: Library copying
+      kind: scene
+      kindLabel: 现场/窗口收费
+      standardAmount: null
+      open: true
+      suspendedNote: null
+      invoiceRequired: false
+  truncated: false

@@ -1,0 +1,27 @@
+# portalMenu (recorded from the TypeScript plugin's behaviour)
+tool: portalMenu
+now: 2026-10-20 12:00
+responses:
+  - match: /WF_CWBS/loadRolesMenu.action
+    campus: cwfw
+    body: <input type="hidden" id="userContext" value="[{_@0-USERINFO.USERID_@:_@2000000000_@,_@0-USERINFO.USERNAME_@:_@张三_@,_@0-ROLEID_@:3,}]" />
+  - match: /WF_CWBS/loadInitFunction.action
+    campus: cwfw
+    body: '[{"varname":"showzerogz","data":"N"},{"varname":"deptno","data":"00127"}]'
+  - match: /WF_CWBS/loadMenu.action
+    campus: cwfw
+    file: cwfw-menu.html
+expect:
+  entries:
+    - title: 项目收支查询
+      winno: "5920"
+      group: 网上查询-项目查询
+      nodeId: "819"
+    - title: 个人工资查询
+      winno: "6941"
+      group: 网上查询-收入查询
+      nodeId: "219"
+    - title: 我的入卡
+      winno: "7987"
+      group: 网上查询-银行入卡
+      nodeId: "271"

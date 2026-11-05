@@ -1,0 +1,111 @@
+# One order by its number: the list row (pageOrderlist: project, invoice) + getOrderById/<id>
+# (channel, times) + the e-invoice link (orderList lookInvoice). Only read-only calls.
+title: 收费平台订单详情
+summary: 一笔订单的状态、支付方式和电子票据链接
+description: >-
+  Details of one order on the PKU payment platform by its order number (from paymentOrders): project, amount and payable amount (yuan), refunded amount, status, created time, closedAt (payment time for paid orders, close time for expired ones), paidBy (WeChat / Alipay / bank …), and invoice (required, issued, and a link to view the e-invoice/receipt when one was issued). Read-only.
+effect: read
+input:
+  orderNo: { type: string, pattern: '^[0-9A-Za-z]{6,40}$', description: "order number, digits" }
+functions:
+  # Merge the list row (has projectName, billNo, billType) with getOrderById (has the rest).
+  orderDetail: |
+    (row, detail, names) => detailOf(row, merge(row, fromEntries(filter(entries(detail ?? {}), (e) => e[1] != null))), names)
+  detailOf: |
+    (row, d, names) => detailRow(row, d, names, str(d.displayStatus ?? ''), d.tradeChannel ? str(d.tradeChannel) : '', yuanOf(d.refundAmount))
+  detailRow: |
+    (row, d, names, code, channel, refunded) => ({
+      orderNo: clean(d.orderNo, 40),
+      project: replace(clean(row.projectName ?? d.projectName ?? d.productDesc, 60), '&$', ''),
+      amount: yuanOf(d.amount),
+      payable: yuanOf(d.payableAmount),
+      refunded: refunded && refunded > 0 ? refunded : null,
+      status: statusName(names, code),
+      createdAt: clean(d.createDate, 20),
+      closedAt: clean(d.actualCloseTime, 20),
+      paidBy: channel != '' ? (PAY_CHANNELS[channel] ?? '渠道 ' + clean(channel, 8)) : null,
+      invoice: { required: d.receiptMust == 'YES', issued: !!row.billNo, billType: row.billType ? clean(row.billType, 20) : null },
+    })
+  # 查看发票: HANGXIN → getEBillPicUrl, BOSI → getCouldEBillPicUrl; body {billType, billNo, schoolCode}; data = URL.
+  invoiceEndpoint: |
+    (t) => t == 'HANGXIN' ? '/pay/pay/invoiced/getEBillPicUrl' : t == 'BOSI' ? '/pay/pay/invoiced/getCouldEBillPicUrl' : null
+  # Only an http(s) URL, capped; anything else is dropped.
+  invoiceUrl: "(data) => invoiceStr(typeOf(data) == 'string' ? trim(data) : '')"
+  invoiceStr: "(s) => test(s, '(?i)^https?://[^\\s<>\"]+$') && length(s) <= 2000 ? s : null"
+steps:
+  - let: want
+    value: trim(input.orderNo)
+  - let: pages
+    paginate:
+      start: "{ page: 1, seen: 0, total: 0 }"
+      request:
+        campus: cwpay
+        url: "${'/pay/web/order/pageOrderlist'}"
+        method: POST
+        contentType: '${JSON_CT}'
+        body: "${str(orderBody(cursor.page, 50))}"
+      items: "[page]"
+      next: nextOrders(page, cursor, want)
+      max: 6
+    as: response
+  - check: firstErr(pages, '订单记录') == null
+    error: ${firstErr(pages, '订单记录')}
+  - let: names
+    value: statusDict(null)
+  - try:
+      - let: dict
+        request:
+          campus: cwpay
+          url: "${'common/com/dict/getDictDatasByTypes/TRADE_DISPLAY_STATUS/' + SCHOOL + '/PAY'}"
+          method: GET
+          contentType: '${JSON_CT}'
+        as: response
+      - if: payErr(dict, '订单状态') == null
+        then:
+          - let: names
+            value: statusDict(payData(dict))
+    catch: []
+  - let: row
+    value: "find(flatMap(pages, (p) => pageRecords(p)), (o) => o.orderNo == want) ?? null"
+  - check: row != null
+    error: 在最近的订单里没有找到订单号 ${want}
+  - let: detail
+    value: "null"
+  - if: row.id != null
+    then:
+      - try:
+          - let: dres
+            request:
+              campus: cwpay
+              url: "${'pay/pay/orderTrade/getOrderById/' + encode(str(row.id))}"
+              method: GET
+              contentType: '${JSON_CT}'
+            as: response
+          - if: payErr(dres, '订单详情') == null
+            then:
+              - let: detail
+                value: payData(dres)
+        catch: []
+  - let: result
+    value: orderDetail(row, detail, names)
+  - let: url
+    value: "null"
+  - let: endpoint
+    value: invoiceEndpoint(row.billType)
+  - if: row.billNo && endpoint
+    then:
+      - try:
+          - let: ires
+            request:
+              campus: cwpay
+              url: "${endpoint}"
+              method: POST
+              contentType: '${JSON_CT}'
+              body: "${str({ billType: row.billType, billNo: row.billNo, schoolCode: SCHOOL })}"
+            as: response
+          - if: payErr(ires, '电子票据') == null
+            then:
+              - let: url
+                value: invoiceUrl(payData(ires))
+        catch: []
+return: "merge(result, { invoice: merge(result.invoice, { url: url }) })"

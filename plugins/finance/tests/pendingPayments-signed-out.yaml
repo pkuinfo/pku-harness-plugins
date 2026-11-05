@@ -1,0 +1,8 @@
+# pendingPayments-signed-out (recorded from the TypeScript plugin's behaviour)
+tool: pendingPayments
+now: 2026-10-20 12:00
+account:
+  signedIn: false
+  username: null
+responses: []
+expectError: 还没有登录校园账号

@@ -1,0 +1,31 @@
+# paymentOrders (recorded from the TypeScript plugin's behaviour)
+tool: paymentOrders
+now: 2026-10-20 12:00
+responses:
+  - match: /pay/web/order/pageOrderlist
+    campus: cwpay
+    file: cwpay-orders.json
+  - match: common/com/dict/getDictDatasByTypes/TRADE_DISPLAY_STATUS/10001/PAY
+    campus: cwpay
+    body: '{"messageCode":"0","message":"成功","data":{"TRADE_DISPLAY_STATUS":[{"key":"105","value":"已退款"},{"key":"103","value":"<i>支付成功</i>"}]}}'
+expect:
+  total: 3
+  orders:
+    - orderNo: PAY2026102000000001
+      project: 浴卡充值
+      amount: 50
+      createdAt: 2026-10-20 08:12:00
+      status: 支付成功
+      invoiced: false
+    - orderNo: PAY2026101900000002
+      project: 学费住宿费
+      amount: 5000
+      createdAt: 2026-10-19 21:00:00
+      status: 待支付
+      invoiced: false
+    - orderNo: PAY2026090100000003
+      project: 网费充值
+      amount: 30
+      createdAt: 2026-09-01 10:00:00
+      status: 已退款
+      invoiced: true

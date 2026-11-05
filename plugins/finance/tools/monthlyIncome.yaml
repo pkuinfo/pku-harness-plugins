@@ -1,0 +1,333 @@
+# 收入查询-个人工资查询 (pkucli crates/cwfw queries.rs; menu 6941 → window 5609, form 5574, cross
+# table grid 6160). Students: scholarships, stipends, living subsidies paid monthly.
+#
+# The triggers (`funcMap` checks) read the form from the userContext they are sent with
+# (`WF_CWBS$5574-D.FUNCNO`, …), not from check_data: with a bare context the server falls back to
+# whatever an earlier page visit left in the session, and on a fresh session it answers `error`,
+# so 收入类型 stayed empty and the 查询 procedure refused ("收入类型不能为空"). Every check
+# therefore gets the form seeded so far, like the page. 收入类型 is a select (`bindMap`, depends
+# on 查询功能) whose default is its check's answer; each option is queried (default first).
+title: 个人工资/奖助学金查询
+summary: 按月发放的奖学金、助学金、生活补贴等，逐月金额和合计
+description: >-
+  Monthly payments listed under 个人工资查询 on the finance portal. For students: scholarships, 助学金, living subsidies and other stipends paid every month (staff get their payslip items). Call it without kind: it returns one section per query kind (code + title, e.g. scholarships, living subsidy) with items: name, months [{month, amount}] (yuan, only months with money) and total. Use for "how much scholarship did I get this month / this year". Per-payment TA/RA/labour fees are in finance__rewards instead. One calendar year per call. Sensitive personal data: call only when the user asks, answer only what was asked, and never put the amounts on the dashboard, in notifications, memory or other plugins unless the user explicitly asks. Works only on the PKU campus network.
+effect: read
+input:
+  year: { type: integer, optional: true, min: 2000, max: 2100, description: calendar year; default this year }
+  monthFrom: { type: integer, optional: true, min: 1, max: 12, description: first month (1-12); default 1 }
+  monthTo: { type: integer, optional: true, min: 1, max: 12, description: 'last month (1-12); default the current month this year, 12 for past years' }
+  kind: { type: string, optional: true, max: 10, description: 'omit to get every kind (the normal call). Only to narrow a follow-up: a code copied from sections[].code of a previous monthlyIncome result. Never guess codes (not 1, 01, 6941, 奖学金…); a wrong one fails with the list of valid codes' }
+functions:
+  at: "(base, form) => seedForm(base, 'WF_CWBS', '5574', form, 219)"
+  # Columns when crossfieldrebuild fails: qq.ym, mon<from>..mon<to>, sum, qq.ord, qq.gztype, qq.remark, qq.itemcode, qq.unino.
+  defaultFields: |
+    (from, to) => [['qq.ym', ''], ...map(range(from, to + 1), (m) => ['mon' + m, m + '月']), ...map(['sum', 'qq.ord', 'qq.gztype', 'qq.remark', 'qq.itemcode', 'qq.unino'], (k) => [k, ''])]
+  fieldIdx: "(fields, n) => findIndex(fields, (f) => f[0] == n)"
+  # queries.rs salary_items: cross-table rows → items with per-month amounts (the 工号 column is
+  # dropped). monCols = [[month, column]] of the mon<N> fields.
+  salaryItems: |
+    (rows, fields) => salaryRows(rows, filter(map(fields, (f, i) => [int(match(f[0], '^mon(\d+)$', 1)), i]), (m) => m[0] != null), max(fieldIdx(fields, 'qq.ym'), 0), fieldIdx(fields, 'sum'), fieldIdx(fields, 'qq.itemcode'))
+  salaryRows: |
+    (rows, monCols, nameI, sumI, codeI) => filter(map(rows, (c) => ({
+      name: cell(c, nameI),
+      months: filter(map(monCols, (m) => ({ month: m[0], amount: amount(cell(c, m[1])) })), (x) => x.amount != null),
+      total: sumI >= 0 ? amount(cell(c, sumI)) : null,
+      itemCode: codeI >= 0 ? cell(c, codeI) : '',
+    })), (i) => i.name)
+steps:
+  - let: y
+    value: input.year ?? thisYear()
+  - check: y <= thisYear()
+    error: ${y} 年还没有到，没有记录
+  - let: from
+    value: input.monthFrom ?? 1
+  - let: to
+    value: "input.monthTo ?? (y == thisYear() ? thisMonth() : 12)"
+  - check: from <= to
+    error: 起始月份 ${from} 不能大于结束月份 ${to}
+  # openCwbs: userContext from loadRolesMenu (+ loadInitFunction, best effort).
+  - let: menu
+    request:
+      campus: cwfw
+      url: '${CWFW}/WF_CWBS/loadRolesMenu.action'
+      method: POST
+      contentType: '${FORM}'
+      headers: { x-requested-with: XMLHttpRequest }
+      body: ''
+    as: response
+  - check: menu.status < 400
+    error: 财务门户返回 HTTP ${menu.status}（loadRolesMenu.action）
+  - let: ctx0
+    value: parseUserContext(menu.text)
+  - check: ctx0 != null
+    error: 财务门户会话未建立（没有拿到用户信息），请稍后重试
+  - let: init
+    value: "{}"
+  - try:
+      - let: initText
+        request:
+          campus: cwfw
+          url: '${CWFW}/WF_CWBS/loadInitFunction.action'
+          method: POST
+          contentType: '${FORM}'
+          headers: { x-requested-with: XMLHttpRequest }
+          body: ''
+        as: text
+      - let: init
+        value: initVars(initText)
+    catch: []
+  - let: uid
+    value: uidOf(ctx0)
+  - check: uid != ''
+    error: 财务门户没有返回学号/工号
+  - let: base
+    value: "merge(ctx0, init, { '0-USERINFO.USERID': uid, '0-UNINO': uid })"
+  - let: defRes
+    request:
+      campus: cwfw
+      url: '${CWFW}/WF_CWBS/loadDefinition.action'
+      method: POST
+      contentType: '${FORM}'
+      headers: "${wfHeaders('WF_CWBS')}"
+      body: "${loadWindow(uid, '5609')}"
+    as: response
+  - check: defRes.status < 400
+    error: 财务门户返回 HTTP ${defRes.status}（loadDefinition.action）
+  - let: def
+    value: defRes.text
+  # 查询功能 options (`bindMap`): a dynamic source via getBindingDataBackend, or static.
+  - let: fe
+    value: mapEntry(def, 'bindMap', 'd.funcno')
+  - let: all
+    value: "fe == null || startsWith(fe.head, '@$') ? [] : parseOptions(fe.head)"
+  - if: "fe != null && startsWith(fe.head, '@$')"
+    then:
+      - let: bres
+        request:
+          campus: cwfw
+          url: '${CWFW}/WF_CWBS/common_getBindingDataBackend.action'
+          method: POST
+          contentType: '${FORM}'
+          headers: "${wfHeaders('WF_CWBS')}"
+          body: "${binding(uid, slice(fe.head, 2), cvstr(fe.params, [], base))}"
+        as: response
+      - check: bres.status < 400
+        error: 财务门户返回 HTTP ${bres.status}（common_getBindingDataBackend.action）
+      - let: all
+        value: parseOptions(bres.text)
+  - check: length(all) > 0
+    error: 这个账号在财务门户里没有可查询的工资/奖助学金项目
+  - let: options
+    value: "input.kind ? filter(all, (o) => o[0] == trim(input.kind)) : all"
+  - check: length(options) > 0
+    error: 没有代码为 ${input.kind} 的工资查询功能。可用：${optionList(all)}（只能用上一次结果 sections[].code 里的代码，不传则查全部）
+  - let: before
+    value: beforeLoadProc(def)
+  - let: proc
+    value: findProc(def, '5574-d.year')
+  - let: perKind
+    each: options
+    steps:
+      - let: code
+        value: item[0]
+      - let: title
+        value: item[1]
+      - let: head
+        value: "[['d.funcno', code]]"
+      # 收入类型 options (depend on 查询功能)…
+      - let: te
+        value: mapEntry(def, 'bindMap', 'd.incometype')
+      - let: types
+        value: "te == null || startsWith(te.head, '@$') ? [] : parseOptions(te.head)"
+      - if: "te != null && startsWith(te.head, '@$')"
+        then:
+          - let: tres
+            request:
+              campus: cwfw
+              url: '${CWFW}/WF_CWBS/common_getBindingDataBackend.action'
+              method: POST
+              contentType: '${FORM}'
+              headers: "${wfHeaders('WF_CWBS')}"
+              body: "${binding(uid, slice(te.head, 2), cvstr(te.params, head, at(base, head)))}"
+            as: response
+          - check: tres.status < 400
+            error: 财务门户返回 HTTP ${tres.status}（common_getBindingDataBackend.action）
+          - let: types
+            value: parseOptions(tres.text)
+      # …and its default, computed by the trigger.
+      - let: resolved
+        value: "null"
+      - let: ie
+        value: mapEntry(def, 'funcMap', 'd.incometype')
+      - if: "ie != null && startsWith(ie.head, '`$')"
+        then:
+          - let: ires
+            request:
+              campus: cwfw
+              url: '${CWFW}/WF_CWBS/commonUpdate_responseButtonEvent.action'
+              method: POST
+              contentType: '${FORM}'
+              headers: "${wfHeaders('WF_CWBS')}"
+              body: "${checkBody(uid, ie.head, buildArgs(ie.params, head, at(base, head)), at(base, head))}"
+            as: response
+          - check: ires.status < 400
+            error: 财务门户返回 HTTP ${ires.status}（commonUpdate_responseButtonEvent.action）
+          - let: resolved
+            value: "trim(ires.text) == 'error' ? null : trim(ires.text)"
+      - let: fallback
+        value: "resolved || (types[0] ?? [])[0] || ''"
+      - if: "!fallback"
+        then:
+          - check: "!input.kind"
+            error: 财务门户没有给“${title}”返回收入类型，请稍后重试
+          # the other kinds still answer
+          - return: "[]"
+      - let: incomeTypes
+        value: "[[fallback, (find(types, (t) => t[0] == fallback) ?? [])[1] ?? ''], ...filter(types, (t) => t[0] != fallback)]"
+      - let: secs
+        each: incomeTypes
+        steps:
+          # triggers: 收入类型 → 代码/库 → 发布方式, each seeing the fields before it
+          - let: form1
+            value: "[...head, ['d.incometype', item[0]]]"
+          - let: v1
+            value: "''"
+          - let: e1
+            value: mapEntry(def, 'funcMap', 'd.code')
+          - if: "e1 != null && startsWith(e1.head, '`$')"
+            then:
+              - let: r1
+                request:
+                  campus: cwfw
+                  url: '${CWFW}/WF_CWBS/commonUpdate_responseButtonEvent.action'
+                  method: POST
+                  contentType: '${FORM}'
+                  headers: "${wfHeaders('WF_CWBS')}"
+                  body: "${checkBody(uid, e1.head, buildArgs(e1.params, form1, at(base, form1)), at(base, form1))}"
+                as: response
+              - check: r1.status < 400
+                error: 财务门户返回 HTTP ${r1.status}（commonUpdate_responseButtonEvent.action）
+              - let: v1
+                value: "trim(r1.text) == 'error' ? '' : trim(r1.text)"
+          - let: form2
+            value: "[...form1, ['d.code', v1]]"
+          - let: v2
+            value: "''"
+          - let: e2
+            value: mapEntry(def, 'funcMap', 'd.dbcode')
+          - if: "e2 != null && startsWith(e2.head, '`$')"
+            then:
+              - let: r2
+                request:
+                  campus: cwfw
+                  url: '${CWFW}/WF_CWBS/commonUpdate_responseButtonEvent.action'
+                  method: POST
+                  contentType: '${FORM}'
+                  headers: "${wfHeaders('WF_CWBS')}"
+                  body: "${checkBody(uid, e2.head, buildArgs(e2.params, form2, at(base, form2)), at(base, form2))}"
+                as: response
+              - check: r2.status < 400
+                error: 财务门户返回 HTTP ${r2.status}（commonUpdate_responseButtonEvent.action）
+              - let: v2
+                value: "trim(r2.text) == 'error' ? '' : trim(r2.text)"
+          - let: form3
+            value: "[...form2, ['d.dbcode', v2]]"
+          - let: v3
+            value: "''"
+          - let: e3
+            value: mapEntry(def, 'funcMap', 'd.pubdate')
+          - if: "e3 != null && startsWith(e3.head, '`$')"
+            then:
+              - let: r3
+                request:
+                  campus: cwfw
+                  url: '${CWFW}/WF_CWBS/commonUpdate_responseButtonEvent.action'
+                  method: POST
+                  contentType: '${FORM}'
+                  headers: "${wfHeaders('WF_CWBS')}"
+                  body: "${checkBody(uid, e3.head, buildArgs(e3.params, form3, at(base, form3)), at(base, form3))}"
+                as: response
+              - check: r3.status < 400
+                error: 财务门户返回 HTTP ${r3.status}（commonUpdate_responseButtonEvent.action）
+              - let: v3
+                value: "trim(r3.text) == 'error' ? '' : trim(r3.text)"
+          - let: form
+            value: "[...form3, ['d.pubdate', v3], ['d.year', str(y)], ['d.month_1', pad2(from)], ['d.month_2', pad2(to)]]"
+          - let: fctx
+            value: at(base, form)
+          # the grid window's beforeLoad procedure (the page runs it on open); not fatal
+          - if: before != null
+            then:
+              - try:
+                  - request:
+                      campus: cwfw
+                      url: '${CWFW}/WF_CWBS/commonUpdate_responseButtonEvent.action'
+                      method: POST
+                      contentType: '${FORM}'
+                      headers: "${wfHeaders('WF_CWBS')}"
+                      body: "${buttonBody(uid, before.hash, buildArgs(before.params, form, base), fctx)}"
+                    as: text
+                catch: []
+          - check: proc != null
+            error: 没能解析财务门户的查询页面（系统可能已改版）
+          - let: btn
+            request:
+              campus: cwfw
+              url: '${CWFW}/WF_CWBS/commonUpdate_responseButtonEvent.action'
+              method: POST
+              contentType: '${FORM}'
+              headers: "${wfHeaders('WF_CWBS')}"
+              body: "${buttonBody(uid, proc.hash, buildArgs(proc.params, form, fctx), fctx)}"
+            as: response
+          - check: btn.status < 400
+            error: 财务门户返回 HTTP ${btn.status}（commonUpdate_responseButtonEvent.action）
+          - check: buttonOk(trim(btn.text))
+            error: ${refused(trim(btn.text))}
+          # dynamic month columns (crossfieldrebuild); the default columns when that fails
+          - let: cf
+            value: "null"
+          - try:
+              - let: cres
+                request:
+                  campus: cwfw
+                  url: '${CWFW}/WF_CWBS/crossfieldrebuild.action'
+                  method: POST
+                  contentType: '${FORM}'
+                  headers: "${wfHeaders('WF_CWBS')}"
+                  body: "${crossBody(uid, '6160', fctx)}"
+                as: text
+              - let: cf
+                value: crossFields(json(trim(cres), null))
+            catch: []
+          - let: fields
+            value: "cf != null && some(cf, (f) => startsWith(f[0], 'mon')) ? cf : defaultFields(from, to)"
+          - let: q
+            request:
+              campus: cwfw
+              url: '${CWFW}/WF_CWBS/commonQuery_doQuery.action'
+              method: POST
+              contentType: '${FORM}'
+              headers: "${wfHeaders('WF_CWBS')}"
+              body: "${doQueryBody(uid, '6160', 'qq.ord ASC', 10000)}"
+            as: response
+          - check: q.status < 400
+            error: 财务门户返回 HTTP ${q.status}（commonQuery_doQuery.action）
+          - check: gridErr(q.text) == null
+            error: ${gridErr(q.text)}
+        return: |
+          {
+            code: code,
+            title: length(incomeTypes) > 1 && item[1] ? title + ' · ' + item[1] : title,
+            items: salaryItems(gridRows(q.text), fields),
+          }
+    return: secs
+  - let: sections
+    value: flat(perKind)
+  - check: length(sections) > 0
+    error: 财务门户没有返回收入类型，请稍后重试
+return: |
+  {
+    range: y + '-' + pad2(from) + '..' + y + '-' + pad2(to),
+    total: round(sum(flatMap(sections, (s) => s.items), (i) => i.total ?? 0), 2),
+    sections: sections,
+  }

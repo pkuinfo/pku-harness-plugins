@@ -49,7 +49,8 @@ SDK, the plugin language, and the marketplace registry.
 | [`course-catalog`](plugins/course-catalog) | Search every course offered this term | Document |
 | [`course-sync`](plugins/course-sync) | Sync this term's timetable into the schedule | Document |
 | [`room-booking`](plugins/room-booking) | Book seminar rooms in the teaching buildings | Document |
-| `wallet`, `finance`, `courses`, `calendar`, `card-share`, `authenticator` | Campus card, finance portal, Blackboard, academic calendar, payment-code sharing, OTP | TypeScript (need host abilities; being ported) |
+| [`finance`](plugins/finance) | Stipends and income, tuition and housing fees, payment orders (read-only) | Document |
+| `wallet`, `courses`, `calendar`, `card-share`, `authenticator` | Campus card, Blackboard, academic calendar, payment-code sharing, OTP | TypeScript (need host abilities; being ported) |
 | `dashboard`, `schedule`, `scheduler`, `todo`, `timetable`, `ledger`, `memory`, `plugins`, `ui`, `deepseek`, `openai-compatible` | The harness's own features and model providers | TypeScript |
 
 The full list, including community plugins, is in [`registry/registry.json`](registry/registry.json)

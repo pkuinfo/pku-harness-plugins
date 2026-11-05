@@ -1,0 +1,61 @@
+# loadMenu.action of 网上查询 (pkucli crates/cwfw wf.rs): the menu entries this account sees.
+title: 财务门户菜单
+summary: 财务门户为你的账号开放了哪些查询
+description: >-
+  The finance portal (网上查询) menu entries visible to this account: title, group, window number. Use to check whether a function exists for this user before saying it is unsupported. Works only on the PKU campus network.
+effect: read
+input: {}
+steps:
+  # openCwbs: userContext from loadRolesMenu (+ loadInitFunction, best effort).
+  - let: menu
+    request:
+      campus: cwfw
+      url: '${CWFW}/WF_CWBS/loadRolesMenu.action'
+      method: POST
+      contentType: '${FORM}'
+      headers: { x-requested-with: XMLHttpRequest }
+      body: ''
+    as: response
+  - check: menu.status < 400
+    error: 财务门户返回 HTTP ${menu.status}（loadRolesMenu.action）
+  - let: ctx0
+    value: parseUserContext(menu.text)
+  - check: ctx0 != null
+    error: 财务门户会话未建立（没有拿到用户信息），请稍后重试
+  - let: init
+    value: "{}"
+  - try:
+      - let: initText
+        request:
+          campus: cwfw
+          url: '${CWFW}/WF_CWBS/loadInitFunction.action'
+          method: POST
+          contentType: '${FORM}'
+          headers: { x-requested-with: XMLHttpRequest }
+          body: ''
+        as: text
+      - let: init
+        value: initVars(initText)
+    catch: []
+  - let: uid
+    value: uidOf(ctx0)
+  - check: uid != ''
+    error: 财务门户没有返回学号/工号
+  - let: base
+    value: "merge(ctx0, init, { '0-USERINFO.USERID': uid, '0-UNINO': uid })"
+  - let: res
+    request:
+      campus: cwfw
+      url: '${CWFW}/WF_CWBS/loadMenu.action'
+      method: POST
+      contentType: '${FORM}'
+      headers: { x-requested-with: XMLHttpRequest }
+      body: ''
+    as: response
+  - check: res.status < 400
+    error: 财务门户返回 HTTP ${res.status}（loadMenu.action）
+  - let: entries
+    value: parseMenu(res.text)
+  - check: length(entries) > 0
+    error: 没有拿到财务门户菜单（会话可能已过期）
+return: "{ entries: entries }"

@@ -1,0 +1,13 @@
+# orderDetail-not-found (recorded from the TypeScript plugin's behaviour)
+tool: orderDetail
+now: 2026-10-20 12:00
+input:
+  orderNo: "999999"
+responses:
+  - match: /pay/web/order/pageOrderlist
+    campus: cwpay
+    body: '{"messageCode":"0","message":"成功","data":{"total":1,"records":[{"id":"o-1","orderNo":"26090100000000000001","projectName":"浴卡充值","amount":5000,"createDate":"2026-09-01 15:41:37","displayStatus":"103","billNo":"E0001","billType":"HANGXIN","receiptMust":"YES","productDesc":"浴卡充值"}]}}'
+  - match: common/com/dict/getDictDatasByTypes/TRADE_DISPLAY_STATUS/10001/PAY
+    campus: cwpay
+    body: '{"messageCode":"0","message":"成功","data":{"TRADE_DISPLAY_STATUS":[{"key":"103","value":"支付成功"}]}}'
+expectError: 在最近的订单里没有找到订单号 999999

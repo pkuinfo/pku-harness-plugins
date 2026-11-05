@@ -1,0 +1,28 @@
+# reimbursements (recorded from the TypeScript plugin's behaviour)
+tool: reimbursements
+now: 2026-10-20 12:00
+responses:
+  - match: /YBX/loadRolesMenu.action
+    campus: cwfw
+    body: <input type="hidden" id="userContext" value="[{_@0-USERINFO.USERID_@:_@_@,_@0-USERINFO.USERNAME_@:_@张三_@,_@0-ROLEID_@:3,}]" />
+  - match: /YBX/loadDefinition.action
+    campus: cwfw
+    body: '{mainWinno:6,wins:[{winno:6,beforeLoadProcs:["`$91cb37cc20d96badcf2b961ab4b009a3:#0-userinfo.userid#;;#0-userinfo.business_id#"]}]}'
+  - match: /YBX/commonUpdate_responseButtonEvent.action
+    campus: cwfw
+    body: pass;local(0-BX_YBXALL_count:1;0-BX_YBXALL_amt:88;0-BX_YBXSPZ_count:1;0-BX_YBXSPZ_amt:88;0-BX_YBXZFSB_count:0;)
+expect:
+  stats:
+    - key: all
+      label: 全部报销单
+      count: 1
+      amount: 88
+    - key: approving
+      label: 审批中
+      count: 1
+      amount: 88
+    - key: paymentFailed
+      label: 支付失败
+      count: 0
+      amount: null
+  needsAttention: []

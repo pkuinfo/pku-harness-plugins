@@ -1,0 +1,20 @@
+# rewards-sys-error (recorded from the TypeScript plugin's behaviour)
+tool: rewards
+now: 2026-10-20 12:00
+responses:
+  - match: /WF_CWBS/loadRolesMenu.action
+    campus: cwfw
+    body: <input type="hidden" id="userContext" value="[{_@0-USERINFO.USERID_@:_@2000000000_@,_@0-USERINFO.USERNAME_@:_@张三_@,_@0-ROLEID_@:3,}]" />
+  - match: /WF_CWBS/loadInitFunction.action
+    campus: cwfw
+    body: '[{"varname":"showzerogz","data":"N"},{"varname":"deptno","data":"00127"}]'
+  - match: /WF_CWBS/loadDefinition.action
+    campus: cwfw
+    body: var wg={btns:[{name:"查询",procs:["`$d22613f13d5012bca16310d4bf2f08c3:#5743-d.year#;#5743-d.month_2#"],x:1}]}
+  - match: /WF_CWBS/commonUpdate_responseButtonEvent.action
+    campus: cwfw
+    body: pass
+  - match: /WF_CWBS/commonQuery_doQuery.action
+    campus: cwfw
+    body: $$$SYS_ERROR$$$ORA-00942
+expectError: 财务系统返回错误，请稍后再试

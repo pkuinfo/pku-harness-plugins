@@ -1,0 +1,13 @@
+# paymentOrders-empty (recorded from the TypeScript plugin's behaviour)
+tool: paymentOrders
+now: 2026-10-20 12:00
+responses:
+  - match: /pay/web/order/pageOrderlist
+    campus: cwpay
+    body: '{"messageCode":"0","message":"成功","data":null}'
+  - match: common/com/dict/getDictDatasByTypes/TRADE_DISPLAY_STATUS/10001/PAY
+    campus: cwpay
+    body: '{"messageCode":"8100","message":"服务异常","data":""}'
+expect:
+  total: 0
+  orders: []

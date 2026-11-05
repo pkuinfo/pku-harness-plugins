@@ -1,0 +1,40 @@
+# 待缴费列表 (PC /student/model/waitingPay, mobile balanceInquiry; chunk-5dcd1bc5):
+# getWaitingPayList/<schoolCode>/<idserial>/<projectId>, where the SPA passes no project, so the
+# last segment is literally "undefined" (= every project).
+title: 收费平台待缴费
+summary: 收费平台上所有待缴的账单和未缴合计
+description: >-
+  Bills waiting to be paid on the PKU payment platform (收费平台 cwpay.pku.edu.cn, its own 待缴费列表 across all projects): project, batch, amount due and unpaid (yuan), whether partial payment is allowed, plus the total unpaid. Use for "do I owe anything on the payment platform". Tuition/housing per academic year: use tuitionFees. Read-only.
+effect: read
+input: {}
+functions:
+  # payLimit -1 / 0 / null = must pay in full (the SPA's check()).
+  pendingOf: |
+    (r) => ({
+      project: clean(r.projectName, 60),
+      batch: clean(r.batchno, 60),
+      due: yuanOf(r.payamt),
+      unpaid: yuanOf(r.unpaidamt),
+      partialAllowed: r.payLimit != null && str(r.payLimit) != '-1' && str(r.payLimit) != '0',
+    })
+steps:
+  - check: account.username
+    error: 还没有登录校园账号
+  - let: res
+    request:
+      campus: cwpay
+      url: "${'pay/pay/waitingPay/getWaitingPayList/' + SCHOOL + '/' + encode(account.username) + '/undefined'}"
+      method: GET
+      contentType: '${JSON_CT}'
+    as: response
+  - check: payErr(res, '待缴费') == null
+    error: ${payErr(res, '待缴费')}
+  - let: items
+    value: "map(isList(payData(res)) ? payData(res) : [], (r) => pendingOf(r))"
+return: |
+  {
+    items: items,
+    totalUnpaid: round(reduce(items, (a, i) => a + max(0, i.unpaid ?? 0), 0), 2),
+    count: length(items),
+    nothingDue: length(items) == 0,
+  }

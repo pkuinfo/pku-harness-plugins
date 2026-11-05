@@ -1,0 +1,55 @@
+# Totals by project and month over the order list (the site's own 缴费账单 stats answer -1 for
+# everyone): at most 10 pages of 50, newest first, date range on the creation date.
+title: 收费平台支出汇总
+summary: 你在收费平台实际付了多少钱，按项目和月份汇总
+description: >-
+  Money actually paid through the PKU payment platform, summed by project and by month (paid and partially refunded orders, refunds subtracted), plus how many orders are still pending. Optional date range on the order creation date and project keyword. Use for "how much did I pay on the platform this year / how much bath-card top-up". Counts at most the latest 500 orders (truncated = true when there were more). Read-only.
+effect: read
+input:
+  from: { type: string, optional: true, pattern: '^\d{4}-\d{2}-\d{2}$', description: 'YYYY-MM-DD, orders created on/after; e.g. Jan 1 for "this year"' }
+  to: { type: string, optional: true, pattern: '^\d{4}-\d{2}-\d{2}$', description: 'YYYY-MM-DD, orders created on/before' }
+  project: { type: string, optional: true, max: 30, description: 'project name keyword, e.g. 浴卡 / 网费' }
+constants:
+  # Count as money paid: 支付成功 and 部分退款 (minus the refund when known).
+  PAID: ['103', '107']
+  PENDING: ['101', '102']
+functions:
+  code: "(o) => str(o.displayStatus ?? '')"
+  paidAmt: "(o) => max(0, (yuanOf(o.amount) ?? 0) - (yuanOf(o.refundAmount) ?? 0))"
+  projectOf: "(o) => replace(clean(o.projectName ?? o.productDesc, 60), '&$', '') || '未知项目'"
+  monthOf: "(o) => slice(clean(o.createDate, 20), 0, 7) || '未知'"
+  bucket: "(list) => ({ count: length(list), total: reduce(list, (a, o) => round(a + paidAmt(o), 2), 0) })"
+  summarize: |
+    (rows, paid) => ({
+      orders: length(rows),
+      paid: { count: length(paid), total: round(reduce(paid, (a, o) => a + paidAmt(o), 0), 2) },
+      pending: count(rows, (o) => includes(PENDING, code(o))),
+      byProject: sortBy(map(entries(groupBy(paid, (o) => projectOf(o))), (e) => merge({ project: e[0] }, bucket(e[1]))), (x) => x.total, true),
+      byMonth: sortBy(map(entries(groupBy(paid, (o) => monthOf(o))), (e) => merge({ month: e[0] }, bucket(e[1]))), (x) => x.month),
+    })
+steps:
+  - check: "!(input.from && input.to && input.from > input.to)"
+    error: 起始日期 ${input.from} 不能晚于结束日期 ${input.to}
+  - let: pages
+    paginate:
+      start: "{ page: 1, seen: 0, total: 0 }"
+      request:
+        campus: cwpay
+        url: "${'/pay/web/order/pageOrderlist'}"
+        method: POST
+        contentType: '${JSON_CT}'
+        body: "${str(orderBody(cursor.page, 50, input.from, input.to, input.project))}"
+      items: "[page]"
+      next: nextOrders(page, cursor)
+      max: 10
+    as: response
+  - check: firstErr(pages, '订单记录') == null
+    error: ${firstErr(pages, '订单记录')}
+  - let: rows
+    value: "flatMap(pages, (p) => pageRecords(p))"
+  - let: total
+    value: "reduce(pages, (t, p) => num(payData(p)?.total ?? 0) || t, 0)"
+  # Stopped on the last allowed page with more to come.
+  - let: truncated
+    value: "length(pageRecords(pages[length(pages) - 1])) >= 50 && length(rows) < total"
+return: "merge({ range: (input.from ?? '…') + '..' + (input.to ?? '…') }, summarize(rows, filter(rows, (o) => includes(PAID, code(o)))), { truncated: truncated })"

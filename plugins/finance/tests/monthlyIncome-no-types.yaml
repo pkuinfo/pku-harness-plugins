@@ -1,0 +1,23 @@
+# monthlyIncome-no-types (recorded from the TypeScript plugin's behaviour)
+tool: monthlyIncome
+now: 2026-10-20 12:00
+responses:
+  - match: /WF_CWBS/loadRolesMenu.action
+    campus: cwfw
+    body: <input type="hidden" id="userContext" value="[{_@0-USERINFO.USERID_@:_@2000000000_@,_@0-USERINFO.USERNAME_@:_@张三_@,_@0-ROLEID_@:3,}]" />
+  - match: /WF_CWBS/loadInitFunction.action
+    campus: cwfw
+    body: '[{"varname":"showzerogz","data":"N"},{"varname":"deptno","data":"00127"}]'
+  - match: /WF_CWBS/loadDefinition.action
+    campus: cwfw
+    file: cwfw-window-5609.txt
+  - match: /WF_CWBS/common_getBindingDataBackend.action
+    campus: cwfw
+    body: 7:生活补贴
+  - match: /WF_CWBS/common_getBindingDataBackend.action
+    campus: cwfw
+    body: ""
+  - match: /WF_CWBS/commonUpdate_responseButtonEvent.action
+    campus: cwfw
+    body: error
+expectError: 财务门户没有返回收入类型，请稍后重试

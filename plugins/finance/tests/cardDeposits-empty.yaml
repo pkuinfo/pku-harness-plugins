@@ -1,0 +1,26 @@
+# cardDeposits-empty (recorded from the TypeScript plugin's behaviour)
+tool: cardDeposits
+now: 2026-10-20 12:00
+input:
+  since: 2025-01-01
+  until: 2025-12-31
+responses:
+  - match: /WF_CWBS/loadRolesMenu.action
+    campus: cwfw
+    body: <input type="hidden" id="userContext" value="[{_@0-USERINFO.USERID_@:_@2000000000_@,_@0-USERINFO.USERNAME_@:_@张三_@,_@0-ROLEID_@:3,}]" />
+  - match: /WF_CWBS/loadInitFunction.action
+    campus: cwfw
+    body: not json
+  - match: /WF_CWBS/common_updateUserContext.action
+    campus: cwfw
+    status: 500
+    body: x
+  - match: /WF_CWBS/commonQuery_doQuery.action
+    campus: cwfw
+    body: "[]"
+expect:
+  range: 2025-01-01..2025-12-31
+  count: 0
+  paidTotal: 0
+  failed: 0
+  records: []

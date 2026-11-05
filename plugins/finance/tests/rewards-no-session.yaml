@@ -1,0 +1,8 @@
+# rewards-no-session (recorded from the TypeScript plugin's behaviour)
+tool: rewards
+now: 2026-10-20 12:00
+responses:
+  - match: /WF_CWBS/loadRolesMenu.action
+    campus: cwfw
+    body: <html>系统超时</html>
+expectError: 财务门户会话未建立（没有拿到用户信息），请稍后重试
