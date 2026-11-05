@@ -71,7 +71,38 @@ export interface HostComponents {
    * link the plugin can't read itself (`link` wins when both are set).
    */
   QRCode: ComponentType<{ value?: string; link?: SecretLink; size?: number; ecl?: 'L' | 'M' | 'Q' | 'H' }>;
+  /**
+   * Columns over one baseline (daily or monthly amounts). Grows in on mount; tap a column to
+   * select it (a readout above shows its label and value). Uncontrolled unless `selected` is set.
+   */
+  ColumnChart: ComponentType<ChartProps & { height?: number }>;
+  /** A trend line with a soft area (values over days or months); tap to read the nearest point. */
+  LineChart: ComponentType<ChartProps & { height?: number; area?: boolean }>;
+  /**
+   * Share of a whole as a ring. Segment i is coloured `theme.courseColor(i).ink` (the same as
+   * Legend item i), so plugins can match rows to it. Tapping a segment shows its value and
+   * share in the centre; otherwise `centerLabel` / `centerCaption`.
+   */
+  DonutChart: ComponentType<ChartFormat & ChartSelection & { data: ChartDatum[]; size?: number; thickness?: number; centerLabel?: string; centerCaption?: string; selectable?: boolean; accessibilityLabel?: string }>;
+  /** Chart key: colour dot, label, optional value. `color` defaults to the chart palette in order. */
+  Legend: ComponentType<{ items: { label: string; value?: string; color?: string }[]; columns?: boolean }>;
 }
+
+/** One chart point / segment. */
+export type ChartDatum = { label: string; value: number };
+/** How chart readouts print values: `valuePrefix` '¥', `decimals` 2 → "¥1,234.50". */
+export type ChartFormat = { valuePrefix?: string; valueSuffix?: string; decimals?: number };
+export type ChartSelection = { selected?: number | null; onSelect?: (index: number | null) => void };
+/** Shared props of the single-series charts. `labels`: x-axis labels ('auto' thins long series). */
+export type ChartProps = ChartFormat &
+  ChartSelection & {
+    data: ChartDatum[];
+    tone?: 'accent' | 'up' | 'down' | 'info' | 'warn';
+    labels?: 'auto' | 'all' | 'none';
+    /** Show the selected point's label and value above the chart (default true). */
+    readout?: boolean;
+    accessibilityLabel?: string;
+  };
 
 /**
  * Live data from read tools, stale-while-revalidate: the last value (persisted across launches)
