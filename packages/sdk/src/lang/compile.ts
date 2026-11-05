@@ -1,4 +1,4 @@
-import { createElement, type ComponentType } from 'react';
+import { createElement, useMemo, type ComponentType } from 'react';
 import { z } from 'zod';
 
 import type { Capability, PluginDef, PluginTranslation, ToolDef, ToolEffect } from '../plugin';
@@ -76,17 +76,47 @@ function fullTool(pluginId: string, tool: string) {
 /** The read tool that backs a `{ fn }` binding (widgets resolve bindings through tools). */
 export const fnToolName = (fn: string) => `fn_${fn.replace(/[^A-Za-z0-9_]/g, '_')}`.slice(0, 40);
 
+/** `{ "$param": "pid" }` in binding args → the screen's route parameter (`/p/<plugin>/<screen>?pid=…`). */
+function withParams(v: unknown, params: Record<string, string | undefined>): unknown {
+  if (Array.isArray(v)) return v.map((x) => withParams(x, params));
+  if (v && typeof v === 'object') {
+    const o = v as Record<string, unknown>;
+    if (typeof o.$param === 'string' && Object.keys(o).length === 1) return params[o.$param] ?? null;
+    return Object.fromEntries(Object.entries(o).map(([k, x]) => [k, withParams(x, params)]));
+  }
+  return v;
+}
+
+/**
+ * A widget or screen document rendered by the host's GenUI. Its state is the spec's state plus:
+ * the bound data, `/params` (screen route parameters), `/size` (widget size) and `/t` (the
+ * view's `strings` in the app language, zh-Hans fallback).
+ */
 function viewComponent(pluginId: string, view: ViewDoc): ComponentType<PluginWidgetProps | PluginScreenProps> {
-  const bindings = Object.fromEntries(
-    Object.entries(view.bindings ?? {}).map(([ptr, { fn, tool, ...b }]) => [ptr, { ...b, tool: fn ? `${pluginId}.${fnToolName(fn)}` : fullTool(pluginId, tool!) }]),
-  );
   const spec = view.spec as Record<string, unknown> & { state?: Record<string, unknown> };
-  function DocView({ host }: PluginWidgetProps | PluginScreenProps) {
+  function DocView(props: PluginWidgetProps | PluginScreenProps) {
+    const { host } = props;
+    const params = ('params' in props ? props.params : undefined) ?? {};
+    const size = 'size' in props ? props.size : undefined;
+    const locale = host.useLocale();
+    const key = JSON.stringify(params);
+    const bindings = useMemo(
+      () =>
+        Object.fromEntries(
+          Object.entries(view.bindings ?? {}).map(([ptr, { fn, tool, args, ...b }]) => [
+            ptr,
+            { ...b, ...(args ? { args: withParams(args, params) as Record<string, unknown> } : {}), tool: fn ? `${pluginId}.${fnToolName(fn)}` : fullTool(pluginId, tool!) },
+          ]),
+        ),
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      [key],
+    );
     const data = host.useWidgetData({ spec, bindings });
     const { GenUI, Skeleton, Text } = host.components;
+    const t = { ...(view.strings?.['zh-Hans'] ?? {}), ...(locale === 'en' ? (view.strings?.en ?? {}) : {}) };
     if (data.status === 'loading') return createElement(Skeleton, { height: 56 });
-    if (data.status === 'error' && !data.value) return createElement(Text, { variant: 'caption', tone: 'muted' } as never, data.error ?? '加载失败');
-    return createElement(GenUI, { spec: { ...spec, state: { ...(spec.state ?? {}), ...(data.value ?? {}) } } });
+    if (data.status === 'error' && !data.value) return createElement(Text, { variant: 'caption', tone: 'muted' } as never, data.error ?? (locale === 'en' ? 'Couldn’t load' : '加载失败'));
+    return createElement(GenUI, { spec: { ...spec, state: { ...(spec.state ?? {}), ...(data.value ?? {}), params, size: size ?? null, t } } });
   }
   return DocView;
 }

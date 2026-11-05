@@ -24,7 +24,7 @@
           "value": null,
           "icon": null
         },
-        "on": { "press": { "action": "open", "params": { "url": { "$item": "url" } } } }
+        "on": { "press": { "action": "open", "params": { "url": { "$template": "${url}" } } } }
       },
       "empty": {
         "type": "Column",
