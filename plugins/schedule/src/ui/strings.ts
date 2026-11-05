@@ -69,7 +69,6 @@ export const strings = defineStrings({
     // Todo list
     today: '今天',
     tomorrow: '明天',
-    overdue: '已逾期 · ',
     complete: (title: string) => `完成 ${title}`,
     edit: (title: string) => `编辑 ${title}`,
     addTodoPlaceholder: '添加待办，回车保存',
@@ -255,7 +254,6 @@ export const strings = defineStrings({
     noClassesThatDay: 'No classes this day',
     today: 'Today',
     tomorrow: 'Tomorrow',
-    overdue: 'Overdue · ',
     complete: (title: string) => `Complete ${title}`,
     edit: (title: string) => `Edit ${title}`,
     addTodoPlaceholder: 'Add a to-do, press return to save',

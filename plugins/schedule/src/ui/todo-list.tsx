@@ -12,7 +12,8 @@ function dueLabel(todo: Todo, now: Date, locale: AppLocale): { text: string; ton
   const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
   const s = strings[locale];
   const day = sameDay(d, now) ? s.today : sameDay(d, tomorrow) ? s.tomorrow : formatLocalDate(d, locale, now);
-  return { text: `${overdue ? s.overdue : ''}${day}${locale === 'en' && !sameDay(d, now) && !sameDay(d, tomorrow) ? ',' : ''} ${clock(d)}`, tone: overdue ? 'down' : sameDay(d, now) ? 'warn' : 'neutral' };
+  // Overdue rows sit under the labelled 已逾期 group: the red tone is enough, no repeated prefix.
+  return { text: `${day}${locale === 'en' && !sameDay(d, now) && !sameDay(d, tomorrow) ? ',' : ''} ${clock(d)}`, tone: overdue ? 'down' : sameDay(d, now) ? 'warn' : 'neutral' };
 }
 
 function TodoRow({ host, services, todo, now }: { host: HostUI; services: HostServices; todo: Todo; now: Date }) {
