@@ -286,6 +286,28 @@
       "verified": true
     },
     {
+      "id": "ledger",
+      "name": "记账",
+      "description": "随手记录收支，说一句或点几下就记好；月度 / 年度统计、预算和图表。数据只存在手机上。",
+      "i18n": {
+        "en": {
+          "name": "Ledger",
+          "description": "Record spending and income with a sentence or a few taps; monthly and yearly totals, budgets and charts. Your data stays on the phone."
+        }
+      },
+      "author": "pkuinfo",
+      "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/ledger",
+      "kind": "builtin",
+      "icon": "ledger",
+      "requires": [],
+      "scopes": [],
+      "tags": [
+        "official",
+        "life"
+      ],
+      "verified": true
+    },
+    {
       "id": "courses",
       "name": "教学网",
       "description": "教学网课程公告、作业（截止时间、要求、成绩）、课程资料目录和课程回放列表（只读）。",

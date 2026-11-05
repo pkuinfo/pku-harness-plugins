@@ -7,6 +7,7 @@ import { coursesPlugin } from './courses/src';
 import { dashboardPlugin } from './dashboard/src';
 import { deepseekPlugin } from './deepseek/src';
 import { financePlugin } from './finance/src';
+import { ledgerPlugin } from './ledger/src';
 import { memoryPlugin } from './memory/src';
 import { openAICompatiblePlugin } from './openai-compatible/src';
 import { pluginsPlugin } from './plugins/src';
@@ -37,6 +38,7 @@ export const builtinPlugins: PluginDef[] = [
   calendarPlugin,
   walletPlugin,
   cardSharePlugin,
+  ledgerPlugin,
   coursesPlugin,
   financePlugin,
   memoryPlugin,

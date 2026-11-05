@@ -43,6 +43,7 @@ SDK, the plugin language, and the marketplace registry.
 | [`notices`](plugins/notices) | Official notices from six university sites and WeChat | Document |
 | [`campus-events`](plugins/campus-events) | Academic talks and campus activities | Document |
 | [`grades`](plugins/grades) | Grades and GPA (with the treehole second factor handled) | Document |
+| [`ledger`](plugins/ledger) | Personal bookkeeping: record spending and income by tap or by chat, budgets and charts; data stays on the phone | TypeScript |
 | `wallet`, `finance`, `courses`, `library`, `treehole`, `elective`, `room-booking`, `course-catalog`, `calendar`, … | Campus card, finance portal, Blackboard, library, forum, course selection and more | TypeScript (being ported) |
 | `dashboard`, `schedule`, `scheduler`, `todo`, `timetable`, `memory`, `plugins`, `ui`, `deepseek`, `openai-compatible` | The harness's own features and model providers | TypeScript |
 

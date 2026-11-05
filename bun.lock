@@ -139,6 +139,16 @@
         "zod": "^4.0.0",
       },
     },
+    "plugins/ledger": {
+      "name": "@pku-harness/plugin-ledger",
+      "version": "1.0.0",
+      "peerDependencies": {
+        "@pku-harness/sdk": "*",
+        "react": "*",
+        "react-native": "*",
+        "zod": "^4.0.0",
+      },
+    },
     "plugins/memory": {
       "name": "@pku-harness/plugin-memory",
       "version": "0.1.0",
@@ -317,6 +327,8 @@
     "@pku-harness/plugin-deepseek": ["@pku-harness/plugin-deepseek@workspace:plugins/deepseek"],
 
     "@pku-harness/plugin-finance": ["@pku-harness/plugin-finance@workspace:plugins/finance"],
+
+    "@pku-harness/plugin-ledger": ["@pku-harness/plugin-ledger@workspace:plugins/ledger"],
 
     "@pku-harness/plugin-memory": ["@pku-harness/plugin-memory@workspace:plugins/memory"],
 
