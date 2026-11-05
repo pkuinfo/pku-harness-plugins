@@ -207,6 +207,10 @@ export interface HostServices {
     get(id: string): Todo | undefined;
     add(input: TodoInput, source: JobSource): Promise<Todo>;
     update(id: string, patch: Partial<TodoInput>, source: JobSource): Promise<Todo>;
+    /**
+     * Mark done/undone. Completing a repeating to-do also creates its next instance (linked as
+     * `nextId`); undoing removes that instance again while it is still open.
+     */
     setDone(id: string, done: boolean): Promise<Todo>;
     remove(id: string): Promise<void>;
   };

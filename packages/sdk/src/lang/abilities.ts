@@ -94,7 +94,7 @@ export const ABILITIES: Record<string, AbilityDef> = {
   'verify.treeholeSendCode': { effect: 'write', description: 'Send the SMS code for the pending treehole check { kind?: login|course when none is pending }', run: treeholeSendCode },
   'otp.code': { effect: 'read', description: 'Current IAAA 手机令牌 code, or null', run: async (_a, e) => e.services.campus.otp() },
   'todos.list': { effect: 'read', description: 'The user’s to-dos', run: async (_a, e) => e.services.todos.list() },
-  'todos.add': { effect: 'write', description: 'Add a to-do { title, notes?, dueAt?, remind? }', run: async (a, e) => e.services.todos.add(a as never, 'plugin') },
+  'todos.add': { effect: 'write', description: 'Add a to-do { title, notes?, dueAt?, remind?, priority?: none|high }', run: async (a, e) => e.services.todos.add(a as never, 'plugin') },
   'todos.update': { effect: 'write', description: 'Update a to-do { id, patch }', run: async (a, e) => e.services.todos.update(str(a.id), (a.patch ?? {}) as never, 'plugin') },
   'todos.setDone': { effect: 'write', description: 'Mark a to-do done { id, done }', run: async (a, e) => e.services.todos.setDone(str(a.id), a.done !== false) },
   'todos.remove': { effect: 'write', description: 'Remove a to-do { id }', run: async (a, e) => e.services.todos.remove(str(a.id)).then(() => ({ removed: true })) },
