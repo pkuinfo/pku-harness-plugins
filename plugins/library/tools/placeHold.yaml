@@ -1,0 +1,82 @@
+# OPAC "预约" button: advisePickupAt { itemBarcode, pkulibSession } for the pickup choices, then
+# createHold { callNumber, expireDate: "", itemBarcode, pickupAt, pkulibSession }; status 0 = ok.
+title: 预约图书
+summary: 预约一本被借出的书（先选取书地点）
+description: >-
+  Place a hold on a book (id from library__search). Without `pickup` it only returns the pickup-library options (status "choose_pickup") so you can ask the user; with `pickup` (an option id) it submits the hold. callNumber picks a specific volume/edition when the record has several. Usually only for books that are all checked out.
+effect: write
+input:
+  id: { type: string, trim: true, min: 4, max: 200, description: book id from library__search }
+  callNumber: { type: string, trim: true, max: 60, optional: true }
+  pickup: { type: string, trim: true, min: 1, max: 60, optional: true, description: pickup option id from a previous call }
+functions:
+  pickOf: |
+    (o) => typeOf(o) == 'string' ? (trim(o) ? { id: trim(o), name: trim(o) } : null)
+      : isObj(o) ? pickObj(sv(o.code ?? o.id ?? o.value ?? o.key ?? o.policyName), o) : null
+  pickObj: "(id, o) => pickFin(id, plain(o.name ?? o.label ?? o.description ?? o.desc ?? o.policyDescription, 40) ?? id)"
+  pickFin: "(id, name) => id && name ? { id, name } : null"
+  advisedOf: "(a) => typeOf(a) == 'string' ? sv(a) : isObj(a) ? sv(a.code ?? a.id ?? a.value) : null"
+steps:
+  - let: h
+    call: holdings
+    input: "{ id: input.id }"
+  - check: h.holdable
+    error: 这本书目前不能预约
+  - let: copy
+    value: "(input.callNumber ? h.copies.filter(c => c.callNumber == input.callNumber) : h.copies)[0] ?? null"
+  - check: copy?.callNumber
+    error: "${input.callNumber ? '没有索书号为 ' + input.callNumber + ' 的馆藏' : '没有可预约的馆藏'}"
+  - let: res
+    request:
+      campus: library
+      url: /prod-api/circ/advisePickupAt
+      method: POST
+      json: { itemBarcode: '${copy.itemId}', pkulibSession: '{session}' }
+      contentType: application/json;charset=utf-8
+    as: response
+  - check: res.status < 400
+    error: 图书馆个人中心返回 HTTP ${res.status}
+  - try:
+      - let: j
+        value: json(res.text)
+    catch:
+      - let: j
+        value: 'null'
+  - check: isObj(j)
+    error: 图书馆个人中心返回了无法解析的内容
+  - let: d
+    value: "isObj(j.data) ? j.data : {}"
+  - let: options
+    value: "arr(d.list).map(o => pickOf(o)).filter(o => o)"
+  - if: "!input.pickup"
+    then:
+      - return: "{ status: 'choose_pickup', title: h.title, callNumber: copy.callNumber, options, advised: advisedOf(d.advised) }"
+  - check: "!options.length || options.some(o => o.id == input.pickup)"
+    error: "取书地点只能从这些里选：${options.map(o => o.name + '（' + o.id + '）').join('、')}"
+  - let: res2
+    request:
+      campus: library
+      url: /prod-api/circ/createHold
+      method: POST
+      json: { callNumber: '${copy.callNumber}', expireDate: '', itemBarcode: '${copy.itemId}', pickupAt: '${input.pickup}', pkulibSession: '{session}' }
+      contentType: application/json;charset=utf-8
+    as: response
+  - check: res2.status < 400
+    error: 图书馆个人中心返回 HTTP ${res2.status}
+  - try:
+      - let: j2
+        value: json(res2.text)
+    catch:
+      - let: j2
+        value: 'null'
+  - check: isObj(j2)
+    error: 图书馆个人中心返回了无法解析的内容
+  - let: data2
+    value: "isObj(j2.data) ? j2.data : {}"
+  - let: status
+    value: j2.status ?? data2.status
+  - let: message
+    value: "str(j2.desc ?? data2.desc ?? j2.msg ?? '')"
+  - check: status == 0 || status == '0'
+    error: "预约失败：${message || '图书馆未说明原因'}"
+return: "{ status: 'ok', title: h.title, callNumber: copy.callNumber, pickup: input.pickup, message: message || '预约成功' }"

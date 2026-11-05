@@ -1,0 +1,62 @@
+# loans
+tool: loans
+now: 2026-10-20 12:00
+responses:
+  - match: getMyInfobySession?pkulib_session={session}
+    campus: library
+    file: account.json
+expect:
+  count: 4
+  overdueCount: 1
+  nextDueDate: 2026-10-18
+  nextDueInDays: -2
+  nextDueTitle: 线性代数
+  loans:
+    - itemId: BK0001
+      title: 线性代数
+      author: null
+      callNumber: null
+      library: null
+      checkoutDate: null
+      dueDate: 2026-10-18
+      recallDueDate: null
+      daysLeft: -2
+      overdue: true
+      renewalsRemaining: 0
+      renewable: false
+    - itemId: BK0004
+      title: 一本书名非常非常长的书：关于计算机程序的构造和解释以及其他许多有趣的主题第二版
+      author: null
+      callNumber: null
+      library: null
+      checkoutDate: null
+      dueDate: 2026-10-21
+      recallDueDate: null
+      daysLeft: 1
+      overdue: false
+      renewalsRemaining: 3
+      renewable: true
+    - itemId: BK0002
+      title: 算法导论
+      author: null
+      callNumber: TP301.6/12
+      library: 北大中心馆
+      checkoutDate: 2026-09-01
+      dueDate: 2026-10-25
+      recallDueDate: null
+      daysLeft: 5
+      overdue: false
+      renewalsRemaining: 2
+      renewable: true
+    - itemId: BK0003
+      title: 数据库系统概念
+      author: null
+      callNumber: null
+      library: null
+      checkoutDate: null
+      dueDate: 2026-11-02
+      recallDueDate: 2026-11-02
+      daysLeft: 13
+      overdue: false
+      renewalsRemaining: 1
+      renewable: false

@@ -1,0 +1,10 @@
+# placeHold-no-callnumber
+tool: placeHold
+input:
+  id: REC0001
+  callNumber: NOPE
+now: 2026-10-20 12:00
+responses:
+  - match: cat_marc=REC0001
+    file: holdings.json
+expectError: 没有索书号为 NOPE 的馆藏

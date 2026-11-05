@@ -1,0 +1,39 @@
+{
+  "response": {
+    "numFound": 197,
+    "docs": [
+      {
+        "id": "AAAA%2FBB%3D%3D",
+        "title": [
+          "三体. [Ⅱ], 黑暗森林"
+        ],
+        "author": [
+          "刘慈欣, 1963- 著"
+        ],
+        "publisher": [
+          "重庆出版社"
+        ],
+        "publishDate": [
+          "2022"
+        ],
+        "callnumber-search": [
+          "I247.55/10b2:2",
+          "I247.55/10b2:2",
+          "I247.55/10b2:2(FZ)"
+        ]
+      },
+      {
+        "id": "x",
+        "title": []
+      },
+      {
+        "id": "CC 1",
+        "title": [
+          "<i>球状闪电</i>"
+        ],
+        "author": "Liu",
+        "publishDate": 2005
+      }
+    ]
+  }
+}

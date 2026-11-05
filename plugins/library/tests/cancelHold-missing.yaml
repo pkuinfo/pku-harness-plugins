@@ -1,0 +1,10 @@
+# cancelHold-missing
+tool: cancelHold
+input:
+  itemId: H9
+now: 2026-10-20 12:00
+responses:
+  - match: getMyInfobySession
+    campus: library
+    file: account.json
+expectError: 没有找到这条预约，先用 library__holds 查看

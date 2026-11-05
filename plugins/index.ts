@@ -8,7 +8,6 @@ import { coursesPlugin } from './courses/src';
 import { dashboardPlugin } from './dashboard/src';
 import { deepseekPlugin } from './deepseek/src';
 import { financePlugin } from './finance/src';
-import { libraryPlugin } from './library/src';
 import { memoryPlugin } from './memory/src';
 import { openAICompatiblePlugin } from './openai-compatible/src';
 import { pluginsPlugin } from './plugins/src';
@@ -45,7 +44,6 @@ export const builtinPlugins: PluginDef[] = [
   coursesPlugin,
   treeholePlugin,
   financePlugin,
-  libraryPlugin,
   roomBookingPlugin,
   memoryPlugin,
   pluginsPlugin,

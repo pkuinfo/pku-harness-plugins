@@ -1,0 +1,12 @@
+# loans-dead-session
+tool: loans
+now: 2026-10-20 12:00
+responses:
+  - match: getMyInfobySession
+    campus: library
+    body:
+      timestamp: 1
+      status: 0
+      desc: ""
+      data: null
+expectError: 图书馆没有返回借阅信息（登录可能已失效）

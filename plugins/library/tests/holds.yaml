@@ -1,0 +1,26 @@
+# holds
+tool: holds
+now: 2026-10-20 12:00
+responses:
+  - match: getMyInfobySession
+    campus: library
+    file: account.json
+expect:
+  - itemId: H1
+    callNumber: O1/1
+    title: 数学分析
+    status: 在途
+    pickupLibrary: 总借还台
+    available: false
+    pickupBy: 2026-11-01
+    changping: false
+    taskId: null
+  - itemId: null
+    callNumber: J1/9
+    title: 日文书
+    status: null
+    pickupLibrary: null
+    available: true
+    pickupBy: null
+    changping: true
+    taskId: T9

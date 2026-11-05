@@ -1,0 +1,9 @@
+# hours-missing
+tool: hours
+now: 2026-10-20 12:00
+responses:
+  - match: opening-hours/getday
+    body:
+      status: 200
+      object: null
+expectError: 图书馆网站没有返回今日开馆时间

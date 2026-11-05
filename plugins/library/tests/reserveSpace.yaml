@@ -1,0 +1,60 @@
+# reserveSpace
+tool: reserveSpace
+input:
+  devId: "101"
+  date: 2026-10-21
+  start: 14:00
+  end: 16:00
+  title: " 小组讨论 "
+  members:
+    - "2600000001"
+    - "2000000000"
+    - "2600000002"
+    - "2600000001"
+now: 2026-10-20 12:00
+responses:
+  - match: resvDates=20261021
+    campus: library-space
+    file: rooms.json
+  - match: auth/userInfo
+    campus: library-space
+    body:
+      code: 0
+      data:
+        accNo: 77
+        trueName: 张三
+        logonName: "2000000000"
+  - match: getMembers?key=2600000001
+    campus: library-space
+    body:
+      code: 0
+      data:
+        - accNo: 78
+          logonName: "2600000001"
+          trueName: 李四
+          status: 1
+  - match: getMembers?key=2600000002
+    campus: library-space
+    body:
+      code: 0
+      data:
+        - accNo: 79
+          logonName: "2600000002"
+        - accNo: 80
+          logonName: "26000000021"
+  - match: ic-web/reserve
+    campus: library-space
+    body:
+      code: 0
+      message: 新增成功
+expect:
+  reserved: true
+  room: 202研讨室
+  date: 2026-10-21
+  start: 14:00
+  end: 16:00
+  members:
+    - 李四
+    - "2600000002"
+  message: 新增成功
+  next: 开始后 30 分钟内全员到研讨室门口刷脸或刷卡签到；不能去请至少提前 30 分钟取消

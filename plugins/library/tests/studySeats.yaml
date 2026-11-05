@@ -1,0 +1,54 @@
+# studySeats
+tool: studySeats
+now: 2026-10-20 12:00
+responses:
+  - match: psgSeatMenu
+    body:
+      code: 0
+      data:
+        - id: 3
+          name: 二层（座位）
+          totalCount: 38
+          remainCount: 0
+          children:
+            - id: 6
+              name: 218室
+              totalCount: 38
+              remainCount: 0
+        - id: 4
+          name: 三层（座位）
+          totalCount: 76
+          remainCount: 1
+          children:
+            - id: 17
+              name: 304室
+              totalCount: 38
+              remainCount: 1
+            - id: 7
+              name: 313室
+              totalCount: 38
+              remainCount: 0
+        - id: 9
+          name: 数据享阅厅
+          totalCount: "20"
+          remainCount: "5"
+expect:
+  areas:
+    - floor: 二层（座位）
+      room: 218室
+      total: 38
+      free: 0
+    - floor: 三层（座位）
+      room: 304室
+      total: 38
+      free: 1
+    - floor: 三层（座位）
+      room: 313室
+      total: 38
+      free: 0
+    - floor: 数据享阅厅
+      room: 数据享阅厅
+      total: 20
+      free: 5
+  totalFree: 6
+  bookingWindow: 每晚 21:00–23:59，kjyy.lib.pku.edu.cn

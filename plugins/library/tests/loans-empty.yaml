@@ -1,0 +1,17 @@
+# loans-empty
+tool: loans
+now: 2026-10-20 12:00
+responses:
+  - match: getMyInfobySession
+    campus: library
+    body:
+      status: 0
+      data:
+        patronCheckoutInfo: []
+expect:
+  count: 0
+  overdueCount: 0
+  nextDueDate: null
+  nextDueInDays: null
+  nextDueTitle: null
+  loans: []

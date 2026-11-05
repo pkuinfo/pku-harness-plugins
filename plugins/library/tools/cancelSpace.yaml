@@ -1,0 +1,40 @@
+# POST /ic-web/reserve/delete { uuid }, after checking the booking is mine and cancellable.
+title: 取消空间预约
+summary: 取消一条研讨室或研修专座预约
+description: Cancel one of my space reservations that has not started (uuid from library__spaceReservations with canCancel). Cancel at least 30 minutes before the start.
+effect: write
+input:
+  uuid: { type: string, trim: true, min: 8, max: 64 }
+steps:
+  - let: today
+    value: formatDate(now, 'YYYY-MM-DD')
+  - let: list
+    call: spaceReservations
+    input: "{ from: addDaysS(today, -1), to: addDaysS(today, 30) }"
+  - let: r
+    value: "list.find(x => x.uuid == input.uuid) ?? null"
+  - check: r
+    error: 没有找到这条预约
+  - check: r.canCancel
+    error: 这条预约（${r.status}）不能取消
+  - let: res
+    request:
+      campus: library-space
+      url: /ic-web/reserve/delete
+      method: POST
+      json: { uuid: '${input.uuid}' }
+      contentType: application/json; charset=UTF-8
+    as: response
+  - try:
+      - let: j
+        value: json(res.text)
+    catch:
+      - let: j
+        value: 'null'
+  - check: isObj(j)
+    error: 空间预约系统返回了无法解析的内容
+  - let: message
+    value: "typeOf(j.message) == 'string' ? j.message : ''"
+  - check: j.code == 0
+    error: "取消失败：${message || '系统未说明原因'}"
+return: "{ cancelled: true, place: r.place, begin: r.begin, message }"

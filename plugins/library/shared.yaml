@@ -1,0 +1,97 @@
+# Constants and helpers every library tool sees (PLUGIN.md shared:). Ported from src/parse.ts:
+# every field is read defensively, since these are third-party systems that change without notice.
+constants:
+  OPAC: https://opac.lib.pku.edu.cn
+  WWW: https://www.lib.pku.edu.cn
+  # The OPAC answers ISO-8859-1 text unless asked for JSON explicitly (Spring negotiation).
+  JSON_HEADERS: { accept: 'application/json, text/plain, */*', content-type: application/json, accept-language: 'zh-CN,zh;q=0.9' }
+  # 研讨室 kind id (roomMenu: kindId 1 "研讨室").
+  ROOM_KIND: 1
+  DAY_RE: '^\d{4}-\d{2}-\d{2}$'
+functions:
+  # ── values (parse.ts isObj / arr / str / first / num / plain) ──
+  isObj: "(v) => typeOf(v) == 'object'"
+  arr: "(v) => isList(v) ? v : []"
+  objs: "(v) => arr(v).filter(x => isObj(x))"
+  sv: |
+    (v) => typeOf(v) == 'number' ? str(v) : typeOf(v) == 'string' && trim(v) != '' ? trim(v) : null
+  # Solr fields are lists of strings: the first non-empty one.
+  firstS: "(v) => isList(v) ? (v.map(x => sv(x)).find(x => !!x) ?? null) : sv(v)"
+  nv: |
+    (v) => typeOf(v) == 'number' ? v : typeOf(v) == 'string' && trim(v) != '' ? num(v) : null
+  # Untrusted free text from the library systems: plain, single-spaced, capped (default 200).
+  plain: "(v, n) => cleanText(sv(v), n ?? 200)"
+  cleanText: |
+    (s, n) => !s ? null : cut(squash(replaceText(replace(s, '<[^>]*>', ' '), '&nbsp;', ' ')), n)
+  cut: "(t, n) => !t ? null : length(t) > n ? slice(t, 0, n) + '…' : t"
+  # ── dates (Beijing) ──
+  pad2: "(n) => padStart(str(n), 2, '0')"
+  # Epoch ms, "2026-11-05T23:59:00.000+08:00", "2026-11-05 08:00:00" or "2026/11/5 8:00" →
+  # "YYYY-MM-DD HH:mm" (date only when the input has no time); null when unreadable.
+  stampOf: |
+    (v) => nv(v) != null && nv(v) > 100000000000 ? formatDate(nv(v), 'YYYY-MM-DD HH:mm') : stampStr(sv(v))
+  stampStr: |
+    (s) => !s ? null
+      : test(s, 'T\d{2}:\d{2}') && test(s, '(Z|[+-]\d{2}:?\d{2})$') && date(s) != null ? formatDate(date(s), 'YYYY-MM-DD HH:mm')
+      : ymdOf(match(s, '^(\d{4})[-/](\d{1,2})[-/](\d{1,2})(?:[ T](\d{1,2}):(\d{2}))?'))
+  ymdOf: |
+    (m) => !m ? null : m[1] + '-' + pad2(int(m[2])) + '-' + pad2(int(m[3])) + (m[4] ? ' ' + pad2(int(m[4])) + ':' + m[5] : '')
+  dateOf: "(v) => stampOf(v) ? slice(stampOf(v), 0, 10) : null"
+  # Whole days from `a` to `b` (both YYYY-MM-DD); negative when past.
+  daysFrom: "(a, b) => daysBetween(date(a), date(b))"
+  addDaysS: "(d, n) => formatDate(addDays(date(d), n), 'YYYY-MM-DD')"
+  hmOf: |
+    (s) => match(s ?? '', '^(\d{1,2}):(\d{2})') ? int(match(s, '^(\d{1,2}):(\d{2})', 1)) * 60 + int(match(s, '^(\d{1,2}):(\d{2})', 2)) : null
+  hhmm: "(m) => pad2(floor(m / 60)) + ':' + pad2(m % 60)"
+  # "9:5" style → "09:05" (input times are already HH:MM-shaped).
+  norm: "(t) => pad2(int(split(t, ':')[0])) + ':' + pad2(int(split(t, ':')[1]))"
+  # ic-web resvStatus bit test (the language has no `&`).
+  bit: "(n, b) => floor(n / b) % 2 == 1"
+  # ── network errors (api.ts publicJson) ──
+  netError: |
+    (msg, what) => test(msg, '(?i)abort|time ?out|timed out') ? what + '超时，请稍后再试' : msg
+  # ── IC 空间 (library-space) ──
+  meOf: "(d) => ({ accNo: d?.accNo != null ? str(d.accNo) : null, name: typeOf(d?.trueName) == 'string' ? d.trueName : null })"
+  # HH:mm of a reservation bound on `date` in minutes, clamped to that day (null when on another day).
+  onDay: |
+    (v, date, edge) => !stampOf(v) ? null
+      : slice(stampOf(v), 0, 10) < date ? (edge == 'start' ? 0 : null)
+      : slice(stampOf(v), 0, 10) > date ? (edge == 'end' ? 1440 : null)
+      : hmOf(slice(stampOf(v), 11)) ?? (edge == 'start' ? 0 : 1440)
+  takenOf: |
+    (d, date) => sortBy(objs(d.resvInfo)
+      .filter(r => !bit(nv(r.resvStatus) ?? 0, 128))
+      .map(r => [onDay(r.startTime ?? r.resvBeginTime, date, 'start'), onDay(r.endTime ?? r.resvEndTime, date, 'end')])
+      .filter(p => p[0] != null && p[1] != null && p[1] > p[0]), p => p[0])
+  # Free periods: the open hours minus active reservations, from `now` on when `date` is today
+  # (rounded up to the 10-minute grid), only as long as the room's minimum booking length.
+  freeOf: |
+    (taken, os, oe, cursor, need) => reduce([...taken, [oe, oe]], (st, t) => st.done ? st : {
+      free: min(t[0], oe) - st.cursor >= need ? [...st.free, { start: hhmm(st.cursor), end: hhmm(min(t[0], oe)) }] : st.free,
+      cursor: max(st.cursor, t[1]),
+      done: max(st.cursor, t[1]) >= oe,
+    }, { free: [], cursor, done: false }).free
+  startCursor: |
+    (os, oe, date, nowStamp) => date == slice(nowStamp, 0, 10) ? max(os, ceil((hmOf(slice(nowStamp, 11)) ?? 0) / 10) * 10)
+      : date < slice(nowStamp, 0, 10) ? oe : os
+  roomOf: |
+    (d, date, nowStamp) => roomRow(d, date, nowStamp, isObj(d.resvRule) ? d.resvRule : {})
+  roomRow: |
+    (d, date, nowStamp, rule) => roomFin(d, date, nowStamp, rule, sv(d.openStart) ?? sv(rule.openStart), sv(d.openEnd) ?? sv(rule.openEnd), takenOf(d, date))
+  roomFin: |
+    (d, date, nowStamp, rule, openStart, openEnd, taken) => ({
+      devId: sv(d.devId),
+      name: plain(d.devName, 40) ?? sv(d.devId),
+      location: plain([sv(d.labName), sv(d.roomName)].filter(x => !!x).join(' '), 60),
+      minPeople: nv(d.minUser),
+      maxPeople: nv(d.maxUser),
+      open: openStart && openEnd ? slice(openStart, 0, 5) + '-' + slice(openEnd, 0, 5) : null,
+      minMinutes: nv(rule.minResvTime),
+      maxMinutes: nv(rule.maxResvTime),
+      taken: taken.map(p => ({ start: hhmm(p[0]), end: hhmm(min(p[1], 1439)) })),
+      free: roomFree(taken, openStart ? hmOf(openStart) : null, openEnd ? hmOf(openEnd) : null, date, nowStamp, max(nv(rule.minResvTime) ?? 30, 10)),
+    })
+  roomFree: |
+    (taken, os, oe, date, nowStamp, need) => os != null && oe != null && oe > os ? freeOf(taken, os, oe, startCursor(os, oe, date, nowStamp), need) : []
+  # `/ic-web/reserve?sysKind=1&kindIds=…&resvDates=YYYYMMDD` data → rooms with taken and free periods.
+  parseRooms: "(data, date, nowStamp) => objs(data).filter(d => sv(d.devId)).map(d => roomOf(d, date, nowStamp))"

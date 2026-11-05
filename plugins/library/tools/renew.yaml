@@ -1,0 +1,55 @@
+# Loan-List-Page renewItem2: POST with query params itemBarcode, pkulibSession, source=2. Symphony's
+# errors are translated as the portal does (parse.ts renewError).
+title: 续借图书
+summary: 续借我借的书
+description: >-
+  Renew one or more of my loans (itemIds from library__loans). Each result says ok with the new due date, or the reason (held by someone else, renewal limit reached, account blocked by overdue/fines, already renewed today…). Changes the loan record: confirm which books with the user unless they asked explicitly.
+effect: write
+input:
+  itemIds: { type: array, items: { type: string, trim: true, min: 4, max: 40 }, min: 1, max: 20 }
+functions:
+  renewError: |
+    (m) => includes(m, 'pending hold request') || includes(m, 'Item has holds') ? '该书已被他人预约，无法续借'
+      : includes(m, 'More than one open loan for item') ? '该书存在多条未结清借阅记录，暂不能续借'
+      : includes(m, 'exceed renewal limit') ? '该书已达到续借上限'
+      : includes(m, 'BLOCKED') ? '因有超期未还的图书或欠款，账户已被限制'
+      : includes(m, 'records are currently in use') ? '该书刚刚已经完成续借，请勿重复操作'
+      : includes(m, 'renewal would not change the due date') ? '续借不会变更到期日期，无需续借'
+      : plain(m, 120) ?? '续借失败'
+  parseRenew: "(j) => renewOf(j, isObj(j.data) ? j.data : j)"
+  renewOf: |
+    (j, d) => objs(d.errors).length ? { ok: false, reason: renewError(sv(objs(d.errors)[0].message) ?? '') }
+      : isObj(d.faultResponse) && sv(d.faultResponse.string) ? { ok: false, reason: renewError(sv(d.faultResponse.string)) }
+      : !isObj(j.data) && !sv(d.dueDate) ? { ok: false, reason: plain(j.desc ?? j.msg ?? j.message, 120) ?? '续借结果未知，请刷新借阅列表确认' }
+      : { ok: true, dueDate: dateOf(d.dueDate) }
+steps:
+  - let: account
+    call: loans
+  - let: results
+    each: unique(input.itemIds)
+    steps:
+      - let: loan
+        value: "account.loans.find(l => l.itemId == item) ?? null"
+      - if: "!loan"
+        then:
+          - return: "{ itemId: item, ok: false, reason: '不在当前借阅里（先用 library__loans 查 itemId）' }"
+      - if: "!loan.renewable"
+        then:
+          - return: "{ itemId: item, title: loan.title, ok: false, reason: (loan.renewalsRemaining ?? 0) <= 0 ? '续借次数已用完' : '今天已经续借过' }"
+      - let: res
+        request: { campus: library, url: '/prod-api/circ/renewItem2?itemBarcode=${encode(item)}&pkulibSession={session}&source=2', method: POST }
+        as: response
+      - check: res.status < 400
+        error: 图书馆个人中心返回 HTTP ${res.status}
+      - try:
+          - let: j
+            value: json(res.text)
+        catch:
+          - let: j
+            value: 'null'
+      - check: isObj(j)
+        error: 图书馆个人中心返回了无法解析的内容
+      - let: r
+        value: parseRenew(j)
+      - return: "r.ok ? { itemId: item, title: loan.title, ok: true, oldDueDate: loan.dueDate, newDueDate: r.dueDate } : { itemId: item, title: loan.title, ok: false, reason: r.reason }"
+return: "{ renewed: count(results, r => r.ok), results, hint: '续借后可以再调用 library__remindDueDates 更新提醒' }"

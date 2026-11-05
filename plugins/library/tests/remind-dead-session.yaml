@@ -1,0 +1,9 @@
+# remind-dead-session
+tool: remindDueDates
+now: 2026-10-20 12:00
+responses:
+  - match: getMyInfobySession
+    campus: library
+    body:
+      data: null
+expectError: 图书馆没有返回借阅信息（登录可能已失效）

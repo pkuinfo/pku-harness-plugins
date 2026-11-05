@@ -1,0 +1,88 @@
+# OPAC catalog search (opac.lib.pku.edu.cn /BookAPI/new_opac/query, Solr docs), public. The OPAC
+# builds the query by hand: every value is encodeURIComponent'ed once and the same encoded
+# strings go into the query string and the JSON body.
+title: 馆藏检索
+summary: 在北大图书馆馆藏目录里找书
+description: >-
+  Search the PKU Library catalog (public, no login). field: any (default) / title / author / isbn / callNumber / publisher / subject / series. Returns total and books (id, title, author, publisher, year, call numbers); with availability (default true) the first few books also get availableCopies / totalCopies. Use the id with library__holdings for per-copy location and due dates.
+effect: read
+input:
+  keyword: { type: string, trim: true, min: 1, max: 100 }
+  field: { enum: [any, title, author, isbn, callNumber, publisher, subject, series], optional: true }
+  page: { type: integer, min: 1, max: 50, optional: true, description: default 1 }
+  limit: { type: integer, min: 1, max: 20, optional: true, description: 'results per page, default 10' }
+  availability: { type: boolean, optional: true, description: 'attach copy counts to the first 5 results, default true' }
+constants:
+  # Search fields the OPAC's own selector offers (value = Solr field).
+  SEARCH_FIELDS: { any: cc_all, title: title, author: author, isbn: isbn, callNumber: callnumber-search, publisher: publisher, subject: topic, series: congshu }
+functions:
+  hit: |
+    (d) => ({
+      id: sv(d.id),
+      title: plain(firstS(d.title), 160),
+      author: plain(firstS(d.author), 80),
+      publisher: plain(firstS(d.publisher), 60),
+      year: firstS(d.publishDate),
+      callNumbers: unique(arr(d['callnumber-search']).map(x => sv(x)).filter(x => !!x)).slice(0, 6),
+    })
+steps:
+  - let: field
+    value: input.field ?? 'any'
+  - let: page
+    value: input.page ?? 1
+  - let: rows
+    value: input.limit ?? 10
+  - let: value
+    value: |
+      encode(field == 'isbn' ? replace(input.keyword, '[-\s]', '') : trim(input.keyword))
+  - let: params
+    value: "fromEntries([[SEARCH_FIELDS[field], value], ['rows', rows], ['start', (page - 1) * rows], ['sort', ''], ['facet.mincount', 1]])"
+  - let: qs
+    value: "entries(params).map(e => e[0] + '=' + e[1]).join('&')"
+  - try:
+      - let: res
+        request:
+          url: '${OPAC}/BookAPI/new_opac/query?${qs}&'
+          method: POST
+          headers: '${JSON_HEADERS}'
+          json: '${params}'
+          timeout: 15s
+        as: response
+    catch:
+      - check: 'false'
+        error: '${netError(error.message, "馆藏检索")}'
+  - check: res.status >= 200 && res.status < 300
+    error: 馆藏检索返回 HTTP ${res.status}
+  - try:
+      - let: j
+        value: json(res.text)
+    catch:
+      - let: j
+        value: 'null'
+  - check: isObj(j)
+    error: 馆藏检索返回了无法解析的内容
+  - let: resp
+    value: "isObj(j.response) ? j.response : {}"
+  - let: books
+    value: "objs(resp.docs).map(d => hit(d)).filter(b => b.id && b.title)"
+  - let: total
+    value: nv(resp.numFound) ?? books.length
+  - if: input.availability == false
+    then:
+      - return: "{ total, page, books }"
+  - let: withCounts
+    each: books
+    concurrency: 4
+    steps:
+      - if: index >= 5
+        then:
+          - return: item
+      - let: h
+        value: 'null'
+      - try:
+          - let: h
+            call: holdings
+            input: "{ id: item.id }"
+        catch: []
+      - return: "h ? { ...item, availableCopies: h.availableCopies, totalCopies: h.totalCopies, firstAvailableAt: h.firstAvailableAt } : item"
+return: "{ total, page, books: withCounts }"

@@ -1,0 +1,16 @@
+# reserveSpace-no-room
+tool: reserveSpace
+input:
+  devId: "999"
+  date: 2026-10-21
+  start: 14:00
+  end: 15:00
+  title: 讨论
+  members:
+    - "2600000001"
+now: 2026-10-20 12:00
+responses:
+  - match: resvDates=20261021
+    campus: library-space
+    file: rooms.json
+expectError: 这天没有这个研讨室，先用 library__spaceRooms 查

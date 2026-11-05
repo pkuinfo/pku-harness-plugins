@@ -1,0 +1,61 @@
+# spaceReservations-next-upcoming
+tool: spaceReservations
+input:
+  next: true
+now: 2026-11-08 09:00
+responses:
+  - match: auth/userInfo
+    campus: library-space
+    body:
+      code: 0
+      data:
+        accNo: 77
+        trueName: 张三
+        logonName: "2000000000"
+  - match: resvInfo
+    campus: library-space
+    body:
+      code: 0
+      data:
+        - uuid: u-2-abcdef
+          appAccNo: 77
+          classKind: 1
+          resvStatus: 2
+          resvBeginTime: 2026-10-22 14:00:00
+          resvEndTime: 2026-10-22 16:00:00
+          testName: 小组讨论
+          resvDevInfoList: &a1
+            - devName: 203研讨室
+              roomName: 研讨室
+              labName: 西区二层
+          resvMemberInfoList: &a2
+            - accNo: 77
+              trueName: 张三
+              logonName: "2600000000"
+            - accNo: 78
+              trueName: 李四
+        - uuid: u-5-abcdef
+          appAccNo: 77
+          classKind: 1
+          resvStatus: 2
+          resvBeginTime: 2026-11-09 18:00:00
+          resvEndTime: 2026-11-09 20:00:00
+          testName: 小组讨论
+          resvDevInfoList: *a1
+          resvMemberInfoList: *a2
+expect:
+  next:
+    uuid: u-5-abcdef
+    kind: 研讨室
+    place: 西区二层 研讨室 203研讨室
+    begin: 2026-11-09 18:00
+    end: 2026-11-09 20:00
+    status: 待生效
+    title: 小组讨论
+    members:
+      - 张三
+      - 李四
+    canCancel: true
+    when: 11-09 18:00 – 20:00
+  started: false
+  count: 2

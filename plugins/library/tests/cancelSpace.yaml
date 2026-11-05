@@ -1,0 +1,27 @@
+# cancelSpace
+tool: cancelSpace
+input:
+  uuid: u-2-abcdef
+now: 2026-10-20 12:00
+responses:
+  - match: auth/userInfo
+    campus: library-space
+    body:
+      code: 0
+      data:
+        accNo: 77
+        trueName: 张三
+        logonName: "2000000000"
+  - match: resvInfo?beginDate=2026-10-19&endDate=2026-11-19
+    campus: library-space
+    file: reservations.json
+  - match: reserve/delete
+    campus: library-space
+    body:
+      code: 0
+      message: 删除成功
+expect:
+  cancelled: true
+  place: 西区二层 研讨室 203研讨室
+  begin: 2026-10-22 14:00
+  message: 删除成功

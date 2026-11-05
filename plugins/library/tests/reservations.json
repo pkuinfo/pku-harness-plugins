@@ -1,0 +1,65 @@
+{
+  "code": 0,
+  "data": [
+    {
+      "uuid": "u-2-abcdef",
+      "appAccNo": 77,
+      "classKind": 1,
+      "resvStatus": 2,
+      "resvBeginTime": "2026-10-22 14:00:00",
+      "resvEndTime": "2026-10-22 16:00:00",
+      "testName": "小组讨论",
+      "resvDevInfoList": [
+        {
+          "devName": "203研讨室",
+          "roomName": "研讨室",
+          "labName": "西区二层"
+        }
+      ],
+      "resvMemberInfoList": [
+        {
+          "accNo": 77,
+          "trueName": "张三",
+          "logonName": "2600000000"
+        },
+        {
+          "accNo": 78,
+          "trueName": "李四"
+        }
+      ]
+    },
+    {
+      "uuid": "u-1-abcdef",
+      "appAccNo": 77,
+      "resvProperty": 32,
+      "resvStatus": 4,
+      "resvBeginTime": 1791585000000,
+      "resvEndTime": "2026-11-07 22:00:00",
+      "resvDevInfoList": [
+        {
+          "devName": "304-12"
+        }
+      ]
+    },
+    {
+      "uuid": "u-3-abcdef",
+      "appAccNo": 99,
+      "classKind": 1,
+      "resvStatus": 2,
+      "resvBeginTime": "2026-10-23 10:00:00",
+      "resvEndTime": "2026-10-23 11:00:00"
+    },
+    {
+      "uuid": "u-4-abcdef",
+      "appAccNo": 77,
+      "classKind": 1,
+      "resvStatus": 196,
+      "resvBeginTime": "2026-10-19 10:00:00",
+      "resvEndTime": "2026-10-19 11:00:00",
+      "resvEndRealTime": "2026-10-19 10:40:00"
+    },
+    {
+      "appAccNo": 77
+    }
+  ]
+}

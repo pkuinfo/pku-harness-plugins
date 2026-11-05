@@ -1,0 +1,35 @@
+# a.lib 个人中心 getMyInfobySession → patronHoldInfo (cancelled / filled holds dropped).
+title: 我的预约（取书）
+summary: 我预约的书和取书状态
+description: 'My active hold requests: title, call number, status, pickup library, whether it is ready to collect (available) and the pickup deadline when known.'
+effect: read
+steps:
+  - let: res
+    request: { campus: library, url: '/prod-api/auth/getMyInfobySession?pkulib_session={session}' }
+    as: response
+  - check: res.status < 400
+    error: 图书馆个人中心返回 HTTP ${res.status}
+  - try:
+      - let: j
+        value: json(res.text)
+    catch:
+      - let: j
+        value: 'null'
+  - check: isObj(j)
+    error: 图书馆个人中心返回了无法解析的内容
+  - check: isObj(j.data)
+    error: 图书馆没有返回预约信息（登录可能已失效）
+return: |
+  objs(j.data.patronHoldInfo)
+    .filter(h => sv(h.holdInactiveType) != 'HOLD_INACTIVE_REASON_CANCELLED' && sv(h.holdInactiveType) != 'HOLD_INACTIVE_REASON_FILLED')
+    .map(h => ({
+      itemId: sv(h.itemID),
+      callNumber: sv(h.callNumber) ?? sv(h.displayableCallNumber),
+      title: plain(h.title, 160) ?? '（无题名）',
+      status: plain(h.status, 30),
+      pickupLibrary: plain(h.pickupLibraryDescription, 40),
+      available: h.available == true,
+      pickupBy: dateOf(h.expirationDate ?? h.pickupExpiryDate ?? h.fillByDate),
+      changping: h.ChangpingriwenbookFlag == true,
+      taskId: sv(h.taskID),
+    }))

@@ -1,0 +1,32 @@
+# reserveSpace-too-few
+tool: reserveSpace
+input:
+  devId: "101"
+  date: 2026-10-21
+  start: 14:00
+  end: 15:00
+  title: 讨论
+  members:
+    - "2600000001"
+now: 2026-10-20 12:00
+responses:
+  - match: resvDates=20261021
+    campus: library-space
+    file: rooms.json
+  - match: auth/userInfo
+    campus: library-space
+    body:
+      code: 0
+      data:
+        accNo: 77
+        trueName: 张三
+        logonName: "2000000000"
+  - match: getMembers?key=2600000001
+    campus: library-space
+    body:
+      code: 0
+      data:
+        - accNo: 78
+          logonName: "2600000001"
+          trueName: 李四
+expectError: 202研讨室 至少 3 人（含你），当前 2 人

@@ -1,0 +1,38 @@
+# reserveSpace-member-missing
+tool: reserveSpace
+input:
+  devId: "101"
+  date: 2026-10-21
+  start: 14:00
+  end: 15:00
+  title: 讨论
+  members:
+    - "2600000001"
+    - "2600000009"
+now: 2026-10-20 12:00
+responses:
+  - match: resvDates=20261021
+    campus: library-space
+    file: rooms.json
+  - match: auth/userInfo
+    campus: library-space
+    body:
+      code: 0
+      data:
+        accNo: 77
+        trueName: 张三
+        logonName: "2000000000"
+  - match: getMembers?key=2600000001
+    campus: library-space
+    body:
+      code: 0
+      data:
+        - accNo: 78
+          logonName: "2600000001"
+          trueName: 李四
+  - match: getMembers?key=2600000009
+    campus: library-space
+    body:
+      code: 0
+      data: []
+expectError: 预约系统里找不到 2600000009（对方需要是校内读者，并且登录过 kjyy\.lib\.pku\.edu\.cn）

@@ -1,0 +1,29 @@
+# www.lib.pku.edu.cn /cms/opening-hours/getday, public.
+title: 今日开馆时间
+summary: 图书馆今天开不开、几点到几点
+description: Whether the main library is open today and its hours (e.g. "6:30-22:30"), with any remark. Public.
+effect: read
+steps:
+  - try:
+      - let: res
+        request:
+          url: '${WWW}/cms/opening-hours/getday'
+          headers: '${JSON_HEADERS}'
+          timeout: 15s
+        as: response
+    catch:
+      - check: 'false'
+        error: '${netError(error.message, "开馆时间")}'
+  - check: res.status >= 200 && res.status < 300
+    error: 开馆时间返回 HTTP ${res.status}
+  - try:
+      - let: j
+        value: json(res.text)
+    catch:
+      - let: j
+        value: 'null'
+  - check: isObj(j)
+    error: 开馆时间返回了无法解析的内容
+  - check: isObj(j.object)
+    error: 图书馆网站没有返回今日开馆时间
+return: "{ date: dateOf(j.object.date), open: j.object.isOpen == true, hours: plain(j.object.openingTime, 40), remarks: plain(j.object.remarks, 120) }"

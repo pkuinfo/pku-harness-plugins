@@ -1,0 +1,22 @@
+# holdings-encode
+tool: holdings
+input:
+  id: a/b c==
+now: 2026-10-20 12:00
+responses:
+  - match: cat_marc=a%2Fb%20c%3D%3D
+    body:
+      data: null
+expect:
+  id: a/b c==
+  title: null
+  author: null
+  publisher: null
+  year: null
+  isbn: null
+  summary: null
+  totalCopies: 0
+  availableCopies: 0
+  holdable: false
+  firstAvailableAt: null
+  copies: []

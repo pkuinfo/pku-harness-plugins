@@ -1,0 +1,46 @@
+# reserveSpace-rejected
+tool: reserveSpace
+input:
+  devId: "101"
+  date: 2026-10-21
+  start: 14:00
+  end: 15:00
+  title: 讨论
+  members:
+    - "2600000001"
+    - "2600000002"
+now: 2026-10-20 12:00
+responses:
+  - match: resvDates=20261021
+    campus: library-space
+    file: rooms.json
+  - match: auth/userInfo
+    campus: library-space
+    body:
+      code: 0
+      data:
+        accNo: 77
+        trueName: 张三
+        logonName: "2000000000"
+  - match: getMembers?key=2600000001
+    campus: library-space
+    body:
+      code: 0
+      data:
+        - accNo: 78
+          logonName: "2600000001"
+          trueName: 李四
+  - match: getMembers?key=2600000002
+    campus: library-space
+    body:
+      code: 0
+      data:
+        - accNo: 79
+          logonName: "2600000002"
+          trueName: 王五
+  - match: ic-web/reserve
+    campus: library-space
+    body:
+      code: 1
+      message: 该时间段已被预约
+expectError: 预约失败：该时间段已被预约

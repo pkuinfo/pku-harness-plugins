@@ -1,0 +1,11 @@
+# placeHold-not-holdable
+tool: placeHold
+input:
+  id: REC0001
+now: 2026-10-20 12:00
+responses:
+  - match: cat_marc=REC0001
+    body:
+      data:
+        TitleInfo: []
+expectError: 这本书目前不能预约

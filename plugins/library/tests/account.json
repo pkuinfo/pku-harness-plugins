@@ -1,0 +1,71 @@
+{
+  "timestamp": 1,
+  "status": 0,
+  "data": {
+    "patronInfo": {
+      "displayName": "张三",
+      "alternativeID": "2600000000"
+    },
+    "patronCheckoutInfo": [
+      {
+        "itemID": "BK0002",
+        "title": "算法导论",
+        "callNumber": "TP301.6/12",
+        "itemLibraryDescription": "北大中心馆",
+        "checkoutDate": "2026-09-01T10:00:00",
+        "dueDate": "2026-10-25T23:59:00",
+        "renewalsRemaining": 2,
+        "overdue": false
+      },
+      {
+        "itemID": "BK0001",
+        "title": "<b>线性代数</b>",
+        "dueDate": "2026-10-18T23:59:00",
+        "renewalsRemaining": 0,
+        "overdue": true
+      },
+      {
+        "itemID": "BK0003",
+        "title": "数据库系统概念",
+        "dueDate": "2026-12-01T23:59:00",
+        "recallDueDate": "2026-11-02T23:59:00",
+        "renewalsRemaining": 1,
+        "lastRenewedDate": "2026-10-20T09:00:00"
+      },
+      {
+        "itemID": "BK0004",
+        "title": "一本书名非常非常长的书：关于计算机程序的构造和解释以及其他许多有趣的主题第二版",
+        "dueDate": "2026-10-21T23:59:00",
+        "renewalsRemaining": "3",
+        "lastRenewedDate": "2026-10-01T09:00:00"
+      },
+      {
+        "title": "no id"
+      }
+    ],
+    "patronHoldInfo": [
+      {
+        "itemID": "H1",
+        "callNumber": "O1/1",
+        "displayableCallNumber": "O1/1",
+        "title": "数学分析",
+        "status": "在途",
+        "pickupLibraryDescription": "总借还台",
+        "available": false,
+        "expirationDate": "2026-11-01T00:00:00"
+      },
+      {
+        "itemID": "H2",
+        "title": "已取消的",
+        "holdInactiveType": "HOLD_INACTIVE_REASON_CANCELLED"
+      },
+      {
+        "taskID": "T9",
+        "title": "日文书",
+        "ChangpingriwenbookFlag": true,
+        "available": true,
+        "displayableCallNumber": "J1/9"
+      }
+    ]
+  }
+}

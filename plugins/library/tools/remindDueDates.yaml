@@ -1,0 +1,88 @@
+# Due dates → to-dos (todos ability), reconciled against the map kept in this plugin's KV
+# (`dueReminders`: itemId → { todoId, dueDate, title }). New loans get a todo, renewed ones (new due
+# date) move theirs, returned ones lose theirs; todos the user deleted or completed by hand are
+# recreated. A reminder that would fire in the past fires a minute from now, unless the loan is
+# already overdue (then it is reported, not scheduled).
+title: 借阅到期提醒
+summary: 把借书的到期日变成待办提醒
+description: >-
+  Create or refresh to-do reminders for my loans' due dates (one todo per book, due at 23:59 on the due date, reminding `daysBefore` days earlier at `time`). Idempotent: run again any time — renewed books move their reminder, returned books lose it, unchanged ones are kept. Overdue books are reported, not scheduled.
+effect: write
+input:
+  daysBefore: { type: integer, min: 0, max: 14, optional: true, description: default 2 }
+  time: { type: string, pattern: '^([01]?\d|2[0-3]):[0-5]\d$', optional: true, description: 'reminder time HH:MM, default 09:00' }
+functions:
+  rowOf: |
+    (l, existing, at, daysBefore) => rowFin(l, existing[l.itemId] ?? null, date(l.dueDate + ' 23:59'), addDays(date(l.dueDate + ' ' + at), -daysBefore))
+  rowFin: |
+    (l, rec, dueAt, r0) => ({
+      itemId: l.itemId,
+      title: '还书：' + (length(l.title) > 30 ? slice(l.title, 0, 30) + '…' : l.title),
+      dueDate: l.dueDate,
+      dueAt,
+      remindAt: r0 <= now ? (dueAt > now ? now + 60000 : r0) : r0,
+      rec,
+    })
+  todoOf: "(r) => ({ title: r.title, notes: '图书馆借阅到期 ' + r.dueDate, dueAt: r.dueAt, remind: { type: 'at', at: r.remindAt } })"
+steps:
+  - let: daysBefore
+    value: input.daysBefore ?? 2
+  - let: at
+    value: norm(input.time ?? '09:00')
+  - let: account
+    call: loans
+  - let: list
+    value: account.loans
+  - let: saved
+    kv: get
+    key: dueReminders
+    # Reminders created by the TypeScript version of this plugin carry over.
+    legacy: true
+  - let: todos
+    ability: todos.list
+  # Todos the user deleted or completed by hand are recreated as new ones.
+  - let: existing
+    value: "fromEntries(entries(saved ?? {}).filter(e => todos.some(t => t.id == e[1].todoId && !t.doneAt)))"
+  - let: rows
+    value: "list.filter(l => l.dueDate).map(l => rowOf(l, existing, at, daysBefore))"
+  - let: create
+    value: "rows.filter(r => !r.rec && r.dueAt > now)"
+  - let: update
+    value: "rows.filter(r => r.rec && r.rec.dueDate != r.dueDate)"
+  - let: keep
+    value: "rows.filter(r => r.rec && r.rec.dueDate == r.dueDate).map(r => r.itemId)"
+  - let: remove
+    value: "entries(existing).filter(e => !rows.some(r => r.itemId == e[0])).map(e => ({ itemId: e[0], todoId: e[1].todoId }))"
+  - let: created
+    each: create
+    steps:
+      - let: todo
+        ability: todos.add
+        args: todoOf(item)
+      - return: "[item.itemId, { todoId: todo.id, dueDate: item.dueDate, title: item.title }]"
+  - let: updated
+    each: update
+    steps:
+      - ability: todos.update
+        args: "{ id: item.rec.todoId, patch: todoOf(item) }"
+      - return: "[item.itemId, { todoId: item.rec.todoId, dueDate: item.dueDate, title: item.title }]"
+  - let: removed
+    each: remove
+    steps:
+      - try:
+          - ability: todos.remove
+            args: "{ id: item.todoId }"
+        catch: []
+      - return: item.itemId
+  - kv: set
+    key: dueReminders
+    value: "fromEntries([...keep.map(id => [id, existing[id]]), ...created, ...updated])"
+return: |
+  {
+    created: create.length,
+    updated: update.length,
+    removed: remove.length,
+    unchanged: keep.length,
+    overdue: list.filter(l => l.overdue).map(l => ({ title: l.title, dueDate: l.dueDate })),
+    remind: (daysBefore == 0 ? '到期当天' : '到期前 ' + daysBefore + ' 天') + ' ' + at,
+  }

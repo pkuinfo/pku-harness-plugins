@@ -1,0 +1,9 @@
+# studySeats-error
+tool: studySeats
+now: 2026-10-20 12:00
+responses:
+  - match: psgSeatMenu
+    body:
+      code: 300
+      message: 系统维护中
+expectError: 查询研修专座失败：系统维护中

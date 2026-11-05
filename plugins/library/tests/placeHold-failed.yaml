@@ -1,0 +1,21 @@
+# placeHold-failed
+tool: placeHold
+input:
+  id: REC0001
+  pickup: 总借还台
+now: 2026-10-20 12:00
+responses:
+  - match: cat_marc=REC0001
+    file: holdings.json
+  - match: advisePickupAt
+    campus: library
+    body:
+      data:
+        list: []
+  - match: createHold
+    campus: library
+    body:
+      status: 1
+      data:
+        desc: 您已预约过此书
+expectError: 预约失败：您已预约过此书

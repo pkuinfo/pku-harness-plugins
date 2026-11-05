@@ -1,0 +1,7 @@
+# spaceRooms-out-of-range
+tool: spaceRooms
+input:
+  date: 2026-10-27
+now: 2026-10-20 12:00
+responses: []
+expectError: 研讨室只能查询和预约今天起 7 天内

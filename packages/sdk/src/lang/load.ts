@@ -67,7 +67,7 @@ const STEP_KEYS: Record<string, string[]> = {
   if: ['if', 'then', 'else'],
   check: ['check', 'error', 'code'],
   try: ['let', 'try', 'catch'],
-  kv: ['let', 'kv', 'key', 'value', 'ttl'],
+  kv: ['let', 'kv', 'key', 'value', 'ttl', 'legacy'],
   cache: ['let', 'cache', 'steps', 'return'],
   call: ['let', 'call', 'input'],
   ability: ['let', 'ability', 'args'],

@@ -1,0 +1,52 @@
+# renew
+tool: renew
+input:
+  itemIds:
+    - BK0002
+    - BK0001
+    - BK0003
+    - NOPE
+    - " BK0002 "
+    - BK0004
+now: 2026-10-20 12:00
+responses:
+  - match: getMyInfobySession
+    campus: library
+    file: account.json
+  - match: renewItem2?itemBarcode=BK0002&pkulibSession={session}&source=2
+    campus: library
+    body:
+      status: 0
+      data:
+        dueDate: 2026-11-24T23:59:00
+  - match: renewItem2?itemBarcode=BK0004
+    campus: library
+    body:
+      status: 0
+      data:
+        errors:
+          - message: Item has a pending hold request
+expect:
+  renewed: 1
+  results:
+    - itemId: BK0002
+      title: 算法导论
+      ok: true
+      oldDueDate: 2026-10-25
+      newDueDate: 2026-11-24
+    - itemId: BK0001
+      title: 线性代数
+      ok: false
+      reason: 续借次数已用完
+    - itemId: BK0003
+      title: 数据库系统概念
+      ok: false
+      reason: 今天已经续借过
+    - itemId: NOPE
+      ok: false
+      reason: 不在当前借阅里（先用 library__loans 查 itemId）
+    - itemId: BK0004
+      title: 一本书名非常非常长的书：关于计算机程序的构造和解释以及其他许多有趣的主题第二版
+      ok: false
+      reason: 该书已被他人预约，无法续借
+  hint: 续借后可以再调用 library__remindDueDates 更新提醒

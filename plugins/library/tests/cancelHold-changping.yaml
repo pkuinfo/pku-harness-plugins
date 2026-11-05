@@ -1,0 +1,17 @@
+# cancelHold-changping
+tool: cancelHold
+input:
+  callNumber: J1/9
+now: 2026-10-20 12:00
+responses:
+  - match: getMyInfobySession
+    campus: library
+    file: account.json
+  - match: cancelChangpingHold
+    campus: library
+    body:
+      data:
+        status: 0
+expect:
+  cancelled: true
+  title: 日文书

@@ -1,0 +1,16 @@
+# reserveSpace-not-free
+tool: reserveSpace
+input:
+  devId: "101"
+  date: 2026-10-21
+  start: 9:30
+  end: 11:00
+  title: 讨论
+  members:
+    - "2600000001"
+now: 2026-10-20 12:00
+responses:
+  - match: resvDates=20261021
+    campus: library-space
+    file: rooms.json
+expectError: 这个时段不空闲。空闲：08:20-09:00、10:30-13:00、14:00-17:00

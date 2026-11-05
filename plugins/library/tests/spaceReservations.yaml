@@ -1,0 +1,54 @@
+# spaceReservations
+tool: spaceReservations
+now: 2026-10-20 12:00
+responses:
+  - match: auth/userInfo
+    campus: library-space
+    body:
+      code: 0
+      data:
+        accNo: 77
+        trueName: 张三
+        logonName: "2000000000"
+  - match: resvInfo?beginDate=2026-10-13&endDate=2026-11-03&needStatus=0
+    campus: library-space
+    file: reservations.json
+expect:
+  - uuid: u-1-abcdef
+    kind: 研修专座
+    place: 304-12
+    begin: 2026-10-10 06:30
+    end: 2026-11-07 22:00
+    status: 已生效
+    title: null
+    members: []
+    canCancel: false
+  - uuid: u-4-abcdef
+    kind: 研讨室
+    place: （未知位置）
+    begin: 2026-10-19 10:00
+    end: 2026-10-19 10:40
+    status: 已结束、已签到、已生效
+    title: null
+    members: []
+    canCancel: false
+  - uuid: u-2-abcdef
+    kind: 研讨室
+    place: 西区二层 研讨室 203研讨室
+    begin: 2026-10-22 14:00
+    end: 2026-10-22 16:00
+    status: 待生效
+    title: 小组讨论
+    members:
+      - 张三
+      - 李四
+    canCancel: true
+  - uuid: u-3-abcdef
+    kind: 研讨室
+    place: （未知位置）
+    begin: 2026-10-23 10:00
+    end: 2026-10-23 11:00
+    status: 待生效
+    title: null
+    members: []
+    canCancel: false

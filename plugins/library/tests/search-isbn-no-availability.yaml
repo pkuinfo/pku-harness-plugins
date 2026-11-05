@@ -1,0 +1,30 @@
+# search-isbn-no-availability
+tool: search
+input:
+  keyword: 978-7-229 15100-3
+  field: isbn
+  page: 2
+  limit: 5
+  availability: false
+now: 2026-10-20 12:00
+responses:
+  - match: query?isbn=9787229151003&rows=5&start=5
+    file: search.json
+expect:
+  total: 197
+  page: 2
+  books:
+    - id: AAAA%2FBB%3D%3D
+      title: 三体. [Ⅱ], 黑暗森林
+      author: 刘慈欣, 1963- 著
+      publisher: 重庆出版社
+      year: "2022"
+      callNumbers:
+        - I247.55/10b2:2
+        - I247.55/10b2:2(FZ)
+    - id: CC 1
+      title: 球状闪电
+      author: Liu
+      publisher: null
+      year: "2005"
+      callNumbers: []

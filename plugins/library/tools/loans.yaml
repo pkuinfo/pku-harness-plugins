@@ -1,0 +1,59 @@
+# a.lib.pku.edu.cn 个人中心 /prod-api/auth/getMyInfobySession (patronInfo, patronCheckoutInfo):
+# everything the portal shows on 我的借阅. Also validates the session.
+title: 我的借阅
+summary: 我借了哪些书、什么时候到期、能否续借
+description: >-
+  My current library loans, soonest due first: itemId, title, call number, library, checkout and due date (a recall date when earlier), daysLeft (negative = overdue), overdue, renewalsRemaining and renewable (the portal's rule: renewals left and not already renewed today). Also count, overdueCount and the next due date.
+effect: read
+functions:
+  loanOf: |
+    (c, today) => loanRow(c, today, dateOf(c.dueDate), dateOf(c.recallDueDate))
+  # A recall shortens the due date (someone requested the book).
+  loanRow: |
+    (c, today, due, recall) => loanFin(c, today, recall && (!due || recall < due) ? recall : due, recall, nv(c.renewalsRemaining), dateOf(c.lastRenewedDate))
+  loanFin: |
+    (c, today, eff, recall, remaining, last) => ({
+      itemId: sv(c.itemID),
+      title: plain(c.title, 160) ?? '（无题名）',
+      author: plain(c.author, 80),
+      callNumber: sv(c.callNumber),
+      library: plain(c.itemLibraryDescription, 40),
+      checkoutDate: dateOf(c.checkoutDate),
+      dueDate: eff,
+      recallDueDate: recall,
+      daysLeft: eff ? daysFrom(today, eff) : null,
+      overdue: c.overdue == true || (eff ? daysFrom(today, eff) < 0 : false),
+      renewalsRemaining: remaining,
+      renewable: (remaining ?? 0) > 0 && (!last || last < today),
+    })
+steps:
+  - let: res
+    request: { campus: library, url: '/prod-api/auth/getMyInfobySession?pkulib_session={session}' }
+    as: response
+  - check: res.status < 400
+    error: 图书馆个人中心返回 HTTP ${res.status}
+  - try:
+      - let: j
+        value: json(res.text)
+    catch:
+      - let: j
+        value: 'null'
+  - check: isObj(j)
+    error: 图书馆个人中心返回了无法解析的内容
+  - check: isObj(j.data)
+    error: 图书馆没有返回借阅信息（登录可能已失效）
+  - let: today
+    value: formatDate(now, 'YYYY-MM-DD')
+  - let: list
+    value: "sortBy(objs(j.data.patronCheckoutInfo).filter(c => sv(c.itemID)).map(c => loanOf(c, today)), l => l.dueDate ?? '9999')"
+  - let: next
+    value: "list.find(l => l.dueDate) ?? null"
+return: |
+  {
+    count: list.length,
+    overdueCount: count(list, l => l.overdue),
+    nextDueDate: next?.dueDate ?? null,
+    nextDueInDays: next?.daysLeft ?? null,
+    nextDueTitle: next?.title ?? null,
+    loans: list,
+  }

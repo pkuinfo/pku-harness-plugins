@@ -1,0 +1,90 @@
+# kjyy.lib IC 空间 /ic-web/reserve/resvInfo (my reservations) + /ic-web/auth/userInfo (my accNo,
+# for canCancel). Members are shown by name only. `next: true` is the mySpace widget's view.
+title: 我的空间预约
+summary: 我的研讨室和研修专座预约
+description: >-
+  My library space reservations (研讨室 / 研修专座) from `from` to `to` (default: 7 days ago to 14 days ahead): uuid, kind, place, begin/end, status, title, member names, canCancel.
+effect: read
+input:
+  from: { type: string, pattern: '^\d{4}-\d{2}-\d{2}$', optional: true, description: YYYY-MM-DD }
+  to: { type: string, pattern: '^\d{4}-\d{2}-\d{2}$', optional: true, description: YYYY-MM-DD }
+  next: { type: boolean, optional: true, description: 'only the next active booking ({ next, started, count }), for the dashboard widget' }
+constants:
+  # ic-web resvStatus bits (config.js statusOption + the status labels in the bundle).
+  STATUS_BITS: [[16384, 被举报], [8192, 待同意], [2048, 暂离], [512, 审核未通过], [256, 待审核], [128, 已结束], [64, 已签到], [16, 已违约], [4, 已生效], [2, 待生效], [1024, 审核通过]]
+  KIND: { '1': 研讨室, '32': 研修专座, '8': 座位 }
+functions:
+  statusText: "(bits) => STATUS_BITS.filter(b => bit(bits, b[0])).map(b => b[1]).join('、') || '未知'"
+  resvOf: |
+    (r, myAccNo) => resvRow(r, myAccNo, nv(r.resvStatus) ?? 0, objs(r.resvDevInfoList)[0] ?? {})
+  resvRow: |
+    (r, myAccNo, bits, dev) => ({
+      uuid: sv(r.uuid),
+      kind: KIND[nv(r.classKind) ?? nv(r.sysKind) ?? 0] ?? (nv(r.resvProperty) == 32 ? '研修专座' : '其他'),
+      place: plain([sv(dev.labName), sv(dev.roomName), sv(dev.devName)].filter(x => !!x).join(' '), 80) ?? '（未知位置）',
+      begin: stampOf(r.resvBeginTime),
+      end: stampOf(r.resvEndRealTime ?? r.resvEndTime),
+      status: statusText(bits),
+      title: plain(r.testName, 60),
+      members: objs(r.resvMemberInfoList).map(m => plain(m.trueName, 20)).filter(s => !!s),
+      // The web page's own rule: not started (bit 4), not ended (128), no no-show (16), mine.
+      canCancel: !bit(bits, 4) && !bit(bits, 128) && !bit(bits, 16) && (!myAccNo || sv(r.appAccNo) == myAccNo),
+    })
+  # The next active booking (not ended / no-show / rejected) as the widget shows it.
+  nextOf: "(list, stamp) => list.find(r => r.end && r.end > stamp && !test(r.status, '已结束|违约|未通过')) ?? null"
+  whenOf: |
+    (r) => (r.begin ? slice(r.begin, 5) : '') + (r.end ? ' – ' + slice(r.end, r.begin && slice(r.begin, 0, 10) == slice(r.end, 0, 10) ? 11 : 5) : '')
+steps:
+  - let: today
+    value: formatDate(now, 'YYYY-MM-DD')
+  - let: from
+    value: input.from ?? addDaysS(today, -7)
+  - let: to
+    value: input.to ?? addDaysS(today, 14)
+  - let: res
+    request: { campus: library-space, url: /ic-web/auth/userInfo }
+    as: response
+  - check: res.status < 400
+    error: 空间预约系统返回 HTTP ${res.status}
+  - try:
+      - let: j
+        value: json(res.text)
+    catch:
+      - let: j
+        value: 'null'
+  - check: isObj(j)
+    error: 空间预约系统返回了无法解析的内容
+  - check: j.code == 0
+    error: "读取账号失败：${plain(j.message, 120) ?? 'code ' + j.code}"
+  - let: me
+    value: meOf(j.data)
+  - let: res2
+    request: { campus: library-space, url: '/ic-web/reserve/resvInfo?beginDate=${from}&endDate=${to}&needStatus=0&page=1&pageNum=50&orderKey=gmt_create&orderModel=desc' }
+    as: response
+  - check: res2.status < 400
+    error: 空间预约系统返回 HTTP ${res2.status}
+  - try:
+      - let: j2
+        value: json(res2.text)
+    catch:
+      - let: j2
+        value: 'null'
+  - check: isObj(j2)
+    error: 空间预约系统返回了无法解析的内容
+  - check: j2.code == 0
+    error: "查询我的预约失败：${plain(j2.message, 120) ?? 'code ' + j2.code}"
+  - let: list
+    value: "sortBy(objs(j2.data).filter(r => sv(r.uuid)).map(r => resvOf(r, me.accNo)), r => r.begin ?? '')"
+  - if: input.next == true
+    then:
+      - let: stamp
+        value: formatDate(now, 'YYYY-MM-DD HH:mm')
+      - let: next
+        value: nextOf(list, stamp)
+      - return: |
+          {
+            next: next ? { ...next, when: whenOf(next) } : null,
+            started: !!next && !!next.begin && next.begin <= stamp,
+            count: list.length,
+          }
+return: list

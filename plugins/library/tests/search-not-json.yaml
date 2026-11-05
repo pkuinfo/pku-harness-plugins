@@ -1,0 +1,9 @@
+# search-not-json
+tool: search
+input:
+  keyword: 三体
+now: 2026-10-20 12:00
+responses:
+  - match: new_opac/query
+    body: <html>ISO-8859-1</html>
+expectError: 馆藏检索返回了无法解析的内容

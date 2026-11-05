@@ -1,0 +1,24 @@
+# renew-blocked
+tool: renew
+input:
+  itemIds:
+    - BK0002
+now: 2026-10-20 12:00
+responses:
+  - match: getMyInfobySession
+    campus: library
+    file: account.json
+  - match: renewItem2
+    campus: library
+    body:
+      data:
+        errors:
+          - message: User BLOCKED
+expect:
+  renewed: 0
+  results:
+    - itemId: BK0002
+      title: 算法导论
+      ok: false
+      reason: 因有超期未还的图书或欠款，账户已被限制
+  hint: 续借后可以再调用 library__remindDueDates 更新提醒

@@ -1,0 +1,93 @@
+{
+  "data": {
+    "TitleInfo": [
+      {
+        "author": "刘慈欣, 1963- 著",
+        "ISBN": [
+          "9787229151003"
+        ],
+        "CallInfo": [
+          {
+            "callNumber": "I247.55/10b3",
+            "libraryID": "北大中心馆",
+            "ItemInfo": [
+              {
+                "itemID": "1001",
+                "chargeable": false,
+                "homeLocation": "文学阅览室(中文)(西区301)",
+                "dueDate": 1793894400000,
+                "currentLocationID": "已借出",
+                "currentLocation": "已借出",
+                "homeLocationID": "西区301中文文学"
+              },
+              {
+                "itemID": "1002",
+                "chargeable": true,
+                "homeLocation": "库本阅览室(西区109)",
+                "currentLocationID": "库本阅览室",
+                "currentLocation": "库本阅览室(西区109)",
+                "homeLocationID": "库本阅览室"
+              },
+              {
+                "itemID": "1003",
+                "chargeable": true,
+                "homeLocation": "文学阅览室(中文)(西区301)",
+                "currentLocationID": "教参阅览室",
+                "currentLocation": "通识参阅厅-教参区",
+                "homeLocationID": "西区301中文文学",
+                "reserveCollectionID": "教学参考书",
+                "reserveCirculationRule": "二十四小时"
+              },
+              {
+                "itemID": "1004",
+                "chargeable": false,
+                "homeLocation": "文学阅览室(中文)(西区301)",
+                "dueDate": "2026-10-28T23:59:00.000+08:00",
+                "currentLocationID": "CHECKEDOUT",
+                "homeLocationID": "西区301中文文学",
+                "publicNote": "<b>附光盘</b>"
+              },
+              {
+                "chargeable": true
+              }
+            ]
+          },
+          {
+            "callNumber": "I247.55/10b3:2",
+            "libraryID": "北大中心馆",
+            "ItemInfo": [
+              {
+                "itemID": "2001",
+                "chargeable": true,
+                "currentLocation": "库本阅览室(西区109)",
+                "homeLocation": "库本阅览室(西区109)"
+              }
+            ]
+          }
+        ],
+        "TitleAvailabilityInfo": {
+          "holdable": true,
+          "totalCopiesAvailable": 2,
+          "locationOfFirstAvailableItem": "库本阅览室(西区109)"
+        }
+      }
+    ]
+  },
+  "BookInfo": {
+    "title": [
+      "三体"
+    ],
+    "publisher": [
+      "重庆出版社"
+    ],
+    "publishDate": [
+      "2020"
+    ],
+    "isbn_pure": [
+      "9787229151003"
+    ],
+    "abstract": [
+      "<p>简介&nbsp;文字</p>"
+    ]
+  }
+}

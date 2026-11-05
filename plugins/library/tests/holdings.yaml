@@ -1,0 +1,61 @@
+# holdings
+tool: holdings
+input:
+  id: REC0001
+now: 2026-10-20 12:00
+responses:
+  - match: query_detail?cat_marc=REC0001
+    file: holdings.json
+expect:
+  id: REC0001
+  title: 三体
+  author: 刘慈欣, 1963- 著
+  publisher: 重庆出版社
+  year: "2020"
+  isbn: "9787229151003"
+  summary: 简介 文字
+  totalCopies: 6
+  availableCopies: 2
+  holdable: true
+  firstAvailableAt: 库本阅览室(西区109)
+  copies:
+    - itemId: "1002"
+      callNumber: I247.55/10b3
+      library: 北大中心馆
+      location: 库本阅览室(西区109)
+      status: available
+      dueDate: null
+      loanable: true
+      note: null
+    - itemId: "2001"
+      callNumber: I247.55/10b3:2
+      library: 北大中心馆
+      location: 库本阅览室(西区109)
+      status: available
+      dueDate: null
+      loanable: true
+      note: null
+    - itemId: "1003"
+      callNumber: I247.55/10b3
+      library: 北大中心馆
+      location: 通识参阅厅-教参区
+      status: elsewhere
+      dueDate: null
+      loanable: true
+      note: 教学参考书（二十四小时）
+    - itemId: "1004"
+      callNumber: I247.55/10b3
+      library: 北大中心馆
+      location: 文学阅览室(中文)(西区301)
+      status: checked_out
+      dueDate: 2026-10-28
+      loanable: true
+      note: 附光盘
+    - itemId: "1001"
+      callNumber: I247.55/10b3
+      library: 北大中心馆
+      location: 文学阅览室(中文)(西区301)
+      status: checked_out
+      dueDate: 2026-11-06
+      loanable: true
+      note: null

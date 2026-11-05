@@ -1,0 +1,38 @@
+# kjyy.lib.pku.edu.cn /ic-web/psgSeatMenu answers without a session: 研修专座 floors → rooms with
+# total / remaining seats.
+title: 研修专座余量
+summary: 研修专座各房间的总座位和空余座位
+description: >-
+  研修专座 (long-term study carrels, west building 218/304/313/404/414 and the 数据享阅厅) per floor and room: total and currently free seats. Public. Booking opens nightly 21:00–23:59 at kjyy.lib.pku.edu.cn for 7–28 days and is for 2nd-year master/PhD students and above; this tool does not book.
+effect: read
+functions:
+  areasOf: |
+    (f) => objs(f.children).length
+      ? objs(f.children).map(r => ({ floor: plain(f.name, 40) ?? '', room: plain(r.name, 40) ?? '', total: nv(r.totalCount), free: nv(r.remainCount) }))
+      : [{ floor: plain(f.name, 40) ?? '', room: plain(f.name, 40) ?? '', total: nv(f.totalCount), free: nv(f.remainCount) }]
+steps:
+  - try:
+      - let: res
+        request:
+          url: https://kjyy.lib.pku.edu.cn/ic-web/psgSeatMenu
+          headers: '${JSON_HEADERS}'
+          timeout: 15s
+        as: response
+    catch:
+      - check: 'false'
+        error: '${netError(error.message, "研修专座")}'
+  - check: res.status >= 200 && res.status < 300
+    error: 研修专座返回 HTTP ${res.status}
+  - try:
+      - let: j
+        value: json(res.text)
+    catch:
+      - let: j
+        value: 'null'
+  - check: isObj(j)
+    error: 研修专座返回了无法解析的内容
+  - check: j.code == 0
+    error: "查询研修专座失败：${plain(j.message, 120) ?? 'code ' + j.code}"
+  - let: areas
+    value: "objs(j.data).flatMap(f => areasOf(f))"
+return: "{ areas, totalFree: sum(areas, a => a.free ?? 0), bookingWindow: '每晚 21:00–23:59，kjyy.lib.pku.edu.cn' }"

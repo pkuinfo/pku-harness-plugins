@@ -1,0 +1,82 @@
+# OPAC record detail (/BookAPI/new_opac/query_detail: SirsiDynix Symphony TitleInfo → CallInfo →
+# ItemInfo), public. The search id is already URL-encoded by the OPAC (e.g. "e0f4…Mw%3D%3D").
+title: 馆藏详情
+summary: 一本书每一册在哪个阅览室、是否在架
+description: >-
+  Copies of one catalog record (id from library__search): each copy's call number, library, current location (reading room) and status (available / checked_out with dueDate / elsewhere), whether it can be borrowed, plus ISBN, summary and whether holds are allowed. Public.
+effect: read
+input:
+  id: { type: string, trim: true, min: 4, max: 200, description: book id from library__search }
+constants:
+  CHECKED_OUT: '(?i)已借出|借出|CHECKEDOUT|CHARGED'
+  MAX_COPIES: 30
+functions:
+  copyOf: |
+    (c, it) => copyRow(c, it, plain(it.currentLocation, 60) ?? plain(it.currentLocationID, 60), plain(it.homeLocation, 60))
+  copyRow: |
+    (c, it, where, home) => copyFin(c, it, where, home, test((sv(it.currentLocationID) ?? '') + ' ' + (where ?? ''), CHECKED_OUT))
+  copyFin: |
+    (c, it, where, home, out) => ({
+      itemId: sv(it.itemID),
+      callNumber: sv(c.callNumber),
+      library: plain(c.libraryID, 30),
+      location: out ? home : where,
+      status: out ? 'checked_out' : where && home && where != home ? 'elsewhere' : 'available',
+      dueDate: out ? dateOf(it.dueDate) : null,
+      loanable: it.chargeable == true || out,
+      note: plain(it.publicNote, 80) ?? (sv(it.reserveCollectionID) ? sv(it.reserveCollectionID) + (sv(it.reserveCirculationRule) ? '（' + sv(it.reserveCirculationRule) + '）' : '') : null),
+    })
+  # On-shelf first, then by due date (soonest back first).
+  rank: "(c) => c.status == 'available' ? 0 : c.status == 'elsewhere' ? 1 : 2"
+steps:
+  - let: enc
+    value: "test(input.id, '(?i)%[0-9A-F]{2}') ? input.id : encode(input.id)"
+  - try:
+      - let: res
+        request:
+          url: '${OPAC}/BookAPI/new_opac/query_detail?cat_marc=${enc}'
+          headers: '${JSON_HEADERS}'
+          timeout: 15s
+        as: response
+    catch:
+      - check: 'false'
+        error: '${netError(error.message, "馆藏详情")}'
+  - check: res.status >= 200 && res.status < 300
+    error: 馆藏详情返回 HTTP ${res.status}
+  - try:
+      - let: j
+        value: json(res.text)
+    catch:
+      - let: j
+        value: 'null'
+  - check: isObj(j)
+    error: 馆藏详情返回了无法解析的内容
+  - let: data
+    value: "isObj(j.data) ? j.data : {}"
+  - let: info
+    value: "isObj(j.BookInfo) ? j.BookInfo : {}"
+  - let: titles
+    value: objs(data.TitleInfo)
+  - let: avs
+    value: "titles.map(t => isObj(t.TitleAvailabilityInfo) ? t.TitleAvailabilityInfo : {})"
+  - let: items
+    value: "titles.flatMap(t => objs(t.CallInfo).flatMap(c => objs(c.ItemInfo).map(it => ({ c, it }))))"
+  - let: copies
+    value: "items.filter(x => sv(x.it.itemID)).map(x => copyOf(x.c, x.it))"
+  - let: t0
+    value: "titles[0] ?? {}"
+return: |
+  {
+    id: input.id,
+    title: plain(firstS(info.title), 160),
+    author: plain(firstS(info.author) ?? sv(t0.author), 80),
+    publisher: plain(firstS(info.publisher), 60),
+    year: firstS(info.publishDate),
+    isbn: firstS(info.isbn_pure) ?? firstS(info.isbn) ?? firstS(t0.ISBN),
+    summary: plain(firstS(info.abstract), 240),
+    totalCopies: items.length,
+    availableCopies: sum(avs, a => nv(a.totalCopiesAvailable) ?? 0),
+    holdable: avs.some(a => a.holdable == true),
+    firstAvailableAt: avs.map(a => plain(a.locationOfFirstAvailableItem, 60)).find(x => x != null) ?? null,
+    copies: sortBy(sortBy(copies, c => c.dueDate ?? ''), c => rank(c)).slice(0, MAX_COPIES),
+  }

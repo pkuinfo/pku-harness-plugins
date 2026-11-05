@@ -1,0 +1,17 @@
+# hours
+tool: hours
+now: 2026-10-20 12:00
+responses:
+  - match: opening-hours/getday
+    body:
+      status: 200
+      object:
+        date: 2026-10-20
+        isOpen: true
+        openingTime: 6:30-22:30
+        remarks: ""
+expect:
+  date: 2026-10-20
+  open: true
+  hours: 6:30-22:30
+  remarks: null

@@ -1,0 +1,60 @@
+{
+  "code": 0,
+  "data": [
+    {
+      "devId": 101,
+      "devName": "202研讨室",
+      "labName": "西区二层",
+      "roomName": "研讨室",
+      "minUser": 3,
+      "maxUser": 4,
+      "openStart": "08:00",
+      "openEnd": "17:00",
+      "resvRule": {
+        "minResvTime": 30,
+        "maxResvTime": 180
+      },
+      "resvInfo": [
+        {
+          "startTime": "2026-10-21 09:00:00",
+          "endTime": "2026-10-21 10:30:00",
+          "resvStatus": 2
+        },
+        {
+          "startTime": 1792558800000,
+          "endTime": 1792562400000,
+          "resvStatus": 4
+        },
+        {
+          "startTime": "2026-10-21 15:00:00",
+          "endTime": "2026-10-21 16:00:00",
+          "resvStatus": 128
+        },
+        {
+          "startTime": "2026-10-22 08:00:00",
+          "endTime": "2026-10-22 09:00:00",
+          "resvStatus": 2
+        },
+        {
+          "startTime": "2026-10-20 20:00:00",
+          "endTime": "2026-10-21 08:20:00",
+          "resvStatus": 2
+        }
+      ]
+    },
+    {
+      "devId": "102",
+      "devName": "203研讨室",
+      "resvRule": {
+        "openStart": "08:00:00",
+        "openEnd": "22:00:00",
+        "minResvTime": 60
+      },
+      "minUser": 3,
+      "resvInfo": []
+    },
+    {
+      "devName": "no id"
+    }
+  ]
+}

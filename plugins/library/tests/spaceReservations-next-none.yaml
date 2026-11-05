@@ -1,0 +1,21 @@
+# spaceReservations-next-none
+tool: spaceReservations
+input:
+  next: true
+now: 2026-11-10 12:00
+responses:
+  - match: auth/userInfo
+    campus: library-space
+    body:
+      code: 0
+      data:
+        accNo: 77
+        trueName: 张三
+        logonName: "2000000000"
+  - match: resvInfo
+    campus: library-space
+    file: reservations.json
+expect:
+  next: null
+  started: false
+  count: 4

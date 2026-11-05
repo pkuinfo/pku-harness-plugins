@@ -1,0 +1,22 @@
+# cancelSpace-failed
+tool: cancelSpace
+input:
+  uuid: u-2-abcdef
+now: 2026-10-20 12:00
+responses:
+  - match: auth/userInfo
+    campus: library-space
+    body:
+      code: 0
+      data:
+        accNo: 77
+        trueName: 张三
+        logonName: "2000000000"
+  - match: resvInfo
+    campus: library-space
+    file: reservations.json
+  - match: reserve/delete
+    campus: library-space
+    body:
+      code: 1
+expectError: 取消失败：系统未说明原因

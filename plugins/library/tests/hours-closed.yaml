@@ -1,0 +1,17 @@
+# hours-closed
+tool: hours
+now: 2026-10-20 12:00
+responses:
+  - match: opening-hours/getday
+    body:
+      status: 200
+      object:
+        date: 1792944000000
+        isOpen: false
+        openingTime: null
+        remarks: <p>国庆闭馆</p>
+expect:
+  date: 2026-10-26
+  open: false
+  hours: null
+  remarks: 国庆闭馆

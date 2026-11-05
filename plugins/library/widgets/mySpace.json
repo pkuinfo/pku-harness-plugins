@@ -1,0 +1,49 @@
+{
+  "title": "我的研讨室预约",
+  "description": "图书馆研讨室（及研修专座）最近一条有效预约：地点、时间和状态，提醒签到。",
+  "sizes": ["sm", "md"],
+  "defaultSize": "md",
+  "bindings": {
+    "/space": { "tool": "spaceReservations", "args": { "next": true }, "ttlMinutes": 15 }
+  },
+  "spec": {
+    "root": "root",
+    "elements": {
+      "root": { "type": "Column", "props": { "gap": "sm" }, "children": ["none", "booking"] },
+      "none": {
+        "type": "Column",
+        "props": { "gap": "sm" },
+        "visible": { "$state": "/space/next", "eq": null },
+        "children": ["noneLabel", "noneText", "book"]
+      },
+      "noneLabel": { "type": "Text", "props": { "text": "图书馆空间预约", "tone": "muted", "size": "small" } },
+      "noneText": { "type": "Heading", "props": { "text": "暂无预约", "size": "sm" } },
+      "book": {
+        "type": "Button",
+        "props": { "label": "约研讨室", "variant": "secondary" },
+        "on": { "press": { "action": "ask", "params": { "text": "帮我看看图书馆研讨室今天和明天哪些时段空着" } } }
+      },
+      "booking": {
+        "type": "Column",
+        "props": { "gap": "sm" },
+        "visible": { "$state": "/space/next", "neq": null },
+        "children": ["kind", "place", "when", "status"]
+      },
+      "kind": { "type": "Text", "props": { "text": { "$state": "/space/next/kind" }, "tone": "muted", "size": "small" } },
+      "place": { "type": "Heading", "props": { "text": { "$state": "/space/next/place" }, "size": "sm" } },
+      "when": { "type": "Text", "props": { "text": { "$state": "/space/next/when" }, "tone": "muted", "size": "small" } },
+      "status": {
+        "type": "Badge",
+        "props": {
+          "label": {
+            "$cond": { "$state": "/space/started" },
+            "$then": { "$template": "${/space/next/status} · 记得签到" },
+            "$else": { "$state": "/space/next/status" }
+          },
+          "tone": { "$cond": { "$state": "/space/started" }, "$then": "warn", "$else": "info" }
+        }
+      }
+    },
+    "state": { "space": null }
+  }
+}

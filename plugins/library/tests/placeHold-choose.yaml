@@ -1,0 +1,28 @@
+# placeHold-choose
+tool: placeHold
+input:
+  id: REC0001
+now: 2026-10-20 12:00
+responses:
+  - match: cat_marc=REC0001
+    file: holdings.json
+  - match: advisePickupAt
+    campus: library
+    body:
+      data:
+        list:
+          - 总借还台
+          - " "
+          - code: CP
+            name: 昌平园区
+        advised: 总借还台
+expect:
+  status: choose_pickup
+  title: 三体
+  callNumber: I247.55/10b3
+  options:
+    - id: 总借还台
+      name: 总借还台
+    - id: CP
+      name: 昌平园区
+  advised: 总借还台

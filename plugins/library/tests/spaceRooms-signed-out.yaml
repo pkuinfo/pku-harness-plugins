@@ -1,0 +1,12 @@
+# spaceRooms-signed-out
+tool: spaceRooms
+input:
+  date: 2026-10-26
+now: 2026-10-20 12:00
+responses:
+  - match: resvDates=20261026
+    campus: library-space
+    body:
+      code: 300
+      message: 用户未登录，请重新登录
+expectError: 查询研讨室失败：用户未登录，请重新登录

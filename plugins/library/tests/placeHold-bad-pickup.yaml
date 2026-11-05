@@ -1,0 +1,18 @@
+# placeHold-bad-pickup
+tool: placeHold
+input:
+  id: REC0001
+  pickup: 火星
+now: 2026-10-20 12:00
+responses:
+  - match: cat_marc=REC0001
+    file: holdings.json
+  - match: advisePickupAt
+    campus: library
+    body:
+      data:
+        list:
+          - code: CP
+            name: 昌平园区
+          - 总借还台
+expectError: 取书地点只能从这些里选：昌平园区（CP）、总借还台（总借还台）

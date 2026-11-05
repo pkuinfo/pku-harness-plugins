@@ -1,0 +1,22 @@
+# renew-unknown
+tool: renew
+input:
+  itemIds:
+    - BK0004
+now: 2026-10-20 12:00
+responses:
+  - match: getMyInfobySession
+    campus: library
+    file: account.json
+  - match: renewItem2
+    campus: library
+    body:
+      desc: 服务异常
+expect:
+  renewed: 0
+  results:
+    - itemId: BK0004
+      title: 一本书名非常非常长的书：关于计算机程序的构造和解释以及其他许多有趣的主题第二版
+      ok: false
+      reason: 服务异常
+  hint: 续借后可以再调用 library__remindDueDates 更新提醒

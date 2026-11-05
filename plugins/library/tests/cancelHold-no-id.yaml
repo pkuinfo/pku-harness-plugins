@@ -1,0 +1,7 @@
+# cancelHold-no-id
+tool: cancelHold
+input:
+  itemId: " "
+now: 2026-10-20 12:00
+responses: []
+expectError: 需要 itemId 或 callNumber

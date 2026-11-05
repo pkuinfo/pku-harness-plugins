@@ -1,0 +1,34 @@
+# kjyy.lib IC 空间 (library-space) /ic-web/reserve?sysKind=1&kindIds=1&resvDates=YYYYMMDD: the
+# discussion rooms with their reservations on one day → taken and free periods (shared parseRooms).
+title: 研讨室空闲时段
+summary: 某天图书馆各研讨室的空闲时段
+description: >-
+  Library discussion rooms (研讨室, west building 2F) on one date (default today, up to 7 days ahead): devId, name, capacity (minPeople–maxPeople), open hours, min/max booking minutes, taken and free periods (free from now on for today). Needs the user's library session.
+effect: read
+input:
+  date: { type: string, pattern: '^\d{4}-\d{2}-\d{2}$', optional: true, description: YYYY-MM-DD }
+steps:
+  - let: today
+    value: formatDate(now, 'YYYY-MM-DD')
+  - let: d
+    value: input.date ?? today
+  - check: "!(d < today || d > addDaysS(today, 6))"
+    error: 研讨室只能查询和预约今天起 7 天内
+  - let: ymd
+    value: "replace(d, '-', '')"
+  - let: res
+    request: { campus: library-space, url: '/ic-web/reserve?sysKind=1&kindIds=${ROOM_KIND}&resvDates=${ymd}&page=1&pageNum=50&pageSize=50' }
+    as: response
+  - check: res.status < 400
+    error: 空间预约系统返回 HTTP ${res.status}
+  - try:
+      - let: j
+        value: json(res.text)
+    catch:
+      - let: j
+        value: 'null'
+  - check: isObj(j)
+    error: 空间预约系统返回了无法解析的内容
+  - check: j.code == 0
+    error: "查询研讨室失败：${plain(j.message, 120) ?? 'code ' + j.code}"
+return: "{ date: d, rooms: parseRooms(j.data, d, formatDate(now, 'YYYY-MM-DD HH:mm')), rules: '3 人起约；每次 30 分钟–3 小时；开始后 30 分钟内全员签到' }"

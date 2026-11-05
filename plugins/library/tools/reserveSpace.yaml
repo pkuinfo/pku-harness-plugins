@@ -1,0 +1,158 @@
+# POST /ic-web/reserve (the research-space page's own submit). The room and the free period are
+# checked against /ic-web/reserve first; other attendees are looked up by 学号/工号 with
+# /ic-web/account/getMembers (they must have signed in to kjyy.lib once).
+title: 预约研讨室
+summary: 为小组预约图书馆研讨室
+description: >-
+  Book a library discussion room (devId and a free period from library__spaceRooms). members = the OTHER attendees' student/staff ids as given by the user (the user is added automatically); the room needs at least its minPeople (usually 3 including the user). Times on the 10-minute grid, 30 min–3 h. Confirm room, time, title and members with the user first. A no-show (not everyone checks in within 30 min) counts as a violation.
+effect: write
+input:
+  devId: { type: string, trim: true, pattern: '^\d+$', description: devId from library__spaceRooms }
+  date: { type: string, pattern: '^\d{4}-\d{2}-\d{2}$', description: YYYY-MM-DD }
+  start: { type: string, pattern: '^([01]?\d|2[0-3]):[0-5]\d$', description: HH:MM }
+  end: { type: string, pattern: '^([01]?\d|2[0-3]):[0-5]\d$', description: HH:MM }
+  title: { type: string, trim: true, min: 2, max: 40, description: '预约主题, e.g. 课程小组讨论' }
+  members: { type: array, items: { type: string, trim: true, pattern: '^\d{5,12}$' }, min: 1, max: 29, description: other attendees' ids (not the user) }
+  memo: { type: string, trim: true, max: 200, optional: true, description: 申请说明及参会人数 }
+functions:
+  idNum: "(x) => num(x) || x"
+  reserveBody: |
+    (devId, appAccNo, members, begin, end, title, memo) => ({
+      sysKind: 1,
+      appAccNo: idNum(appAccNo),
+      memberKind: members.length > 1 ? 2 : 1,
+      resvBeginTime: begin + ':00',
+      resvEndTime: end + ':00',
+      testName: title,
+      resvKind: 2,
+      resvProperty: 0,
+      appUrl: '',
+      resvMember: members.map(m => idNum(m)),
+      resvDev: [idNum(devId)],
+      memo,
+      captcha: '',
+      addServices: [],
+    })
+steps:
+  - let: start
+    value: norm(input.start)
+  - let: end
+    value: norm(input.end)
+  - check: start < end
+    error: 结束时间要晚于开始时间
+  - let: len
+    value: hmOf(end) - hmOf(start)
+  - check: len >= 30 && len <= 180
+    error: 每次预约 30 分钟到 3 小时
+  - check: hmOf(start) % 10 == 0 && hmOf(end) % 10 == 0
+    error: 时间要对齐到 10 分钟（如 14:00、14:10）
+  - let: ymd
+    value: "replace(input.date, '-', '')"
+  - let: res
+    request: { campus: library-space, url: '/ic-web/reserve?sysKind=1&kindIds=${ROOM_KIND}&resvDates=${ymd}&page=1&pageNum=50&pageSize=50' }
+    as: response
+  - check: res.status < 400
+    error: 空间预约系统返回 HTTP ${res.status}
+  - try:
+      - let: j
+        value: json(res.text)
+    catch:
+      - let: j
+        value: 'null'
+  - check: isObj(j)
+    error: 空间预约系统返回了无法解析的内容
+  - check: j.code == 0
+    error: "查询研讨室失败：${plain(j.message, 120) ?? 'code ' + j.code}"
+  - let: room
+    value: "parseRooms(j.data, input.date, formatDate(now, 'YYYY-MM-DD HH:mm')).find(r => r.devId == input.devId) ?? null"
+  - check: room
+    error: 这天没有这个研讨室，先用 library__spaceRooms 查
+  - check: room.free.some(f => f.start <= start && end <= f.end)
+    error: "这个时段不空闲。空闲：${room.free.map(f => f.start + '-' + f.end).join('、') || '无'}"
+  - let: res2
+    request: { campus: library-space, url: /ic-web/auth/userInfo }
+    as: response
+  - check: res2.status < 400
+    error: 空间预约系统返回 HTTP ${res2.status}
+  - try:
+      - let: j2
+        value: json(res2.text)
+    catch:
+      - let: j2
+        value: 'null'
+  - check: isObj(j2)
+    error: 空间预约系统返回了无法解析的内容
+  - check: j2.code == 0
+    error: "读取账号失败：${plain(j2.message, 120) ?? 'code ' + j2.code}"
+  - let: self
+    value: meOf(j2.data)
+  - check: self.accNo
+    error: 读取不到你的空间预约账号
+  - let: hits
+    each: "unique(input.members).filter(m => m != account.username)"
+    steps:
+      - let: r
+        request: { campus: library-space, url: '/ic-web/account/getMembers?key=${encode(item)}&page=1&pageNum=10' }
+        as: response
+      - check: r.status < 400
+        error: 空间预约系统返回 HTTP ${r.status}
+      - try:
+          - let: m
+            value: json(r.text)
+        catch:
+          - let: m
+            value: 'null'
+      - check: isObj(m)
+        error: 空间预约系统返回了无法解析的内容
+      - check: m.code == 0
+        error: "查找预约人失败：${plain(m.message, 120) ?? 'code ' + m.code}"
+      # account/getMembers → accounts; `logonName` is the login (学号/工号).
+      - let: hit
+        value: |
+          objs(m.data)
+            .map(x => ({ accNo: sv(x.accNo) ?? '', id: sv(x.logonName) ?? '', name: plain(x.trueName, 20), disabled: nv(x.localstatus) == 2 || nv(x.status) == 2 }))
+            .find(x => x.accNo && x.id && x.id == item) ?? null
+      - check: hit
+        error: 预约系统里找不到 ${item}（对方需要是校内读者，并且登录过 kjyy.lib.pku.edu.cn）
+      - check: "!hit.disabled"
+        error: ${item} 当前不能参与预约
+      - return: "{ accNo: hit.accNo, name: hit.name ?? item }"
+  - let: accNos
+    value: "[self.accNo, ...hits.map(h => h.accNo)]"
+  - let: need
+    value: room.minPeople ?? 3
+  - check: accNos.length >= need
+    error: ${room.name} 至少 ${need} 人（含你），当前 ${accNos.length} 人
+  - check: "!room.maxPeople || accNos.length <= room.maxPeople"
+    error: ${room.name} 最多 ${room.maxPeople} 人
+  - let: res3
+    request:
+      campus: library-space
+      url: /ic-web/reserve
+      method: POST
+      json: "${reserveBody(input.devId, self.accNo, accNos, input.date + ' ' + start, input.date + ' ' + end, input.title, input.memo ?? '')}"
+      contentType: application/json; charset=UTF-8
+    as: response
+  - try:
+      - let: j3
+        value: json(res3.text)
+    catch:
+      - let: j3
+        value: 'null'
+  - check: isObj(j3)
+    error: 空间预约系统返回了无法解析的内容
+  - let: message
+    value: "typeOf(j3.message) == 'string' ? j3.message : ''"
+  - check: j3.code == 0
+    error: "预约失败：${message || '系统未说明原因'}"
+return: |
+  {
+    reserved: true,
+    room: room.name,
+    date: input.date,
+    start,
+    end,
+    members: hits.map(h => h.name),
+    message,
+    next: '开始后 30 分钟内全员到研讨室门口刷脸或刷卡签到；不能去请至少提前 30 分钟取消',
+  }

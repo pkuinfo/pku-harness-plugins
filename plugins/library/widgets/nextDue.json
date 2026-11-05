@@ -1,0 +1,67 @@
+{
+  "title": "借阅到期",
+  "description": "最近到期的借书：书名、到期日和剩余天数，超期或 3 天内到期时变色；显示在借总数。",
+  "sizes": ["sm", "md"],
+  "defaultSize": "md",
+  "bindings": {
+    "/loans": { "tool": "loans", "ttlMinutes": 60 }
+  },
+  "spec": {
+    "root": "root",
+    "elements": {
+      "root": { "type": "Column", "props": { "gap": "sm" }, "children": ["empty", "due"] },
+      "empty": {
+        "type": "Column",
+        "props": { "gap": "sm" },
+        "visible": { "$state": "/loans/count", "eq": 0 },
+        "children": ["emptyLabel", "emptyText"]
+      },
+      "emptyLabel": { "type": "Text", "props": { "text": "图书馆借阅", "tone": "muted", "size": "small" } },
+      "emptyText": { "type": "Heading", "props": { "text": "目前没有在借的书", "size": "sm" } },
+      "due": {
+        "type": "Column",
+        "props": { "gap": "sm" },
+        "visible": { "$state": "/loans/count", "gt": 0 },
+        "children": ["label", "date", "when", "foot"]
+      },
+      "label": { "type": "Text", "props": { "text": { "$template": "借阅到期 · 在借 ${/loans/count} 本" }, "tone": "muted", "size": "small" } },
+      "date": {
+        "type": "Heading",
+        "props": { "text": { "$cond": { "$state": "/loans/nextDueDate", "neq": null }, "$then": { "$state": "/loans/nextDueDate" }, "$else": "—" }, "size": "lg" }
+      },
+      "when": {
+        "type": "Text",
+        "props": {
+          "text": {
+            "$cond": { "$state": "/loans/nextDueInDays", "lt": 0 },
+            "$then": { "$template": "已超期 · ${/loans/nextDueTitle}" },
+            "$else": {
+              "$cond": { "$state": "/loans/nextDueInDays", "eq": 0 },
+              "$then": { "$template": "今天到期 · ${/loans/nextDueTitle}" },
+              "$else": { "$template": "${/loans/nextDueInDays} 天后到期 · ${/loans/nextDueTitle}" }
+            }
+          },
+          "tone": {
+            "$cond": { "$state": "/loans/nextDueInDays", "lt": 0 },
+            "$then": "down",
+            "$else": { "$cond": { "$state": "/loans/nextDueInDays", "lte": 3 }, "$then": "warn", "$else": "muted" }
+          },
+          "size": "small"
+        },
+        "visible": { "$state": "/loans/nextDueInDays", "neq": null }
+      },
+      "foot": { "type": "Row", "props": { "gap": "sm", "align": "between", "wrap": false }, "children": ["overdue", "renew"] },
+      "overdue": {
+        "type": "Badge",
+        "props": { "label": { "$template": "${/loans/overdueCount} 本超期" }, "tone": "down" },
+        "visible": { "$state": "/loans/overdueCount", "gt": 0 }
+      },
+      "renew": {
+        "type": "Button",
+        "props": { "label": "续借", "variant": "secondary" },
+        "on": { "press": { "action": "ask", "params": { "text": "看看我借的书哪些能续借，列出来让我确认后续借" } } }
+      }
+    },
+    "state": { "loans": null }
+  }
+}

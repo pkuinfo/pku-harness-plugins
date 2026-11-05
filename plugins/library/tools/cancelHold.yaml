@@ -1,0 +1,55 @@
+# hold-list cancelHold: JSON body; success when desc is "取消预约成功". 昌平日文书 holds go through
+# cancelChangpingHold (taskID; status 0 = ok).
+title: 取消图书预约
+summary: 取消我的一条图书预约
+description: Cancel one of my hold requests, identified by itemId or callNumber from library__holds.
+effect: write
+input:
+  itemId: { type: string, trim: true, optional: true }
+  callNumber: { type: string, trim: true, optional: true }
+steps:
+  - check: input.itemId || input.callNumber
+    error: 需要 itemId 或 callNumber
+    code: invalid_input
+  - let: list
+    call: holds
+  - let: hold
+    value: "list.find(h => (input.itemId && h.itemId == input.itemId) || (input.callNumber && h.callNumber == input.callNumber)) ?? null"
+  - check: hold
+    error: 没有找到这条预约，先用 library__holds 查看
+  - if: hold.changping
+    then:
+      - let: res
+        request:
+          campus: library
+          url: /prod-api/circ/cancelChangpingHold
+          method: POST
+          json: { pkulibSession: '{session}', taskID: '${hold.taskId}' }
+          contentType: application/json;charset=utf-8
+        as: response
+    else:
+      - let: res
+        request:
+          campus: library
+          url: /prod-api/circ/cancelHold
+          method: POST
+          json: { itemBarcode: '${hold.itemId}', callNumber: '${hold.callNumber}', pkulibSession: '{session}', cancelReason: 不想要了 }
+          contentType: application/json;charset=utf-8
+        as: response
+  - check: res.status < 400
+    error: 图书馆个人中心返回 HTTP ${res.status}
+  - try:
+      - let: j
+        value: json(res.text)
+    catch:
+      - let: j
+        value: 'null'
+  - check: isObj(j)
+    error: 图书馆个人中心返回了无法解析的内容
+  - let: data
+    value: "isObj(j.data) ? j.data : {}"
+  - let: desc
+    value: "str(j.desc ?? data.desc ?? '')"
+  - check: "hold.changping ? data.status == 0 || j.status == 0 : desc == '取消预约成功'"
+    error: "取消失败：${desc || '取消预约失败'}"
+return: "{ cancelled: true, title: hold.title }"

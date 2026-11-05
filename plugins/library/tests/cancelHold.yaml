@@ -1,0 +1,17 @@
+# cancelHold
+tool: cancelHold
+input:
+  itemId: H1
+now: 2026-10-20 12:00
+responses:
+  - match: getMyInfobySession
+    campus: library
+    file: account.json
+  - match: circ/cancelHold
+    campus: library
+    body:
+      status: 0
+      desc: 取消预约成功
+expect:
+  cancelled: true
+  title: 数学分析

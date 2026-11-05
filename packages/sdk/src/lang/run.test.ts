@@ -340,3 +340,15 @@ describe('request fields that evaluate to null', () => {
     ]);
   });
 });
+
+describe('kv legacy fallback', () => {
+  test('reads a key written by the TypeScript version of the plugin', async () => {
+    const d = await doc({
+      'PLUGIN.md': md('tools:\n  t: tools/t.yaml'),
+      'tools/t.yaml': 'title: T\ndescription: Legacy key.\neffect: read\nsteps:\n  - let: a\n    kv: get\n    key: old\n    legacy: true\n  - let: b\n    kv: get\n    key: old\nreturn: "{ a, b }"\n',
+    });
+    const { env } = replayEnv(d, [], { kv: { old: { x: 1 } } });
+    expect(await runTool(env, 't', {})).toEqual({ a: { x: 1 }, b: null });
+  });
+});
+

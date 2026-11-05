@@ -286,9 +286,11 @@ function pipe(run: Run, item: unknown, spec: string): unknown {
 
 // ------------------------------------------------------------ steps
 
-async function kvGet(run: Run, key: string) {
+async function kvGet(run: Run, key: string, legacy = false) {
   const v = await run.env.kv.get<{ v: unknown; exp?: number }>(`doc:${key}`);
-  if (!v) return null;
+  // `legacy: true`: fall back to the same key as written by the plugin's TypeScript version (a
+  // plain value outside the `doc:` namespace), so state carries over when a plugin is ported.
+  if (!v) return legacy ? ((await run.env.kv.get<unknown>(key)) ?? null) : null;
   if (v.exp && v.exp < run.ctx.now) return null;
   return v.v;
 }
@@ -410,7 +412,7 @@ async function runStep(run: Run, step: StepDoc, scope: Scope): Promise<unknown> 
 
   if ('kv' in step) {
     const key = String(template(String(step.key), scope, run.ctx));
-    if (step.kv === 'get') return kvGet(run, key);
+    if (step.kv === 'get') return kvGet(run, key, step.legacy === true);
     if (step.kv === 'set') {
       const v = expr(run, step.value, scope);
       await kvSet(run, key, v, step.ttl);
