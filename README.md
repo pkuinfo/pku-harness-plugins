@@ -43,9 +43,14 @@ SDK, the plugin language, and the marketplace registry.
 | [`notices`](plugins/notices) | Official notices from six university sites and WeChat | Document |
 | [`campus-events`](plugins/campus-events) | Academic talks and campus activities | Document |
 | [`grades`](plugins/grades) | Grades and GPA (with the treehole second factor handled) | Document |
-| [`ledger`](plugins/ledger) | Personal bookkeeping: record spending and income by tap or by chat, budgets and charts; data stays on the phone | TypeScript |
-| `wallet`, `finance`, `courses`, `library`, `treehole`, `elective`, `room-booking`, `course-catalog`, `calendar`, … | Campus card, finance portal, Blackboard, library, forum, course selection and more | TypeScript (being ported) |
-| `dashboard`, `schedule`, `scheduler`, `todo`, `timetable`, `memory`, `plugins`, `ui`, `deepseek`, `openai-compatible` | The harness's own features and model providers | TypeScript |
+| [`library`](plugins/library) | Catalogue search, loans and renewals, holds, study rooms and seats | Document |
+| [`treehole`](plugins/treehole) | Browse, search, follow and post on the campus forum | Document |
+| [`elective`](plugins/elective) | Course selection results and open seats (read-only) | Document |
+| [`course-catalog`](plugins/course-catalog) | Search every course offered this term | Document |
+| [`course-sync`](plugins/course-sync) | Sync this term's timetable into the schedule | Document |
+| [`room-booking`](plugins/room-booking) | Book seminar rooms in the teaching buildings | Document |
+| `wallet`, `finance`, `courses`, `calendar`, `card-share`, `authenticator` | Campus card, finance portal, Blackboard, academic calendar, payment-code sharing, OTP | TypeScript (need host abilities; being ported) |
+| `dashboard`, `schedule`, `scheduler`, `todo`, `timetable`, `ledger`, `memory`, `plugins`, `ui`, `deepseek`, `openai-compatible` | The harness's own features and model providers | TypeScript |
 
 The full list, including community plugins, is in [`registry/registry.json`](registry/registry.json)
 and on the [marketplace](https://harness.novadiffusion.com/marketplace).
