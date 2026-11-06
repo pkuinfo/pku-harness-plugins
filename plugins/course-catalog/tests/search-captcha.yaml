@@ -1,0 +1,6 @@
+tool: search
+input: { name: 机器学习 }
+now: 2026-11-06 09:40
+responses:
+  - { match: courseSearch_do.php, body: { status: 'no', courselist: [], count: null } }
+expectError: 验证码

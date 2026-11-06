@@ -93,6 +93,11 @@ steps:
         catch:
           - check: "false"
             error: 教务部返回的不是课程数据，网站可能在维护
+      # Since 2026-11 the site answers {"status":"no"} to every search until the session has
+      # passed its captcha (course_do.php?act=checkSearch → code 120). We don't solve captchas.
+      - check: data?.status != 'no'
+        error: 教务部课表查询现在要求在网页上输入验证码，暂时无法直接查询；请改用 course-catalog__searchElective（选课网，需登录）
+        code: captcha_required
       - check: data?.status == 'ok'
         error: 教务部返回错误：${data?.status ?? '未知'}
     return: "{ count: num(data.count, 0) || 0, courses: deanCourses(data) }"

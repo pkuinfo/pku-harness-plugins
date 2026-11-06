@@ -3,7 +3,7 @@ spec: 1
 id: course-catalog
 name: 全校课程目录
 description: 按课程名、教师、院系搜索全校开课，含上课时间（选课网查询含教室）。只读。
-version: 0.2.0
+version: 0.2.1
 author: pkuinfo
 icon: catalog
 homepage: https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/course-catalog
@@ -30,6 +30,7 @@ i18n:
 全校课程目录（只读，不能选课/退课）：
 - course-catalog__search：教务部课表查询（公开，无需登录），按课程名/教师/院系搜某学期的开课，返回课号、班号、学分、教师、开课单位、上课时间（星期、节次和时间）、起止周。没有教室。
 - 需要教室地点时用 course-catalog__searchElective（选课网，需要已登录校园账号，按课程分类查，较慢）。
+- 教务部网站可能要求网页验证码，这时 search 会报 captcha_required：改用 searchElective（按课程分类和名称关键词查），或请用户到 https://dean.pku.edu.cn/service/web/courseSearch.php 自己查。
 - 院系可以直接写名称（如"信息科学技术学院"），不确定时先用 course-catalog__departments 查代码。
 - 学期代码形如 "25-26-1"（25-26 学年第 1 学期），默认当前学期。
 - 用户想把某门课加进课表时，用 timetable__addCourse，按 sessions 里的 weekday、start、end、room 和 weeks（单双周看 weekType）逐个添加。
