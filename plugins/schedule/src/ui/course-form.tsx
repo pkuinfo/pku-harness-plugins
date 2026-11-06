@@ -1,16 +1,12 @@
-import { formatTime, formatWeeks, parseWeeks, type PluginScreenProps } from '@pku-harness/sdk';
+import { formatWeeks, parseWeeks, type PluginScreenProps } from '@pku-harness/sdk';
 import { useState } from 'react';
 import { View } from 'react-native';
 
 import { strings } from './strings';
+import { hhmmOf, jsWeekday, timeToday } from './util';
 
-const toDate = (s: string) => {
-  const [h, m] = s.split(':').map(Number);
-  const d = new Date();
-  d.setHours(h, m, 0, 0);
-  return d;
-};
-const toTime = (d: Date) => formatTime(d.getHours(), d.getMinutes());
+const toDate = timeToday;
+const toTime = hhmmOf;
 
 /** Add or edit a course meeting. Saves through the timetable tools, like the agent does. */
 export function CourseForm({ host, services, invoke, params }: PluginScreenProps) {
@@ -23,7 +19,7 @@ export function CourseForm({ host, services, invoke, params }: PluginScreenProps
   const [name, setName] = useState(existing?.name ?? '');
   const [location, setLocation] = useState(existing?.location ?? '');
   const [teacher, setTeacher] = useState(existing?.teacher ?? '');
-  const [weekday, setWeekday] = useState(existing?.weekday ?? (new Date().getDay() || 1));
+  const [weekday, setWeekday] = useState(existing?.weekday ?? (jsWeekday(Date.now()) || 1));
   const [start, setStart] = useState(() => toDate(existing?.start ?? '08:00'));
   const [end, setEnd] = useState(() => toDate(existing?.end ?? '09:50'));
   const [weeks, setWeeks] = useState(existing?.weeks ? formatWeeks(existing.weeks, locale).replace(/周$/, '').replace(/^Weeks? /, '') : '');

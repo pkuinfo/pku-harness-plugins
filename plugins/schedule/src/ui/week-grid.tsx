@@ -2,7 +2,7 @@ import { classesOn, type Course, type HostUI, type Semester } from '@pku-harness
 import { StyleSheet, View } from 'react-native';
 
 import { strings } from './strings';
-import { addDays, form, mondayOf, sameDay } from './util';
+import { addDays, dayOfMonth, form, minuteOfDay, mondayOf, sameDay } from './util';
 
 const HOUR = 52;
 const GUTTER = 34;
@@ -25,7 +25,7 @@ export function WeekGrid({ host, courses, semester, selected, now }: { host: Hos
   const endHour = Math.max(21, ...all.map((x) => Math.ceil(mins(x.end) / 60)));
   const hours = Array.from({ length: endHour - startHour }, (_, i) => startHour + i);
   const colWidth = (t.contentWidth - t.spacing.lg * 2 - GUTTER) / shown;
-  const nowMin = now.getHours() * 60 + now.getMinutes();
+  const nowMin = minuteOfDay(now);
   const todayIndex = days.findIndex((d) => sameDay(d, now));
 
   return (
@@ -37,7 +37,7 @@ export function WeekGrid({ host, courses, semester, selected, now }: { host: Hos
               {s.weekdayHead(s.weekdayShort[i])}
             </Text>
             <Text variant="callout" tone={i === todayIndex ? 'accent' : 'default'}>
-              {d.getDate()}
+              {dayOfMonth(d)}
             </Text>
           </View>
         ))}

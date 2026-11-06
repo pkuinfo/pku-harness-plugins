@@ -1,9 +1,11 @@
+import { parts, startOfDay } from './clock';
 import type { AppLocale } from './ui';
 
 /**
  * Locale-aware date/time strings for plugin screens and widgets (docs/AGENT-HARNESS.md §8).
  * Hand-formatted, because Hermes' Intl ignores locales; the output matches the app's own
  * `src/utils/date.ts` so plugin UI reads like the rest of the app. Pure: pass `now` in tests.
+ * Wall-clock fields come from `clock.ts`, so they follow the app's time-zone setting.
  */
 
 const pad = (n: number) => String(n).padStart(2, '0');
@@ -12,10 +14,9 @@ const WEEKDAYS_EN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTHS_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const DAY = 86_400_000;
 
-const toDate = (d: Date | number) => (typeof d === 'number' ? new Date(d) : d);
-const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+const toMs = (d: Date | number) => (typeof d === 'number' ? d : d.getTime());
 /** Calendar days from `now` to `d` (0 = today, 1 = tomorrow, -1 = yesterday), DST-safe. */
-export const dayDiff = (d: Date | number, now: Date | number = Date.now()) => Math.round((startOfDay(toDate(d)) - startOfDay(toDate(now))) / DAY);
+export const dayDiff = (d: Date | number, now: Date | number = Date.now()) => Math.round((startOfDay(toMs(d)) - startOfDay(toMs(now))) / DAY);
 
 /** Per-locale string table; `en` must have exactly the keys (and value types) of `zh-Hans`. */
 export type Localized<T> = { 'zh-Hans': T; en: T };
@@ -25,13 +26,13 @@ export const defineStrings = <T>(table: { 'zh-Hans': T; en: NoInfer<T> }): Local
 
 /** "21:04" (or "21:04:37" with seconds); same in both locales. */
 export function formatClock(d: Date | number, seconds = false): string {
-  const x = toDate(d);
-  return `${pad(x.getHours())}:${pad(x.getMinutes())}${seconds ? `:${pad(x.getSeconds())}` : ''}`;
+  const x = parts(toMs(d));
+  return `${pad(x.hour)}:${pad(x.minute)}${seconds ? `:${pad(x.second)}` : ''}`;
 }
 
 /** "周一" / "Mon". */
 export function formatWeekday(d: Date | number, locale: AppLocale): string {
-  const day = toDate(d).getDay();
+  const day = parts(toMs(d)).weekday % 7;
   return locale === 'en' ? WEEKDAYS_EN[day] : `周${WEEKDAYS_ZH[day]}`;
 }
 
@@ -43,10 +44,10 @@ export function weekdayName(weekday: number, locale: AppLocale): string {
 
 /** "10月18日" / "Oct 18"; the year is added when it isn't the current one. */
 export function formatLocalDate(d: Date | number, locale: AppLocale, now: Date | number = Date.now()): string {
-  const x = toDate(d);
-  const sameYear = x.getFullYear() === toDate(now).getFullYear();
-  if (locale === 'en') return `${MONTHS_EN[x.getMonth()]} ${x.getDate()}${sameYear ? '' : `, ${x.getFullYear()}`}`;
-  return `${sameYear ? '' : `${x.getFullYear()}年`}${x.getMonth() + 1}月${x.getDate()}日`;
+  const x = parts(toMs(d));
+  const sameYear = x.year === parts(toMs(now)).year;
+  if (locale === 'en') return `${MONTHS_EN[x.month - 1]} ${x.day}${sameYear ? '' : `, ${x.year}`}`;
+  return `${sameYear ? '' : `${x.year}年`}${x.month}月${x.day}日`;
 }
 
 /** "10月18日 21:04" / "Oct 18, 21:04". */

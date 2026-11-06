@@ -1,4 +1,4 @@
-import { definePlugin, defineTool, formatLocal } from '@pku-harness/sdk';
+import { at, definePlugin, defineTool, formatLocal, parts, startOfDay } from '@pku-harness/sdk';
 import { z } from 'zod';
 
 import { fetchCalendar } from './api';
@@ -10,12 +10,10 @@ const DAY = 86_400_000;
 const WEEKDAY = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
 
 /** Week number (1-based) of `now` in a semester whose week 1 starts on the Monday of `start`. */
-export function semesterWeek(sem: Semester, now: Date) {
+export function semesterWeek(sem: Semester, now: Date | number) {
   const [y, m, d] = sem.start.split('-').map(Number);
-  const s = new Date(y, m - 1, d);
-  const monday = new Date(y, m - 1, d - ((s.getDay() + 6) % 7));
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const days = Math.round((today.getTime() - monday.getTime()) / DAY);
+  const monday = at(y, m, d - (parts(at(y, m, d)).weekday - 1));
+  const days = Math.round((startOfDay(+now) - monday) / DAY);
   const week = Math.floor(days / 7) + 1;
   return { week, inSemester: week >= 1 && week <= sem.weeks, daysLeft: Math.max(0, sem.weeks * 7 - days - 1) };
 }
@@ -82,14 +80,15 @@ export const calendarPlugin = definePlugin({
       input: z.object({}),
       effect: 'read',
       execute: async (_input, ctx) => {
-        const now = new Date();
+        const now = Date.now();
+        const p = parts(now);
         const sem = await ctx.kv.get<Semester>('semester');
         const w = sem ? semesterWeek(sem, now) : null;
         return {
-          date: formatLocal(now.getTime()).slice(0, 10),
-          month: now.getMonth() + 1,
-          day: now.getDate(),
-          weekday: WEEKDAY[now.getDay()],
+          date: formatLocal(now).slice(0, 10),
+          month: p.month,
+          day: p.day,
+          weekday: WEEKDAY[p.weekday % 7],
           semester: sem && w ? { name: sem.name, week: w.week, totalWeeks: sem.weeks, inSemester: w.inSemester, daysLeft: w.daysLeft } : null,
         };
       },

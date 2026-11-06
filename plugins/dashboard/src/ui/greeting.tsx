@@ -1,4 +1,4 @@
-import { classesOn, classStatus, formatLocalDate, formatWeekday, weekOf, type HostServices, type HostUI } from '@pku-harness/sdk';
+import { classesOn, classStatus, formatLocalDate, formatWeekday, parts, weekOf, type HostServices, type HostUI } from '@pku-harness/sdk';
 import { View } from 'react-native';
 
 import { strings } from './strings';
@@ -33,7 +33,7 @@ export function Greeting({ host, services }: { host: HostUI; services: HostServi
           : campus.signedIn
             ? s.signedInHint
             : s.signedOutHint;
-  const greeting = s.greeting(now.getHours());
+  const greeting = s.greeting(parts(now.getTime()).hour);
 
   return (
     <FadeIn>

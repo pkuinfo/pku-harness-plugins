@@ -1,4 +1,4 @@
-import { formatWeekday, type AppLocale, type HostUI } from '@pku-harness/sdk';
+import { at, formatClock, formatWeekday, type AppLocale, type HostUI } from '@pku-harness/sdk';
 import type { ReactNode } from 'react';
 import { View } from 'react-native';
 
@@ -15,7 +15,7 @@ export const monthTitle = (month: string, s: Strings) => {
 
 export const dayTitle = (day: string, s: Strings, locale: AppLocale) => {
   const [y, m, d] = day.split('-').map(Number);
-  return `${s.dayShort(m, d)} ${formatWeekday(new Date(y, m - 1, d), locale)}`;
+  return `${s.dayShort(m, d)} ${formatWeekday(at(y, m, d), locale)}`;
 };
 
 /** "+12%" / "-8%" / null. */
@@ -81,8 +81,7 @@ export function EntryRow({ host, entry, settings, s, onPress }: { host: HostUI; 
   const locale = host.useLocale();
   const cat = settings.categories.find((c) => c.id === entry.category);
   const name = categoryName(cat, locale);
-  const d = new Date(entry.at);
-  const time = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  const time = formatClock(entry.at);
   const meta = [entry.note ? name : null, accountName(entry.account, locale), time].filter(Boolean).join(' · ');
   const income = entry.type === 'income';
   const amount = `${income ? '+' : '−'}${formatMoney(entry.amount)}`;

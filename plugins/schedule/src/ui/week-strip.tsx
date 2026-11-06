@@ -2,7 +2,7 @@ import type { HostUI } from '@pku-harness/sdk';
 import { StyleSheet, View } from 'react-native';
 
 import { strings } from './strings';
-import { addDays, mondayOf, sameDay } from './util';
+import { addDays, dayOfMonth, mondayOf, monthOf, sameDay } from './util';
 
 /** Monday-first week of the selected day; dots mark days with classes. */
 export function WeekStrip({ host, selected, onSelect, hasClasses }: { host: HostUI; selected: Date; onSelect: (d: Date) => void; hasClasses: (d: Date) => boolean }) {
@@ -23,7 +23,7 @@ export function WeekStrip({ host, selected, onSelect, hasClasses }: { host: Host
             <Pressable
               key={label}
               accessibilityRole="button"
-              accessibilityLabel={s.dayA11y(label, day.getMonth() + 1, day.getDate())}
+              accessibilityLabel={s.dayA11y(label, monthOf(day), dayOfMonth(day))}
               haptic={false}
               onPress={() => {
                 host.haptics.select();
@@ -34,7 +34,7 @@ export function WeekStrip({ host, selected, onSelect, hasClasses }: { host: Host
                 {label}
               </Text>
               <Text variant="bodyStrong" tone={isSel ? 'onAccent' : isToday ? 'accent' : 'default'}>
-                {day.getDate()}
+                {dayOfMonth(day)}
               </Text>
               <View style={[styles.dot, { borderRadius: t.radius.full, backgroundColor: hasClasses(day) ? (isSel ? t.colors.onAccent : t.colors.textFaint) : 'transparent' }]} />
             </Pressable>
@@ -59,7 +59,7 @@ export function WeekNav({ host, selected, onSelect, week }: { host: HostUI; sele
       <Pressable accessibilityRole="button" accessibilityLabel={s.thisWeekA11y} style={[styles.nav, { gap: t.spacing.xxs }]} onPress={() => onSelect(new Date())}>
         <Text variant="bodyStrong">{week != null && week >= 1 ? s.week(week) : s.thisWeek}</Text>
         <Text variant="caption" tone="muted">
-          {s.range(monday.getMonth() + 1, monday.getDate(), sunday.getMonth() + 1, sunday.getDate())}
+          {s.range(monthOf(monday), dayOfMonth(monday), monthOf(sunday), dayOfMonth(sunday))}
         </Text>
       </Pressable>
       <IconButton icon="chevronRight" label={s.nextWeek} variant="ghost" size={32} onPress={() => onSelect(addDays(selected, 7))} />

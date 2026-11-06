@@ -1,4 +1,4 @@
-import { defineTool, type KV, type ToolDef } from '@pku-harness/sdk';
+import { defineTool, formatClock, type KV, type ToolDef } from '@pku-harness/sdk';
 import { z } from 'zod';
 
 import { budgetStatus, byCategory, change, inRange, series, topEntries, totals } from './aggregate';
@@ -92,11 +92,7 @@ export const inputs = {
   }),
 };
 
-const pad = (n: number) => String(n).padStart(2, '0');
-const stamp = (at: number) => {
-  const d = new Date(at);
-  return `${dayKey(at)} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-};
+const stamp = (at: number) => `${dayKey(at)} ${formatClock(at)}`;
 
 /** What a tool result shows of an entry (names, not ids, except the entry id). */
 export function view(e: Entry, categories: Category[]) {

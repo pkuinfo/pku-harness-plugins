@@ -1,3 +1,5 @@
+import { parts } from '@pku-harness/sdk';
+
 import { categoryName, OTHER, type Category, type Entry, type EntryType, type Settings } from './model';
 import { bucketKeys, dayKey, daysInMonth, monthBounds, monthKey, toFen, toYuan, type Range } from './time';
 
@@ -112,7 +114,7 @@ export function budgetStatus(entries: Entry[], month: string, settings: Settings
   const monthEntries = inRange(entries, { start, end }).filter((e) => e.type === 'expense');
   const elapsed = now >= end ? 1 : now < start ? 0 : Math.min(1, (now - start) / (end - start));
   // Days left including today (a past month has none).
-  const daysLeft = now >= end ? 0 : now < start ? days : days - new Date(now).getDate() + 1;
+  const daysLeft = now >= end ? 0 : now < start ? days : days - parts(now).day + 1;
   const line = (scope: string, name: string, budget: number, list: Entry[]): BudgetLine => {
     const spentFen = list.reduce((s, e) => s + toFen(e.amount), 0);
     const budgetFen = toFen(budget);

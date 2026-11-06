@@ -1,4 +1,4 @@
-import { classesOn, classStatus, definePlugin, defineTool, formatWeeks, parseWeeks, timeOfDay, weekOf, type Course } from '@pku-harness/sdk';
+import { at, classesOn, classStatus, definePlugin, defineTool, formatWeeks, parseWeeks, timeOfDay, weekOf, type Course } from '@pku-harness/sdk';
 import { z } from 'zod';
 
 import { NextClassWidget } from './widget';
@@ -80,8 +80,8 @@ export const timetablePlugin = definePlugin({
       input: z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional() }),
       effect: 'read',
       execute: async ({ date }, ctx) => {
-        const now = new Date();
-        const day = date ? new Date(`${date}T00:00:00`) : now;
+        const now = Date.now();
+        const day = date ? at(...(date.split('-').map(Number) as [number, number, number])) : now;
         const { courses, semester } = ctx.services.timetable.get();
         const list = classesOn(courses, day, semester).map((c) => ({ ...view(c), ...(date ? {} : classStatus(c, now)) }));
         const next = date ? null : (list.find((c) => 'state' in c && c.state !== 'after') ?? null);

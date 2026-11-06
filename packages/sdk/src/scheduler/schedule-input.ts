@@ -1,11 +1,13 @@
 import { z } from 'zod';
 
+import { at, parts } from '../clock';
 import { describeTrigger, nextOccurrence, occurrencesAfter, totalOccurrences } from './recurrence';
 import { timeOfDay, type Trigger } from './types';
 
 /**
  * Model- and form-friendly schedule format: local "YYYY-MM-DD HH:mm" strings instead of epoch
- * ms, converted to a `Trigger`. Pure, so it is unit-tested.
+ * ms, converted to a `Trigger`. "Local" = the app's clock zone (`clock.ts`). Pure, so it is
+ * unit-tested.
  */
 
 const localDateTime = z
@@ -39,9 +41,10 @@ export function parseLocal(s: string): number {
   const m = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{1,2}):(\d{2})(?::(\d{2}))?$/.exec(s.trim());
   if (!m) throw new Error(`无法识别的时间：${s}`);
   const [, y, mo, d, h, mi, sec] = m.map(Number);
-  const date = new Date(y, mo - 1, d, h, mi, sec || 0);
-  if (date.getMonth() !== mo - 1 || date.getDate() !== d) throw new Error(`不存在的日期：${s}`);
-  return date.getTime();
+  const ms = at(y, mo, d, h, mi, sec || 0);
+  const p = parts(ms);
+  if (p.month !== mo || p.day !== d) throw new Error(`不存在的日期：${s}`);
+  return ms;
 }
 
 const pad = (n: number) => String(n).padStart(2, '0');
@@ -49,8 +52,8 @@ const WEEKDAY = ['日', '一', '二', '三', '四', '五', '六'];
 
 /** "2026-10-20 08:00 周二" */
 export function formatLocal(ms: number): string {
-  const d = new Date(ms);
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())} 周${WEEKDAY[d.getDay()]}`;
+  const d = parts(ms);
+  return `${d.year}-${pad(d.month)}-${pad(d.day)} ${pad(d.hour)}:${pad(d.minute)} 周${WEEKDAY[d.weekday % 7]}`;
 }
 
 export function toTrigger(input: ScheduleInput, now = Date.now()): Trigger {

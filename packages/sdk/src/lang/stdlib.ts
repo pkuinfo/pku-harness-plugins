@@ -134,6 +134,7 @@ function matchGroups(m: RegExpExecArray | RegExpMatchArray): unknown {
 
 // ---------------------------------------------------------------- dates (Beijing, UTC+8)
 
+// Deliberately pinned to Beijing: campus data is Beijing time. User-local wall-clock math uses clock.ts.
 const TZ = 8 * 3600_000;
 const DAY = 86400_000;
 

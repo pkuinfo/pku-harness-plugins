@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { strings } from './strings';
+import { dayAt, jsWeekday } from './util';
 
 type RemindMode = 'none' | 'atDue' | 'before15' | 'before60' | 'custom';
 type RepeatMode = 'none' | 'day' | 'week';
@@ -31,7 +32,7 @@ export function TodoForm({ host, services, params }: PluginScreenProps) {
   const rule0 = existing?.repeat ? repeatRuleOf(existing.repeat) : null;
   const [repeatMode, setRepeatMode] = useState<RepeatMode>(rule0?.unit ?? 'none');
   const [interval, setInterval] = useState(rule0?.interval ?? 1);
-  const [weekdays, setWeekdays] = useState<number[]>(rule0?.weekdays ?? [(due ?? new Date()).getDay()]);
+  const [weekdays, setWeekdays] = useState<number[]>(rule0?.weekdays ?? [jsWeekday(due ?? Date.now())]);
   const [end, setEnd] = useState<End>(rule0?.count ? 'count' : rule0?.until ? 'until' : 'never');
   const [count, setCount] = useState(rule0?.count ?? 10);
   const [until, setUntil] = useState<Date>(() => (rule0?.until ? new Date(rule0.until) : new Date(Date.now() + 90 * 86_400_000)));
@@ -44,7 +45,7 @@ export function TodoForm({ host, services, params }: PluginScreenProps) {
           interval,
           weekdays: repeatMode === 'week' ? weekdays : undefined,
           count: end === 'count' ? count : undefined,
-          until: end === 'until' ? new Date(until.getFullYear(), until.getMonth(), until.getDate(), 23, 59).getTime() : undefined,
+          until: end === 'until' ? dayAt(until, 23, 59) : undefined,
         };
   const r = rule();
   // Without a due time a repeating to-do starts on the next matching day (like the tool does).

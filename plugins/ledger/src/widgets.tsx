@@ -1,4 +1,4 @@
-import type { PluginWidgetProps } from '@pku-harness/sdk';
+import { at, parts, type PluginWidgetProps } from '@pku-harness/sdk';
 import { View } from 'react-native';
 
 import { budgetStatus, byCategory, inRange, series, totals } from './aggregate';
@@ -97,8 +97,9 @@ export function TrendWidget({ host, kv }: PluginWidgetProps) {
   const locale = host.useLocale();
   const s = strings[locale];
   const now = host.useNow(60_000);
-  const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).getTime();
-  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 29).getTime();
+  const today = parts(now.getTime());
+  const end = at(today.year, today.month, today.day + 1);
+  const start = at(today.year, today.month, today.day - 29);
   const data = useLedger(kv, start, end);
   if (!data) return <View style={{ minHeight: 96 }} />;
   const days = series(data.entries, { start, end, label: dayKey(start), unit: 'day' });

@@ -1,7 +1,12 @@
+import { at as wallAt, parts, startOfDay } from './clock';
 import { formatTime, parseTime } from './scheduler/recurrence';
 import type { Trigger } from './scheduler/types';
 
-/** Pure timetable logic, unit-tested. Weekdays use JS numbering: 0 = Sunday … 6 = Saturday. */
+/**
+ * Pure timetable logic, unit-tested. Weekdays use JS numbering: 0 = Sunday … 6 = Saturday.
+ * Dates are wall-clock dates in the app's clock zone (`clock.ts`); a `Date` argument is only
+ * read as an instant.
+ */
 
 export type Course = {
   id: string;
@@ -82,31 +87,32 @@ export function weekPattern(weeks: number[]): { first: number; last: number; ste
   return { first: weeks[0], last: weeks[weeks.length - 1], step };
 }
 
-function mondayOf(sem: Semester): Date {
+const ms = (d: Date | number) => (typeof d === 'number' ? d : d.getTime());
+
+/** Midnight of the Monday of the semester's first week. */
+function mondayOf(sem: Semester): number {
   const [y, m, d] = sem.start.split('-').map(Number);
-  const s = new Date(y, m - 1, d);
-  return new Date(y, m - 1, d - ((s.getDay() + 6) % 7));
+  return wallAt(y, m, d - (parts(wallAt(y, m, d)).weekday - 1));
 }
 
 /** Teaching week (1-based) of a date, or null without a semester. */
-export function weekOf(sem: Semester | null, date: Date): number | null {
+export function weekOf(sem: Semester | null, date: Date | number): number | null {
   if (!sem) return null;
-  const mon = mondayOf(sem);
-  const day = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  return Math.floor(Math.round((day.getTime() - mon.getTime()) / DAY) / 7) + 1;
+  return Math.floor(Math.round((startOfDay(ms(date)) - mondayOf(sem)) / DAY) / 7) + 1;
 }
 
-/** Local date of a weekday in a given teaching week. */
+/** Local date (its midnight) of a weekday in a given teaching week. */
 export function dateOfWeek(sem: Semester, week: number, weekday: number): Date {
-  const mon = mondayOf(sem);
-  return new Date(mon.getFullYear(), mon.getMonth(), mon.getDate() + (week - 1) * 7 + ((weekday + 6) % 7));
+  const mon = parts(mondayOf(sem));
+  return new Date(wallAt(mon.year, mon.month, mon.day + (week - 1) * 7 + ((weekday + 6) % 7)));
 }
 
 /** Courses meeting on a date, sorted by start time. */
-export function classesOn(courses: Course[], date: Date, sem: Semester | null): Course[] {
+export function classesOn(courses: Course[], date: Date | number, sem: Semester | null): Course[] {
   const week = weekOf(sem, date);
+  const weekday = parts(ms(date)).weekday % 7;
   return courses
-    .filter((c) => c.weekday === date.getDay())
+    .filter((c) => c.weekday === weekday)
     .filter((c) => !c.weeks || week == null || c.weeks.includes(week))
     .filter((c) => !sem || week == null || (week >= 1 && week <= sem.weeks))
     .sort((a, b) => a.start.localeCompare(b.start));
@@ -118,8 +124,9 @@ const minutes = (t: string) => {
 };
 
 /** Status of a class at `now` on its day: before / ongoing (with progress) / after. */
-export function classStatus(c: Course, now: Date): { state: 'before' | 'ongoing' | 'after'; progress: number; minutesToStart: number } {
-  const n = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
+export function classStatus(c: Course, now: Date | number): { state: 'before' | 'ongoing' | 'after'; progress: number; minutesToStart: number } {
+  const p = parts(ms(now));
+  const n = p.hour * 60 + p.minute + p.second / 60;
   const s = minutes(c.start);
   const e = minutes(c.end);
   if (n < s) return { state: 'before', progress: 0, minutesToStart: Math.ceil(s - n) };
@@ -140,8 +147,8 @@ export function courseReminderTrigger(c: Course, minutesBefore: number, sem: Sem
   }
   const weeks = c.weeks?.length ? c.weeks : range(1, sem.weeks);
   const p = weekPattern(weeks) ?? { first: weeks[0], last: weeks[weeks.length - 1], step: 1 };
-  const first = dateOfWeek(sem, p.first, c.weekday);
-  const last = dateOfWeek(sem, p.last, c.weekday);
+  const first = parts(dateOfWeek(sem, p.first, c.weekday).getTime());
+  const last = parts(dateOfWeek(sem, p.last, c.weekday).getTime());
   const [h, m] = parseTime(time);
   return {
     type: 'every',
@@ -150,7 +157,7 @@ export function courseReminderTrigger(c: Course, minutesBefore: number, sem: Sem
     weekdays: [c.weekday],
     times: [time],
     // Start on the Monday of the first week so the step-2 cadence aligns with that week.
-    startAt: new Date(first.getFullYear(), first.getMonth(), first.getDate() - ((c.weekday + 6) % 7)).getTime(),
-    until: new Date(last.getFullYear(), last.getMonth(), last.getDate(), h, m).getTime(),
+    startAt: wallAt(first.year, first.month, first.day - ((c.weekday + 6) % 7)),
+    until: wallAt(last.year, last.month, last.day, h, m),
   };
 }

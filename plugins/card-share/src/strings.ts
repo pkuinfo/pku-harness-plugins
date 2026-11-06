@@ -1,4 +1,4 @@
-import { defineStrings, formatCountdown, type AppLocale } from '@pku-harness/sdk';
+import { at, defineStrings, formatCountdown, parts, type AppLocale } from '@pku-harness/sdk';
 
 import type { EndReason } from './protocol';
 import type { OngoingText, ShareRecord } from './session';
@@ -227,9 +227,8 @@ export function ttlSeconds(preset: TtlPreset, now: number = Date.now()): number 
     case '2h':
       return 7200;
     case 'today': {
-      const end = new Date(now);
-      end.setHours(23, 59, 0, 0);
-      return Math.max(600, Math.round((end.getTime() - now) / 1000));
+      const d = parts(now);
+      return Math.max(600, Math.round((at(d.year, d.month, d.day, 23, 59) - now) / 1000));
     }
   }
 }

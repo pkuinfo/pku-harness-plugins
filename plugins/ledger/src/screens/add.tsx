@@ -1,4 +1,4 @@
-import type { PluginScreenProps } from '@pku-harness/sdk';
+import { formatClock, type PluginScreenProps } from '@pku-harness/sdk';
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 
@@ -9,8 +9,7 @@ import { strings } from '../strings';
 import { dayKey, formatMoney, monthBounds, MONTH_RE } from '../time';
 import { useSettings } from '../use-ledger';
 
-const pad = (n: number) => String(n).padStart(2, '0');
-const whenOf = (d: Date) => `${dayKey(d)} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+const whenOf = (d: Date) => `${dayKey(d)} ${formatClock(d)}`;
 
 /**
  * 记一笔 / edit. Fast path: the sheet opens on 支出 with the first category picked, so type the

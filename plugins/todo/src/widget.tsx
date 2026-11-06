@@ -1,17 +1,12 @@
-import { formatClock, formatLocalDate, todosForView, type AppLocale, type HostUI, type PluginWidgetProps, type Todo } from '@pku-harness/sdk';
+import { dayDiff, formatClock, formatLocalDate, todosForView, type AppLocale, type HostUI, type PluginWidgetProps, type Todo } from '@pku-harness/sdk';
 import { StyleSheet, View } from 'react-native';
 
 import { strings } from './strings';
 
-const dayStart = (ms: number) => {
-  const d = new Date(ms);
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-};
-
 /** "18:00" today, "明天 09:00", else the date; overdue ones prefixed. */
 export function dueText(dueAt: number, now: number, locale: AppLocale): string {
   const s = strings[locale];
-  const days = Math.round((dayStart(dueAt) - dayStart(now)) / 86_400_000);
+  const days = dayDiff(dueAt, now);
   const when = days === 0 ? formatClock(dueAt) : days === 1 ? `${s.tomorrow} ${formatClock(dueAt)}` : formatLocalDate(dueAt, locale, now);
   return dueAt < now ? `${s.overdue}${when}` : when;
 }

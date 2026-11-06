@@ -1,4 +1,4 @@
-import type { PluginScreenProps } from '@pku-harness/sdk';
+import { parts, type PluginScreenProps } from '@pku-harness/sdk';
 import { useState } from 'react';
 import { View } from 'react-native';
 
@@ -15,7 +15,7 @@ export function YearScreen({ host, kv, params }: PluginScreenProps) {
   const locale = host.useLocale();
   const s = strings[locale];
   const now = host.useNow(60_000);
-  const thisYear = now.getFullYear();
+  const thisYear = parts(now.getTime()).year;
   const asked = Number(params.year);
   const [year, setYear] = useState(Number.isInteger(asked) && asked > 1999 && asked <= thisYear ? asked : thisYear);
   const r = resolvePeriod({ period: 'year', year }, now.getTime());

@@ -1,8 +1,10 @@
+import { at as wallAt, dayKey, parts as wallParts } from '../clock';
 import type { Trigger } from './types';
 
 /**
- * Recurrence engine (docs/ARCHITECTURE.md §8). Pure functions over device-local time, no
- * React Native imports, so it runs under `bun test`.
+ * Recurrence engine (docs/ARCHITECTURE.md §8). Pure functions over wall-clock time in the app's
+ * clock zone (`clock.ts`), no React Native imports, so it runs under `bun test`.
+ * Trigger `weekdays` use the JS numbering 0 = Sunday … 6 = Saturday.
  *
  * A series is a sequence of periods (one minute/hour step, one day, or one week), each with
  * a fixed list of slots (times of day × weekdays). Slots before `startAt` are skipped; the
@@ -38,7 +40,6 @@ type Series = {
 };
 
 function compile(t: Every): Series {
-  const start = new Date(t.startAt);
   if (t.unit === 'minute' || t.unit === 'hour') {
     const step = t.interval * (t.unit === 'minute' ? MINUTE : HOUR);
     return {
@@ -52,22 +53,23 @@ function compile(t: Every): Series {
     };
   }
 
-  const times = [...new Set(t.times ?? [formatTime(start.getHours(), start.getMinutes())])]
+  const start = wallParts(t.startAt);
+  const times = [...new Set(t.times ?? [formatTime(start.hour, start.minute)])]
     .map(parseTime)
     .sort((a, b) => a[0] * 60 + a[1] - (b[0] * 60 + b[1]));
-  const y = start.getFullYear();
-  const mo = start.getMonth();
+  const y = start.year;
+  const mo = start.month;
   let d0: number;
   let dayOffsets: number[];
   let daysPerPeriod: number;
   if (t.unit === 'day') {
-    d0 = start.getDate();
+    d0 = start.day;
     dayOffsets = [0];
     daysPerPeriod = t.interval;
   } else {
     // Weeks start on Monday (China). Offsets are days from that Monday.
-    d0 = start.getDate() - ((start.getDay() + 6) % 7);
-    const weekdays = [...new Set(t.weekdays ?? [start.getDay()])];
+    d0 = start.day - (start.weekday - 1);
+    const weekdays = [...new Set(t.weekdays ?? [start.weekday % 7])];
     dayOffsets = weekdays.map((wd) => (wd + 6) % 7).sort((a, b) => a - b);
     daysPerPeriod = 7 * t.interval;
   }
@@ -75,12 +77,12 @@ function compile(t: Every): Series {
   const rawSlots = (p: number) => {
     const out: number[] = [];
     for (const off of dayOffsets) {
-      for (const [h, m] of times) out.push(new Date(y, mo, d0 + p * daysPerPeriod + off, h, m).getTime());
+      for (const [h, m] of times) out.push(wallAt(y, mo, d0 + p * daysPerPeriod + off, h, m));
     }
     return out;
   };
   return {
-    periodStart: (p) => new Date(y, mo, d0 + p * daysPerPeriod).getTime(),
+    periodStart: (p) => wallAt(y, mo, d0 + p * daysPerPeriod),
     rawSlots,
     approxLen: daysPerPeriod * DAY,
     perPeriod: dayOffsets.length * times.length,
@@ -168,19 +170,15 @@ export function totalOccurrences(trigger: Trigger): number | null {
 const WEEKDAY = ['日', '一', '二', '三', '四', '五', '六'];
 
 function formatDateTime(ms: number, now: number) {
-  const d = new Date(ms);
-  const n = new Date(now);
-  const time = formatTime(d.getHours(), d.getMinutes());
-  const sameYear = d.getFullYear() === n.getFullYear();
-  const dayDiff = Math.round(
-    (new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime() -
-      new Date(n.getFullYear(), n.getMonth(), n.getDate()).getTime()) /
-      DAY,
-  );
+  const d = wallParts(ms);
+  const n = wallParts(now);
+  const time = formatTime(d.hour, d.minute);
+  const sameYear = d.year === n.year;
+  const dayDiff = Math.round((wallAt(d.year, d.month, d.day) - wallAt(n.year, n.month, n.day)) / DAY);
   if (dayDiff === 0) return `今天 ${time}`;
   if (dayDiff === 1) return `明天 ${time}`;
   if (dayDiff === 2) return `后天 ${time}`;
-  return `${sameYear ? '' : `${d.getFullYear()}年`}${d.getMonth() + 1}月${d.getDate()}日 ${time}`;
+  return `${sameYear ? '' : `${d.year}年`}${d.month}月${d.day}日 ${time}`;
 }
 
 /** Short description in the app language, e.g. "每 3 天 08:00 · 共 16 次" / "Every 3 days at 08:00 · 16 times". */
@@ -192,14 +190,14 @@ function formatDateTime(ms: number, now: number) {
 function startWorthSaying(trigger: Extract<Trigger, { type: 'every' }>, now: number): boolean {
   if (trigger.startAt <= now) return false;
   const first = nextOccurrence(trigger, now)?.at;
-  return first == null || new Date(first).toDateString() !== new Date(trigger.startAt).toDateString();
+  return first == null || dayKey(first) !== dayKey(trigger.startAt);
 }
 
 export function describeTrigger(trigger: Trigger, now = Date.now(), locale: 'zh-Hans' | 'en' = 'zh-Hans'): string {
   if (locale === 'en') return describeTriggerEn(trigger, now);
   if (trigger.type === 'at') return formatDateTime(trigger.at, now);
-  const start = new Date(trigger.startAt);
-  const times = (trigger.times ?? [formatTime(start.getHours(), start.getMinutes())]).join('、');
+  const start = wallParts(trigger.startAt);
+  const times = (trigger.times ?? [formatTime(start.hour, start.minute)]).join('、');
   let head: string;
   switch (trigger.unit) {
     case 'minute':
@@ -212,7 +210,7 @@ export function describeTrigger(trigger: Trigger, now = Date.now(), locale: 'zh-
       head = `${trigger.interval === 1 ? '每天' : `每 ${trigger.interval} 天`} ${times}`;
       break;
     case 'week': {
-      const days = [...(trigger.weekdays ?? [start.getDay()])]
+      const days = [...(trigger.weekdays ?? [start.weekday % 7])]
         .sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7))
         .map((w) => WEEKDAY[w])
         .join('、');
@@ -232,22 +230,20 @@ const MONTH_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep',
 
 /** "Today 20:00", "Tomorrow 08:00", "Nov 2, 08:00" ("Nov 2, 2027, 08:00" in another year); lowercase day words mid-sentence. */
 function formatDateTimeEn(ms: number, now: number, midSentence = false) {
-  const d = new Date(ms);
-  const n = new Date(now);
-  const time = formatTime(d.getHours(), d.getMinutes());
-  const dayDiff = Math.round(
-    (new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime() - new Date(n.getFullYear(), n.getMonth(), n.getDate()).getTime()) / DAY,
-  );
+  const d = wallParts(ms);
+  const n = wallParts(now);
+  const time = formatTime(d.hour, d.minute);
+  const dayDiff = Math.round((wallAt(d.year, d.month, d.day) - wallAt(n.year, n.month, n.day)) / DAY);
   if (dayDiff === 0) return `${midSentence ? 'today' : 'Today'} ${time}`;
   if (dayDiff === 1) return `${midSentence ? 'tomorrow' : 'Tomorrow'} ${time}`;
-  const year = d.getFullYear() === n.getFullYear() ? '' : `, ${d.getFullYear()}`;
-  return `${MONTH_EN[d.getMonth()]} ${d.getDate()}${year}, ${time}`;
+  const year = d.year === n.year ? '' : `, ${d.year}`;
+  return `${MONTH_EN[d.month - 1]} ${d.day}${year}, ${time}`;
 }
 
 function describeTriggerEn(trigger: Trigger, now: number): string {
   if (trigger.type === 'at') return formatDateTimeEn(trigger.at, now);
-  const start = new Date(trigger.startAt);
-  const times = (trigger.times ?? [formatTime(start.getHours(), start.getMinutes())]).join(', ');
+  const start = wallParts(trigger.startAt);
+  const times = (trigger.times ?? [formatTime(start.hour, start.minute)]).join(', ');
   const n = trigger.interval;
   let head: string;
   switch (trigger.unit) {
@@ -261,7 +257,7 @@ function describeTriggerEn(trigger: Trigger, now: number): string {
       head = `${n === 1 ? 'Daily' : `Every ${n} days`} at ${times}`;
       break;
     case 'week': {
-      const days = [...(trigger.weekdays ?? [start.getDay()])]
+      const days = [...(trigger.weekdays ?? [start.weekday % 7])]
         .sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7))
         .map((w) => WEEKDAY_EN[w])
         .join(', ');

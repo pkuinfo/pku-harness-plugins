@@ -1,4 +1,4 @@
-import { definePlugin, defineTool } from '@pku-harness/sdk';
+import { dayKey, definePlugin, defineTool, formatClock } from '@pku-harness/sdk';
 import { z } from 'zod';
 
 import { redactUrl } from './parse';
@@ -8,12 +8,7 @@ import { SubmitScreen } from './submit-screen';
 import { VideosScreen } from './videos-screen';
 import { DueWidget } from './widget';
 
-const fmt = (ms: number | null) => {
-  if (ms == null) return null;
-  const d = new Date(ms);
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-};
+const fmt = (ms: number | null) => (ms == null ? null : `${dayKey(ms)} ${formatClock(ms)}`);
 
 const clip = (s: string, n: number) => (s.length > n ? `${s.slice(0, n)}…` : s);
 

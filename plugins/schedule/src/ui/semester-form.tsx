@@ -1,10 +1,8 @@
-import type { PluginScreenProps } from '@pku-harness/sdk';
+import { at, dayKey, type PluginScreenProps } from '@pku-harness/sdk';
 import { useState } from 'react';
 import { View } from 'react-native';
 
 import { strings } from './strings';
-
-const pad = (n: number) => String(n).padStart(2, '0');
 
 /** Semester dates for teaching weeks and class reminders (calendar.setSemester). */
 export function SemesterForm({ host, services, invoke }: PluginScreenProps) {
@@ -13,12 +11,12 @@ export function SemesterForm({ host, services, invoke }: PluginScreenProps) {
   const s = strings[host.useLocale()];
   const cur = services.timetable.get().semester;
   const [name, setName] = useState(cur?.name ?? '');
-  const [start, setStart] = useState<Date | null>(() => (cur ? new Date(`${cur.start}T00:00:00`) : null));
+  const [start, setStart] = useState<Date | null>(() => (cur ? new Date(at(...(cur.start.split('-').map(Number) as [number, number, number]))) : null));
   const [weeks, setWeeks] = useState(cur?.weeks ?? 16);
 
   const save = async () => {
     if (!start) return;
-    await invoke('calendar.setSemester', { name: name.trim() || s.defaultSemester, start: `${start.getFullYear()}-${pad(start.getMonth() + 1)}-${pad(start.getDate())}`, weeks });
+    await invoke('calendar.setSemester', { name: name.trim() || s.defaultSemester, start: dayKey(start.getTime()), weeks });
     host.haptics.success();
     host.dismiss('/schedule');
   };

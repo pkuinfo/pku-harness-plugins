@@ -1,18 +1,14 @@
-import { describeTrigger, formatClock, formatLocalDateTime, formatTime, formatWeekday, isLate, occurrencesAfter, summarize, type Job, type JobRun, type PluginScreenProps, type Trigger } from '@pku-harness/sdk';
+import { describeTrigger, formatClock, formatLocalDateTime, formatWeekday, isLate, occurrencesAfter, parts, summarize, type Job, type JobRun, type PluginScreenProps, type Trigger } from '@pku-harness/sdk';
 import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { strings } from './strings';
+import { dayAt, hhmmOf, jsWeekday, startOfDay, timeToday } from './util';
 
 type Unit = 'day' | 'week' | 'hour' | 'minute';
 type End = 'never' | 'count' | 'until';
 
-const toDate = (hhmm: string) => {
-  const [h, m] = hhmm.split(':').map(Number);
-  const d = new Date();
-  d.setHours(h, m, 0, 0);
-  return d;
-};
+const toDate = timeToday;
 
 /** Create or edit a stand-alone reminder (or the schedule of a check job). */
 export function ReminderForm({ host, services, params }: PluginScreenProps) {
@@ -31,14 +27,14 @@ export function ReminderForm({ host, services, params }: PluginScreenProps) {
   const [kind, setKind] = useState<'once' | 'repeat'>(every ? 'repeat' : 'once');
   const [at, setAt] = useState<Date>(() => {
     if (tr?.type === 'at') return new Date(tr.at);
-    const d = new Date();
-    d.setHours(d.getHours() + 1, 0, 0, 0);
-    return d;
+    // The next whole hour.
+    const now = Date.now();
+    return new Date(dayAt(now, parts(now).hour + 1));
   });
   const [unit, setUnit] = useState<Unit>(every?.unit ?? 'day');
   const [interval, setInterval] = useState(every?.interval ?? 1);
   const [times, setTimes] = useState<string[]>(every?.times ?? ['08:00']);
-  const [weekdays, setWeekdays] = useState<number[]>(every?.weekdays ?? [new Date().getDay()]);
+  const [weekdays, setWeekdays] = useState<number[]>(every?.weekdays ?? [jsWeekday(Date.now())]);
   const [start, setStart] = useState<Date>(() => (every ? new Date(every.startAt) : new Date()));
   const [end, setEnd] = useState<End>(every?.count ? 'count' : every?.until ? 'until' : 'never');
   const [count, setCount] = useState(every?.count ?? 10);
@@ -54,9 +50,9 @@ export function ReminderForm({ host, services, params }: PluginScreenProps) {
       interval,
       times: fine ? undefined : times,
       weekdays: unit === 'week' ? weekdays : undefined,
-      startAt: fine ? Math.floor(start.getTime() / 60_000) * 60_000 : new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime(),
+      startAt: fine ? Math.floor(start.getTime() / 60_000) * 60_000 : startOfDay(start).getTime(),
       count: end === 'count' ? count : undefined,
-      until: end === 'until' ? new Date(until.getFullYear(), until.getMonth(), until.getDate(), 23, 59).getTime() : undefined,
+      until: end === 'until' ? dayAt(until, 23, 59) : undefined,
     };
   }, [kind, at, unit, interval, times, weekdays, start, end, count, until]);
   const summary = summarize(trigger, openedAt, 3);
@@ -90,7 +86,7 @@ export function ReminderForm({ host, services, params }: PluginScreenProps) {
 
   const setTime = (i: number, d: Date) => {
     const next = times.slice();
-    next[i] = formatTime(d.getHours(), d.getMinutes());
+    next[i] = hhmmOf(d);
     setTimes([...new Set(next)].sort());
   };
 

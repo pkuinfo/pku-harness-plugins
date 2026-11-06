@@ -3,13 +3,13 @@ import { useState } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 
 import { strings } from './strings';
-import { clock, form, sameDay } from './util';
+import { addDays, clock, form, sameDay } from './util';
 
 function dueLabel(todo: Todo, now: Date, locale: AppLocale): { text: string; tone: 'down' | 'warn' | 'neutral' } | null {
   if (todo.dueAt == null) return null;
   const d = new Date(todo.dueAt);
   const overdue = !todo.doneAt && todo.dueAt < now.getTime();
-  const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  const tomorrow = addDays(now, 1);
   const s = strings[locale];
   const day = sameDay(d, now) ? s.today : sameDay(d, tomorrow) ? s.tomorrow : formatLocalDate(d, locale, now);
   // Overdue rows sit under the labelled 已逾期 group: the red tone is enough, no repeated prefix.

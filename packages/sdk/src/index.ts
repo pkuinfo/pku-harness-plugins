@@ -1,4 +1,5 @@
 export * from './campus';
+export * from './clock';
 export * from './cloud';
 export * from './dashboard';
 export * from './format';

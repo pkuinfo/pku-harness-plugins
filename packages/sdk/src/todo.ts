@@ -1,3 +1,4 @@
+import { at, parts, startOfDay } from './clock';
 import { nextOccurrence } from './scheduler/recurrence';
 import type { Trigger } from './scheduler/types';
 
@@ -7,8 +8,8 @@ export type TodoPriority = 'none' | 'high';
 /**
  * How a to-do repeats: an ordinary scheduler series (`every`, unit day or week) whose
  * occurrences are the due times of successive instances. `times` holds the due time of day,
- * `startAt` anchors the series (so `count` / `until` bound it across instances). Device-local
- * time, like the rest of the scheduler.
+ * `startAt` anchors the series (so `count` / `until` bound it across instances). Wall-clock
+ * time in the app's clock zone (`clock.ts`), like the rest of the scheduler.
  */
 export type TodoRepeat = Extract<Trigger, { type: 'every' }>;
 
@@ -57,14 +58,14 @@ const pad = (n: number) => String(n).padStart(2, '0');
 
 /** A repeat series anchored at a due time: occurrences fall on that time of day. */
 export function todoRepeat(rule: RepeatRule, dueAt: number): TodoRepeat {
-  const d = new Date(dueAt);
+  const d = parts(dueAt);
   return {
     type: 'every',
     unit: rule.unit,
     interval: Math.max(1, Math.round(rule.interval)),
-    times: [`${pad(d.getHours())}:${pad(d.getMinutes())}`],
-    weekdays: rule.unit === 'week' ? (rule.weekdays?.length ? [...new Set(rule.weekdays)].sort() : [d.getDay()]) : undefined,
-    startAt: new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(),
+    times: [`${pad(d.hour)}:${pad(d.minute)}`],
+    weekdays: rule.unit === 'week' ? (rule.weekdays?.length ? [...new Set(rule.weekdays)].sort() : [d.weekday % 7]) : undefined,
+    startAt: startOfDay(dueAt),
     count: rule.count,
     until: rule.until,
   };
@@ -85,10 +86,10 @@ export function repeatRuleOf(r: TodoRepeat): RepeatRule {
  * `time` ("HH:mm", default 09:00) on a matching day.
  */
 export function firstDue(rule: RepeatRule, now: number, time = '09:00'): number | null {
-  const n = new Date(now);
+  const n = parts(now);
   const [h, m] = time.split(':').map(Number);
-  const anchor = new Date(n.getFullYear(), n.getMonth(), n.getDate(), h, m).getTime();
-  const series = todoRepeat({ ...rule, weekdays: rule.unit === 'week' ? (rule.weekdays?.length ? rule.weekdays : [n.getDay()]) : undefined }, anchor);
+  const anchor = at(n.year, n.month, n.day, h, m);
+  const series = todoRepeat({ ...rule, weekdays: rule.unit === 'week' ? (rule.weekdays?.length ? rule.weekdays : [n.weekday % 7]) : undefined }, anchor);
   return nextOccurrence(series, now - 1)?.at ?? null;
 }
 
@@ -119,8 +120,8 @@ export function nextTodoInstance(
 export type TodoGroup = 'overdue' | 'today' | 'upcoming' | 'undated' | 'done';
 
 const endOfDay = (now: number) => {
-  const d = new Date(now);
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1).getTime();
+  const d = parts(now);
+  return at(d.year, d.month, d.day + 1);
 };
 
 /** Which list a to-do belongs in at `now`. */
