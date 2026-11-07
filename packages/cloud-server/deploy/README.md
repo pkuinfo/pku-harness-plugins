@@ -10,7 +10,7 @@ Three pieces, all optional except the first:
 
 ## Build
 
-From the root of the plugins repo, after building any viewer pages (`plugins/*/web/dist`):
+From the root of the plugins repo. The image builds every viewer page (`plugins/*/web`) itself:
 
 ```bash
 docker build -f packages/cloud-server/deploy/Dockerfile -t pku-harness-cloud .
