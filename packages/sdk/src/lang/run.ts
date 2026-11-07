@@ -31,6 +31,9 @@ export const LIMITS = {
   callDepth: 3,
 };
 
+/** The most a tool's own `limits:` may raise LIMITS to (crawls across all of a student's courses). */
+export const RAISED_MAX = { requests: 200, wallMs: 120_000 };
+
 /** Public HTTP for plugins: the host supplies it (fetch with a timeout); the runner checks hosts. */
 export type PublicFetch = (req: { url: string; method: string; headers: Record<string, string>; body?: string; timeoutMs: number; followRedirects: boolean }) => Promise<{ status: number; url: string; headers: Record<string, string>; body: string }>;
 
@@ -86,9 +89,8 @@ type Run = {
   env: RunEnv;
   lim: typeof LIMITS;
   ctx: EvalContext & { now: number };
-  steps: number;
-  requests: number;
-  inFlight: number;
+  /** Counters shared by the whole run, `call`ed tools included (they are not a way around LIMITS). */
+  n: { steps: number; requests: number; inFlight: number };
   deadline: number;
   depth: number;
   effect: ToolEffect;
@@ -173,8 +175,8 @@ function toMultipart(run: Run, req: RequestDoc): CampusMultipart {
 /** One request; returns the response shaped by `as`. */
 async function request(run: Run, raw: unknown, as: unknown, scope: Scope): Promise<unknown> {
   guard(run);
-  if (++run.requests > run.lim.requests) throw new ToolFailure(`more than ${run.lim.requests} requests in one run`);
-  while (run.inFlight >= run.lim.inFlight) await new Promise((r) => setTimeout(r, 5));
+  if (++run.n.requests > run.lim.requests) throw new ToolFailure(`more than ${run.lim.requests} requests in one run`);
+  while (run.n.inFlight >= run.lim.inFlight) await new Promise((r) => setTimeout(r, 5));
   let tscope = scope;
   if (run.env.secrets) {
     tscope = scope.child();
@@ -204,7 +206,7 @@ async function request(run: Run, raw: unknown, as: unknown, scope: Scope): Promi
   const followRedirects = req.followRedirects ?? true;
 
   let res: CampusResponse;
-  run.inFlight++;
+  run.n.inFlight++;
   try {
     if (req.campus) {
       if (run.env.campus === false) throw new ToolFailure(`campus services are only available on the phone (requested '${req.campus}')`);
@@ -235,7 +237,7 @@ async function request(run: Run, raw: unknown, as: unknown, scope: Scope): Promi
       if (!hostAllowed(final, run.env.manifest.network)) throw new ToolFailure(`the request was redirected to ${final}, which is not declared in network`);
     }
   } finally {
-    run.inFlight--;
+    run.n.inFlight--;
   }
   const maxSize = Math.min(run.lim.responseBytesMax, Math.max(run.lim.responseBytes, Number(req.maxSize) || 0));
   if (res.body.length > maxSize) throw new ToolFailure(`response larger than ${maxSize / 1e6} MB (raise request.maxSize, at most ${run.lim.responseBytesMax / 1e6} MB)`);
@@ -353,7 +355,7 @@ async function runSteps(run: Run, steps: StepDoc[], scope: Scope): Promise<unkno
   let last: unknown;
   for (const step of steps) {
     guard(run);
-    if (++run.steps > run.lim.steps) throw new ToolFailure(`more than ${run.lim.steps} steps in one run`);
+    if (++run.n.steps > run.lim.steps) throw new ToolFailure(`more than ${run.lim.steps} steps in one run`);
     const value = await runStep(run, step, scope);
     if (typeof step.let === 'string') {
       scope.set(step.let, value);
@@ -405,8 +407,8 @@ async function runStep(run: Run, step: StepDoc, scope: Scope): Promise<unknown> 
   if ('request' in step) return request(run, step.request, step.as, scope);
 
   if ('paginate' in step) {
-    const p = step.paginate as { request: unknown; items: string; next: string; start?: string; max?: number; as?: string };
-    const max = Math.max(1, Math.min(run.lim.pages, Number(p.max ?? 10)));
+    const p = step.paginate as { request: unknown; items: string; next: string; start?: string; max?: number | string; as?: string };
+    const max = Math.max(1, Math.min(run.lim.pages, Number((typeof p.max === 'string' ? expr(run, p.max, scope) : p.max) ?? 10) || 1));
     const s = scope.child();
     s.set('cursor', p.start == null ? null : expr(run, p.start, scope));
     const all: unknown[] = [];
@@ -565,6 +567,9 @@ export async function runTool(env: RunEnv, name: string, input: Record<string, u
   if (!tool) throw new ToolFailure(`no tool '${name}'`);
   const now = env.now?.() ?? Date.now();
   const lim = { ...LIMITS };
+  // A tool may ask for more requests or time (shown before install), up to RAISED_MAX.
+  if (tool.limits?.requests) lim.requests = Math.min(RAISED_MAX.requests, Math.max(lim.requests, tool.limits.requests));
+  if (tool.limits?.seconds) lim.wallMs = Math.min(RAISED_MAX.wallMs, Math.max(lim.wallMs, tool.limits.seconds * 1000));
   for (const [k, v] of Object.entries(env.limits ?? {})) if (typeof v === 'number') lim[k as keyof typeof LIMITS] = Math.min(lim[k as keyof typeof LIMITS], v);
   const ctx: EvalContext & { now: number } = {
     budget: { ops: lim.ops },
@@ -572,7 +577,7 @@ export async function runTool(env: RunEnv, name: string, input: Record<string, u
     now,
     call: (fn, args) => callFn(fn, args, ctx),
   };
-  const run: Run = { env, lim, ctx, steps: 0, requests: 0, inFlight: 0, deadline: Date.now() + lim.wallMs, depth: 0, effect: tool.effect, picked: env.picked ?? new Map(), userOnly: !!tool.userOnly };
+  const run: Run = { env, lim, ctx, n: { steps: 0, requests: 0, inFlight: 0 }, deadline: Date.now() + lim.wallMs, depth: 0, effect: tool.effect, picked: env.picked ?? new Map(), userOnly: !!tool.userOnly };
   try {
     const out = plain(await execTool(run, tool, input));
     const size = JSON.stringify(out ?? null).length;

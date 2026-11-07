@@ -158,6 +158,8 @@ function checkStep(c: Ctx, where: string, step: unknown) {
     else {
       checkRequest(c, `${where}.paginate.request`, p.request);
       for (const f of ['items', 'next', 'start']) if (p[f] !== undefined) checkExpr(c, `${where}.paginate.${f}`, p[f]);
+      if (typeof p.max === 'string') checkExpr(c, `${where}.paginate.max`, p.max);
+      else if (p.max !== undefined && typeof p.max !== 'number') c.issues.push(`${c.file} › ${where}.paginate.max: a number or an expression`);
       if (p.items === undefined || p.next === undefined) c.issues.push(`${c.file} › ${where}.paginate: needs items and next`);
     }
   }
@@ -325,6 +327,7 @@ export async function loadDocument(read: ReadFile): Promise<PluginDocument> {
     else if (tools[ds.tool]!.effect !== 'read') issues.push(`PLUGIN.md › dataSources.${name}: '${ds.tool}' is not a read tool`);
   }
   for (const s of manifest.settings ?? []) if (!screens[s.screen]) issues.push(`PLUGIN.md › settings: no screen '${s.screen}'`);
+  for (const [k, c] of Object.entries(manifest.commands ?? {})) if (c.screen && !screens[c.screen]) issues.push(`PLUGIN.md › commands.${k}.screen: no screen '${c.screen}'`);
   if (manifest.remote && manifest.tools && Object.keys(manifest.tools).length) issues.push('PLUGIN.md: a remote (MCP) plugin has no tools of its own');
   // Server functions send data to a server: the user must be told what, in the consent sheet.
   const disclosure = (manifest.cloud as { disclosure?: { zh?: unknown[] } } | undefined)?.disclosure;

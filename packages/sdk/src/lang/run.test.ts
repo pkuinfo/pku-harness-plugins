@@ -451,3 +451,46 @@ describe('secure screens and QR codes', () => {
     expect(await plugin(view('https://pay.example/123'))).toContain('QRCode value must be bound');
   });
 });
+
+describe('run budget', () => {
+  // Two each steps of `half` requests (each takes at most 50 items).
+  const crawl = (extra: string, half: number, call = false) =>
+    doc({
+      'PLUGIN.md': md('network: [example.com]\ntools:\n  t: tools/t.yaml\n  one: tools/one.yaml'),
+      'tools/one.yaml': "title: 一个\ndescription: One request.\neffect: read\nsteps:\n  - let: r\n    request: { url: 'https://example.com/p' }\n    as: text\nreturn: r\n",
+      'tools/t.yaml': `title: 抓取\ndescription: Many requests.\neffect: read\n${extra}steps:\n${['a', 'b']
+        .map((v) => `  - let: ${v}\n    each: "range(0, ${half})"\n    ${call ? 'steps:\n      - let: x\n        call: one\n        input: "{}"\n    return: x' : "request: { url: 'https://example.com/p' }"}\n`)
+        .join('')}return: a.length + b.length\n`,
+    }).then((d) => runTool(replayEnv(d, Array.from({ length: half * 2 }, () => ({ match: '/p', body: 'x' }))).env, 't', {}));
+
+  test('a tool may ask for more requests, up to 200', async () => {
+    expect(await crawl('', 31).catch((e: Error) => e.message)).toContain('more than 60 requests');
+    expect(await crawl('limits: { requests: 100 }\n', 50)).toBe(100);
+    const big = await doc({
+      'PLUGIN.md': md('tools:\n  t: tools/t.yaml'),
+      'tools/t.yaml': 'title: T\ndescription: Too many.\neffect: read\nlimits: { requests: 500 }\nreturn: 1\n',
+    }).catch((e: Error) => e.message);
+    expect(typeof big).toBe('string');
+  });
+
+  test('called tools count against the caller (call is no way around the limits)', async () => {
+    expect(await crawl('', 31, true).catch((e: Error) => e.message)).toContain('more than 60 requests');
+  });
+});
+
+describe('commands that open a screen', () => {
+  test('compile to a navigate run; a missing screen is reported', async () => {
+    const files = (cmd: string) => ({
+      'PLUGIN.md': md(`tools:\n  t: tools/t.yaml\nscreens:\n  pay: views/pay.json\ncommands:\n  ${cmd}`),
+      'tools/t.yaml': 'title: T\ndescription: Nothing.\neffect: read\nreturn: 1\n',
+      'views/pay.json': '{ "title": "付", "presentation": "modal", "spec": { "root": "a", "elements": { "a": { "type": "Text", "props": { "text": "x" } } } } }',
+    });
+    const d = await doc(files('pay: { description: 打开付款码, screen: pay }'));
+    const plugin = compilePlugin(d, { fetch: async () => ({ status: 200, url: '', headers: {}, body: '' }) } as never);
+    const hrefs: string[] = [];
+    await (plugin.contributes!.commands!.pay as { run: (i: string, c: unknown) => unknown }).run('', { navigate: (h: string) => hrefs.push(h) });
+    expect(hrefs).toEqual(['/m/demo/pay']);
+    expect(await doc(files('pay: { description: 打开, screen: nope }')).catch((e: Error) => e.message)).toContain("no screen 'nope'");
+    expect(await doc(files('pay: { description: 打开, screen: pay, prompt: hi }')).catch((e: Error) => e.message)).toContain('either prompt or screen');
+  });
+});

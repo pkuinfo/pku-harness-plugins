@@ -81,6 +81,8 @@ export const fnToolName = (fn: string) => `fn_${fn.replace(/[^A-Za-z0-9_]/g, '_'
  * Route parameters are strings; when the bound tool's input field is a number, a numeric string
  * becomes a number.
  */
+const isParam = (v: unknown) => !!v && typeof v === 'object' && typeof (v as { $param?: unknown }).$param === 'string';
+
 function withParams(v: unknown, params: Record<string, string | undefined>, fields?: Record<string, FieldDef>, field?: string): unknown {
   if (Array.isArray(v)) return v.map((x) => withParams(x, params));
   if (v && typeof v === 'object') {
@@ -91,7 +93,8 @@ function withParams(v: unknown, params: Record<string, string | undefined>, fiel
       if (raw !== null && (type === 'integer' || type === 'number') && /^-?\d+(\.\d+)?$/.test(raw)) return Number(raw);
       return raw;
     }
-    return Object.fromEntries(Object.entries(o).map(([k, x]) => [k, withParams(x, params, fields, k)]));
+    // An absent route parameter leaves its field out, so optional inputs keep their default.
+    return Object.fromEntries(Object.entries(o).map(([k, x]) => [k, withParams(x, params, fields, k)]).filter(([k, x]) => x !== null || !isParam(o[k as string])));
   }
   return v;
 }
@@ -246,7 +249,16 @@ export function compilePlugin(doc: PluginDocument, opts: CompileOptions): Plugin
       : undefined,
     instructions: doc.instructions || undefined,
     contributes: {
-      commands: m.commands ? Object.fromEntries(Object.entries(m.commands).map(([k, c]) => [k, { description: c.description, aliases: c.aliases, argHint: c.argHint, prompt: c.prompt }])) : undefined,
+      commands: m.commands
+        ? Object.fromEntries(
+            Object.entries(m.commands).map(([k, c]) => {
+              const base = { description: c.description, aliases: c.aliases, argHint: c.argHint };
+              if (!c.screen) return [k, { ...base, prompt: c.prompt }];
+              const href = `/${doc.screens[c.screen]?.presentation === 'modal' ? 'm' : 'p'}/${m.id}/${c.screen}`;
+              return [k, { ...base, run: (_input: string, ctx: { navigate: (href: string) => void }) => ctx.navigate(href) }];
+            }),
+          )
+        : undefined,
       widgets: Object.keys(doc.widgets).length
         ? Object.fromEntries(
             Object.entries(doc.widgets).map(([k, v]) => [k, { title: v.title, description: v.description ?? v.title, sizes: v.sizes, defaultSize: v.defaultSize, component: viewComponent(m.id, v, doc.tools) as ComponentType<PluginWidgetProps> }]),

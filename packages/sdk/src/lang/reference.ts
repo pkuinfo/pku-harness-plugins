@@ -14,13 +14,13 @@ optional: icon, homepage, shared: shared.yaml ({ constants, functions } every to
 (campus services called with the user's signed-in session), network: [host, *.host] (public
 HTTPS hosts), abilities: [verify|otp|todos|timetable|scheduler|browser|campusPage|sms|files|crypto|cloud],
 tools: { name: tools/name.yaml }, dataSources: { name: { tool, args?, ttl: 10m } },
-widgets: { name: widgets/name.json }, screens, settings, commands: { name: { description, prompt: "...{{input}}" } },
+widgets: { name: widgets/name.json }, screens, settings, commands: { name: { description, prompt: "...{{input}}" | screen: name } },
 i18n: { en: { name, description, tools: { name: { title } } } }
 
 ## Tool file (YAML)
 title (short, Chinese) · summary (one short line for people, shown before install; translate in i18n.en.tools.<name>.summary) · description (for the AI, never shown to users) · effect: read|write|money|public ·
 untrusted?: true when results carry third-party text · input: { field: { type: string|number|integer|boolean|array|object, enum?, default?, optional?, min?, max?, pattern?, trim?, description? } } ·
-constants: { NAME: data } · functions: { f: "(a, b) => expr" } · steps: [...] · return: expr
+constants: { NAME: data } · functions: { f: "(a, b) => expr" } · steps: [...] · return: expr · limits?: { requests ≤ 200, seconds ≤ 120 }
 
 ## Steps (run in order; \`let: name\` binds the result)
 - { let, value: expr }
@@ -28,7 +28,7 @@ constants: { NAME: data } · functions: { f: "(a, b) => expr" } · steps: [...] 
   campus url = path on that service; public url must be https on a network host. html → a node for select().
   multipart (campus POST only): { fields: { k: v } | [[k, v], ...], files: [{ field, uri, name? }] }; each uri must be a file the user picked (files.pick). The tool needs userOnly: true.
 - { let, each: listExpr, concurrency?: 1–4, request | steps + return | value }  (item, index in scope; ≤ 50 items)
-- { let, paginate: { start?, request (uses cursor), items: expr (page), next: expr (null stops), max ≤ 30 } }
+- { let, paginate: { start?, request (uses cursor), items: expr (page), next: expr (null stops), max ≤ 30 (number or expr) } }
 - { let, extract: { from: expr, each: css, fields: { name: "css | text" } }, limit? }
   pipes: text, html, attr X, data X, url (absolute), num, date, match RE [group], trim, squash; "." or "" = the item
 - { if: expr, then: [steps], else?: [steps] } · { check: expr, error: "template" } · { return: expr }
@@ -61,7 +61,7 @@ urls/json: url(base, path) query(url, name) encode decode base64(s) unbase64(s) 
 html: html(text, url?) select(node, css) first(node, css) node.text node.html node.attrs attr(node, name) data(node, name) children parent tableRows(node, {header, cells}) options(select) htmlText(s) htmlLines(node|s) without(node, css) largestText(node)
 
 ## Limits per run
-400 steps, 60 requests (4 in flight), 60 s, 2 MB per response (request.maxSize up to 8 MB), 1 MB result, 300 000 operations.
+400 steps, 60 requests (4 in flight), 60 s (a tool's limits: may raise requests/time; call shares the budget), 2 MB per response (request.maxSize up to 8 MB), 1 MB result, 300 000 operations.
 
 ## Widgets / screens (JSON)
 { title, description?, sizes?: [sm,md,lg], secure?: { brightness? } (screens: no screenshots; payment codes), spec: { root, elements: { id: { type, props, children?, repeat?: { statePath, key }, on? } }, state? },

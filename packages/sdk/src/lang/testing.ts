@@ -62,6 +62,8 @@ export async function runRecorded(doc: PluginDocument, t: TestDoc, files: Record
   const now = t.now === undefined ? undefined : typeof t.now === 'number' ? t.now : Date.parse(t.now.includes('T') || /[zZ+]/.test(t.now) ? t.now : `${t.now.replace(' ', 'T')}+08:00`);
   const services = t.picked ? ({ files: { pick: async () => structuredClone(t.picked) } } as unknown as Partial<HostServices>) : undefined;
   const { env, seen } = replayEnv(doc, responses, { now, kv: t.kv, account: t.account, services });
+  // As if the user picked these earlier in the session (a screen picks in one tap, submits in the next).
+  if (t.picked) env.picked = new Map(t.picked.map((f) => [f.uri, { name: f.name, mime: f.mime }]));
   // Validate and default the input exactly as the app does before a tool runs.
   const input = inputZod(doc.tools[t.tool]?.input).parse(t.input ?? {}) as Record<string, unknown>;
   const result = await runTool(env, t.tool, input);

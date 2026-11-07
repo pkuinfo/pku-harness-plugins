@@ -80,6 +80,8 @@ export const toolSchema = z
     functions: z.record(z.string().regex(/^[A-Za-z_$][A-Za-z0-9_$]*$/), z.string()).optional(),
     steps: z.array(stepSchema).max(100).optional(),
     return: z.unknown().optional(),
+    /** More requests or time than the defaults (60 requests, 60 s), up to 200 and 120 s; shown before install. */
+    limits: z.object({ requests: z.number().int().min(1).max(200).optional(), seconds: z.number().int().min(1).max(120).optional() }).strict().optional(),
   })
   .strict();
 export type ToolDoc = z.infer<typeof toolSchema>;
@@ -132,7 +134,18 @@ export const manifestSchema = z
     commands: z
       .record(
         z.string().regex(/^[a-z][a-z0-9-]*$/),
-        z.object({ description: z.string().min(1).max(80), prompt: z.string().min(1).max(2000), aliases: z.array(z.string()).optional(), argHint: z.string().optional() }).strict(),
+        z
+          .object({
+            description: z.string().min(1).max(80),
+            /** Sent to the agent ({{input}} = what the user typed after the command)… */
+            prompt: z.string().min(1).max(2000).optional(),
+            /** …or opens one of this plugin's screens. */
+            screen: z.string().optional(),
+            aliases: z.array(z.string()).optional(),
+            argHint: z.string().optional(),
+          })
+          .strict()
+          .refine((c) => !!c.prompt !== !!c.screen, 'a command has either prompt or screen'),
       )
       .optional(),
     defaultModes: z.object({ read: modeSchema, write: modeSchema, money: modeSchema, public: modeSchema }).partial().optional(),
