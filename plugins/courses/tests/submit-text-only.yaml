@@ -1,0 +1,43 @@
+# Text only (no file, no picker); the review page fails, so not verified yet.
+tool: submit
+input:
+  rev: 1792468740000
+now: 2026-10-20 12:00
+kv:
+  doc:submit.draft:
+    v:
+      courseId: _8001_1
+      contentId: _11_1
+      title: 作业一
+      course: 高等数学
+      text: |-
+        第一段
+
+        第二段
+      comment: 谢谢老师
+      files: []
+      savedAt: 1792465200000
+      rev: 1792468740000
+responses:
+  - match: action=newAttempt&content_id=_11_1&
+    campus: blackboard
+    file: submit-form.html
+  - match: action=submit
+    campus: blackboard
+    body: <html><body>复查提交历史记录</body></html>
+  - match: mode=view&content_id=_11_1&
+    campus: blackboard
+    status: 500
+    body: ""
+expect:
+  submitted: true
+  courseId: _8001_1
+  contentId: _11_1
+  title: 作业一
+  verified: false
+  attempt: null
+  message: null
+  files: []
+  textLength: 8
+  at: 1792468800000
+  submittedAt: 2026-10-20 12:00

@@ -1,0 +1,52 @@
+# What the 交作业 screen shows: the draft (kv submit.draft, also as the TS plugin stored it), the
+# assignment's due date and attempt (cached 10 min), and the files picked for it. `rev` changes
+# with every edit; submit only goes out for the rev the user was looking at.
+title: 交作业草稿
+summary: 交作业页面里正在准备的作业、文字和文件
+description: The submission draft the 交作业 screen shows (assignment, text, comment, picked files). Rarely needed in chat; the user reviews and submits it on the screen.
+effect: read
+steps:
+  - let: d
+    kv: get
+    key: submit.draft
+    legacy: true
+  - if: "!fresh(d)"
+    then:
+      - return: "{ has: false }"
+  - let: info
+    value: "null"
+  - let: detailError
+    value: "null"
+  - try:
+      - let: info
+        cache: { key: 'detail:${d.courseId}:${d.contentId}', ttl: 10m }
+        steps:
+          - let: a
+            call: assignment
+            input: "{ courseId: d.courseId, contentId: d.contentId }"
+        return: a
+    catch:
+      - let: detailError
+        value: error.message
+  - let: files
+    value: "(d.files ?? []).map(f => fileView(f))"
+  - let: text
+    value: trim(d.text ?? '')
+return: |
+  {
+    has: true,
+    courseId: d.courseId,
+    contentId: d.contentId,
+    rev: revOf(d),
+    title: info?.title || d.title || null,
+    course: d.course ?? null,
+    due: info?.due ?? null,
+    closed: info?.deadline != null && info.deadline < now,
+    attempt: info?.attempt ?? null,
+    detailError,
+    text,
+    comment: trim(d.comment ?? ''),
+    files,
+    hasFiles: length(files) > 0,
+    canSubmit: (length(files) > 0 || text != '') && !some(files, f => f.tooBig),
+  }

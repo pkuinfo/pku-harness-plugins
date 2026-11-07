@@ -1,0 +1,24 @@
+title: 选择要提交的文件
+summary: 从手机里选一个文件放进交作业草稿
+description: Lets the user pick the file for the draft submission (the 交作业 screen's 选择文件 button). Replaces the picked file; at most one file.
+effect: read
+userOnly: true
+steps:
+  - let: d
+    kv: get
+    key: submit.draft
+    legacy: true
+  - check: fresh(d)
+    error: 先选择要提交的作业
+  - let: picked
+    ability: files.pick
+    args: "{ multiple: MAX_FILES > 1 }"
+  - if: length(picked) == 0
+    then:
+      - return: "{ files: (d.files ?? []).map(f => fileView(f)) }"
+  - let: files
+    value: "slice(concat(d.files ?? [], picked.map(f => ({ name: f.name, mime: f.mime, uri: f.uri, size: f.size ?? null }))), -MAX_FILES)"
+  - kv: set
+    key: submit.draft
+    value: "merge(d, { files, rev: now })"
+return: "{ files: files.map(f => fileView(f)) }"

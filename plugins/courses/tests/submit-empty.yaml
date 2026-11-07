@@ -1,0 +1,18 @@
+# Neither file nor text.
+tool: submit
+input:
+  rev: 1792468740000
+now: 2026-10-20 12:00
+kv:
+  doc:submit.draft:
+    v:
+      courseId: _8001_1
+      contentId: _11_1
+      title: 作业一
+      course: 高等数学
+      text: " "
+      comment: 谢谢老师
+      files: []
+      savedAt: 1792465200000
+      rev: 1792468740000
+expectError: 至少要提交一个文件或一段文字

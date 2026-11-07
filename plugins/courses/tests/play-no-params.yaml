@@ -1,0 +1,18 @@
+# The player didn’t redirect to a URL with the 智云 ids.
+tool: play
+input:
+  courseId: _8001_1
+  url: https://course.pku.edu.cn/webapps/bb-streammedia-hqy-BBLEARN/videoPlay.action?course_id=_8001_1&sub_id=1
+now: 2026-10-20 12:00
+responses:
+  - match: videoList.action
+    campus: blackboard
+    file: videos.html
+  - match: videoPlay.action?course_id=_8001_1&sub_id=1
+    campus: blackboard
+    file: play.html
+  - match: iframe.action
+    campus: blackboard
+    url: https://onlineroomse.pku.edu.cn/player?course_id=123
+    body: <html></html>
+expectError: 回放播放器没有返回播放参数

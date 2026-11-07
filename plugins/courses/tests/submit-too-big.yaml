@@ -1,0 +1,25 @@
+# Over 200 MB.
+tool: submit
+input:
+  rev: 1792468740000
+now: 2026-10-20 12:00
+kv:
+  doc:submit.draft:
+    v:
+      courseId: _8001_1
+      contentId: _11_1
+      title: 作业一
+      course: 高等数学
+      text: |-
+        第一段
+
+        第二段
+      comment: 谢谢老师
+      files:
+        - name: hw1.pdf
+          mime: application/pdf
+          uri: content://picker/1
+          size: 314572800
+      savedAt: 1792465200000
+      rev: 1792468740000
+expectError: 文件太大（最大 200 MB）

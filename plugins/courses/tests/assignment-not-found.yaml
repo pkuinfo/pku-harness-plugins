@@ -1,0 +1,15 @@
+# Neither page describes an assignment.
+tool: assignment
+input:
+  courseId: _8001_1
+  contentId: _99_1
+now: 2026-10-20 12:00
+responses:
+  - match: action=newAttempt&content_id=_99_1&
+    campus: blackboard
+    body: <html></html>
+  - match: mode=view&content_id=_99_1&
+    campus: blackboard
+    status: 404
+    body: x
+expectError: 没有找到这个作业（检查 courseId / contentId，或稍后再试）

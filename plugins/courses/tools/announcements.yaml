@@ -1,0 +1,25 @@
+title: 课程公告
+summary: 各门课最新的公告
+description: Latest announcements of current courses (or one course), newest first per course.
+effect: read
+untrusted: true
+input:
+  courseId: { type: string, optional: true, description: from courses__list; default all current courses }
+steps:
+  - let: all
+    call: list
+    input: "{ all: !!input.courseId }"
+  - let: picked
+    value: "input.courseId ? all.filter(c => c.id == input.courseId) : all"
+  - check: "!input.courseId || length(picked) > 0"
+    error: 没有这门课：${input.courseId}
+  - let: pages
+    each: picked
+    concurrency: 3
+    request: { campus: blackboard, url: '${coursePage(item.id)}' }
+    as: response
+  - let: bad
+    value: "find(pages, p => p.status >= 400)"
+  - check: bad == null
+    error: 教学网返回 HTTP ${bad?.status}
+return: "flatMap(pages, (p, i) => slice(announcements(html(p.text)), 0, 10).map(a => merge({ course: picked[i].name }, a)))"

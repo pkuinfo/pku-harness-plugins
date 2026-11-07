@@ -1,0 +1,50 @@
+# My Grades rows: graded, ungraded, total, title from a bare text node (grades.test.ts); a failing course reports its error.
+tool: grades
+now: 2026-10-20 12:00
+responses:
+  - match: tabAction?tab_tab_group_id=_1_1
+    campus: blackboard
+    file: courses.html
+  - match: myGrades?course_id=_8001_1
+    campus: blackboard
+    file: grades.html
+  - match: myGrades?course_id=_8002_1
+    campus: blackboard
+    status: 500
+    body: x
+expect:
+  - course: 高等数学
+    courseId: _8001_1
+    items:
+      - title: 作业一
+        category: 作业
+        score: "92.00"
+        possible: "100"
+        status: 已评分
+        date: 2026年10月21日
+        total: false
+      - title: 期中报告
+        category: 作业
+        score: null
+        possible: "100"
+        status: 即将到期
+        date: "截止日期: 2026-11-15"
+        total: false
+      - title: 总分
+        category: 合计
+        score: "92.00"
+        possible: null
+        status: null
+        date: null
+        total: true
+      - title: 小测验
+        category: 测验
+        score: "8"
+        possible: "10"
+        status: null
+        date: null
+        total: false
+  - course: 普通物理
+    courseId: _8002_1
+    items: []
+    error: 教学网返回 HTTP 500

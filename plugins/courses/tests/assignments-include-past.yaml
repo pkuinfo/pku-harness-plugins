@@ -1,0 +1,69 @@
+# includePast keeps the past one (a 404 review page = no attempt).
+tool: assignments
+input:
+  courseId: _8001_1
+  includePast: true
+now: 2026-10-20 12:00
+responses:
+  - match: tabAction?tab_tab_group_id=_1_1
+    campus: blackboard
+    file: courses.html
+  - match: course_id=_8001_1&handle=announcements_entry
+    campus: blackboard
+    file: menu.html
+  - match: content_id=_1_1&course_id=_8001_1
+    campus: blackboard
+    file: folder-root.html
+  - match: content_id=_2_1&course_id=_8001_1
+    campus: blackboard
+    file: folder-ch1.html
+  - match: content_id=_3_1&course_id=_8001_1
+    campus: blackboard
+    file: folder-ch2.html
+  - match: action=newAttempt&content_id=_11_1&
+    campus: blackboard
+    file: assignment-submit.html
+  - match: mode=view&content_id=_11_1&
+    campus: blackboard
+    body: <html></html>
+  - match: action=newAttempt&content_id=_12_1&
+    campus: blackboard
+    body: '<div class="itemdates">截止日期: 2026年10月25日 星期日 上午9:00</div>'
+  - match: mode=view&content_id=_12_1&
+    campus: blackboard
+    file: assignment-view.html
+  - match: action=newAttempt&content_id=_13_1&
+    campus: blackboard
+    file: assignment-past.html
+  - match: mode=view&content_id=_13_1&
+    campus: blackboard
+    status: 404
+    body: <html></html>
+expect:
+  - course: 高等数学
+    courseId: _8001_1
+    contentId: _13_1
+    title: 作业零
+    deadline: 1767285000000
+    deadlineText: "截止日期: 2026年1月2日 星期五 上午12:30"
+    submitted: false
+    attempt: null
+    due: 2026-01-02 00:30
+  - course: 高等数学
+    courseId: _8001_1
+    contentId: _11_1
+    title: 作业一
+    deadline: 1793721540000
+    deadlineText: "截止日期: 2026年11月3日 星期二 下午11:59"
+    submitted: false
+    attempt: null
+    due: 2026-11-03 23:59
+  - course: 高等数学
+    courseId: _8001_1
+    contentId: _12_1
+    title: 作业二
+    deadline: 1792890000000
+    deadlineText: "截止日期: 2026年10月25日 星期日 上午9:00"
+    submitted: true
+    attempt: 尝试 2026-10-19 下午10:01
+    due: 2026-10-25 09:00

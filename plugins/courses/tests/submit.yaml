@@ -1,0 +1,52 @@
+# Fresh nonce from the newAttempt form, multipart POST, receipt, then the review page confirms the attempt.
+tool: submit
+input:
+  rev: 1792468740000
+now: 2026-10-20 12:00
+kv:
+  doc:submit.draft:
+    v:
+      courseId: _8001_1
+      contentId: _11_1
+      title: 作业一
+      course: 高等数学
+      text: |-
+        第一段
+
+        第二段
+      comment: 谢谢老师
+      files:
+        - name: hw1.pdf
+          mime: application/pdf
+          uri: content://picker/1
+          size: 2048
+      savedAt: 1792465200000
+      rev: 1792468740000
+picked:
+  - name: hw1.pdf
+    mime: application/pdf
+    size: 2048
+    uri: content://picker/1
+responses:
+  - match: action=newAttempt&content_id=_11_1&
+    campus: blackboard
+    file: submit-form.html
+  - match: action=submit
+    campus: blackboard
+    body: <div id="inlineReceipt_good">作业已成功提交</div>
+  - match: mode=view&content_id=_11_1&
+    campus: blackboard
+    file: assignment-view.html
+expect:
+  submitted: true
+  courseId: _8001_1
+  contentId: _11_1
+  title: 作业一
+  verified: true
+  attempt: 尝试 2026-10-19 下午10:01
+  message: 作业已成功提交
+  files:
+    - hw1.pdf
+  textLength: 8
+  at: 1792468800000
+  submittedAt: 2026-10-20 12:00

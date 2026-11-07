@@ -1,0 +1,50 @@
+# Breadth-first through content folders (api.rs list_all_content_recursive) from the course menu's
+# content listings or one folder, one listing per page of a paginate whose cursor is the queue.
+title: 课程资料
+summary: 一门课的资料目录、附件和作业
+description: "A course's content tree (folders, documents, assignments, each with attachment file names and links and a short description), crawled from the course menu or from one folder. Bounded: stops after maxPages folder listings (at most 30) and says truncated=true; then call again with folderId of an unvisited folder. Links need the 教学网 session, so they are for showing the user, not for fetching."
+effect: read
+untrusted: true
+input:
+  courseId: { type: string, description: from courses__list }
+  folderId: { type: string, optional: true, description: content id of a folder to start from; default the whole course menu }
+  maxPages: { type: integer, min: 1, max: 40, optional: true, description: 'folder listings to fetch, default 15 (at most 30)' }
+steps:
+  - if: input.folderId
+    then:
+      - let: rootList
+        value: "[{ id: input.folderId, path: '' }]"
+    else:
+      - let: menuPage
+        request: { campus: blackboard, url: '${coursePage(input.courseId)}' }
+        as: response
+      - check: menuPage.status < 400
+        error: 教学网返回 HTTP ${menuPage.status}
+      - let: rootList
+        value: roots(html(menuPage.text))
+  - check: length(rootList) > 0
+    error: 这门课没有可浏览的内容目录
+  - let: maxPages
+    value: min(input.maxPages ?? 15, 30)
+  - let: crawl
+    paginate:
+      start: crawlStart(rootList)
+      max: maxPages
+      request: { campus: blackboard, url: '${listUrl(input.courseId, cursor.queue[0].id)}' }
+      as: response
+      items: "[crawlStep(cursor, page)]"
+      next: crawlMore(crawlStep(cursor, page), maxPages)
+return: |
+  {
+    truncated: length(crawl[length(crawl) - 1].queue) > 0,
+    pages: length(crawl),
+    items: flatMap(crawl, s => s.items).map(i => ({
+      contentId: i.contentId,
+      title: i.title,
+      type: i.type,
+      path: i.path,
+      description: cut(i.description, 300),
+      url: i.url ? redact(i.url) : i.url,
+      attachments: i.attachments.map(a => merge(a, { url: redact(a.url) })),
+    })),
+  }

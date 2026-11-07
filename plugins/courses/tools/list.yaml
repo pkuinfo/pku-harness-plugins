@@ -1,0 +1,13 @@
+title: 教学网课程
+summary: 本学期在教学网上的课程
+description: Blackboard courses (current semester unless all=true).
+effect: read
+input:
+  all: { type: boolean, optional: true }
+steps:
+  - let: r
+    request: { campus: blackboard, url: /webapps/portal/execute/tabs/tabAction?tab_tab_group_id=_1_1 }
+    as: response
+  - check: r.status < 400
+    error: 教学网返回 HTTP ${r.status}
+return: "courses(html(r.text)).filter(c => input.all || c.current)"

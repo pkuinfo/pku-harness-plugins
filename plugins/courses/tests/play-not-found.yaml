@@ -1,0 +1,11 @@
+# The recording is no longer in the course list.
+tool: play
+input:
+  courseId: _8001_1
+  url: https://course.pku.edu.cn/webapps/bb-streammedia-hqy-BBLEARN/videoPlay.action?course_id=_8001_1&sub_id=9
+now: 2026-10-20 12:00
+responses:
+  - match: videoList.action
+    campus: blackboard
+    file: videos.html
+expectError: 没有找到这个回放，请刷新列表

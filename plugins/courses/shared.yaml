@@ -1,0 +1,234 @@
+# Blackboard Learn (教学网) page parsing, ported from the TS plugin (parse.ts, grades.ts, submit.ts),
+# which followed pkucli crates/course/src/api.rs (selectors checked against the live site).
+constants:
+  BB: https://course.pku.edu.cn
+  VIDEO_BASE: https://course.pku.edu.cn/webapps/bb-streammedia-hqy-BBLEARN/
+  # Folder listings per course crawl (pkucli walks everything; a phone shouldn't).
+  MAX_PAGES: 25
+  SUBMIT_PATH: /webapps/assignment/uploadAssignment?action=submit
+  # Files per submission. Only the one-file layout is verified (pkucli); raise after checking a
+  # multi-file submission on the live site.
+  MAX_FILES: 1
+  # Largest file we send (Blackboard's own limit is per course; this guards the phone).
+  MAX_FILE_BYTES: 209715200
+  # A draft the agent prepared opens in 交作业 for a day.
+  DRAFT_TTL: 86400000
+  # Fields copied from the newAttempt form, in pkucli's order (api.rs submit_assignment).
+  REQUIRED:
+    - attempt_id
+    - blackboard.platform.security.NonceUtil.nonce
+    - blackboard.platform.security.NonceUtil.nonce.ajax
+    - content_id
+    - course_id
+    - isAjaxSubmit
+    - lu_link_id
+    - mode
+    - recallUrl
+    - remove_file_id
+    - studentSubmission.text_f
+    - studentSubmission.text_w
+    - studentSubmission.type
+    - student_commentstext_f
+    - student_commentstext_w
+    - student_commentstype
+    - textbox_prefix
+functions:
+  # ---- text and URLs
+  # parse.ts text(): nbsp → space, runs of spaces/tabs collapsed, newlines kept, trimmed.
+  tx: "(n) => n == null ? '' : trim(replace(replaceText(n.rawText, ' ', ' '), '[ \t]+', ' '))"
+  # submit.ts / grades.ts clean(): all whitespace collapsed.
+  sq: "(n) => n == null ? '' : squash(n.rawText)"
+  abs: "(h) => startsWith(h, 'http') ? h : BB + h"
+  dec: "(v) => v == null ? null : decode(v)"
+  param: "(u, name) => dec(match(u, '[?&]' + name + '=([^&#]*)', 1))"
+  # Tool results go to the model provider: strip credential-like query parameters (play links
+  # carry a session token). parse.ts redactUrl.
+  redact: |
+    (u) => replace(
+      replace(
+        replace(u, '(?i)([?&])(token|access_token|ticket|jsessionid|sid|session|sign|signature)=[^&#]*&', '$1'),
+        '(?i)[?&](token|access_token|ticket|jsessionid|sid|session|sign|signature)=[^&#]*(?=#|$)', ''),
+      '[?&]$', '')
+  cut: "(s, n) => length(s) > n ? slice(s, 0, n) + '…' : s"
+  fmt: "(ms) => ms == null ? null : formatDate(ms, 'YYYY-MM-DD HH:mm')"
+  fileSize: "(n) => n == null ? '' : n < 1024 ? n + ' B' : n < 1048576 ? fixed(n / 1024, 1) + ' KB' : fixed(n / 1048576, 1) + ' MB'"
+
+  # ---- paths
+  coursePage: "(id) => '/webapps/blackboard/execute/announcement?method=search&context=course_entry&course_id=' + id + '&handle=announcements_entry&mode=view'"
+  listUrl: "(courseId, contentId) => '/webapps/blackboard/content/listContent.jsp?content_id=' + contentId + '&course_id=' + courseId"
+  assignmentUrl: "(courseId, contentId, view) => '/webapps/assignment/uploadAssignment?' + (view ? 'mode=view' : 'action=newAttempt') + '&content_id=' + contentId + '&course_id=' + courseId"
+  videoListUrl: "(id) => '/webapps/bb-streammedia-hqy-BBLEARN/videoList.action?sortDir=ASCENDING&numResults=100&editPaging=false&course_id=' + id + '&mode=view&startIndex=0'"
+  gradesPath: "(id) => '/webapps/bb-mygrades-BBLEARN/myGrades?course_id=' + id + '&stream_name=mygrades&is_stream=false'"
+
+  # ---- courses (api.rs list_courses): `key=_123_1,` in each course link of each portlet
+  courses: "(doc) => flatMap(select(doc, 'div.portlet'), p => courseRows(p, tx(first(p, 'span.moduleTitle'))))"
+  courseRows: |
+    (p, heading) => select(p, 'ul.courseListing li a')
+      .map(a => courseOf(match(attr(a, 'href') ?? '', 'key=([\d_]+),', 1), tx(a), includes(heading, '当前') || includes(heading, 'Current Semester')))
+      .filter(c => c != null)
+  # "00001234-0: 高等数学 (2026秋)": drop the code prefix, then the term suffix (api.rs name()).
+  courseOf: "(id, long, current) => id == null ? null : courseFin(id, includes(long, ':') ? trim(slice(long, indexOf(long, ':') + 1)) : long, current)"
+  courseFin: "(id, title, current) => ({ id, title, name: nameOf(title, match(title, '^(.*)\\(', 1)), current })"
+  nameOf: "(title, pre) => pre ? trim(pre) : title"
+
+  # ---- announcements (api.rs list_announcements)
+  announcements: "(doc) => select(doc, '#announcementList > li').map(li => annOf(li)).filter(a => a.title)"
+  annOf: |
+    (li) => ({
+      title: tx(first(li, 'h3')),
+      body: tx(first(li, '.vtbegenerated')),
+      date: afterLabel(find(select(li, '.details span'), el => includes(el.rawText, '发布时间'))?.rawText ?? first(li, '.details')?.rawText ?? '', '发布时间[:：]'),
+      author: afterLabel(find(select(li, '.announcementInfo p'), el => includes(el.rawText, '发帖者'))?.rawText ?? first(li, '.announcementInfo')?.rawText ?? '', '发帖者[:：]'),
+    })
+  afterLabel: "(s, label) => trim(split(split(s, label, true)[1] ?? '', '\\n')[0])"
+
+  # ---- content (api.rs list_course_entries, parse_content_items)
+  menu: "(doc) => select(doc, '#courseMenuPalette_contents > li > a').map(a => ({ name: tx(a), url: attr(a, 'href') ?? '' })).filter(e => e.url)"
+  # The course menu's content listings are the crawl's roots.
+  roots: "(doc) => menu(doc).filter(e => includes(e.url, 'listContent')).map(e => ({ id: param(e.url, 'content_id') ?? '', path: e.name })).filter(r => r.id)"
+  atts: |
+    (root) => select(root, 'ul.attachments li a')
+      .map(a => ({ name: tx(a), url: attr(a, 'href') ?? '' }))
+      .filter(a => a.name && a.url)
+      .map(a => ({ name: a.name, url: abs(a.url) }))
+  contentItems: "(doc) => select(doc, '#content_listContainer > li, li.clearfix').filter(li => tx(first(li, 'h3'))).map(li => itemOf(li, first(li, 'h3 a')))"
+  itemOf: "(li, a) => itemUrl(li, a == null ? null : attr(a, 'href'))"
+  itemUrl: "(li, href) => itemFin(li, href ? abs(href) : null, altOf(first(li, 'img')))"
+  altOf: "(img) => img == null ? '' : attr(img, 'alt') ?? ''"
+  itemFin: "(li, url, alt) => itemOut(li, url, alt, attr(li, 'id') ?? (url ? param(url, 'content_id') ?? '' : ''))"
+  itemOut: |
+    (li, url, alt, id) => ({
+      id,
+      contentId: (url ? param(url, 'content_id') : null) ?? replace(id, '^contentListItem:', ''),
+      title: tx(first(li, 'h3')),
+      type: alt == '作业' || (url != null && test(url, 'uploadAssignment|assignment')) ? 'assignment' : url != null && includes(url, 'listContent') ? 'folder' : 'document',
+      url,
+      description: tx(first(li, 'div.vtbegenerated') ?? first(li, 'div.details')),
+      attachments: atts(li),
+    })
+  # One breadth-first step of the content crawl (api.rs list_all_content_recursive): the head of
+  # the queue was fetched as `page`; its items get the folder path, unseen sub-folders join the
+  # queue. A listing that failed counts as an empty folder, as in the TS crawl.
+  crawlStep: "(c, page) => crawlNext(c, c.queue[0], page.status < 400 ? contentItems(html(page.text)) : [])"
+  crawlNext: "(c, f, list) => crawlFin(c, list.map(i => merge(i, { path: f.path })), newFolders(c, f, list))"
+  newFolders: |
+    (c, f, list) => unique(
+      list
+        .filter(i => i.type == 'folder' && i.url && param(i.url, 'content_id') && !includes(c.seen, param(i.url, 'content_id')))
+        .map(i => ({ id: param(i.url, 'content_id'), path: f.path ? f.path + ' / ' + i.title : i.title })),
+      x => x.id)
+  crawlFin: "(c, items, nf) => ({ items, queue: concat(slice(c.queue, 1), nf), seen: concat(c.seen, nf.map(x => x.id)), pages: c.pages + 1 })"
+  crawlStart: "(roots) => ({ queue: roots, seen: roots.map(r => r.id), pages: 0 })"
+  crawlMore: "(s, maxPages) => length(s.queue) > 0 && s.pages < maxPages ? s : null"
+
+  # ---- assignments (api.rs get_assignment / get_assignment_attempt)
+  attemptOf: "(doc) => attemptText(tx(first(doc, 'h3#currentAttempt_label')))"
+  attemptText: "(a) => a ? join(split(a, '\\s+', true), ' ') : null"
+  briefOf: "(doc) => ({ deadlineText: tx(first(doc, '.itemdates')) || null, attempt: attemptOf(doc) })"
+  brief: "(r) => r.status < 400 ? briefOf(html(r.text)) : null"
+  # "2026年10月20日 星期二 下午11:59" → epoch ms, Beijing time (api.rs parse_deadline).
+  deadline: "(raw) => raw ? dl(match(raw, '(\\d{4})年(\\d{1,2})月(\\d{1,2})日 星期. (上午|下午)(\\d{1,2}):(\\d{1,2})')) : null"
+  dl: "(m) => m == null ? null : date(m[1] + '-' + padStart(m[2], 2, '0') + '-' + padStart(m[3], 2, '0') + ' ' + padStart(str(hour12(m[4], int(m[5]))), 2, '0') + ':' + padStart(m[6], 2, '0'))"
+  hour12: "(ap, h) => ap == '下午' && h < 12 ? h + 12 : ap == '上午' && h == 12 ? 0 : h"
+  # Full assignment page; works on newAttempt and on the review page (the caller merges both).
+  # The grade is best effort from the review page ids (pkucli doesn't parse it).
+  detailOf: "(doc) => detailGrade(doc, first(doc, '#currentAttempt_grade') ?? first(doc, '#aggregateGrade'), tx(first(doc, '#currentAttempt_pointsPossible') ?? first(doc, '#aggregateGrade_pointsPossible')))"
+  detailGrade: "(doc, g, possible) => detailFin(doc, g == null ? '' : trim(attr(g, 'value') ?? tx(g)), possible)"
+  detailFin: |
+    (doc, grade, possible) => ({
+      title: tx(first(doc, 'span.title') ?? first(doc, '#pageTitleText')),
+      deadlineText: tx(first(doc, '.itemdates')) || null,
+      instructions: tx(first(doc, 'div.vtbegenerated')),
+      attachments: atts(doc),
+      status: tx(first(doc, '.status')) || null,
+      attempt: attemptOf(doc),
+      grade: grade && grade != '-' ? grade + (possible ? ' ' + possible : '') : null,
+    })
+  detail: "(r) => r.status < 400 ? detailOf(html(r.text)) : null"
+
+  # ---- recordings (api.rs list_videos, get_video_redirect_url, get_video_m3u8_url)
+  videos: "(doc) => select(doc, 'tbody#listContainer_databody > tr').map(tr => videoOf(tr, select(tr, 'span.table-data-cell-value'))).filter(v => v.title)"
+  videoOf: "(tr, cells) => videoFin(tr, cells, cells[2] == null ? '' : hrefOf(first(cells[2], 'a')))"
+  hrefOf: "(a) => a == null ? '' : attr(a, 'href') ?? ''"
+  videoFin: "(tr, cells, href) => ({ title: tx(children(tr)[0]), time: tx(cells[0]), teacher: tx(cells[1]), url: href ? resolveVideo(href) : '' })"
+  resolveVideo: "(h) => test(h, '(?i)^https?://') ? h : startsWith(h, '/') ? BB + h : VIDEO_BASE + replace(h, '^\\./', '')"
+  iframeOf: "(doc) => iframeSrc(attr(first(doc, '#content iframe') ?? doc, 'src'))"
+  iframeSrc: "(src) => !src ? null : test(src, '(?i)^https?://') ? src : BB + (startsWith(src, '/') ? '' : '/') + src"
+  playParams: "(u) => playFin(param(u, 'course_id'), param(u, 'sub_id'), param(u, 'app_id'), param(u, 'auth_data'))"
+  playFin: "(courseId, subId, appId, authData) => courseId && subId && appId && authData ? { courseId, subId, appId, authData } : null"
+  subInfoUrl: "(p) => 'https://yjapise.pku.edu.cn/courseapi/v2/schedule/get-sub-info-by-auth-data?all=1&course_id=' + encode(p.courseId) + '&sub_id=' + encode(p.subId) + '&with_sub_data=1&app_id=' + encode(p.appId) + '&auth_data=' + encode(p.authData)"
+
+  # ---- 我的成绩 (Blackboard Learn 9.1 My Grades; pkucli has no grades command). Best effort.
+  gradeRows: "(doc) => select(doc, 'div.sortable_item_row').map(row => gradeOf(row, first(row, '.cell.gradable'))).filter(g => g != null)"
+  gradeOf: "(row, cell) => cell == null ? null : gradeTitled(row, cell, gradeTitle(cell))"
+  # The first link, else the first non-empty span outside the category/due lines, else the first child.
+  gradeTitle: "(cell) => sq(first(cell, 'a') ?? find(select(without(cell, '.itemCat, .eventDue'), 'span'), s => sq(s))) || leadText(cell)"
+  leadText: "(cell) => startsWith(cell.html, '<') ? sq(children(cell)[0]) : htmlText(match(cell.html, '^[^<]*', 0) ?? '')"
+  gradeTitled: "(row, cell, title) => !title ? null : gradeFin(row, cell, title, first(row, '.cell.grade'), first(row, '.cell.activity'))"
+  gradeScore: "(gc) => gc == null ? '' : sq(first(gc, '.grade')) || trim(replaceText(sq(gc), sq(first(gc, '.pointsPossible')), ''))"
+  gradeFin: |
+    (row, cell, title, gc, act) => ({
+      title,
+      category: sq(first(cell, '.itemCat')) || null,
+      score: scoreOf(gradeScore(gc)),
+      possible: (gc == null ? '' : trim(replace(sq(first(gc, '.pointsPossible')), '^/', ''))) || null,
+      status: (act == null ? '' : sq(first(act, '.activityType'))) || null,
+      date: (act == null ? '' : sq(first(act, '.lastActivityDate'))) || sq(first(cell, '.eventDue')) || null,
+      total: test(attr(row, 'class') ?? '', '(^|\\s)calculatedRow(\\s|$)') || test(sq(first(cell, '.itemCat')), '(?i)总分|合计|Total'),
+    })
+  scoreOf: "(s) => s && s != '-' && s != '--' ? s : null"
+
+  # ---- submission (api.rs get_submit_formfields + submit_assignment)
+  # Inputs with a name and a value attribute, minus file/button/submit (pkucli extract_field).
+  fieldsOf: |
+    (root, css) => root == null ? {} : fromEntries(
+      select(root, css)
+        .filter(i => attr(i, 'name') && attr(i, 'value') != null && !includes(['file', 'button', 'submit'], lower(attr(i, 'type') ?? '')))
+        .map(i => [attr(i, 'name'), attr(i, 'value')]))
+  formOf: "(doc) => formFin(doc, first(doc, 'form#uploadAssignmentFormId'))"
+  formFin: "(doc, form) => formOpen(doc, form, merge(fieldsOf(form, 'input'), fieldsOf(doc, 'div.field input')))"
+  formOpen: "(doc, form, fields) => formMsg(doc, fields, form != null && fields['blackboard.platform.security.NonceUtil.nonce'] != null)"
+  formMsg: "(doc, fields, open) => ({ open, fields, message: open ? null : sq(first(doc, '#inlineReceipt_bad, .receipt.bad, #badMsg1, .noItems, #inlineReceipt_good, .receipt')) || null })"
+  esc: "(s) => replaceText(replaceText(replaceText(replaceText(s, '&', '&amp;'), '<', '&lt;'), '>', '&gt;'), '\"', '&quot;')"
+  # Plain text for a Blackboard text box: HTML paragraphs when the box type is HTML ('H').
+  textbox: "(plain, type) => tbx(trim(replace(plain ?? '', '\\r\\n?', '\\n')), type)"
+  tbx: "(s, type) => !s ? '' : type && upper(type) != 'H' ? s : join(split(s, '\\n{2,}', true).map(p => '<p>' + replace(esc(p), '\\n', '<br>') + '</p>'), '')"
+  fileRows: "(f) => [['newFile_artifactFileId', 'undefined'], ['newFile_artifactType', 'undefined'], ['newFile_artifactTypeResourceKey', 'undefined'], ['newFile_attachmentType', 'L'], ['newFile_fileId', 'new'], ['newFile_linkTitle', f.name]]"
+  # The multipart body: the form's hidden fields, the text/comment boxes, dispatch=submit and one
+  # file-picker row per file.
+  submission: |
+    (form, text, comment, files) => concat(
+      REQUIRED.map(k => [k, form[k]]),
+      [['studentSubmission.text', textbox(text, form['studentSubmission.type'])], ['student_commentstext', textbox(comment, form.student_commentstype)], ['dispatch', 'submit']],
+      flatMap(files, f => fileRows(f)),
+      [['newFilefilePickerLastInput', 'dummyValue'], ['useless', '']])
+  submitFiles: "(files) => files.map((f, i) => ({ field: 'newFile_LocalFile' + i, uri: f.uri, name: f.name }))"
+  # The response page of the submit POST: Blackboard's receipt, or its error.
+  receipt: |
+    (status, body) => includes(body, '尝试呈现错误页面时发生严重的内部错误') ? { ok: false, message: '教学网服务器内部错误' }
+      : receiptBad(status, html(body), sq(first(html(body), '#inlineReceipt_bad, .receipt.bad, #badMsg1')))
+  receiptBad: |
+    (status, doc, bad) => status >= 400 ? { ok: false, message: bad || 'HTTP ' + status }
+      : bad ? { ok: false, message: bad }
+      : { ok: true, message: sq(first(doc, '#inlineReceipt_good, .receipt.good, #goodMsg1, .receipt')) || null }
+
+  # ---- drafts (kv `submit.draft`, as the TS plugin stored it: { courseId, contentId, title, text, comment, savedAt })
+  fresh: "(d) => d != null && d.courseId != null && now - (d.savedAt ?? 0) < DRAFT_TTL"
+  revOf: "(d) => d.rev ?? d.savedAt"
+  fileView: "(f) => ({ name: f.name, mime: f.mime, uri: f.uri, size: f.size ?? null, sizeText: fileSize(f.size), tooBig: f.size != null && f.size > MAX_FILE_BYTES })"
+
+  # ---- deadline sync (sync.ts planSync): key = courseId:contentId → todoId (null = user deleted it)
+  remindTime: "(deadline, hours, t) => deadline - hours * 3600000 > t + 60000 ? deadline - hours * 3600000 : deadline - 3600000 > t + 60000 ? deadline - 3600000 : null"
+  planOf: "(a, synced, todos, hours) => planKey(a, a.courseId + ':' + a.contentId, '交作业：' + a.title, a.course + ' · 教学网作业', synced, todos, hours)"
+  planKey: |
+    (a, key, title, notes, synced, todos, hours) => includes(keys(synced), key)
+      ? planSynced(a, key, title, notes, synced[key], synced[key] ? find(todos, t => t.id == synced[key]) : null, hours)
+      : a.submitted || a.deadline == null || a.deadline <= now ? null
+      : { kind: 'add', key, title, notes, dueAt: a.deadline, remindAt: remindTime(a.deadline, hours, now) }
+  planSynced: |
+    (a, key, title, notes, id, todo, hours) => !id || !todo ? null
+      : todo.doneAt != null ? { kind: 'keep', key, todoId: id }
+      : a.submitted ? { kind: 'done', key, todoId: id, title: todo.title }
+      : a.deadline != null && (todo.dueAt != a.deadline || todo.title != title) ? { kind: 'update', key, todoId: id, title, notes, dueAt: a.deadline, remindAt: remindTime(a.deadline, hours, now) }
+      : { kind: 'keep', key, todoId: id }
+  todoOf: "(s) => ({ title: s.title, notes: s.notes, dueAt: s.dueAt, remind: s.remindAt ? { type: 'at', at: s.remindAt } : null })"

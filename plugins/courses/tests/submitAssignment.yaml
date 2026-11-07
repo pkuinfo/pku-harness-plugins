@@ -1,0 +1,12 @@
+# The agent only saves a draft and is sent to /交作业.
+tool: submitAssignment
+input:
+  courseId: _8001_1
+  contentId: _11_1
+  title: 作业一
+  text: 答案见附件
+now: 2026-10-20 12:00
+expect:
+  submitted: false
+  needsUserConfirmation: true
+  message: 没有提交。已保存草稿：请用户在聊天里输入 /交作业 打开交作业页面，选择文件、核对内容后亲自点「确认提交」。

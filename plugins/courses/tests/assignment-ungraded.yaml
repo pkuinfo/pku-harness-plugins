@@ -1,0 +1,27 @@
+# Ungraded "-" is no grade; the submit page fails but the review page is enough.
+tool: assignment
+input:
+  courseId: _8001_1
+  contentId: _11_1
+now: 2026-10-20 12:00
+responses:
+  - match: action=newAttempt&content_id=_11_1&
+    campus: blackboard
+    status: 500
+    body: x
+  - match: mode=view&content_id=_11_1&
+    campus: blackboard
+    file: assignment-view-ungraded.html
+expect:
+  courseId: _8001_1
+  contentId: _11_1
+  title: ""
+  deadline: null
+  deadlineText: null
+  instructions: ""
+  attachments: []
+  status: null
+  submitted: true
+  attempt: 尝试
+  grade: null
+  due: null

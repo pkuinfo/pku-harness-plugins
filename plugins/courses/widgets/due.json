@@ -1,0 +1,46 @@
+{
+  "title": "作业截止",
+  "description": "本学期未提交的作业，按截止时间排序，含截止时间。",
+  "sizes": ["md", "lg"],
+  "defaultSize": "md",
+  "bindings": {
+    "/items": { "tool": "assignments", "ttlMinutes": 120 }
+  },
+  "strings": {
+    "zh-Hans": { "nothingDue": "没有待交的作业", "noDeadline": "无截止", "due": "截止 " },
+    "en": { "nothingDue": "Nothing due", "noDeadline": "No due date", "due": "Due " }
+  },
+  "spec": {
+    "root": "root",
+    "elements": {
+      "root": { "type": "Column", "props": { "gap": "sm" }, "children": ["list", "empty"] },
+      "list": {
+        "type": "Column",
+        "props": { "gap": "sm" },
+        "repeat": { "statePath": "/items", "key": "contentId" },
+        "children": ["row"]
+      },
+      "row": {
+        "type": "ListItem",
+        "visible": {
+          "$and": [
+            { "$item": "submitted", "not": true },
+            { "$or": [{ "$index": true, "lt": 3 }, { "$and": [{ "$state": "/size", "eq": "lg" }, { "$index": true, "lt": 6 }] }] }
+          ]
+        },
+        "props": {
+          "title": { "$item": "title" },
+          "subtitle": { "$item": "course" },
+          "value": { "$cond": { "$item": "due" }, "$then": { "$template": "${/t/due}${due}" }, "$else": { "$state": "/t/noDeadline" } },
+          "icon": "clock"
+        }
+      },
+      "empty": {
+        "type": "Text",
+        "props": { "text": { "$state": "/t/nothingDue" }, "tone": "up", "size": "body" },
+        "visible": { "$or": [{ "$state": "/items/0", "not": true }, { "$state": "/items/0/submitted" }] }
+      }
+    },
+    "state": { "items": null }
+  }
+}

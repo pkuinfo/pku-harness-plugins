@@ -1,0 +1,11 @@
+# Choosing an assignment from the list starts a draft for it.
+tool: editDraft
+input:
+  courseId: _8001_1
+  contentId: _12_1
+  title: 作业二
+  course: 高等数学
+now: 2026-10-20 12:00
+expect:
+  has: true
+  rev: 1792468800000

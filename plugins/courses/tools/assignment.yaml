@@ -1,0 +1,41 @@
+# The submit page (action=newAttempt) has instructions, attachments and the deadline; the review
+# page (mode=view) the attempt and grade. Either may fail; both failing is an error.
+title: 作业详情
+summary: 一个作业的要求、附件、提交记录和成绩
+description: "One assignment in full: instructions, attached files (names + links), deadline, submission status, current attempt and grade if graded. Get courseId/contentId from courses__assignments or courses__content."
+effect: read
+untrusted: true
+input:
+  courseId: { type: string, description: e.g. _8001_1 }
+  contentId: { type: string, description: e.g. _11_1 }
+steps:
+  - let: pages
+    each: "[false, true]"
+    concurrency: 2
+    request: { campus: blackboard, url: '${assignmentUrl(input.courseId, input.contentId, item)}' }
+    as: response
+  - let: s
+    value: detail(pages[0])
+  - let: v
+    value: detail(pages[1])
+  - check: s?.title || v?.title || s?.deadlineText || v?.attempt
+    error: 没有找到这个作业（检查 courseId / contentId，或稍后再试）
+  - let: deadlineText
+    value: s?.deadlineText ?? v?.deadlineText ?? null
+  - let: attempt
+    value: v?.attempt ?? s?.attempt ?? null
+return: |
+  {
+    courseId: input.courseId,
+    contentId: input.contentId,
+    title: s?.title || v?.title || '',
+    deadline: deadline(deadlineText),
+    deadlineText,
+    instructions: cut(s?.instructions || v?.instructions || '', 4000),
+    attachments: length(s?.attachments ?? []) > 0 ? s.attachments : v?.attachments ?? [],
+    status: s?.status ?? v?.status ?? null,
+    submitted: attempt != null,
+    attempt,
+    grade: v?.grade ?? s?.grade ?? null,
+    due: fmt(deadline(deadlineText)),
+  }

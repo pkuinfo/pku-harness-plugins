@@ -97,19 +97,6 @@
         "zod": "^4.0.0",
       },
     },
-    "plugins/courses": {
-      "name": "@pku-harness/plugin-courses",
-      "version": "0.3.0",
-      "dependencies": {
-        "node-html-parser": "^9.0.4",
-      },
-      "peerDependencies": {
-        "@pku-harness/sdk": "*",
-        "react": "*",
-        "react-native": "*",
-        "zod": "^4.0.0",
-      },
-    },
     "plugins/dashboard": {
       "name": "@pku-harness/plugin-dashboard",
       "version": "0.3.0",
@@ -309,8 +296,6 @@
     "@pku-harness/plugin-calendar": ["@pku-harness/plugin-calendar@workspace:plugins/calendar"],
 
     "@pku-harness/plugin-card-share": ["@pku-harness/plugin-card-share@workspace:plugins/card-share"],
-
-    "@pku-harness/plugin-courses": ["@pku-harness/plugin-courses@workspace:plugins/courses"],
 
     "@pku-harness/plugin-dashboard": ["@pku-harness/plugin-dashboard@workspace:plugins/dashboard"],
 
