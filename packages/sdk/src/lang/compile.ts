@@ -139,7 +139,10 @@ function viewComponent(pluginId: string, view: ViewDoc, tools: Record<string, To
 
 function screenComponent(pluginId: string, view: ViewDoc, tools: Record<string, ToolDoc>, enTitle?: string): ComponentType<PluginScreenProps> {
   const Body = viewComponent(pluginId, view, tools) as ComponentType<PluginScreenProps>;
+  const secure = view.secure;
   function DocScreen(props: PluginScreenProps) {
+    // `secure` is fixed per screen, so the hook is called on every render or on none.
+    if (secure) props.host.useSecureDisplay({ brightness: secure.brightness ?? false });
     const { Screen } = props.host.components;
     const title = props.host.useLocale() === 'en' && enTitle ? enTitle : view.title;
     return createElement(Screen, { title: titleWith(title, props.params ?? {}), back: true, children: createElement(Body, props) });

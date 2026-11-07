@@ -290,6 +290,12 @@ export async function loadDocument(read: ReadFile): Promise<PluginDocument> {
         const v = viewSchema.safeParse(raw);
         if (!v.success) issues.push(...zodIssues(path, v.error));
         else {
+          if (kind === 'widgets' && v.data.secure) issues.push(`${path} › secure: only screens can be secure`);
+          // A payment or OTP code comes from a tool at run time ({ "$state": … }), never as text in the file.
+          for (const [id, el] of Object.entries(v.data.spec.elements)) {
+            const e = el as { type?: unknown; props?: { value?: unknown } };
+            if (e?.type === 'QRCode' && typeof e.props?.value === 'string') issues.push(`${path} › spec.elements.${id}: QRCode value must be bound ({ "$state": "/…" }), not text`);
+          }
           for (const [ptr, b] of Object.entries(v.data.bindings ?? {})) {
             if (b.fn) {
               const fn = serverFunctions(manifest)[b.fn];

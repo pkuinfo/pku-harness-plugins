@@ -64,7 +64,7 @@ html: html(text, url?) select(node, css) first(node, css) node.text node.html no
 400 steps, 60 requests (4 in flight), 60 s, 2 MB per response (request.maxSize up to 8 MB), 1 MB result, 300 000 operations.
 
 ## Widgets / screens (JSON)
-{ title, description?, sizes?: [sm,md,lg], spec: { root, elements: { id: { type, props, children?, repeat?: { statePath, key }, on? } }, state? },
+{ title, description?, sizes?: [sm,md,lg], secure?: { brightness? } (screens: no screenshots; payment codes), spec: { root, elements: { id: { type, props, children?, repeat?: { statePath, key }, on? } }, state? },
   bindings: { "/path": { tool: readTool, path?, ttlMinutes? } } }
 Components come from the app's UI catalog (plugins.reference doesn't list them; use ui.render's
 catalog). In a repeat: { "$item": "field" }, { "$template": "\${field}" }. Actions: ask {text},

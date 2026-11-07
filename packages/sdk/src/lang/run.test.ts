@@ -424,3 +424,30 @@ describe('multipart uploads', () => {
     await expect(runTool(r.env, 'send', { uri: 'content://picker/1' })).rejects.toThrow('files.pick');
   });
 });
+
+describe('secure screens and QR codes', () => {
+  const plugin = (view: string, kind = 'screens') =>
+    doc({
+      'PLUGIN.md': md(`tools:\n  code: tools/code.yaml\n${kind}:\n  pay: views/pay.json`),
+      'tools/code.yaml': "title: 付款码\ndescription: The code.\neffect: read\nuserOnly: true\nreturn: \"'x'\"\n",
+      'views/pay.json': view,
+    }).then(
+      (d) => d,
+      (e: Error) => e.message,
+    );
+  const view = (value: unknown, extra = '') =>
+    `{ "title": "付款码"${extra}, "spec": { "root": "q", "elements": { "q": { "type": "QRCode", "props": { "value": ${JSON.stringify(value)} } } } } }`;
+
+  test('a screen can be secure, with brightness', async () => {
+    const d = await plugin(view({ $state: '/code' }, ', "secure": { "brightness": true }'));
+    expect(typeof d === 'string' ? d : d.screens.pay!.secure).toEqual({ brightness: true });
+  });
+
+  test('a widget cannot be secure', async () => {
+    expect(await plugin(view({ $state: '/code' }, ', "secure": {}'), 'widgets')).toContain('only screens can be secure');
+  });
+
+  test('a QR code value is bound, never written into the file', async () => {
+    expect(await plugin(view('https://pay.example/123'))).toContain('QRCode value must be bound');
+  });
+});

@@ -153,6 +153,11 @@ export const viewSchema = z
     sizes: z.array(z.enum(['sm', 'md', 'lg'])).optional(),
     defaultSize: z.enum(['sm', 'md', 'lg']).optional(),
     presentation: z.enum(['push', 'modal']).optional(),
+    /**
+     * Screens only: keep the screen out of screenshots and the app switcher while it is open, and
+     * optionally raise brightness (payment codes, OTP digits); host.useSecureDisplay.
+     */
+    secure: z.object({ brightness: z.boolean().optional() }).strict().optional(),
     /** UI text per language, read in the spec as { "$state": "/t/<key>" } (zh-Hans is the fallback). */
     strings: z.object({ 'zh-Hans': z.record(z.string(), z.string()), en: z.record(z.string(), z.string()).optional() }).optional(),
     spec: z.object({ root: z.string(), elements: z.record(z.string(), z.unknown()), state: z.record(z.string(), z.unknown()).optional() }),
