@@ -45,7 +45,20 @@ export interface HostComponents {
   Stepper: ComponentType<{ value: number; onChange: (n: number) => void; min?: number; max?: number; suffix?: string; label: string }>;
   WeekdayPicker: ComponentType<{ value: number[]; onChange: (v: number[]) => void; multiple?: boolean }>;
   /** Form sheet layout: title + close, scrolling body, primary (and optional secondary/danger) action. */
-  SheetScreen: ComponentType<{ title: string; children: ReactNode; primary: string; onPrimary: () => void; primaryDisabled?: boolean; loading?: boolean; danger?: string; onDanger?: () => void; secondary?: string; onSecondary?: () => void }>;
+  SheetScreen: ComponentType<{
+    title: string;
+    children: ReactNode;
+    primary: string;
+    onPrimary: () => void;
+    primaryDisabled?: boolean;
+    loading?: boolean;
+    danger?: string;
+    onDanger?: () => void;
+    secondary?: string;
+    onSecondary?: () => void;
+    /** Shown right above the pinned actions (e.g. why the primary action failed), never scrolled away. */
+    notice?: { tone: 'down' | 'warn' | 'info'; text: string; action?: { label: string; onPress: () => void } };
+  }>;
   Sparkline: ComponentType<{ values: number[]; tone?: 'accent' | 'up' | 'down' | 'info'; height?: number }>;
   Ring: ComponentType<{ value: number; label?: string; caption?: string; tone?: 'accent' | 'up' | 'down' | 'warn'; size?: number }>;
   /**

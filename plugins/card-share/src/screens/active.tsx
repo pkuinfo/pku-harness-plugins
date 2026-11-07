@@ -100,7 +100,7 @@ function ShareCard({ host, manager, record: r, now, s, onNotice }: { host: HostU
       await fn();
     } catch (e) {
       host.haptics.warning();
-      onNotice({ tone: 'down', text: errorText(e) });
+      onNotice({ tone: 'down', text: errorText(e, s) });
     } finally {
       setBusy(null);
     }
