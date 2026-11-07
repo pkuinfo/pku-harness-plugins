@@ -61,6 +61,12 @@ export interface RunEnv {
   cloud?: PluginCloud;
   /** Limit overrides (only lower than LIMITS). */
   limits?: Partial<typeof LIMITS>;
+  /**
+   * Files the user picked with files.pick, by URI: the only files `request.multipart` may send.
+   * The host keeps one per plugin for the app session (the picker's URIs live that long), so a
+   * screen can pick in one tap and submit in the next; without it, only this run's picks count.
+   */
+  picked?: Map<string, { name: string; mime: string }>;
 }
 
 export class ToolFailure extends Error {
@@ -86,8 +92,10 @@ type Run = {
   deadline: number;
   depth: number;
   effect: ToolEffect;
-  /** URIs of the files the user picked in this run (files.pick): the only files multipart sends. */
+  /** RunEnv.picked, or this run's own picks. */
   picked: Map<string, { name: string; mime: string }>;
+  /** The tool the run started with is userOnly (a tap on a screen, never the agent). */
+  userOnly: boolean;
 };
 
 const UA = 'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130 Mobile Safari/537.36 PKUHarness';
@@ -141,6 +149,7 @@ type RequestDoc = {
 function toMultipart(run: Run, req: RequestDoc): CampusMultipart {
   const m = req.multipart!;
   if (!req.campus) throw new ToolFailure('multipart is only for campus requests (campus: <service>)');
+  if (!run.userOnly) throw new ToolFailure('multipart uploads run only from a userOnly tool (a tap on a screen)');
   if (req.json !== undefined || req.form || req.body !== undefined) throw new ToolFailure('multipart can’t be combined with json, form or body');
   if (req.method && req.method.toUpperCase() !== 'POST') throw new ToolFailure('multipart requests are POST');
   const raw = m.fields ?? {};
@@ -154,7 +163,7 @@ function toMultipart(run: Run, req: RequestDoc): CampusMultipart {
     const o = (f ?? {}) as Record<string, unknown>;
     const uri = String(o.uri ?? '');
     const picked = run.picked.get(uri);
-    if (!picked) throw new ToolFailure('multipart.files: each file must come from files.pick in this run');
+    if (!picked) throw new ToolFailure('multipart.files: each file must be one the user picked with files.pick');
     if (typeof o.field !== 'string' || !o.field) throw new ToolFailure('multipart.files: each file needs a field name');
     return { field: o.field, name: typeof o.name === 'string' && o.name ? o.name : picked.name, mime: picked.mime || 'application/octet-stream', uri };
   });
@@ -500,6 +509,7 @@ async function runStep(run: Run, step: StepDoc, scope: Scope): Promise<unknown> 
     const group = id.split('.')[0]!;
     if (!run.env.implicitAbilities && !run.env.manifest.abilities?.includes(group as never)) throw new ToolFailure(`ability '${group}' is not declared in PLUGIN.md (abilities: [...])`);
     if (effectRank(ab.effect) > effectRank(run.effect)) throw new ToolFailure(`ability ${id} needs effect '${ab.effect}' or stronger`);
+    if (ab.userOnly && !run.userOnly) throw new ToolFailure(`ability ${id} runs only from a userOnly tool (a tap on a screen)`);
     const args = step.args === undefined ? {} : expr(run, step.args, scope);
     const out = await ab.run(args as Record<string, unknown>, {
       services: run.env.services,
@@ -562,7 +572,7 @@ export async function runTool(env: RunEnv, name: string, input: Record<string, u
     now,
     call: (fn, args) => callFn(fn, args, ctx),
   };
-  const run: Run = { env, lim, ctx, steps: 0, requests: 0, inFlight: 0, deadline: Date.now() + lim.wallMs, depth: 0, effect: tool.effect, picked: new Map() };
+  const run: Run = { env, lim, ctx, steps: 0, requests: 0, inFlight: 0, deadline: Date.now() + lim.wallMs, depth: 0, effect: tool.effect, picked: env.picked ?? new Map(), userOnly: !!tool.userOnly };
   try {
     const out = plain(await execTool(run, tool, input));
     const size = JSON.stringify(out ?? null).length;

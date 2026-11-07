@@ -111,6 +111,7 @@ function checkRequest(c: Ctx, where: string, req: unknown) {
   const r = req as Record<string, unknown>;
   for (const k of Object.keys(r)) if (!REQUEST_KEYS.has(k)) c.issues.push(`${c.file} › ${where}.${k}: unknown request field (${[...REQUEST_KEYS].join(', ')})`);
   if (typeof r.url !== 'string') c.issues.push(`${c.file} › ${where}.url: required`);
+  if (r.multipart !== undefined && !c.tool.userOnly) c.issues.push(`${c.file} › ${where}.multipart: needs userOnly: true on the tool (a tap on a screen)`);
   if (typeof r.campus === 'string' && !r.campus.includes('${') && !c.manifest.campus?.includes(r.campus)) c.issues.push(`${c.file} › ${where}.campus: '${r.campus}' is not listed in PLUGIN.md campus`);
   // Static host check only when the host itself isn't templated (templated hosts are checked at run time).
   if (r.campus === undefined && typeof r.url === 'string' && /^https?:\/\/[^/$]+(\/|$)/.test(r.url)) {
@@ -190,6 +191,7 @@ function checkStep(c: Ctx, where: string, step: unknown) {
     else {
       if (!c.implicitAbilities && !c.manifest.abilities?.includes(id.split('.')[0] as never)) c.issues.push(`${c.file} › ${where}.ability: add '${id.split('.')[0]}' to PLUGIN.md abilities`);
       if (effectRank(ab.effect) > effectRank(c.tool.effect)) c.issues.push(`${c.file} › ${where}.ability: ${id} needs effect '${ab.effect}' or stronger (the tool says '${c.tool.effect}')`);
+      if (ab.userOnly && !c.tool.userOnly) c.issues.push(`${c.file} › ${where}.ability: ${id} needs userOnly: true on the tool (a tap on a screen)`);
     }
   }
 }

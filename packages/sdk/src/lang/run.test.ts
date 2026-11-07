@@ -357,7 +357,7 @@ describe('multipart uploads', () => {
   const PICKED = [{ name: 'hw1.pdf', mime: 'application/pdf', size: 3, uri: 'content://picker/1' }];
   const files = (steps: string) => ({
     'PLUGIN.md': md('campus: [blackboard]\nabilities: [files]\ntools:\n  up: tools/up.yaml'),
-    'tools/up.yaml': `title: 上传\ndescription: Upload a picked file.\neffect: write\nsteps:\n${steps}\nreturn: r\n`,
+    'tools/up.yaml': `title: 上传\ndescription: Upload a picked file.\neffect: write\nuserOnly: true\nsteps:\n${steps}\nreturn: r\n`,
   });
   const env = async (steps: string) => {
     const d = await doc(files(steps));
@@ -394,10 +394,33 @@ describe('multipart uploads', () => {
   test('is campus-only and excludes other bodies', async () => {
     const d = await doc({
       'PLUGIN.md': md('network: [example.com]\ntools:\n  up: tools/up.yaml'),
-      'tools/up.yaml': "title: 上传\ndescription: Public upload.\neffect: write\nsteps:\n  - let: r\n    request: { url: 'https://example.com/upload', multipart: { fields: { a: 1 } } }\n    as: text\nreturn: r\n",
+      'tools/up.yaml': "title: 上传\ndescription: Public upload.\neffect: write\nuserOnly: true\nsteps:\n  - let: r\n    request: { url: 'https://example.com/upload', multipart: { fields: { a: 1 } } }\n    as: text\nreturn: r\n",
     });
     await expect(runTool(replayEnv(d, []).env, 'up', {})).rejects.toThrow('only for campus');
     const r = await env("  - let: r\n    request: { campus: blackboard, url: /upload, form: { a: 1 }, multipart: { fields: { a: 1 } } }\n    as: text");
     await expect(runTool(r.env, 'up', {})).rejects.toThrow('combined');
+  });
+
+  test('picking and uploading need a userOnly tool (a tap, never the agent)', async () => {
+    const bad = (steps: string) =>
+      doc({
+        'PLUGIN.md': md('campus: [blackboard]\nabilities: [files]\ntools:\n  up: tools/up.yaml'),
+        'tools/up.yaml': `title: 上传\ndescription: Agent-callable upload.\neffect: write\nsteps:\n${steps}\nreturn: 1\n`,
+      }).then(() => '', (e: Error) => e.message);
+    expect(await bad('  - ability: files.pick')).toContain('needs userOnly');
+    expect(await bad("  - request: { campus: blackboard, url: /upload, multipart: { fields: { a: 1 } } }")).toContain('needs userOnly');
+  });
+
+  test('a pick in one tap can be submitted in the next (the plugin keeps its picks)', async () => {
+    const d = await doc({
+      'PLUGIN.md': md('campus: [blackboard]\nabilities: [files]\ntools:\n  choose: tools/choose.yaml\n  send: tools/send.yaml'),
+      'tools/choose.yaml': 'title: 选文件\ndescription: Pick.\neffect: read\nuserOnly: true\nsteps:\n  - let: f\n    ability: files.pick\nreturn: f\n',
+      'tools/send.yaml': "title: 提交\ndescription: Send.\neffect: write\nuserOnly: true\ninput:\n  uri: { type: string }\nsteps:\n  - let: r\n    request: { campus: blackboard, url: /upload, multipart: { files: [{ field: f, uri: '${input.uri}' }] } }\n    as: text\nreturn: r\n",
+    });
+    const r = replayEnv(d, [{ match: '/upload', campus: 'blackboard', body: 'ok' }], { services: { files: { pick: async () => structuredClone(PICKED) } } as never });
+    const shared = { ...r.env, picked: new Map() };
+    await runTool(shared, 'choose', {});
+    expect(await runTool(shared, 'send', { uri: 'content://picker/1' })).toBe('ok');
+    await expect(runTool(r.env, 'send', { uri: 'content://picker/1' })).rejects.toThrow('files.pick');
   });
 });

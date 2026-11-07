@@ -22,7 +22,13 @@ export type AbilityEnv = {
   cloud?: PluginCloud;
 };
 
-export type AbilityDef = { effect: ToolEffect; description: string; run: (args: Record<string, unknown>, env: AbilityEnv) => Promise<unknown> };
+export type AbilityDef = {
+  effect: ToolEffect;
+  description: string;
+  /** Only a userOnly tool (a tap on a screen) may use it, never the agent. */
+  userOnly?: boolean;
+  run: (args: Record<string, unknown>, env: AbilityEnv) => Promise<unknown>;
+};
 
 // ---------------------------------------------------------------- treehole second factors
 
@@ -117,7 +123,7 @@ export const ABILITIES: Record<string, AbilityDef> = {
   'browser.open': { effect: 'read', description: 'Open an https URL outside the app { url }', run: async (a, e) => e.services.browser.open(str(a.url)) },
   'campusPage.open': { effect: 'read', description: 'Open a campus site signed in { service }', run: async (a, e) => e.services.campus.openSignedIn(str(a.service)) },
   'sms.awaitCode': { effect: 'read', description: 'One-tap SMS code (user allows reading one SMS)', run: async (_a, e) => ({ code: await e.services.sms.awaitCode() }) },
-  'files.pick': { effect: 'read', description: 'Let the user pick files { types?, multiple? }', run: async (a, e) => e.services.files.pick(a as never) },
+  'files.pick': { effect: 'read', userOnly: true, description: 'Let the user pick files { types?, multiple? } (userOnly tools)', run: async (a, e) => e.services.files.pick(a as never) },
   'cloud.call': {
     effect: 'read',
     description: 'Call one of this plugin’s server functions { fn, input } (docs/CLOUD-FUNCTIONS.md)',

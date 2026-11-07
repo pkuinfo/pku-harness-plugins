@@ -26,7 +26,7 @@ constants: { NAME: data } · functions: { f: "(a, b) => expr" } · steps: [...] 
 - { let, value: expr }
 - { let, request: { campus?: service, url, method?, query?, headers?, json? | form? | body?+contentType? | multipart?, timeout?, maxSize? }, as: json|text|html|response }
   campus url = path on that service; public url must be https on a network host. html → a node for select().
-  multipart (campus POST only): { fields: { k: v } | [[k, v], ...], files: [{ field, uri, name? }] }; each uri must come from files.pick in the same run.
+  multipart (campus POST only): { fields: { k: v } | [[k, v], ...], files: [{ field, uri, name? }] }; each uri must be a file the user picked (files.pick). The tool needs userOnly: true.
 - { let, each: listExpr, concurrency?: 1–4, request | steps + return | value }  (item, index in scope; ≤ 50 items)
 - { let, paginate: { start?, request (uses cursor), items: expr (page), next: expr (null stops), max ≤ 30 } }
 - { let, extract: { from: expr, each: css, fields: { name: "css | text" } }, limit? }
@@ -39,7 +39,7 @@ constants: { NAME: data } · functions: { f: "(a, b) => expr" } · steps: [...] 
 Abilities: verify.treehole { request, code?, via? } (SMS/OTP second factor; returns data or
 {status:'verification_required'}), verify.treeholeSendCode, otp.code, todos.list/add/update/setDone/remove,
 timetable.get/upsert/remove, scheduler.list/create/update/remove, browser.open {url}, campusPage.open {service},
-sms.awaitCode, files.pick, crypto.sha256 {text}, cloud.call {fn, input}. The tool's effect must cover the ability's.
+sms.awaitCode, files.pick (userOnly tools), crypto.sha256 {text}, cloud.call {fn, input}. The tool's effect must cover the ability's.
 
 ## Expressions and templates
 Expression fields (value, each, if, check, return, items, next, from, call input, ability args,

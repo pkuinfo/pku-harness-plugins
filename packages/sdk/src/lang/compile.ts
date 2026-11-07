@@ -171,6 +171,8 @@ export function compilePlugin(doc: PluginDocument, opts: CompileOptions): Plugin
   if (m.cloud || m.server) requires.add('cloud');
 
   const tools: Record<string, ToolDef> = {};
+  // Files the user picked in this plugin's screens, for this app session (RunEnv.picked).
+  const picked = new Map<string, { name: string; mime: string }>();
   for (const [name, t] of Object.entries(doc.tools)) {
     tools[name] = {
       title: t.title,
@@ -184,7 +186,7 @@ export function compilePlugin(doc: PluginDocument, opts: CompileOptions): Plugin
           // Plugins that declare campus services may read who is signed in (the student ID some
           // campus pages need, e.g. elective's xh); never the password or the holder's name.
           const scope = m.campus?.length ? { account: accountOf(ctx.services) } : undefined;
-          return await runTool({ manifest: m, tools: doc.tools, services: ctx.services, kv: ctx.kv, fetch: opts.fetch, signal: ctx.signal, cloud: ctx.cloud, scope }, name, input as Record<string, unknown>);
+          return await runTool({ manifest: m, tools: doc.tools, services: ctx.services, kv: ctx.kv, fetch: opts.fetch, signal: ctx.signal, cloud: ctx.cloud, scope, picked }, name, input as Record<string, unknown>);
         } catch (e) {
           throw e instanceof ToolFailure ? new Error(e.message) : e;
         }
