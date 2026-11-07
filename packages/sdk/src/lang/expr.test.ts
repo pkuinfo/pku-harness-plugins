@@ -200,4 +200,13 @@ describe('sha256 and randomId', () => {
     expect(ev('randomId()')).toMatch(/^[0-9a-z]{16}$/);
     expect(ev('randomId(11)')).not.toBe(a);
   });
+  test('randomId works without globalThis.crypto (Hermes)', () => {
+    const saved = Object.getOwnPropertyDescriptor(globalThis, 'crypto');
+    Object.defineProperty(globalThis, 'crypto', { value: undefined, configurable: true, writable: true });
+    try {
+      expect(ev('randomId(11)')).toMatch(/^[0-9a-z]{11}$/);
+    } finally {
+      if (saved) Object.defineProperty(globalThis, 'crypto', saved);
+    }
+  });
 });

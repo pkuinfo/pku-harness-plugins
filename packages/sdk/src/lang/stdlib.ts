@@ -538,11 +538,16 @@ export function sha256(s: string): string {
   return h.map((v) => (v >>> 0).toString(16).padStart(8, '0')).join('');
 }
 
-/** `n` random characters from 0-9a-z (nonces), from the platform's secure random source. */
+/**
+ * `n` random characters from 0-9a-z (request nonces, not secrets): the platform's secure source
+ * when it has one. Hermes (the app) has no `crypto`, so Math.random there, as pkucli's nonce does.
+ */
 function randomId(n: number): string {
   const len = Math.max(1, Math.min(64, Math.floor(n) || 16));
   const bytes = new Uint8Array(len);
-  globalThis.crypto.getRandomValues(bytes);
+  const c = (globalThis as { crypto?: { getRandomValues?: (a: Uint8Array) => Uint8Array } }).crypto;
+  if (typeof c?.getRandomValues === 'function') c.getRandomValues(bytes);
+  else for (let i = 0; i < len; i++) bytes[i] = Math.floor(Math.random() * 256);
   const abc = '0123456789abcdefghijklmnopqrstuvwxyz';
   return Array.from(bytes, (b) => abc[b % 36]).join('');
 }
