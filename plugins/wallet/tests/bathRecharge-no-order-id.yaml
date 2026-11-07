@@ -1,0 +1,29 @@
+# createOrder without PayOrderTrade.id. (expected: the TypeScript tool on the same responses)
+tool: bathRecharge
+input:
+  amount: 99.5
+responses:
+  - match: getProjectTypeAndProjectInfoListInit/10001
+    campus: cwpay
+    file: cwpay-projects.json
+  - match: getProjectTypeAndProjectInfoList/f-more
+    campus: cwpay
+    body:
+      messageCode: "0"
+      message: 成功
+      data: []
+  - match: getProjectIsAllowPayment
+    campus: cwpay
+    body:
+      messageCode: "0"
+      message: 成功
+      data: true
+  - match: bath/createOrder
+    campus: cwpay
+    body:
+      messageCode: "0"
+      message: 成功
+      data:
+        PayOrderTrade:
+          orderNo: x
+expectError: 收费平台没有返回订单号

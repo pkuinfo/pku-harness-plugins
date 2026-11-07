@@ -1,0 +1,389 @@
+{
+  "title": "充值",
+  "description": "校园卡充值：选金额，在学校收银台用微信或支付宝付款。",
+  "presentation": "modal",
+  "strings": {
+    "zh-Hans": {
+      "otherAmount": "其他金额（元）",
+      "amountHint": "1–1000 的整数",
+      "rechargeAmount": "充值 ¥",
+      "rechargeNote": "在学校收银台里用微信或支付宝付款，本 App 不经手钱款。充值成功后需在食堂 POS 机上刷一次卡才能到账。",
+      "opened": "已打开收银台：选择微信或支付宝付款。付完回到这里，在 POS 机上刷一次卡余额才会更新。"
+    },
+    "en": {
+      "otherAmount": "Other amount (¥)",
+      "amountHint": "Whole number, 1–1000",
+      "rechargeAmount": "Top up ¥",
+      "rechargeNote": "You pay with WeChat or Alipay at the university’s cashier; this app never handles the money. After topping up, tap your card once on a canteen POS for the credit to arrive.",
+      "opened": "The cashier is open: pay with WeChat or Alipay. When you’re back, tap your card once on a POS to update the balance."
+    }
+  },
+  "spec": {
+    "root": "root",
+    "elements": {
+      "root": {
+        "type": "Column",
+        "props": {
+          "gap": "lg"
+        },
+        "children": [
+          "presets",
+          "custom",
+          "note",
+          "go",
+          "opened",
+          "error"
+        ]
+      },
+      "presets": {
+        "type": "Row",
+        "props": {
+          "gap": "sm",
+          "align": "start",
+          "wrap": true
+        },
+        "children": [
+          "p10",
+          "p50",
+          "p100",
+          "p200",
+          "p500",
+          "p800"
+        ]
+      },
+      "custom": {
+        "type": "TextField",
+        "props": {
+          "label": {
+            "$state": "/t/otherAmount"
+          },
+          "placeholder": {
+            "$state": "/t/amountHint"
+          },
+          "value": {
+            "$bindState": "/form/custom"
+          },
+          "keyboard": "number"
+        }
+      },
+      "note": {
+        "type": "Text",
+        "props": {
+          "text": {
+            "$state": "/t/rechargeNote"
+          },
+          "tone": "muted",
+          "size": "small"
+        }
+      },
+      "go": {
+        "type": "Button",
+        "props": {
+          "label": {
+            "$cond": {
+              "$state": "/form/custom"
+            },
+            "$then": {
+              "$template": "${/t/rechargeAmount}${/form/custom}"
+            },
+            "$else": {
+              "$template": "${/t/rechargeAmount}${/form/preset}"
+            }
+          },
+          "variant": "primary"
+        },
+        "on": {
+          "press": [
+            {
+              "action": "setState",
+              "params": {
+                "statePath": "/result/topUp",
+                "value": null
+              }
+            },
+            {
+              "action": "callTool",
+              "params": {
+                "tool": "wallet.cardTopUp",
+                "input": {
+                  "preset": {
+                    "$state": "/form/preset"
+                  },
+                  "custom": {
+                    "$state": "/form/custom"
+                  }
+                },
+                "resultPath": "/result/topUp",
+                "errorPath": "/error"
+              }
+            }
+          ]
+        }
+      },
+      "opened": {
+        "type": "Text",
+        "props": {
+          "text": {
+            "$state": "/t/opened"
+          },
+          "tone": "up",
+          "size": "body"
+        },
+        "visible": {
+          "$state": "/result/topUp"
+        }
+      },
+      "error": {
+        "type": "Text",
+        "props": {
+          "text": {
+            "$state": "/error"
+          },
+          "tone": "down",
+          "size": "body"
+        },
+        "visible": {
+          "$state": "/error"
+        }
+      },
+      "p10": {
+        "type": "Button",
+        "props": {
+          "label": "¥10",
+          "variant": {
+            "$cond": [
+              {
+                "$state": "/form/custom",
+                "not": true
+              },
+              {
+                "$state": "/form/preset",
+                "eq": 10
+              }
+            ],
+            "$then": "primary",
+            "$else": "secondary"
+          }
+        },
+        "on": {
+          "press": [
+            {
+              "action": "setState",
+              "params": {
+                "statePath": "/form/custom",
+                "value": ""
+              }
+            },
+            {
+              "action": "setState",
+              "params": {
+                "statePath": "/form/preset",
+                "value": 10
+              }
+            }
+          ]
+        }
+      },
+      "p50": {
+        "type": "Button",
+        "props": {
+          "label": "¥50",
+          "variant": {
+            "$cond": [
+              {
+                "$state": "/form/custom",
+                "not": true
+              },
+              {
+                "$state": "/form/preset",
+                "eq": 50
+              }
+            ],
+            "$then": "primary",
+            "$else": "secondary"
+          }
+        },
+        "on": {
+          "press": [
+            {
+              "action": "setState",
+              "params": {
+                "statePath": "/form/custom",
+                "value": ""
+              }
+            },
+            {
+              "action": "setState",
+              "params": {
+                "statePath": "/form/preset",
+                "value": 50
+              }
+            }
+          ]
+        }
+      },
+      "p100": {
+        "type": "Button",
+        "props": {
+          "label": "¥100",
+          "variant": {
+            "$cond": [
+              {
+                "$state": "/form/custom",
+                "not": true
+              },
+              {
+                "$state": "/form/preset",
+                "eq": 100
+              }
+            ],
+            "$then": "primary",
+            "$else": "secondary"
+          }
+        },
+        "on": {
+          "press": [
+            {
+              "action": "setState",
+              "params": {
+                "statePath": "/form/custom",
+                "value": ""
+              }
+            },
+            {
+              "action": "setState",
+              "params": {
+                "statePath": "/form/preset",
+                "value": 100
+              }
+            }
+          ]
+        }
+      },
+      "p200": {
+        "type": "Button",
+        "props": {
+          "label": "¥200",
+          "variant": {
+            "$cond": [
+              {
+                "$state": "/form/custom",
+                "not": true
+              },
+              {
+                "$state": "/form/preset",
+                "eq": 200
+              }
+            ],
+            "$then": "primary",
+            "$else": "secondary"
+          }
+        },
+        "on": {
+          "press": [
+            {
+              "action": "setState",
+              "params": {
+                "statePath": "/form/custom",
+                "value": ""
+              }
+            },
+            {
+              "action": "setState",
+              "params": {
+                "statePath": "/form/preset",
+                "value": 200
+              }
+            }
+          ]
+        }
+      },
+      "p500": {
+        "type": "Button",
+        "props": {
+          "label": "¥500",
+          "variant": {
+            "$cond": [
+              {
+                "$state": "/form/custom",
+                "not": true
+              },
+              {
+                "$state": "/form/preset",
+                "eq": 500
+              }
+            ],
+            "$then": "primary",
+            "$else": "secondary"
+          }
+        },
+        "on": {
+          "press": [
+            {
+              "action": "setState",
+              "params": {
+                "statePath": "/form/custom",
+                "value": ""
+              }
+            },
+            {
+              "action": "setState",
+              "params": {
+                "statePath": "/form/preset",
+                "value": 500
+              }
+            }
+          ]
+        }
+      },
+      "p800": {
+        "type": "Button",
+        "props": {
+          "label": "¥800",
+          "variant": {
+            "$cond": [
+              {
+                "$state": "/form/custom",
+                "not": true
+              },
+              {
+                "$state": "/form/preset",
+                "eq": 800
+              }
+            ],
+            "$then": "primary",
+            "$else": "secondary"
+          }
+        },
+        "on": {
+          "press": [
+            {
+              "action": "setState",
+              "params": {
+                "statePath": "/form/custom",
+                "value": ""
+              }
+            },
+            {
+              "action": "setState",
+              "params": {
+                "statePath": "/form/preset",
+                "value": 800
+              }
+            }
+          ]
+        }
+      }
+    },
+    "state": {
+      "form": {
+        "preset": 100,
+        "custom": ""
+      },
+      "result": {
+        "topUp": null
+      },
+      "error": null
+    }
+  }
+}

@@ -1,0 +1,8 @@
+# A gateway error page. (expected: the TypeScript tool on the same responses)
+tool: cardBalance
+responses:
+  - match: ykt/tsm/queryCard
+    campus: card
+    status: 502
+    body: <html>Bad gateway</html>
+expectError: 校园卡服务返回了无法识别的内容（HTTP 502）

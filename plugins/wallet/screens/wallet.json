@@ -1,0 +1,903 @@
+{
+  "title": "校园钱包",
+  "description": "余额、付款码与充值：校园卡、网费、浴卡和宿舍电费在一页；每一块单独加载。",
+  "bindings": {
+    "/w": {
+      "tool": "overview",
+      "ttlMinutes": 5
+    }
+  },
+  "strings": {
+    "zh-Hans": {
+      "signInFirst": "先登录校园账号",
+      "signInWhy": "校园卡、网费和浴卡的数据都来自学校系统，需要登录校园账号。",
+      "goSignIn": "登录校园账号",
+      "card": "校园卡",
+      "netfee": "网费",
+      "bath": "浴卡",
+      "electricity": "宿舍电费",
+      "electricityNote": "没有线上接口，查不到电量",
+      "balance": "余额",
+      "lost": "已挂失",
+      "frozen": "已冻结",
+      "todaySpent": "今日消费 ¥",
+      "dailyLimit": " / 限额 ¥",
+      "topUp": "充值",
+      "payCode": "付款码",
+      "thisMonth": "本月 ",
+      "fee": " · ¥",
+      "payNetfee": "缴网费",
+      "netfeeNote": "网费可以在收费平台缴纳，用微信或支付宝付款。",
+      "closed": "收费平台目前没有为你的账号开放浴卡充值。浴卡余额在卡片芯片里，可在转存机或洗浴时查看。",
+      "lastTopUp": "最近充值",
+      "noTopUps": "还没有线上充值记录",
+      "activate": " · 余额在卡里，需转存机激活",
+      "unpaid": "待支付",
+      "paid": "已付款",
+      "showMore": "展开",
+      "showLess": "收起",
+      "electricityShort": "宿舍电费目前只能在微信里交：关注公众号「动力中心收费服务号」→ 缴费服务 → 学生购电 → 充值；剩余电量也在那里看。",
+      "electricityGuide": "宿舍电费目前只能在微信里交：关注公众号「动力中心收费服务号」→ 缴费服务 → 学生购电 → 用户绑定/解绑（首次绑定楼宇和房间）→ 充值；剩余电量也在那里看。也可以到学生宿舍 28 楼地下一层后勤服务大厅现场购电（每天 8:00–20:00，电话 62753157 / 62758015）。本 App 暂时查不到电量，也不能代缴。",
+      "more": "更多",
+      "transactions": "最近消费",
+      "transactionsPrompt": "看看我最近的校园卡消费记录。",
+      "monthly": "本月消费统计",
+      "monthlyPrompt": "这个月我的校园卡一共花了多少钱？主要花在哪？",
+      "payCenter": "打开收费平台",
+      "payCenterSubtitle": "待支付订单、学费和其他缴费",
+      "opened": "已在浏览器打开收费平台。",
+      "footer": "付款都在学校的收银台或收费平台里用微信或支付宝完成，本 App 不经手钱款。"
+    },
+    "en": {
+      "signInFirst": "Sign in to your campus account first",
+      "signInWhy": "Campus Card, network fee and bath card data come from university systems, so sign in to your campus account.",
+      "goSignIn": "Sign in to campus account",
+      "card": "Campus Card",
+      "netfee": "Network fee",
+      "bath": "Bath card",
+      "electricity": "Dorm electricity",
+      "electricityNote": "No online access, so your meter can’t be read here",
+      "balance": "Balance",
+      "lost": "Reported lost",
+      "frozen": "Frozen",
+      "todaySpent": "Spent today ¥",
+      "dailyLimit": " / limit ¥",
+      "topUp": "Top up",
+      "payCode": "Pay",
+      "thisMonth": "This month ",
+      "fee": " · ¥",
+      "payNetfee": "Pay network fee",
+      "netfeeNote": "You can pay the network fee on the university’s payment platform with WeChat or Alipay.",
+      "closed": "The payment platform doesn’t offer bath-card top-ups for your account right now. The balance lives on the card chip: check it at a top-up kiosk or in the shower.",
+      "lastTopUp": "Latest top-up",
+      "noTopUps": "No online top-ups yet",
+      "activate": " · Credit goes on the card at a top-up kiosk",
+      "unpaid": "Unpaid",
+      "paid": "Paid",
+      "showMore": "Show more",
+      "showLess": "Show less",
+      "electricityShort": "Dorm electricity can only be paid in WeChat for now: follow the 动力中心收费服务号 account → 缴费服务 → 学生购电 → top up; your remaining balance is shown there too.",
+      "electricityGuide": "Dorm electricity can only be paid in WeChat for now: follow the 动力中心收费服务号 account → 缴费服务 → 学生购电 → 用户绑定/解绑 (bind your building and room the first time) → top up; your remaining balance is shown there too. You can also buy electricity in person at the service hall in the basement of dorm building 28 (8:00–20:00 daily, tel. 62753157 / 62758015). This app can’t read your meter or pay for you yet.",
+      "more": "More",
+      "transactions": "Recent spending",
+      "transactionsPrompt": "Show my recent Campus Card transactions.",
+      "monthly": "This month’s spending",
+      "monthlyPrompt": "How much have I spent on my Campus Card this month, and on what?",
+      "payCenter": "Open payment platform",
+      "payCenterSubtitle": "Unpaid orders, tuition and other fees",
+      "opened": "The payment platform is open in your browser.",
+      "footer": "You always pay with WeChat or Alipay at the university’s cashier or payment platform; this app never handles the money."
+    }
+  },
+  "spec": {
+    "root": "root",
+    "elements": {
+      "root": {
+        "type": "Column",
+        "props": {
+          "gap": "lg"
+        },
+        "children": [
+          "signedOut",
+          "body"
+        ]
+      },
+      "signedOut": {
+        "type": "Column",
+        "props": {
+          "gap": "md"
+        },
+        "visible": {
+          "$state": "/account/signedIn",
+          "not": true
+        },
+        "children": [
+          "soTitle",
+          "soWhy",
+          "soButton"
+        ]
+      },
+      "soTitle": {
+        "type": "Heading",
+        "props": {
+          "text": {
+            "$state": "/t/signInFirst"
+          },
+          "size": "md"
+        }
+      },
+      "soWhy": {
+        "type": "Text",
+        "props": {
+          "text": {
+            "$state": "/t/signInWhy"
+          },
+          "tone": "muted",
+          "size": "body"
+        }
+      },
+      "soButton": {
+        "type": "Button",
+        "props": {
+          "label": {
+            "$state": "/t/goSignIn"
+          },
+          "variant": "primary"
+        },
+        "on": {
+          "press": {
+            "action": "navigate",
+            "params": {
+              "href": "/campus"
+            }
+          }
+        }
+      },
+      "body": {
+        "type": "Column",
+        "props": {
+          "gap": "lg"
+        },
+        "visible": {
+          "$state": "/account/signedIn"
+        },
+        "children": [
+          "card",
+          "netfee",
+          "bath",
+          "electricity",
+          "notice",
+          "error",
+          "more",
+          "footer"
+        ]
+      },
+      "card": {
+        "type": "Card",
+        "props": {
+          "title": {
+            "$state": "/t/card"
+          },
+          "subtitle": null
+        },
+        "children": [
+          "cardBalance",
+          "cardNone",
+          "cardStatus",
+          "cardToday",
+          "cardError",
+          "cardActions"
+        ]
+      },
+      "cardBalance": {
+        "type": "Stat",
+        "props": {
+          "label": {
+            "$state": "/t/balance"
+          },
+          "value": {
+            "$state": "/w/card/balance"
+          },
+          "prefix": "¥",
+          "suffix": null,
+          "decimals": 2,
+          "delta": null,
+          "deltaTone": null,
+          "caption": null,
+          "icon": null,
+          "size": "xl"
+        },
+        "visible": {
+          "$state": "/w/card/balance",
+          "neq": null
+        }
+      },
+      "cardNone": {
+        "type": "Heading",
+        "props": {
+          "text": "¥ —",
+          "size": "lg"
+        },
+        "visible": [
+          {
+            "$state": "/w/card"
+          },
+          {
+            "$state": "/w/card/balance",
+            "eq": null
+          }
+        ]
+      },
+      "cardStatus": {
+        "type": "Badge",
+        "props": {
+          "label": {
+            "$cond": {
+              "$state": "/w/card/status",
+              "eq": "lost"
+            },
+            "$then": {
+              "$state": "/t/lost"
+            },
+            "$else": {
+              "$state": "/t/frozen"
+            }
+          },
+          "tone": "down"
+        },
+        "visible": [
+          {
+            "$state": "/w/card"
+          },
+          {
+            "$state": "/w/card/status",
+            "neq": "normal"
+          }
+        ]
+      },
+      "cardToday": {
+        "type": "Text",
+        "props": {
+          "text": {
+            "$cond": {
+              "$state": "/w/card/dailyLimit"
+            },
+            "$then": {
+              "$template": "${/t/todaySpent}${/w/card/todaySpent}${/t/dailyLimit}${/w/card/dailyLimit}"
+            },
+            "$else": {
+              "$template": "${/t/todaySpent}${/w/card/todaySpent}"
+            }
+          },
+          "tone": "muted",
+          "size": "small"
+        },
+        "visible": [
+          {
+            "$state": "/w/card"
+          },
+          {
+            "$state": "/w/card/todaySpent",
+            "neq": null
+          }
+        ]
+      },
+      "cardError": {
+        "type": "Text",
+        "props": {
+          "text": {
+            "$state": "/w/cardError"
+          },
+          "tone": "warn",
+          "size": "small"
+        },
+        "visible": {
+          "$state": "/w/cardError"
+        }
+      },
+      "cardActions": {
+        "type": "Row",
+        "props": {
+          "gap": "sm",
+          "align": "start",
+          "wrap": true
+        },
+        "children": [
+          "topUp",
+          "payCode"
+        ]
+      },
+      "topUp": {
+        "type": "Button",
+        "props": {
+          "label": {
+            "$state": "/t/topUp"
+          },
+          "variant": "secondary"
+        },
+        "on": {
+          "press": {
+            "action": "navigate",
+            "params": {
+              "href": "/m/wallet/recharge"
+            }
+          }
+        }
+      },
+      "payCode": {
+        "type": "Button",
+        "props": {
+          "label": {
+            "$state": "/t/payCode"
+          },
+          "variant": "primary"
+        },
+        "on": {
+          "press": {
+            "action": "navigate",
+            "params": {
+              "href": "/m/wallet/pay"
+            }
+          }
+        }
+      },
+      "netfee": {
+        "type": "Card",
+        "props": {
+          "title": {
+            "$state": "/t/netfee"
+          },
+          "subtitle": null
+        },
+        "children": [
+          "netBalance",
+          "netNone",
+          "netMonth",
+          "netError",
+          "netNote",
+          "payNetfee"
+        ]
+      },
+      "netBalance": {
+        "type": "Stat",
+        "props": {
+          "label": {
+            "$state": "/t/balance"
+          },
+          "value": {
+            "$state": "/w/netfee/balance"
+          },
+          "prefix": "¥",
+          "suffix": null,
+          "decimals": 2,
+          "delta": null,
+          "deltaTone": null,
+          "caption": null,
+          "icon": null,
+          "size": "lg"
+        },
+        "visible": {
+          "$state": "/w/netfee/balance",
+          "neq": null
+        }
+      },
+      "netNone": {
+        "type": "Heading",
+        "props": {
+          "text": "¥ —",
+          "size": "lg"
+        },
+        "visible": [
+          {
+            "$state": "/w/netfee"
+          },
+          {
+            "$state": "/w/netfee/balance",
+            "eq": null
+          }
+        ]
+      },
+      "netMonth": {
+        "type": "Text",
+        "props": {
+          "text": {
+            "$cond": {
+              "$state": "/w/netfee/monthlyFee",
+              "neq": null
+            },
+            "$then": {
+              "$template": "${/t/thisMonth}${/w/netfee/monthlyUsage}${/t/fee}${/w/netfee/monthlyFee}"
+            },
+            "$else": {
+              "$template": "${/t/thisMonth}${/w/netfee/monthlyUsage}"
+            }
+          },
+          "tone": "muted",
+          "size": "small"
+        },
+        "visible": {
+          "$and": [
+            {
+              "$state": "/w/netfee"
+            },
+            {
+              "$or": [
+                {
+                  "$state": "/w/netfee/monthlyUsage"
+                },
+                {
+                  "$state": "/w/netfee/monthlyFee",
+                  "neq": null
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "netError": {
+        "type": "Text",
+        "props": {
+          "text": {
+            "$state": "/w/netfeeError"
+          },
+          "tone": "warn",
+          "size": "small"
+        },
+        "visible": {
+          "$state": "/w/netfeeError"
+        }
+      },
+      "netNote": {
+        "type": "Text",
+        "props": {
+          "text": {
+            "$state": "/t/netfeeNote"
+          },
+          "tone": "muted",
+          "size": "small"
+        }
+      },
+      "payNetfee": {
+        "type": "Button",
+        "props": {
+          "label": {
+            "$state": "/t/payNetfee"
+          },
+          "variant": "secondary"
+        },
+        "on": {
+          "press": [
+            {
+              "action": "setState",
+              "params": {
+                "statePath": "/result/opened",
+                "value": null
+              }
+            },
+            {
+              "action": "callTool",
+              "params": {
+                "tool": "wallet.openPayCenter",
+                "input": {},
+                "resultPath": "/result/opened",
+                "errorPath": "/error"
+              }
+            }
+          ]
+        }
+      },
+      "bath": {
+        "type": "Card",
+        "props": {
+          "title": {
+            "$state": "/t/bath"
+          },
+          "subtitle": null
+        },
+        "children": [
+          "bathClosed",
+          "bathLive",
+          "bathError"
+        ]
+      },
+      "bathClosed": {
+        "type": "Text",
+        "props": {
+          "text": {
+            "$state": "/t/closed"
+          },
+          "tone": "muted",
+          "size": "small"
+        },
+        "visible": {
+          "$state": "/w/bath/available",
+          "eq": false
+        }
+      },
+      "bathLive": {
+        "type": "Column",
+        "props": {
+          "gap": "sm"
+        },
+        "visible": {
+          "$state": "/w/bath/available",
+          "eq": true
+        },
+        "children": [
+          "bathList",
+          "bathNone",
+          "bathTopUp"
+        ]
+      },
+      "bathList": {
+        "type": "Column",
+        "props": {
+          "gap": "sm"
+        },
+        "repeat": {
+          "statePath": "/w/bath/recentTopUps"
+        },
+        "children": [
+          "bathLast"
+        ]
+      },
+      "bathLast": {
+        "type": "Column",
+        "props": {
+          "gap": "sm"
+        },
+        "visible": {
+          "$index": true,
+          "lt": 1
+        },
+        "children": [
+          "bathAmount",
+          "bathStatus",
+          "bathWhen"
+        ]
+      },
+      "bathAmount": {
+        "type": "Stat",
+        "props": {
+          "label": {
+            "$state": "/t/lastTopUp"
+          },
+          "value": {
+            "$item": "amount"
+          },
+          "prefix": "¥",
+          "suffix": null,
+          "decimals": 2,
+          "delta": null,
+          "deltaTone": null,
+          "caption": null,
+          "icon": null,
+          "size": "lg"
+        },
+        "visible": {
+          "$item": "amount",
+          "neq": null
+        }
+      },
+      "bathStatus": {
+        "type": "Badge",
+        "props": {
+          "label": {
+            "$cond": {
+              "$item": "status",
+              "eq": "待支付"
+            },
+            "$then": {
+              "$state": "/t/unpaid"
+            },
+            "$else": {
+              "$cond": {
+                "$item": "status",
+                "eq": "已付款"
+              },
+              "$then": {
+                "$state": "/t/paid"
+              },
+              "$else": {
+                "$item": "status"
+              }
+            }
+          },
+          "tone": {
+            "$cond": {
+              "$item": "status",
+              "eq": "待支付"
+            },
+            "$then": "warn",
+            "$else": "neutral"
+          }
+        }
+      },
+      "bathWhen": {
+        "type": "Text",
+        "props": {
+          "text": {
+            "$template": "${createdAt}${/t/activate}"
+          },
+          "tone": "muted",
+          "size": "small"
+        }
+      },
+      "bathNone": {
+        "type": "Text",
+        "props": {
+          "text": {
+            "$state": "/t/noTopUps"
+          },
+          "tone": "muted",
+          "size": "body"
+        },
+        "visible": {
+          "$state": "/w/bath/recentTopUps/0",
+          "not": true
+        }
+      },
+      "bathTopUp": {
+        "type": "Button",
+        "props": {
+          "label": {
+            "$state": "/t/topUp"
+          },
+          "variant": "secondary"
+        },
+        "on": {
+          "press": {
+            "action": "navigate",
+            "params": {
+              "href": "/m/wallet/bath-recharge"
+            }
+          }
+        }
+      },
+      "bathError": {
+        "type": "Text",
+        "props": {
+          "text": {
+            "$state": "/w/bathError"
+          },
+          "tone": "warn",
+          "size": "small"
+        },
+        "visible": {
+          "$state": "/w/bathError"
+        }
+      },
+      "electricity": {
+        "type": "Card",
+        "props": {
+          "title": {
+            "$state": "/t/electricity"
+          },
+          "subtitle": null
+        },
+        "children": [
+          "elNote",
+          "elShort",
+          "elGuide",
+          "elMore",
+          "elLess"
+        ]
+      },
+      "elNote": {
+        "type": "Text",
+        "props": {
+          "text": {
+            "$state": "/t/electricityNote"
+          },
+          "tone": "muted",
+          "size": "small"
+        }
+      },
+      "elShort": {
+        "type": "Text",
+        "props": {
+          "text": {
+            "$state": "/t/electricityShort"
+          },
+          "tone": "muted",
+          "size": "body"
+        },
+        "visible": {
+          "$state": "/form/guideOpen",
+          "not": true
+        }
+      },
+      "elGuide": {
+        "type": "Text",
+        "props": {
+          "text": {
+            "$state": "/t/electricityGuide"
+          },
+          "tone": "muted",
+          "size": "body"
+        },
+        "visible": {
+          "$state": "/form/guideOpen"
+        }
+      },
+      "notice": {
+        "type": "Text",
+        "props": {
+          "text": {
+            "$state": "/t/opened"
+          },
+          "tone": "up",
+          "size": "body"
+        },
+        "visible": {
+          "$state": "/result/opened"
+        }
+      },
+      "error": {
+        "type": "Text",
+        "props": {
+          "text": {
+            "$state": "/error"
+          },
+          "tone": "down",
+          "size": "body"
+        },
+        "visible": {
+          "$state": "/error"
+        }
+      },
+      "more": {
+        "type": "Card",
+        "props": {
+          "title": {
+            "$state": "/t/more"
+          },
+          "subtitle": null
+        },
+        "children": [
+          "monthly",
+          "transactions",
+          "payCenter"
+        ]
+      },
+      "monthly": {
+        "type": "ListItem",
+        "props": {
+          "title": {
+            "$state": "/t/monthly"
+          },
+          "subtitle": null,
+          "value": null,
+          "icon": "schedule"
+        },
+        "on": {
+          "press": {
+            "action": "ask",
+            "params": {
+              "text": {
+                "$state": "/t/monthlyPrompt"
+              }
+            }
+          }
+        }
+      },
+      "transactions": {
+        "type": "ListItem",
+        "props": {
+          "title": {
+            "$state": "/t/transactions"
+          },
+          "subtitle": null,
+          "value": null,
+          "icon": "todo"
+        },
+        "on": {
+          "press": {
+            "action": "ask",
+            "params": {
+              "text": {
+                "$state": "/t/transactionsPrompt"
+              }
+            }
+          }
+        }
+      },
+      "payCenter": {
+        "type": "ListItem",
+        "props": {
+          "title": {
+            "$state": "/t/payCenter"
+          },
+          "subtitle": {
+            "$state": "/t/payCenterSubtitle"
+          },
+          "value": null,
+          "icon": "card"
+        },
+        "on": {
+          "press": [
+            {
+              "action": "setState",
+              "params": {
+                "statePath": "/result/opened",
+                "value": null
+              }
+            },
+            {
+              "action": "callTool",
+              "params": {
+                "tool": "wallet.openPayCenter",
+                "input": {},
+                "resultPath": "/result/opened",
+                "errorPath": "/error"
+              }
+            }
+          ]
+        }
+      },
+      "footer": {
+        "type": "Text",
+        "props": {
+          "text": {
+            "$state": "/t/footer"
+          },
+          "tone": "muted",
+          "size": "small"
+        }
+      },
+      "elMore": {
+        "type": "Button",
+        "props": {
+          "label": {
+            "$state": "/t/showMore"
+          },
+          "variant": "ghost"
+        },
+        "visible": {
+          "$state": "/form/guideOpen",
+          "not": true
+        },
+        "on": {
+          "press": {
+            "action": "setState",
+            "params": {
+              "statePath": "/form/guideOpen",
+              "value": true
+            }
+          }
+        }
+      },
+      "elLess": {
+        "type": "Button",
+        "props": {
+          "label": {
+            "$state": "/t/showLess"
+          },
+          "variant": "ghost"
+        },
+        "visible": {
+          "$state": "/form/guideOpen"
+        },
+        "on": {
+          "press": {
+            "action": "setState",
+            "params": {
+              "statePath": "/form/guideOpen",
+              "value": false
+            }
+          }
+        }
+      }
+    },
+    "state": {
+      "w": null,
+      "form": {
+        "guideOpen": false
+      },
+      "result": {
+        "opened": null
+      },
+      "error": null
+    }
+  }
+}

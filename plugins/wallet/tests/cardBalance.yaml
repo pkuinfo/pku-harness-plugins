@@ -1,0 +1,31 @@
+# Balance, today’s spending and limit in yuan (tools.ts cardBalance). (expected: the TypeScript tool on the same responses)
+tool: cardBalance
+responses:
+  - match: ykt/tsm/queryCard
+    campus: card
+    body:
+      code: 200
+      success: true
+      data:
+        card:
+          - sno: "2000012345"
+            name: 张三
+            account: "123456"
+            lostflag: 0
+            freezeflag: 0
+            expdate: "20300701"
+            elec_accamt: 12345
+            accinfo:
+              - balance: 12345
+                name: 电子钱包
+                type: "001"
+                daycostamt: 1250
+                daycostlimit: 20000
+expect:
+  balance: 123.45
+  name: 张三
+  status: normal
+  todaySpent: 12.5
+  dailyLimit: 200
+  expires: "20300701"
+  low: false

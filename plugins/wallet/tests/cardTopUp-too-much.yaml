@@ -1,0 +1,7 @@
+# Typed digits only (non-digits dropped, as the TS field did); over ¥1000 is refused.
+tool: cardTopUp
+input:
+  preset: 100
+  custom: 2,000
+responses: []
+expectError: 充值金额是 1–1000 的整数

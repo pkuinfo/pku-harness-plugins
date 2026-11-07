@@ -1,0 +1,30 @@
+# card/tools.ts cardBalance: queryCard (pkucli api.rs get_card_info). `low` replaces the TS widget's
+# warnBelow setting (default ¥50), so the dashboard widget can change colour.
+title: 查询校园卡余额
+summary: 校园卡余额、今日消费和卡状态
+description: "Campus card balance in yuan, plus card status (lost / frozen) and today's spending if available."
+effect: read
+steps:
+  - let: res
+    request: { campus: card, url: '${QUERY_CARD}' }
+    as: response
+  - check: cardErr(res) == null
+    error: ${cardErr(res)}
+  - let: card
+    value: cardData(res).card[0]
+  - check: card != null
+    error: 没有找到校园卡
+  - let: acc
+    value: card.accinfo?.[0]
+  - let: balance
+    value: yuan2(card.elec_accamt)
+return: |
+  {
+    balance: balance,
+    name: card.name ?? null,
+    status: card.lostflag ? 'lost' : card.freezeflag ? 'frozen' : 'normal',
+    todaySpent: yuan2(acc?.daycostamt),
+    dailyLimit: yuan2(acc?.daycostlimit),
+    expires: card.expdate ?? null,
+    low: balance != null && balance < WARN_BELOW,
+  }

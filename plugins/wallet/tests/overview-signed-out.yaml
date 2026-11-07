@@ -1,0 +1,8 @@
+# Signed out: the hub shows the sign-in prompt, no request.
+tool: overview
+account:
+  signedIn: false
+  username: null
+responses: []
+expect:
+  signedIn: false

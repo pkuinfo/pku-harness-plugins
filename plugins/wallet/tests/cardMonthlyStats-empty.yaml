@@ -1,0 +1,39 @@
+# An unnamed category is 其他; no spending → no share, no days. (expected: the TypeScript tool on the same responses)
+tool: cardMonthlyStats
+input:
+  month: 2026-05
+responses:
+  - match: turnover/count
+    campus: card
+    body:
+      code: 200
+      success: true
+      data:
+        income: 0
+        expenses: 0
+  - match: statistics/turnover?type=2
+    campus: card
+    body:
+      code: 200
+      success: true
+      data:
+        - amount: 300
+  - match: sum/user
+    campus: card
+    body:
+      code: 200
+      success: true
+      data: {}
+expect:
+  month: 2026-05
+  income: 0
+  expenses: 0
+  net: 0
+  categories:
+    - category: 其他
+      amount: 3
+      share: null
+  daily: []
+  activeDays: 0
+  averagePerActiveDay: null
+  biggestDay: null

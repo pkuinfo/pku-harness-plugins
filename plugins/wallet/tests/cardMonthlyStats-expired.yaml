@@ -1,0 +1,25 @@
+# One of the three answers is a session error. (expected: the TypeScript tool on the same responses)
+tool: cardMonthlyStats
+input:
+  month: 2026-04
+responses:
+  - match: turnover/count
+    campus: card
+    body:
+      code: 200
+      success: true
+      data:
+        income: 0
+        expenses: 0
+  - match: statistics/turnover?type=2
+    campus: card
+    body:
+      code: 401
+      msg: expired
+  - match: sum/user
+    campus: card
+    body:
+      code: 200
+      success: true
+      data: {}
+expectError: 校园卡登录已失效：expired

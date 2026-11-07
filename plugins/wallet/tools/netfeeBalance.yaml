@@ -1,0 +1,29 @@
+# netfee/tools.ts (pkucli crates/portal/src/netfee.rs apply_itsutil_info + parse_billing): the
+# its.pku.edu.cn account page; td.td_name / td.td_value cells pair up (names contain full-width
+# spaces, e.g. 「余　　额」), with the billing text as a fallback.
+title: 查询网费
+summary: 校园网余额、本月用量和费用
+description: "Campus network account balance (yuan), this month's usage and fee."
+effect: read
+steps:
+  - let: res
+    request:
+      campus: its
+      url: /netportal/itsUtil?operation=info
+      headers: { x-requested-with: XMLHttpRequest }
+    as: response
+  - let: pairs
+    value: itsPairs(itsCells(res.text))
+  - let: bill
+    value: billing(res.text)
+  - let: balance
+    value: toNumber(pairs['余额'] ?? bill.balance)
+  - check: balance != null || length(keys(pairs)) > 0
+    error: 没能读到网费信息，页面结构可能变了
+return: |
+  {
+    balance: balance,
+    monthlyUsage: pairs['本月使用'] ?? pairs['本月流量'] ?? bill.monthlyUsage,
+    monthlyFee: toNumber(pairs['本月费用'] ?? pairs['月费用'] ?? bill.monthlyFee),
+    fields: pairs,
+  }

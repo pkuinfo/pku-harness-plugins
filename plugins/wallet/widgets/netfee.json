@@ -1,0 +1,63 @@
+{
+  "title": "网费",
+  "description": "校园网余额和本月用量。",
+  "sizes": ["sm", "md"],
+  "defaultSize": "sm",
+  "bindings": {
+    "/netfee": { "tool": "netfeeBalance", "ttlMinutes": 30 }
+  },
+  "strings": {
+    "zh-Hans": { "signedOut": "登录校园账号后显示网费", "signIn": "登录", "label": "网费", "balance": "余额", "thisMonth": "本月 ", "fee": " · ¥" },
+    "en": { "signedOut": "Sign in to your campus account to see your network fee", "signIn": "Sign in", "label": "Network fee", "balance": "Balance", "thisMonth": "This month ", "fee": " · ¥" }
+  },
+  "spec": {
+    "root": "root",
+    "elements": {
+      "root": { "type": "Column", "props": { "gap": "sm" }, "children": ["signedOut", "live"] },
+      "signedOut": {
+        "type": "Column",
+        "props": { "gap": "sm" },
+        "visible": { "$state": "/account/signedIn", "not": true },
+        "children": ["signedOutText", "signIn"]
+      },
+      "signedOutText": { "type": "Text", "props": { "text": { "$state": "/t/signedOut" }, "tone": "muted", "size": "small" } },
+      "signIn": {
+        "type": "Button",
+        "props": { "label": { "$state": "/t/signIn" }, "variant": "secondary" },
+        "on": { "press": { "action": "navigate", "params": { "href": "/campus" } } }
+      },
+      "live": { "type": "Column", "props": { "gap": "sm" }, "visible": { "$state": "/account/signedIn" }, "children": ["balance", "noBalance", "month"] },
+      "balance": {
+        "type": "Stat",
+        "props": {
+          "label": { "$cond": { "$state": "/size", "eq": "sm" }, "$then": { "$state": "/t/label" }, "$else": { "$state": "/t/balance" } },
+          "value": { "$state": "/netfee/balance" },
+          "prefix": "¥",
+          "suffix": null,
+          "decimals": 2,
+          "delta": null,
+          "deltaTone": null,
+          "caption": null,
+          "icon": null,
+          "size": "lg"
+        },
+        "visible": { "$state": "/netfee/balance", "neq": null }
+      },
+      "noBalance": { "type": "Heading", "props": { "text": "¥ —", "size": "lg" }, "visible": { "$state": "/netfee/balance", "eq": null } },
+      "month": {
+        "type": "Text",
+        "props": {
+          "text": {
+            "$cond": { "$state": "/netfee/monthlyFee", "neq": null },
+            "$then": { "$template": "${/t/thisMonth}${/netfee/monthlyUsage}${/t/fee}${/netfee/monthlyFee}" },
+            "$else": { "$template": "${/t/thisMonth}${/netfee/monthlyUsage}" }
+          },
+          "tone": "muted",
+          "size": "small"
+        },
+        "visible": { "$and": [{ "$state": "/size", "neq": "sm" }, { "$or": [{ "$state": "/netfee/monthlyUsage" }, { "$state": "/netfee/monthlyFee", "neq": null }] }] }
+      }
+    },
+    "state": { "netfee": null }
+  }
+}

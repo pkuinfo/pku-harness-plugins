@@ -1,0 +1,22 @@
+# Below ¥50 is low; lostflag wins over freezeflag; no accinfo → no daily numbers. (expected: the TypeScript tool on the same responses)
+tool: cardBalance
+responses:
+  - match: ykt/tsm/queryCard
+    campus: card
+    body:
+      code: 200
+      success: true
+      data:
+        card:
+          - account: "1"
+            lostflag: 1
+            freezeflag: 1
+            elec_accamt: 4999
+expect:
+  balance: 49.99
+  name: null
+  status: lost
+  todaySpent: null
+  dailyLimit: null
+  expires: null
+  low: true

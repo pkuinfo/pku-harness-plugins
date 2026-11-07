@@ -1,0 +1,7 @@
+# The project list fails. (expected: the TypeScript tool on the same responses)
+tool: bathCard
+responses:
+  - match: getProjectTypeAndProjectInfoListInit/10001
+    campus: cwpay
+    file: cwpay-error.json
+expectError: 收费平台：服务异常，请稍后再试（缴费项目）

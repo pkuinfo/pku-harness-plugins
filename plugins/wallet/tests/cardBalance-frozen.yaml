@@ -1,0 +1,22 @@
+# Frozen card, balance unknown. (expected: the TypeScript tool on the same responses)
+tool: cardBalance
+responses:
+  - match: ykt/tsm/queryCard
+    campus: card
+    body:
+      code: 200
+      success: true
+      data:
+        card:
+          - account: "1"
+            name: 李四
+            lostflag: 0
+            freezeflag: 1
+expect:
+  balance: null
+  name: 李四
+  status: frozen
+  todaySpent: null
+  dailyLimit: null
+  expires: null
+  low: false

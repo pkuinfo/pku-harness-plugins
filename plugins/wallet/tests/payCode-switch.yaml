@@ -1,0 +1,49 @@
+# Not 数字卡: offer the switch with the conflict notice as plain text.
+tool: payCode
+responses:
+  - match: ykt/tsm/queryCard
+    campus: card
+    body:
+      code: 200
+      success: true
+      data:
+        card:
+          - sno: "2000012345"
+            name: 张三
+            account: "123456"
+            lostflag: 0
+            freezeflag: 0
+            expdate: "20300701"
+            elec_accamt: 12345
+            accinfo:
+              - balance: 12345
+                name: 电子钱包
+                type: "001"
+                daycostamt: 1250
+                daycostlimit: 20000
+  - match: useCard/getUseCardConfig
+    campus: card
+    body:
+      code: 200
+      success: true
+      data:
+        cardType: "2"
+        cardTypes:
+          - name: 实体卡
+            code: 0
+          - name: 数字卡
+            code: 1
+          - name: 手机 NFC
+            code: 2
+  - match: cardConflict/getConflictInfo?fromaccount=123456&flag=1
+    campus: card
+    body:
+      code: 200
+      success: true
+      data:
+        status: "0"
+        message: <!DOCTYPE html><p>切换后&ldquo;手机 NFC&rdquo;将不可用</p>
+expect:
+  step: switch
+  current: 手机 NFC
+  notice: 切换后“手机 NFC”将不可用

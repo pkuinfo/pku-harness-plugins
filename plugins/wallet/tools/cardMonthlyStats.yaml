@@ -1,0 +1,36 @@
+# card/stats.ts (pkucli commands.rs cmd_stats + api.rs get_turnover_count / get_category_stats /
+# get_daily_stats). The default month is the current month in Beijing time (the TS used the
+# device's local month).
+title: 查询月度消费统计
+summary: 一个月的校园卡收支、分类和每日消费
+description: 'One month of campus card statistics in yuan: total income (recharge, subsidy, refund) and spending, spending by category (sorted, with share), and per-day spending for days with any. Use for "how much did I spend in April", "where does my money go", monthly comparisons (call once per month).'
+effect: read
+input:
+  month: { type: string, optional: true, pattern: '^\d{4}-\d{2}$', description: YYYY-MM; default current month }
+steps:
+  - let: m
+    value: "input.month ?? formatDate(now, 'YYYY-MM')"
+  - let: mon
+    value: int(slice(m, 5, 7))
+  # Validate before any request (stats.ts monthRange).
+  - check: test(m, '^\d{4}-\d{2}$') && mon >= 1 && mon <= 12
+    error: 月份格式错误，请使用 YYYY-MM
+  - let: urls
+    value: "statsUrls(m, m + '-01', m + '-' + padStart(str(lastDay(int(slice(m, 0, 4)), mon)), 2, '0'))"
+  # commands.rs cmd_stats fetches the three in parallel.
+  - let: rs
+    each: urls
+    concurrency: 3
+    request: { campus: card, url: '${item}' }
+    as: response
+  - check: cardErr(rs[0]) == null
+    error: ${cardErr(rs[0])}
+  - check: cardErr(rs[1]) == null
+    error: ${cardErr(rs[1])}
+  - check: cardErr(rs[2]) == null
+    error: ${cardErr(rs[2])}
+  - let: income
+    value: toYuan(cardData(rs[0])?.income)
+  - let: expenses
+    value: toYuan(cardData(rs[0])?.expenses)
+return: summary(m, income, expenses, categoriesOf(cardData(rs[1]), expenses), daysOf(cardData(rs[2])))

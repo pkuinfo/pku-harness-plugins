@@ -1,0 +1,9 @@
+# code 401 is a session error (campus-card.ts unwrap). (expected: the TypeScript tool on the same responses)
+tool: cardBalance
+responses:
+  - match: ykt/tsm/queryCard
+    campus: card
+    body:
+      code: 401
+      message: token expired
+expectError: 校园卡登录已失效：token expired

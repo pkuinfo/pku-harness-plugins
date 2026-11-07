@@ -1,0 +1,8 @@
+# Signed out: the screen offers sign-in, no request.
+tool: payCode
+account:
+  signedIn: false
+  username: null
+responses: []
+expect:
+  step: signedOut

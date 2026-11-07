@@ -1,0 +1,57 @@
+# Income icons are positive, spending negative; missing fields become null (tools.ts cardTransactions). (expected: the TypeScript tool on the same responses)
+tool: cardTransactions
+input:
+  limit: 5
+  from: 2026-10-01
+  to: 2026-10-23
+responses:
+  - match: personal/turnover?size=5&current=1&synAccessSource=h5&timeFrom=2026-10-01&timeTo=2026-10-23
+    campus: card
+    body:
+      code: 200
+      success: true
+      data:
+        total: 42
+        records:
+          - resume: 学一食堂
+            turnoverType: 消费
+            tranamt: 1250
+            cardBalance: 12345
+            effectdateStr: 2026-10-23 12:01:02
+            icon: canteen
+          - resume: 微信充值
+            tranamt: 10000
+            cardBalance: 13595
+            effectdateStr: 2026-10-22 08:00:00
+            icon: recharge
+          - turnoverType: 补助
+            tranamt: 5000
+            cardBalance: 3595
+            icon: subsidy
+          - resume: ""
+            cardBalance: 0
+            turnoverType: 退款
+            icon: refund
+expect:
+  total: 42
+  items:
+    - title: 学一食堂
+      type: canteen
+      amount: -12.5
+      balanceAfter: 123.45
+      time: 2026-10-23 12:01:02
+    - title: 微信充值
+      type: recharge
+      amount: 100
+      balanceAfter: 135.95
+      time: 2026-10-22 08:00:00
+    - title: 未知交易
+      type: subsidy
+      amount: 50
+      balanceAfter: 35.95
+      time: null
+    - title: ""
+      type: refund
+      amount: 0
+      balanceAfter: 0
+      time: null

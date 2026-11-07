@@ -1,0 +1,22 @@
+# The 充值 screen's button (card/recharge-screen.tsx): a preset amount or the typed one, then the
+# same cardRecharge the agent uses (one money approval, as before). Typed text arrives as a string,
+# so this tap-only tool reads it as a whole number of yuan first.
+title: 校园卡充值（充值页）
+summary: 按充值页选的金额创建充值订单并打开收银台
+description: The 充值 screen's top-up button (preset or typed amount); runs cardRecharge. Taps only.
+effect: money
+userOnly: true
+input:
+  preset: { type: number, optional: true }
+  custom: { type: string, optional: true, max: 10 }
+steps:
+  - let: typed
+    value: "replace(input.custom ?? '', '\\D', '')"
+  - let: amount
+    value: "typed != '' ? num(typed) : input.preset ?? null"
+  - check: amount != null && int(amount) == amount && amount >= 1 && amount <= RECHARGE_MAX
+    error: 充值金额是 1–${RECHARGE_MAX} 的整数
+  - let: r
+    call: cardRecharge
+    input: "{ amount: amount }"
+return: r

@@ -1,0 +1,285 @@
+{
+  "title": "校园卡余额",
+  "description": "校园卡余额、今日消费和卡状态，余额偏低时变色提醒（低于 50 元）。",
+  "sizes": [
+    "sm",
+    "md",
+    "lg"
+  ],
+  "defaultSize": "md",
+  "bindings": {
+    "/card": {
+      "tool": "cardBalance",
+      "ttlMinutes": 10
+    }
+  },
+  "strings": {
+    "zh-Hans": {
+      "signedOut": "登录校园账号后显示余额",
+      "signIn": "登录",
+      "label": "校园卡",
+      "balance": "余额",
+      "lost": "已挂失",
+      "frozen": "已冻结",
+      "todaySpent": "今日消费 ¥",
+      "dailyLimit": " / 限额 ¥",
+      "topUp": "充值",
+      "payCode": "付款码"
+    },
+    "en": {
+      "signedOut": "Sign in to your campus account to see your balance",
+      "signIn": "Sign in",
+      "label": "Campus Card",
+      "balance": "Balance",
+      "lost": "Reported lost",
+      "frozen": "Frozen",
+      "todaySpent": "Spent today ¥",
+      "dailyLimit": " / limit ¥",
+      "topUp": "Top up",
+      "payCode": "Pay"
+    }
+  },
+  "spec": {
+    "root": "root",
+    "elements": {
+      "root": {
+        "type": "Column",
+        "props": {
+          "gap": "sm"
+        },
+        "children": [
+          "signedOut",
+          "live"
+        ]
+      },
+      "signedOut": {
+        "type": "Column",
+        "props": {
+          "gap": "sm"
+        },
+        "visible": {
+          "$state": "/account/signedIn",
+          "not": true
+        },
+        "children": [
+          "signedOutText",
+          "signIn"
+        ]
+      },
+      "signedOutText": {
+        "type": "Text",
+        "props": {
+          "text": {
+            "$state": "/t/signedOut"
+          },
+          "tone": "muted",
+          "size": "small"
+        }
+      },
+      "signIn": {
+        "type": "Button",
+        "props": {
+          "label": {
+            "$state": "/t/signIn"
+          },
+          "variant": "secondary"
+        },
+        "on": {
+          "press": {
+            "action": "navigate",
+            "params": {
+              "href": "/campus"
+            }
+          }
+        }
+      },
+      "live": {
+        "type": "Column",
+        "props": {
+          "gap": "sm"
+        },
+        "visible": {
+          "$state": "/account/signedIn"
+        },
+        "children": [
+          "balance",
+          "noBalance",
+          "status",
+          "today",
+          "actions"
+        ]
+      },
+      "balance": {
+        "type": "Stat",
+        "props": {
+          "label": {
+            "$cond": {
+              "$state": "/size",
+              "eq": "sm"
+            },
+            "$then": {
+              "$state": "/t/label"
+            },
+            "$else": {
+              "$state": "/t/balance"
+            }
+          },
+          "value": {
+            "$state": "/card/balance"
+          },
+          "prefix": "¥",
+          "suffix": null,
+          "decimals": 2,
+          "delta": null,
+          "deltaTone": null,
+          "caption": null,
+          "icon": {
+            "$cond": {
+              "$state": "/card/low"
+            },
+            "$then": "warning",
+            "$else": null
+          },
+          "size": {
+            "$cond": {
+              "$state": "/size",
+              "eq": "lg"
+            },
+            "$then": "xl",
+            "$else": "lg"
+          }
+        },
+        "visible": {
+          "$state": "/card/balance",
+          "neq": null
+        }
+      },
+      "noBalance": {
+        "type": "Heading",
+        "props": {
+          "text": "¥ —",
+          "size": "lg"
+        },
+        "visible": {
+          "$state": "/card/balance",
+          "eq": null
+        }
+      },
+      "status": {
+        "type": "Badge",
+        "props": {
+          "label": {
+            "$cond": {
+              "$state": "/card/status",
+              "eq": "lost"
+            },
+            "$then": {
+              "$state": "/t/lost"
+            },
+            "$else": {
+              "$state": "/t/frozen"
+            }
+          },
+          "tone": "down"
+        },
+        "visible": [
+          {
+            "$state": "/card/status",
+            "neq": "normal"
+          },
+          {
+            "$state": "/card/status",
+            "neq": null
+          }
+        ]
+      },
+      "today": {
+        "type": "Text",
+        "props": {
+          "text": {
+            "$cond": {
+              "$state": "/card/dailyLimit"
+            },
+            "$then": {
+              "$template": "${/t/todaySpent}${/card/todaySpent}${/t/dailyLimit}${/card/dailyLimit}"
+            },
+            "$else": {
+              "$template": "${/t/todaySpent}${/card/todaySpent}"
+            }
+          },
+          "tone": {
+            "$cond": {
+              "$state": "/card/low"
+            },
+            "$then": "warn",
+            "$else": "muted"
+          },
+          "size": "small"
+        },
+        "visible": [
+          {
+            "$state": "/size",
+            "neq": "sm"
+          },
+          {
+            "$state": "/card/todaySpent",
+            "neq": null
+          }
+        ]
+      },
+      "actions": {
+        "type": "Row",
+        "props": {
+          "gap": "sm",
+          "align": "end",
+          "wrap": null
+        },
+        "visible": {
+          "$state": "/size",
+          "neq": "sm"
+        },
+        "children": [
+          "topUp",
+          "payCode"
+        ]
+      },
+      "topUp": {
+        "type": "Button",
+        "props": {
+          "label": {
+            "$state": "/t/topUp"
+          },
+          "variant": "secondary"
+        },
+        "on": {
+          "press": {
+            "action": "navigate",
+            "params": {
+              "href": "/m/wallet/recharge"
+            }
+          }
+        }
+      },
+      "payCode": {
+        "type": "Button",
+        "props": {
+          "label": {
+            "$state": "/t/payCode"
+          },
+          "variant": "primary"
+        },
+        "on": {
+          "press": {
+            "action": "navigate",
+            "params": {
+              "href": "/m/wallet/pay"
+            }
+          }
+        }
+      }
+    },
+    "state": {
+      "card": null
+    }
+  }
+}

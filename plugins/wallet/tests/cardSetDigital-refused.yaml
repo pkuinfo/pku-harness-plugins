@@ -1,0 +1,24 @@
+# The service refuses the switch. (expected: the TypeScript tool on the same responses)
+tool: cardSetDigital
+responses:
+  - match: useCard/getUseCardConfig
+    campus: card
+    body:
+      code: 200
+      success: true
+      data:
+        cardType: "2"
+        cardTypes:
+          - name: 实体卡
+            code: 0
+          - name: 数字卡
+            code: 1
+          - name: 手机 NFC
+            code: 2
+  - match: useCard/setUseCardConfig
+    campus: card
+    body:
+      code: 500
+      success: false
+      msg: 当前卡状态不允许切换
+expectError: 切换用卡方式失败：当前卡状态不允许切换

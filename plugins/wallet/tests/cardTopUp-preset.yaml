@@ -1,0 +1,32 @@
+# No typed amount: the preset goes to cardRecharge (here the order fails, so no browser is needed).
+tool: cardTopUp
+input:
+  preset: 200
+  custom: ""
+now: 2026-10-19 21:30
+responses:
+  - match: ykt/tsm/queryCard
+    campus: card
+    body:
+      code: 200
+      success: true
+      data:
+        card:
+          - sno: "2000012345"
+            name: 张三
+            account: "123456"
+            lostflag: 0
+            freezeflag: 0
+            expdate: "20300701"
+            elec_accamt: 12345
+            accinfo:
+              - balance: 12345
+                name: 电子钱包
+                type: "001"
+                daycostamt: 1250
+                daycostlimit: 20000
+  - match: /charge/order/thirdOrder
+    campus: card
+    status: 500
+    body: ""
+expectError: 创建充值订单失败（HTTP 500）

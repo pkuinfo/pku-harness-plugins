@@ -1,0 +1,53 @@
+# card/recharge.ts createRechargeOrder (pkucli api.rs create_recharge_order + sign_params): POST
+# /charge/order/thirdOrder with the card JWT *in the form* (authIn: form, added by the harness) and a
+# SHA-256 signature over every non-empty field, sorted, as k=v& pairs + SECRET_KEY (sign:, computed
+# inside the request, so the plugin never sees the token). The answer is a 3xx whose Location is
+# the 收银台 with the order id and a token: it goes to the browser only, never into the result.
+title: 校园卡充值
+summary: 创建充值订单并打开学校收银台，用微信或支付宝付款
+description: "Top up the campus card: creates the school's recharge order for `amount` yuan and opens its cashier page in the system browser, where the user picks WeChat Pay or Alipay and pays in that app. Does not pay and cannot confirm payment; check cardBalance later (the money shows after one tap on a canteen POS)."
+effect: money
+input:
+  amount: { type: integer, min: 1, max: 1000, description: 'yuan, whole number; the cashier suggests 10 / 50 / 100 / 200 / 500 / 800' }
+steps:
+  - let: card
+    request: { campus: card, url: '${QUERY_CARD}' }
+    as: response
+  - check: cardErr(card) == null
+    error: ${cardErr(card)}
+  - let: account
+    value: cardData(card).card[0]?.account
+  - check: account
+    error: 校园卡缺少账户信息
+  - let: res
+    request:
+      campus: card
+      url: /charge/order/thirdOrder
+      method: POST
+      followRedirects: false
+      authIn: form
+      form:
+        feeitemid: '401'
+        appid: '${APP_ID}'
+        tranamt: '${str(input.amount)}'
+        source: app
+        yktcard: '${account}'
+        synAccessSource: h5
+        abstracts: '{"type":"recharge"}'
+        APP_ID: '${APP_ID}'
+        # yyyyMMddHHmmss in Beijing time (api.rs timestamp_now runs on a CST machine).
+        TIMESTAMP: "${formatDate(now, 'YYYYMMDDHHmmss')}"
+        SIGN_TYPE: SHA256
+        NONCE: '${randomId(11)}'
+      sign: { field: SIGN, case: upper, exclude: [SECRET_KEY], suffix: 'SECRET_KEY=${SECRET}' }
+    as: response
+  - let: location
+    value: res.headers.location ?? null
+  - check: res.status >= 300 && res.status < 400 && location
+    error: "创建充值订单失败（HTTP ${res.status}${res.text ? '：' + slice(res.text, 0, 80) : ''}）"
+  - check: test(location, '(?i)^https://')
+    error: 充值订单返回的收银台地址无效
+  - ability: browser.open
+    args: "{ url: location }"
+# The cashier URL carries an order token: never part of the result (it reaches the model).
+return: "{ amount: input.amount, cashierOpened: true, next: '用户在收银台选择微信或支付宝并在该 App 内付款；付款后需在 POS 机刷一次卡才到账' }"

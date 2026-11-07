@@ -1,0 +1,10 @@
+# utilities/api.ts openPayCenter: services.campus.openSignedIn('cwpay'); the harness builds the URL
+# and keeps the token.
+title: 打开收费平台
+summary: 在浏览器打开已登录的收费平台
+description: 'Open the PKU payment platform (收费平台), already signed in, in the system browser so the user can pay tuition, pending orders or other fees themselves. Hands the platform session to the browser; nothing is paid by this tool.'
+effect: write
+steps:
+  - ability: campusPage.open
+    args: "{ service: 'cwpay' }"
+return: "{ opened: true }"

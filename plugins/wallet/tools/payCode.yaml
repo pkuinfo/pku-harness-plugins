@@ -1,0 +1,61 @@
+# card/pay.tsx load(): the payment code for the canteen POS, fetched straight into the 付款码 screen
+# (a refreshSeconds binding: memory only, every 30 s). userOnly, so the code is never a result the
+# agent sees and never reaches the model provider (campus-card.ts cardAccount, cardMode,
+# conflictNotice, paymentCode; pkucli commands.rs paycode).
+title: 获取付款码
+summary: 付款码页面显示的校园卡付款码
+description: The campus card payment code shown on the 付款码 screen (refreshed every 30 s while it is open). Taps only; the code never goes to the assistant.
+effect: read
+userOnly: true
+steps:
+  - if: "!account.signedIn"
+    then:
+      - return: "{ step: 'signedOut' }"
+  - let: card
+    request: { campus: card, url: '${QUERY_CARD}' }
+    as: response
+  - check: cardErr(card) == null
+    error: ${cardErr(card)}
+  - let: acc
+    value: cardData(card).card[0]?.account
+  - check: acc
+    error: 校园卡缺少账户信息
+  - let: cfg
+    request: { campus: card, url: '${USE_CARD_CONFIG}' }
+    as: response
+  - check: cardErr(cfg) == null
+    error: ${cardErr(cfg)}
+  - let: mode
+    value: modeOf(cardData(cfg))
+  # Not 数字卡: offer the switch, with the NFC conflict notice when there is one.
+  - if: "!mode.digital"
+    then:
+      - let: notice
+        value: "null"
+      - try:
+          - let: c
+            request: { campus: card, url: '/berserker-app/cardConflict/getConflictInfo?fromaccount=${encode(acc)}&flag=1&synAccessSource=h5' }
+            as: response
+          - let: notice
+            value: "cardErr(c) == null ? conflictText(cardData(c)) : null"
+        catch: []
+      - return: "{ step: 'switch', current: mode.name, notice: notice }"
+  - let: payinfo
+    request: { campus: card, url: /berserker-app/ykt/tsm/codebarPayinfo?synAccessSource=h5 }
+    as: response
+  - check: cardErr(payinfo) == null
+    error: ${cardErr(payinfo)}
+  - let: info
+    value: cardData(payinfo)[0]
+  - check: info != null
+    error: 未获取到付款信息
+  - let: codes
+    request: { campus: card, url: '/berserker-app/ykt/tsm/batchGetBarCodeGet?account=${encode(acc)}&payacc=${info.payacc ?? ''001''}&paytype=${info.paytype ?? ''1''}&synAccessSource=h5' }
+    as: response
+  - check: cardErr(codes) == null
+    error: ${cardErr(codes)}
+  - let: code
+    value: cardData(codes).barcode[0]
+  - check: code
+    error: 未获取到付款码
+return: "{ step: 'code', code: code, name: info.name, balance: yuan2(info.elec_accamt) }"

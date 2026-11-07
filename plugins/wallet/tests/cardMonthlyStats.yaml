@@ -1,0 +1,56 @@
+# fen → yuan, categories sorted with share, active days only (stats.test.ts summarizeMonth). (expected: the TypeScript tool on the same responses)
+tool: cardMonthlyStats
+input:
+  month: 2026-04
+responses:
+  - match: turnover/count?timeFrom=2026-04-01&timeTo=2026-04-30
+    campus: card
+    body:
+      code: 200
+      success: true
+      data:
+        income: 50000
+        expenses: 60000
+  - match: statistics/turnover?type=2&timeFrom=2026-04-01&timeTo=2026-04-30
+    campus: card
+    body:
+      code: 200
+      success: true
+      data:
+        - turnoverType: 超市
+          amount: 15000
+        - turnoverType: 餐费
+          amount: 45000
+        - turnoverType: null
+          amount: 0
+  - match: sum/user?dateStr=2026-04&dateType=month&statisticsDateStr=day&type=2
+    campus: card
+    body:
+      code: 200
+      success: true
+      data:
+        2026-04-03: 2050
+        2026-04-01: 1500
+        2026-04-02: 0
+expect:
+  month: 2026-04
+  income: 500
+  expenses: 600
+  net: -100
+  categories:
+    - category: 餐费
+      amount: 450
+      share: 0.75
+    - category: 超市
+      amount: 150
+      share: 0.25
+  daily:
+    - date: 2026-04-01
+      amount: 15
+    - date: 2026-04-03
+      amount: 20.5
+  activeDays: 2
+  averagePerActiveDay: 17.75
+  biggestDay:
+    date: 2026-04-03
+    amount: 20.5

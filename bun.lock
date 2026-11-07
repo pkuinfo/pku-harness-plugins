@@ -194,16 +194,6 @@
         "zod": "^4.0.0",
       },
     },
-    "plugins/wallet": {
-      "name": "@pku-harness/plugin-wallet",
-      "version": "1.0.0",
-      "peerDependencies": {
-        "@pku-harness/sdk": "*",
-        "react": "*",
-        "react-native": "*",
-        "zod": "^4.0.0",
-      },
-    },
     "templates/remote-plugin": {
       "name": "@pku-harness/template-remote-plugin",
       "version": "0.1.0",
@@ -318,8 +308,6 @@
     "@pku-harness/plugin-todo": ["@pku-harness/plugin-todo@workspace:plugins/todo"],
 
     "@pku-harness/plugin-ui": ["@pku-harness/plugin-ui@workspace:plugins/ui"],
-
-    "@pku-harness/plugin-wallet": ["@pku-harness/plugin-wallet@workspace:plugins/wallet"],
 
     "@pku-harness/sdk": ["@pku-harness/sdk@workspace:packages/sdk"],
 

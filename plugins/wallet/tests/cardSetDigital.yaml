@@ -1,0 +1,27 @@
+# Switches 实体卡 → 数字卡 (setUseCardConfig; data may be null). (expected: the TypeScript tool on the same responses)
+tool: cardSetDigital
+responses:
+  - match: useCard/getUseCardConfig
+    campus: card
+    body:
+      code: 200
+      success: true
+      data:
+        cardType: "0"
+        cardTypes:
+          - name: 实体卡
+            code: 0
+          - name: 数字卡
+            code: 1
+          - name: 手机 NFC
+            code: 2
+  - match: useCard/setUseCardConfig
+    campus: card
+    body:
+      code: 200
+      success: true
+      data: null
+expect:
+  changed: true
+  from: 实体卡
+  mode: 数字卡

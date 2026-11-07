@@ -1,0 +1,29 @@
+# The 浴卡充值 screen's button (utilities/recharge-screen.tsx): a preset or the typed amount, then
+# the same bathRecharge the agent uses. Typed text arrives as a string (digits and one point).
+title: 浴卡充值（充值页）
+summary: 按充值页选的金额创建浴卡订单并打开收费平台
+description: The 浴卡充值 screen's top-up button (preset or typed amount); runs bathRecharge. Taps only.
+effect: money
+userOnly: true
+limits: { requests: 70 }
+input:
+  preset: { type: number, optional: true }
+  custom: { type: string, optional: true, max: 10 }
+steps:
+  - let: typed
+    value: "replace(input.custom ?? '', '[^\\d.]', '')"
+  - let: amount
+    value: "typed != '' ? num(typed) : input.preset ?? null"
+  # parse.ts checkBathAmount, in its order.
+  - check: amount != null
+    error: 请输入充值金额
+  - check: amount >= BATH_MIN
+    error: 充值不能低于 ${BATH_MIN} 元
+  - check: amount <= BATH_MAX
+    error: 充值不能高于 ${BATH_MAX} 元
+  - check: round(amount * 100) == amount * 100
+    error: 金额最多两位小数
+  - let: r
+    call: bathRecharge
+    input: "{ amount: amount }"
+return: r

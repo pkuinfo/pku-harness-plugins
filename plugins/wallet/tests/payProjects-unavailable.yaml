@@ -1,0 +1,8 @@
+# A 5xx page that isn’t JSON. (expected: the TypeScript tool on the same responses)
+tool: payProjects
+responses:
+  - match: getProjectTypeAndProjectInfoListInit/10001
+    campus: cwpay
+    status: 503
+    body: <html>503</html>
+expectError: 收费平台暂时不可用（HTTP 503）

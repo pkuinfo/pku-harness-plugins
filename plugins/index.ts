@@ -14,7 +14,6 @@ import { schedulerPlugin } from './scheduler/src';
 import { timetablePlugin } from './timetable/src';
 import { todoPlugin } from './todo/src';
 import { uiPlugin } from './ui/src';
-import { walletPlugin } from './wallet/src';
 
 /**
  * TypeScript plugins bundled with the app (the harness's own features and integrations not yet
@@ -34,7 +33,6 @@ export const builtinPlugins: PluginDef[] = [
   timetablePlugin,
   authenticatorPlugin,
   calendarPlugin,
-  walletPlugin,
   cardSharePlugin,
   ledgerPlugin,
   memoryPlugin,

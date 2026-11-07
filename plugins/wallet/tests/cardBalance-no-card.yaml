@@ -1,0 +1,11 @@
+# No card in the answer. (expected: the TypeScript tool on the same responses)
+tool: cardBalance
+responses:
+  - match: ykt/tsm/queryCard
+    campus: card
+    body:
+      code: 200
+      success: true
+      data:
+        card: []
+expectError: 没有找到校园卡

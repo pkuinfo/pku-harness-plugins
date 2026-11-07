@@ -1,0 +1,14 @@
+# Default page size 20, no date range. (expected: the TypeScript tool on the same responses)
+tool: cardTransactions
+responses:
+  - match: personal/turnover?size=20&current=1&synAccessSource=h5
+    campus: card
+    body:
+      code: 200
+      success: true
+      data:
+        total: 0
+        records: []
+expect:
+  total: 0
+  items: []
