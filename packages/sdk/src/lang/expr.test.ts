@@ -210,3 +210,14 @@ describe('sha256 and randomId', () => {
     }
   });
 });
+
+describe('attribute values decode like a browser', () => {
+  test('&timestamp in a URL stays literal; real references decode', () => {
+    const doc = ev(`html('<iframe src="/p?a=1&timestamp=2&amp;b=3&copy=4&lt;5&#38;c=6&quot;x&quot;" data-k="a&times;b"></iframe>')`);
+    const el = ev("first(d, 'iframe')", { d: doc });
+    expect(ev("attr(e, 'src')", { e: el })).toBe('/p?a=1&timestamp=2&b=3&copy=4<5&c=6"x"');
+    expect(ev("data(e, 'k')", { e: el })).toBe('a×b');
+    expect(ev("attr(e, 'nope')", { e: el })).toBeNull();
+    expect(ev('e.attrs', { e: el })).toEqual({ src: '/p?a=1&timestamp=2&b=3&copy=4<5&c=6"x"', 'data-k': 'a×b' });
+  });
+});

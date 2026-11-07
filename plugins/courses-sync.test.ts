@@ -135,4 +135,14 @@ describe('courses: play', () => {
     expect(seen.map((r) => r.url)).toContain(`${url}&token=eyJabc.def`);
     expect(seen.at(-1)?.url).toContain('auth_data=a%2Bb');
   });
+
+  // Found on device 2026-11-07: the iframe now goes through yjapise's casapi login, whose src has
+  // `&timestamp=`; decoding it as `&times` (×) made the server answer 请求参数中缺少字段：timestamp.
+  test('keeps &timestamp in the iframe link literal (attribute decoding as in a browser)', async () => {
+    const src = '/webapps/bb-streammedia-hqy-BBLEARN/iframe.action?r=auth/login&amp;tenant_code=1&timestamp=1762500000&copy=2';
+    const rs = responses('play-not-m3u8', { 'videoPlay.action?course_id=_8001_1&sub_id=1': `<div id="content"><iframe src="${src}"></iframe></div>` });
+    const { env, seen } = replayEnv(doc, rs, { now: NOW, services: { browser: { open: async () => {} } } as never });
+    await runTool(env, 'play', { courseId: '_8001_1', url: 'https://course.pku.edu.cn/webapps/bb-streammedia-hqy-BBLEARN/videoPlay.action?course_id=_8001_1&sub_id=1' }).catch(() => null);
+    expect(seen.map((r) => r.url)).toContain('https://course.pku.edu.cn/webapps/bb-streammedia-hqy-BBLEARN/iframe.action?r=auth/login&tenant_code=1&timestamp=1762500000&copy=2');
+  });
 });

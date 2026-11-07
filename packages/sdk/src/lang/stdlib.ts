@@ -2,6 +2,27 @@ import { parse as parseHtml, type HTMLElement } from 'node-html-parser';
 
 import { builtin, callFn, ExprError, getProp, isFn, PROPS, stringify, type EvalContext, type Fn } from './expr';
 
+// Attribute values decoded the way browsers do (HTML spec, "character reference in attribute
+// value"): a named reference without `;` followed by a letter, digit or `=` stays literal.
+// node-html-parser decodes `&timestamp=…` in a URL as `×tamp=…` (the legacy `&times`), which broke
+// Blackboard's player link. Legacy names a browser would still decode bare in a value.
+const LEGACY_BARE = new Set(['amp', 'lt', 'gt', 'quot', 'nbsp', 'copy', 'reg']);
+const quoteAttr = (s: string) => s.replace(/"/g, '&quot;');
+
+/** One attribute of an element, spec-decoded; null when absent. */
+export function attrOf(el: HTMLElement, name: string): string | null {
+  const raw = el.rawAttributes[name] ?? el.rawAttributes[name.toLowerCase()];
+  if (raw == null) return null;
+  if (!raw.includes('&')) return raw;
+  const safe = raw.replace(/&([A-Za-z][A-Za-z0-9]*)(?![A-Za-z0-9;])/g, (m, n: string, at: number, s: string) =>
+    LEGACY_BARE.has(n) && s[at + m.length] !== '=' ? m : `&amp;${n}`,
+  );
+  return parseHtml(`<i a="${quoteAttr(safe)}"></i>`).querySelector('i')?.getAttribute('a') ?? raw;
+}
+
+/** Every attribute of an element, spec-decoded. */
+const attrsOf = (el: HTMLElement) => Object.fromEntries(Object.keys(el.rawAttributes).map((k) => [k, attrOf(el, k)]));
+
 /**
  * The plugin language's standard library (docs/PLUGIN-LANGUAGE.md §6.2). Every function is pure
  * (no I/O, no clock except `now`, which the runner binds), so a tool run replays exactly from
@@ -28,7 +49,7 @@ export function wrapNode(el: HTMLElement, url?: string): object {
         case 'tag':
           return el.tagName?.toLowerCase() ?? '';
         case 'attrs':
-          return { ...el.attributes };
+          return attrsOf(el);
         case 'url':
           return url;
         default:
@@ -86,8 +107,8 @@ function tableRows(v: unknown, opts: { header?: boolean; cells?: boolean } = {})
     let c = 0;
     for (const cell of tr.querySelectorAll('th, td').filter((x) => x.parentNode === tr)) {
       while (grid[r]![c] !== undefined) c++;
-      const rs = Math.max(1, Math.min(50, Number(cell.getAttribute('rowspan')) || 1));
-      const cs = Math.max(1, Math.min(50, Number(cell.getAttribute('colspan')) || 1));
+      const rs = Math.max(1, Math.min(50, Number(attrOf(cell, 'rowspan')) || 1));
+      const cs = Math.max(1, Math.min(50, Number(attrOf(cell, 'colspan')) || 1));
       const info: Cell = { text: squash(cell.text), row: r, col: c, rowspan: rs, colspan: cs, id: id++ };
       for (let i = 0; i < rs; i++) for (let j = 0; j < cs; j++) (grid[r + i] ??= [])[c + j] = info;
       c += cs;
@@ -460,8 +481,8 @@ const fns: Record<string, Impl> = {
     const el = node(v, 'first').querySelector(str(css));
     return el ? wrapNode(el, baseOf(v)) : null;
   },
-  attr: (_c, [v, name]) => node(v, 'attr').getAttribute(str(name)) ?? null,
-  data: (_c, [v, name]) => node(v, 'data').getAttribute(`data-${str(name)}`) ?? null,
+  attr: (_c, [v, name]) => attrOf(node(v, 'attr'), str(name)),
+  data: (_c, [v, name]) => attrOf(node(v, 'data'), `data-${str(name)}`),
   text: (_c, [v]) => (typeof v === 'string' ? squash(parseHtml(v).text) : squash(node(v, 'text').text)),
   children: (_c, [v]) =>
     node(v, 'children')
@@ -475,7 +496,7 @@ const fns: Record<string, Impl> = {
   options: (_c, [v]) =>
     node(v, 'options')
       .querySelectorAll('option')
-      .map((o) => ({ value: o.getAttribute('value') ?? squash(o.text), label: squash(o.text), selected: o.getAttribute('selected') != null })),
+      .map((o) => ({ value: attrOf(o, 'value') ?? squash(o.text), label: squash(o.text), selected: attrOf(o, 'selected') != null })),
   htmlText: (_c, [s]) => squash(parseHtml(str(s)).text),
   /** Text with line breaks kept: block elements and <br> become newlines, blank runs collapse. */
   htmlLines: (_c, [v]) => htmlLines(typeof v === 'string' ? v : node(v, 'htmlLines').innerHTML),
