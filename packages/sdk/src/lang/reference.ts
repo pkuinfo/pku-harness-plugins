@@ -19,7 +19,7 @@ i18n: { en: { name, description, tools: { name: { title } } } }, legacy: { plugi
 
 ## Tool file (YAML)
 title (short, Chinese) · summary (one short line for people, shown before install; translate in i18n.en.tools.<name>.summary) · description (for the AI, never shown to users) · effect: read|write|money|public ·
-untrusted?: true when results carry third-party text · input: { field: { type: string|number|integer|boolean|array|object, enum?, default?, optional?, min?, max?, pattern?, trim?, description? } } ·
+untrusted?: true when results carry third-party text · dayScoped?: true when the result is about today (widgets never show yesterday's cache) · input: { field: { type: string|number|integer|boolean|array|object, enum?, default?, optional?, min?, max?, pattern?, trim?, description? } } ·
 constants: { NAME: data } · functions: { f: "(a, b) => expr" } · steps: [...] · return: expr · limits?: { requests ≤ 200, seconds ≤ 120 }
 
 ## Steps (run in order; \`let: name\` binds the result)

@@ -75,6 +75,8 @@ export const toolSchema = z
     effect: effectSchema,
     untrusted: z.boolean().optional(),
     userOnly: z.boolean().optional(),
+    /** The result is about the current day: widgets never paint a cached value from an earlier day. */
+    dayScoped: z.boolean().optional(),
     input: z.record(z.string().regex(/^[a-zA-Z_][a-zA-Z0-9_]{0,39}$/), fieldSchema).optional(),
     constants: z.record(z.string().regex(/^[A-Za-z_$][A-Za-z0-9_$]*$/), z.unknown()).optional(),
     functions: z.record(z.string().regex(/^[A-Za-z_$][A-Za-z0-9_$]*$/), z.string()).optional(),

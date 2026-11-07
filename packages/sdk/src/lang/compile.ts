@@ -251,6 +251,7 @@ export function compilePlugin(doc: PluginDocument, opts: CompileOptions): Plugin
       effect: t.effect,
       untrusted: t.untrusted ?? !opts.verified,
       userOnly: t.userOnly,
+      dayScoped: t.dayScoped,
       execute: async (input, ctx) => {
         try {
           // Plugins that declare campus services may read who is signed in (the student ID some

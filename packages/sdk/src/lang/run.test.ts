@@ -562,3 +562,11 @@ describe('live screen bindings', () => {
     expect(atPath({ list: [{ code: 'x' }] }, 'list[0].code')).toBe('x');
   });
 });
+
+describe('dayScoped tools', () => {
+  test('reach the compiled ToolDef', async () => {
+    const d = await doc({ 'PLUGIN.md': md('tools:\n  today: tools/t.yaml'), 'tools/t.yaml': 'title: 今天\ndescription: Today.\neffect: read\ndayScoped: true\nreturn: 1\n' });
+    const p = compilePlugin(d, { fetch: async () => ({ status: 200, url: '', headers: {}, body: '' }), verified: true } as never);
+    expect(p.tools!.today!.dayScoped).toBe(true);
+  });
+});

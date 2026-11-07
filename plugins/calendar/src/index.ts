@@ -79,6 +79,7 @@ export const calendarPlugin = definePlugin({
       description: 'Today\'s date, weekday and the current teaching week of the semester (if configured).',
       input: z.object({}),
       effect: 'read',
+      dayScoped: true,
       execute: async (_input, ctx) => {
         const now = Date.now();
         const p = parts(now);
