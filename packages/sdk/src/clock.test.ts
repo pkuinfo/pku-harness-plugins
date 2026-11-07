@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from 'bun:test';
 
-import { addDays, at, clockZone, dayKey, daysInMonth, parts, setClockZone, startOfDay, subscribeClockZone, type ClockZone } from './clock';
+import { addDays, at, clockZone, dayKey, daysInMonth, isZoneId, parts, setClockZone, startOfDay, subscribeClockZone, zoneOffset, type ClockZone } from './clock';
 import { KATHMANDU, MINUS_8, SHANGHAI } from './testing';
 
 const H = 3_600_000;
@@ -169,5 +169,70 @@ describe('daysInMonth', () => {
       expect(parts(at(2028, 2, 29)).day).toBe(29);
       expect(parts(at(2027, 2, 29)).day).toBe(1);
     }
+  });
+});
+
+describe('named zones follow DST through Intl', () => {
+  const NY = { id: 'America/New_York' } satisfies ClockZone;
+  const LORD_HOWE = { id: 'Australia/Lord_Howe' } satisfies ClockZone; // +10:30, +11 in summer
+
+  test('isZoneId and zoneOffset', () => {
+    expect(isZoneId('America/New_York')).toBe(true);
+    expect(isZoneId('Mars/Olympus')).toBe(false);
+    expect(zoneOffset(NY, Date.UTC(2026, 0, 15, 12))).toBe(-300);
+    expect(zoneOffset(NY, Date.UTC(2026, 6, 15, 12))).toBe(-240);
+    expect(zoneOffset(LORD_HOWE, Date.UTC(2026, 6, 15))).toBe(630);
+    expect(zoneOffset(LORD_HOWE, Date.UTC(2026, 0, 15))).toBe(660);
+    expect(zoneOffset({ id: 'Asia/Shanghai' }, Date.UTC(2026, 6, 15))).toBe(480);
+  });
+
+  test('parts reads standard and summer time', () => {
+    setClockZone(NY);
+    expect(parts(Date.UTC(2026, 0, 15, 12))).toMatchObject({ month: 1, day: 15, hour: 7 });
+    expect(parts(Date.UTC(2026, 6, 15, 12))).toMatchObject({ month: 7, day: 15, hour: 8 });
+  });
+
+  test('at: plain times, the skipped hour and the repeated hour', () => {
+    setClockZone(NY);
+    expect(at(2026, 1, 15, 7)).toBe(Date.UTC(2026, 0, 15, 12));
+    expect(at(2026, 7, 15, 8)).toBe(Date.UTC(2026, 6, 15, 12));
+    // 2026-03-08 02:30 does not exist in New York: like Date, it moves forward to 03:30 EDT.
+    expect(at(2026, 3, 8, 2, 30)).toBe(Date.UTC(2026, 2, 8, 7, 30));
+    expect(parts(at(2026, 3, 8, 2, 30))).toMatchObject({ hour: 3, minute: 30 });
+    // 2026-11-01 01:30 happens twice: the first (EDT, UTC-4) is chosen.
+    expect(at(2026, 11, 1, 1, 30)).toBe(Date.UTC(2026, 10, 1, 5, 30));
+  });
+
+  test('a daily 08:00 stays 08:00 across both switches', () => {
+    setClockZone(NY);
+    const spring = at(2026, 3, 7, 8);
+    expect(addDays(spring, 1) - spring).toBe(23 * H);
+    expect(parts(addDays(spring, 1))).toMatchObject({ day: 8, hour: 8, minute: 0 });
+    const fall = at(2026, 10, 31, 8);
+    expect(addDays(fall, 1) - fall).toBe(25 * H);
+    expect(parts(addDays(fall, 1))).toMatchObject({ month: 11, day: 1, hour: 8 });
+    expect(startOfDay(at(2026, 3, 8, 12))).toBe(Date.UTC(2026, 2, 8, 5));
+  });
+
+  test.each([
+    ['America/New_York', NY],
+    ['Australia/Lord_Howe', LORD_HOWE],
+  ])('%s round trips over a year (repeated hour reads as its first time)', (_id, z) => {
+    setClockZone(z);
+    for (let t = Date.UTC(2026, 0, 1); t < Date.UTC(2027, 0, 1); t += 3 * H + 7 * M) {
+      const p = parts(t);
+      const back = at(p.year, p.month, p.day, p.hour, p.minute, p.second);
+      const whole = t - (t % 1000);
+      // Equal, or the earlier twin of a repeated wall time (shift = the DST step).
+      expect(back === whole || (whole - back > 0 && whole - back <= H && parts(back).hour === p.hour)).toBe(true);
+    }
+  });
+
+  test('Intl wins over a stale offsetMinutes; unknown id needs a fallback', () => {
+    setClockZone({ id: 'America/New_York', offsetMinutes: -300 });
+    expect(parts(Date.UTC(2026, 6, 15, 12)).hour).toBe(8);
+    setClockZone({ id: 'Nowhere/Fixed', offsetMinutes: 90 });
+    expect(parts(Date.UTC(2026, 6, 15, 12))).toMatchObject({ hour: 13, minute: 30 });
+    expect(() => setClockZone({ id: 'Nowhere/Fixed' })).toThrow();
   });
 });
