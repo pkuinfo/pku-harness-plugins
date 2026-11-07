@@ -1,6 +1,6 @@
 import { parse as parseHtml } from 'node-html-parser';
 
-import type { CampusRequest, CampusResponse } from '../campus';
+import type { CampusFilePart, CampusMultipart, CampusRequest, CampusResponse } from '../campus';
 import type { PluginCloud } from '../cloud';
 import type { HostServices, KV, ToolEffect } from '../plugin';
 import { ABILITIES, effectRank, type AbilityDef } from './abilities';
@@ -86,6 +86,8 @@ type Run = {
   deadline: number;
   depth: number;
   effect: ToolEffect;
+  /** URIs of the files the user picked in this run (files.pick): the only files multipart sends. */
+  picked: Map<string, { name: string; mime: string }>;
 };
 
 const UA = 'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130 Mobile Safari/537.36 PKUHarness';
@@ -124,11 +126,40 @@ type RequestDoc = {
   form?: Record<string, unknown>;
   body?: string;
   contentType?: string;
+  multipart?: { fields?: Record<string, unknown> | unknown[][]; files?: unknown[] };
   followRedirects?: boolean;
   timeout?: string | number;
   /** Larger pages (e.g. WeChat articles, ~4 MB): bytes, at most LIMITS.responseBytesMax. */
   maxSize?: number;
 };
+
+/**
+ * `request.multipart` → the host's CampusMultipart. Campus requests only, POST, no other body.
+ * Every file must be one the user picked in this run (`ability: files.pick`): a plugin can't name
+ * an arbitrary local path and upload it.
+ */
+function toMultipart(run: Run, req: RequestDoc): CampusMultipart {
+  const m = req.multipart!;
+  if (!req.campus) throw new ToolFailure('multipart is only for campus requests (campus: <service>)');
+  if (req.json !== undefined || req.form || req.body !== undefined) throw new ToolFailure('multipart can’t be combined with json, form or body');
+  if (req.method && req.method.toUpperCase() !== 'POST') throw new ToolFailure('multipart requests are POST');
+  const raw = m.fields ?? {};
+  const fields: [string, string][] = Array.isArray(raw)
+    ? raw.map((p) => {
+        if (!Array.isArray(p) || p.length !== 2) throw new ToolFailure('multipart.fields as a list holds [name, value] pairs');
+        return [String(p[0]), p[1] == null ? '' : String(p[1])];
+      })
+    : Object.entries(raw).filter(([, v]) => v != null).map(([k, v]) => [k, String(v)]);
+  const files: CampusFilePart[] = (m.files ?? []).map((f) => {
+    const o = (f ?? {}) as Record<string, unknown>;
+    const uri = String(o.uri ?? '');
+    const picked = run.picked.get(uri);
+    if (!picked) throw new ToolFailure('multipart.files: each file must come from files.pick in this run');
+    if (typeof o.field !== 'string' || !o.field) throw new ToolFailure('multipart.files: each file needs a field name');
+    return { field: o.field, name: typeof o.name === 'string' && o.name ? o.name : picked.name, mime: picked.mime || 'application/octet-stream', uri };
+  });
+  return { fields, files };
+}
 
 /** One request; returns the response shaped by `as`. */
 async function request(run: Run, raw: unknown, as: unknown, scope: Scope): Promise<unknown> {
@@ -158,6 +189,7 @@ async function request(run: Run, raw: unknown, as: unknown, scope: Scope): Promi
     body = encodeForm(req.form);
     contentType ??= 'application/x-www-form-urlencoded';
   } else if (req.body !== undefined) body = String(req.body);
+  const multipart = req.multipart ? toMultipart(run, req) : undefined;
   const url = withQuery(req.url, req.query);
   const timeoutMs = Math.min(run.lim.wallMs, req.timeout == null ? 20_000 : durationMs(req.timeout));
   const followRedirects = req.followRedirects ?? true;
@@ -168,7 +200,9 @@ async function request(run: Run, raw: unknown, as: unknown, scope: Scope): Promi
     if (req.campus) {
       if (run.env.campus === false) throw new ToolFailure(`campus services are only available on the phone (requested '${req.campus}')`);
       if (!run.env.manifest.campus?.includes(req.campus)) throw new ToolFailure(`campus service '${req.campus}' is not declared in PLUGIN.md (campus: [...])`);
-      const creq: CampusRequest = { url, method: method as 'GET' | 'POST', headers, body, contentType, followRedirects, timeoutMs };
+      const creq: CampusRequest = multipart
+        ? { url, method: 'POST', headers, multipart, followRedirects, timeoutMs: req.timeout == null ? run.lim.wallMs : timeoutMs }
+        : { url, method: method as 'GET' | 'POST', headers, body, contentType, followRedirects, timeoutMs };
       res = await run.env.services.campus.request(req.campus, creq);
     } else {
       let u: URL;
@@ -467,13 +501,15 @@ async function runStep(run: Run, step: StepDoc, scope: Scope): Promise<unknown> 
     if (!run.env.implicitAbilities && !run.env.manifest.abilities?.includes(group as never)) throw new ToolFailure(`ability '${group}' is not declared in PLUGIN.md (abilities: [...])`);
     if (effectRank(ab.effect) > effectRank(run.effect)) throw new ToolFailure(`ability ${id} needs effect '${ab.effect}' or stronger`);
     const args = step.args === undefined ? {} : expr(run, step.args, scope);
-    return ab.run(args as Record<string, unknown>, {
+    const out = await ab.run(args as Record<string, unknown>, {
       services: run.env.services,
       kv: run.env.kv,
       request: (r) => request(run, r, 'json', scope),
       call: (fn, fnArgs) => run.ctx.call(fn, fnArgs),
       cloud: run.env.cloud,
     });
+    if (id === 'files.pick' && Array.isArray(out)) for (const f of out as { uri?: unknown; name?: unknown; mime?: unknown }[]) if (typeof f?.uri === 'string') run.picked.set(f.uri, { name: String(f.name ?? 'file'), mime: String(f.mime ?? '') });
+    return out;
   }
 
   if ('value' in step) return expr(run, step.value, scope);
@@ -526,7 +562,7 @@ export async function runTool(env: RunEnv, name: string, input: Record<string, u
     now,
     call: (fn, args) => callFn(fn, args, ctx),
   };
-  const run: Run = { env, lim, ctx, steps: 0, requests: 0, inFlight: 0, deadline: Date.now() + lim.wallMs, depth: 0, effect: tool.effect };
+  const run: Run = { env, lim, ctx, steps: 0, requests: 0, inFlight: 0, deadline: Date.now() + lim.wallMs, depth: 0, effect: tool.effect, picked: new Map() };
   try {
     const out = plain(await execTool(run, tool, input));
     const size = JSON.stringify(out ?? null).length;

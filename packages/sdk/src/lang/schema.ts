@@ -185,6 +185,8 @@ export const testSchema = z.object({
   kv: z.record(z.string(), z.unknown()).optional(),
   /** The signed-in account the tool sees (plugins with campus services); default: signed in. */
   account: z.object({ signedIn: z.boolean(), username: z.string().nullable() }).optional(),
+  /** What `files.pick` returns in this test (the user's choice of files). */
+  picked: z.array(z.object({ name: z.string(), mime: z.string(), size: z.number().nullable().optional(), uri: z.string() }).strict()).optional(),
   responses: z
     .array(
       z.object({

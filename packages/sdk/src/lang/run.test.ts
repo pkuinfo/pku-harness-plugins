@@ -352,3 +352,52 @@ describe('kv legacy fallback', () => {
   });
 });
 
+
+describe('multipart uploads', () => {
+  const PICKED = [{ name: 'hw1.pdf', mime: 'application/pdf', size: 3, uri: 'content://picker/1' }];
+  const files = (steps: string) => ({
+    'PLUGIN.md': md('campus: [blackboard]\nabilities: [files]\ntools:\n  up: tools/up.yaml'),
+    'tools/up.yaml': `title: 上传\ndescription: Upload a picked file.\neffect: write\nsteps:\n${steps}\nreturn: r\n`,
+  });
+  const env = async (steps: string) => {
+    const d = await doc(files(steps));
+    return replayEnv(d, [{ match: '/upload', campus: 'blackboard', body: 'ok' }], { services: { files: { pick: async () => structuredClone(PICKED) } } as never });
+  };
+
+  test('sends ordered fields and the files picked in this run', async () => {
+    const r = await env(`  - let: picked
+    ability: files.pick
+  - let: r
+    request:
+      campus: blackboard
+      url: /upload
+      multipart:
+        fields: "\${[['a', '1'], ['a', 2], ['b', null]]}"
+        files: "\${picked.map((f, i) => ({ ...f, field: 'file' + i }))}"
+    as: text`);
+    expect(await runTool(r.env, 'up', {})).toBe('ok');
+    expect(r.seen[0]!.method).toBe('POST');
+    expect(r.seen[0]!.multipart).toEqual({ fields: [['a', '1'], ['a', '2'], ['b', '']], files: [{ field: 'file0', name: 'hw1.pdf', mime: 'application/pdf', uri: 'content://picker/1' }] });
+  });
+
+  test('refuses a file the user did not pick', async () => {
+    const r = await env(`  - let: r
+    request:
+      campus: blackboard
+      url: /upload
+      multipart: { files: [{ field: f, uri: 'file:///data/data/app/secrets.db' }] }
+    as: text`);
+    await expect(runTool(r.env, 'up', {})).rejects.toThrow('files.pick');
+    expect(r.seen).toEqual([]);
+  });
+
+  test('is campus-only and excludes other bodies', async () => {
+    const d = await doc({
+      'PLUGIN.md': md('network: [example.com]\ntools:\n  up: tools/up.yaml'),
+      'tools/up.yaml': "title: 上传\ndescription: Public upload.\neffect: write\nsteps:\n  - let: r\n    request: { url: 'https://example.com/upload', multipart: { fields: { a: 1 } } }\n    as: text\nreturn: r\n",
+    });
+    await expect(runTool(replayEnv(d, []).env, 'up', {})).rejects.toThrow('only for campus');
+    const r = await env("  - let: r\n    request: { campus: blackboard, url: /upload, form: { a: 1 }, multipart: { fields: { a: 1 } } }\n    as: text");
+    await expect(runTool(r.env, 'up', {})).rejects.toThrow('combined');
+  });
+});

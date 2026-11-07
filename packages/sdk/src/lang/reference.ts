@@ -24,8 +24,9 @@ constants: { NAME: data } · functions: { f: "(a, b) => expr" } · steps: [...] 
 
 ## Steps (run in order; \`let: name\` binds the result)
 - { let, value: expr }
-- { let, request: { campus?: service, url, method?, query?, headers?, json? | form? | body?+contentType?, timeout?, maxSize? }, as: json|text|html|response }
+- { let, request: { campus?: service, url, method?, query?, headers?, json? | form? | body?+contentType? | multipart?, timeout?, maxSize? }, as: json|text|html|response }
   campus url = path on that service; public url must be https on a network host. html → a node for select().
+  multipart (campus POST only): { fields: { k: v } | [[k, v], ...], files: [{ field, uri, name? }] }; each uri must come from files.pick in the same run.
 - { let, each: listExpr, concurrency?: 1–4, request | steps + return | value }  (item, index in scope; ≤ 50 items)
 - { let, paginate: { start?, request (uses cursor), items: expr (page), next: expr (null stops), max ≤ 30 } }
 - { let, extract: { from: expr, each: css, fields: { name: "css | text" } }, limit? }

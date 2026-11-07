@@ -1,4 +1,4 @@
-import type { CampusRequest } from '../campus';
+import type { CampusMultipart, CampusRequest } from '../campus';
 import type { HostServices, KV } from '../plugin';
 import type { PluginDocument } from './load';
 import { inputZod } from './compile';
@@ -12,7 +12,7 @@ import type { TestDoc } from './schema';
  */
 
 export type Recorded = NonNullable<TestDoc['responses']>[number] & { text?: string };
-export type SeenRequest = { campus?: string; url: string; method: string; body?: string; headers: Record<string, string> };
+export type SeenRequest = { campus?: string; url: string; method: string; body?: string; multipart?: CampusMultipart; headers: Record<string, string> };
 
 export function memoryKV(init: Record<string, unknown> = {}): KV & { data: Map<string, unknown> } {
   const data = new Map<string, unknown>(Object.entries(init));
@@ -43,7 +43,7 @@ export function replayEnv(doc: PluginDocument, responses: Recorded[], opts: { no
     campus: {
       ...(opts.services?.campus ?? {}),
       request: async (service: string, req: CampusRequest) => {
-        seen.push({ campus: service, url: req.url, method: req.method ?? 'GET', body: typeof req.body === 'string' ? req.body : undefined, headers: req.headers ?? {} });
+        seen.push({ campus: service, url: req.url, method: req.method ?? 'GET', body: typeof req.body === 'string' ? req.body : undefined, multipart: req.multipart, headers: req.headers ?? {} });
         return take(service, req.url);
       },
       otp: opts.services?.campus?.otp ?? (async () => null),
@@ -60,7 +60,8 @@ export function replayEnv(doc: PluginDocument, responses: Recorded[], opts: { no
 export async function runRecorded(doc: PluginDocument, t: TestDoc, files: Record<string, string> = {}) {
   const responses: Recorded[] = (t.responses ?? []).map((r) => (r.file ? { ...r, text: files[r.file] ?? '' } : r));
   const now = t.now === undefined ? undefined : typeof t.now === 'number' ? t.now : Date.parse(t.now.includes('T') || /[zZ+]/.test(t.now) ? t.now : `${t.now.replace(' ', 'T')}+08:00`);
-  const { env, seen } = replayEnv(doc, responses, { now, kv: t.kv, account: t.account });
+  const services = t.picked ? ({ files: { pick: async () => structuredClone(t.picked) } } as unknown as Partial<HostServices>) : undefined;
+  const { env, seen } = replayEnv(doc, responses, { now, kv: t.kv, account: t.account, services });
   // Validate and default the input exactly as the app does before a tool runs.
   const input = inputZod(doc.tools[t.tool]?.input).parse(t.input ?? {}) as Record<string, unknown>;
   const result = await runTool(env, t.tool, input);
