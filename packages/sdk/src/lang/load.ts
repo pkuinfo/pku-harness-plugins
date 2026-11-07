@@ -75,7 +75,7 @@ const STEP_KEYS: Record<string, string[]> = {
   return: ['return'],
 };
 const KIND_ORDER = ['each', 'paginate', 'extract', 'request', 'if', 'check', 'try', 'kv', 'cache', 'call', 'ability', 'value', 'return'];
-const REQUEST_KEYS = new Set(['campus', 'url', 'method', 'query', 'headers', 'json', 'form', 'body', 'contentType', 'multipart', 'followRedirects', 'timeout', 'maxSize']);
+const REQUEST_KEYS = new Set(['campus', 'url', 'method', 'query', 'headers', 'json', 'form', 'body', 'contentType', 'multipart', 'authIn', 'sign', 'followRedirects', 'timeout', 'maxSize']);
 
 type Ctx = { file: string; manifest: Manifest; tool: ToolDoc; toolNames: Set<string>; issues: string[]; abilities: Record<string, AbilityDef>; implicitAbilities: boolean };
 
@@ -293,6 +293,9 @@ export async function loadDocument(read: ReadFile): Promise<PluginDocument> {
         if (!v.success) issues.push(...zodIssues(path, v.error));
         else {
           if (kind === 'widgets' && v.data.secure) issues.push(`${path} › secure: only screens can be secure`);
+          for (const [ptr, b] of Object.entries(v.data.bindings ?? {}))
+            if (b.refreshSeconds !== undefined && (kind === 'widgets' || b.fn || b.ttlMinutes !== undefined))
+              issues.push(`${path} › bindings.${ptr}.refreshSeconds: screens only, for a tool, without ttlMinutes`);
           // A payment or OTP code comes from a tool at run time ({ "$state": … }), never as text in the file.
           for (const [id, el] of Object.entries(v.data.spec.elements)) {
             const e = el as { type?: unknown; props?: { value?: unknown } };
@@ -327,6 +330,8 @@ export async function loadDocument(read: ReadFile): Promise<PluginDocument> {
     else if (tools[ds.tool]!.effect !== 'read') issues.push(`PLUGIN.md › dataSources.${name}: '${ds.tool}' is not a read tool`);
   }
   for (const s of manifest.settings ?? []) if (!screens[s.screen]) issues.push(`PLUGIN.md › settings: no screen '${s.screen}'`);
+  for (const [old, t] of Object.entries(manifest.legacy?.tools ?? {})) if (!tools[t]) issues.push(`PLUGIN.md › legacy.tools.${old}: no tool '${t}'`);
+  for (const [old, w] of Object.entries(manifest.legacy?.widgets ?? {})) if (!widgets[w]) issues.push(`PLUGIN.md › legacy.widgets.${old}: no widget '${w}'`);
   for (const [k, c] of Object.entries(manifest.commands ?? {})) if (c.screen && !screens[c.screen]) issues.push(`PLUGIN.md › commands.${k}.screen: no screen '${c.screen}'`);
   if (manifest.remote && manifest.tools && Object.keys(manifest.tools).length) issues.push('PLUGIN.md: a remote (MCP) plugin has no tools of its own');
   // Server functions send data to a server: the user must be told what, in the consent sheet.

@@ -152,6 +152,19 @@ export const manifestSchema = z
     cloud: z.record(z.string(), z.unknown()).optional(),
     i18n: z.object({ en: translationSchema.optional() }).optional(),
     remote: z.object({ mcp: z.string().url(), auth: z.enum(['none', 'bearer']).optional() }).strict().optional(),
+    /**
+     * Old ids this plugin now serves (merged plugins): plugin ids, `<plugin>.<tool>` → tool,
+     * `<plugin>.<widget>` → widget, so saved checks, widgets and settings carry over. The app
+     * honours it only for verified plugins.
+     */
+    legacy: z
+      .object({
+        pluginIds: z.array(pluginIdSchema).optional(),
+        tools: z.record(z.string().regex(/^[a-z0-9-]+\.[A-Za-z]\w*$/, 'like old-plugin.toolName'), toolNameSchema).optional(),
+        widgets: z.record(z.string().regex(/^[a-z0-9-]+\.[A-Za-z][\w-]*$/, 'like old-plugin.widget'), z.string()).optional(),
+      })
+      .strict()
+      .optional(),
     /** Server functions, schedules, collections (pku-harness docs/CLOUD-FUNCTIONS.md); see server-schema.ts. */
     server: z.lazy(() => serverSlot.schema).optional(),
   })
@@ -186,6 +199,12 @@ export const viewSchema = z
             args: z.record(z.string(), z.unknown()).optional(),
             path: z.string().optional(),
             ttlMinutes: z.number().min(0).max(1440).optional(),
+            /**
+             * Screens only: a live value (payment codes). Fetched when the screen opens and every
+             * N seconds while it stays open, kept in memory only (never cached, never stale);
+             * `/refreshIn` holds the seconds until the next refresh.
+             */
+            refreshSeconds: z.number().int().min(5).max(300).optional(),
           })
           .strict()
           .refine((b) => !!b.tool !== !!b.fn, 'a binding names either tool or fn'),

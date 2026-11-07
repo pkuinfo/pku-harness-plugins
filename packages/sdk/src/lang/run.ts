@@ -6,7 +6,7 @@ import type { HostServices, KV, ToolEffect } from '../plugin';
 import { ABILITIES, effectRank, type AbilityDef } from './abilities';
 import { callFn, compile, evaluate, ExprError, getProp, isFn, lambda, Scope, template, templateDeep, type EvalContext } from './expr';
 import { durationMs, type Manifest, type StepDoc, type ToolDoc } from './schema';
-import { isNode, squash, STDLIB, wrapNode } from './stdlib';
+import { isNode, sha256, squash, STDLIB, wrapNode } from './stdlib';
 
 /**
  * Runs a tool written in the plugin language (docs/PLUGIN-LANGUAGE.md §6). The runner is the only
@@ -137,6 +137,9 @@ type RequestDoc = {
   body?: string;
   contentType?: string;
   multipart?: { fields?: Record<string, unknown> | unknown[][]; files?: unknown[] };
+  /** 'form': the host puts the service's session token into `form` too (it is signed with the rest). */
+  authIn?: string;
+  sign?: SignDoc;
   followRedirects?: boolean;
   timeout?: string | number;
   /** Larger pages (e.g. WeChat articles, ~4 MB): bytes, at most LIMITS.responseBytesMax. */
@@ -172,6 +175,31 @@ function toMultipart(run: Run, req: RequestDoc): CampusMultipart {
   return { fields, files };
 }
 
+/**
+ * `request.sign`: a declarative form signature the SDK computes after the host has added the
+ * session token (`authIn: form`), so the plugin never sees the token, not even through an error:
+ * field = hash of every non-empty field except `field` and `exclude`, sorted by name, as
+ * `k=v&` pairs, then `suffix` (e.g. `SECRET_KEY=…`).
+ */
+type SignDoc = { field: string; hash?: string; case?: string; suffix?: string; exclude?: string[] };
+
+function signer(s: SignDoc): (fields: Record<string, string>) => Record<string, string> {
+  if (!s || typeof s.field !== 'string' || !s.field) throw new ToolFailure('sign needs a field name');
+  if ((s.hash ?? 'sha256') !== 'sha256') throw new ToolFailure('sign.hash: only sha256');
+  if (s.case !== undefined && s.case !== 'upper' && s.case !== 'lower') throw new ToolFailure('sign.case: upper or lower');
+  const skip = new Set([s.field, ...(s.exclude ?? []).map(String)]);
+  const suffix = s.suffix == null ? '' : String(s.suffix);
+  return (fields) => {
+    const pairs = Object.keys(fields)
+      .filter((k) => !skip.has(k) && fields[k] !== '')
+      .sort()
+      .map((k) => `${k}=${fields[k]}&`)
+      .join('');
+    const h = sha256(pairs + suffix);
+    return { ...fields, [s.field]: s.case === 'upper' ? h.toUpperCase() : h };
+  };
+}
+
 /** One request; returns the response shaped by `as`. */
 async function request(run: Run, raw: unknown, as: unknown, scope: Scope): Promise<unknown> {
   guard(run);
@@ -201,6 +229,12 @@ async function request(run: Run, raw: unknown, as: unknown, scope: Scope): Promi
     contentType ??= 'application/x-www-form-urlencoded';
   } else if (req.body !== undefined) body = String(req.body);
   const multipart = req.multipart ? toMultipart(run, req) : undefined;
+  if (req.authIn !== undefined && req.authIn !== 'form' && req.authIn !== 'headers') throw new ToolFailure('authIn: form or headers');
+  const formAuth = req.authIn === 'form' || req.sign !== undefined;
+  if (formAuth) {
+    if (!req.campus) throw new ToolFailure('authIn and sign are only for campus requests');
+    if (!req.form || req.json !== undefined || req.body !== undefined || req.multipart) throw new ToolFailure('authIn: form and sign need form (and no json, body or multipart)');
+  }
   const url = withQuery(req.url, req.query);
   const timeoutMs = Math.min(run.lim.wallMs, req.timeout == null ? 20_000 : durationMs(req.timeout));
   const followRedirects = req.followRedirects ?? true;
@@ -213,7 +247,18 @@ async function request(run: Run, raw: unknown, as: unknown, scope: Scope): Promi
       if (!run.env.manifest.campus?.includes(req.campus)) throw new ToolFailure(`campus service '${req.campus}' is not declared in PLUGIN.md (campus: [...])`);
       const creq: CampusRequest = multipart
         ? { url, method: 'POST', headers, multipart, followRedirects, timeoutMs: req.timeout == null ? run.lim.wallMs : timeoutMs }
-        : { url, method: method as 'GET' | 'POST', headers, body, contentType, followRedirects, timeoutMs };
+        : formAuth
+          ? {
+              url,
+              method: 'POST',
+              headers,
+              form: Object.fromEntries(Object.entries(req.form!).filter(([, v]) => v != null).map(([k, v]) => [k, typeof v === 'object' ? JSON.stringify(v) : String(v)])),
+              ...(req.authIn ? { authIn: req.authIn as 'form' | 'headers' } : {}),
+              ...(req.sign ? { sign: signer(req.sign) } : {}),
+              followRedirects,
+              timeoutMs,
+            }
+          : { url, method: method as 'GET' | 'POST', headers, body, contentType, followRedirects, timeoutMs };
       res = await run.env.services.campus.request(req.campus, creq);
     } else {
       let u: URL;

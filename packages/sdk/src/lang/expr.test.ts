@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'bun:test';
+import { createHash } from 'node:crypto';
 
 import { callFn, compile, evaluate, Scope, template, type EvalContext } from './expr';
 import { STDLIB } from './stdlib';
@@ -185,5 +186,18 @@ describe('json', () => {
     expect(ev("json('null', 'bad')")).toBeNull();
     expect(ev("'x'.json(0)")).toBe(0);
     expect(() => ev("json('nope')")).toThrow('not valid JSON');
+  });
+});
+
+describe('sha256 and randomId', () => {
+  test('sha256 matches node:crypto (UTF-8, padding edges)', () => {
+    for (const s of ['', 'abc', '张三😀', 'x'.repeat(55), 'x'.repeat(56), 'y'.repeat(64), 'z'.repeat(1000)])
+      expect(ev('sha256(s)', { s })).toBe(createHash('sha256').update(s).digest('hex'));
+  });
+  test('randomId gives n characters of 0-9a-z, different each time', () => {
+    const a = ev('randomId(11)') as string;
+    expect(a).toMatch(/^[0-9a-z]{11}$/);
+    expect(ev('randomId()')).toMatch(/^[0-9a-z]{16}$/);
+    expect(ev('randomId(11)')).not.toBe(a);
   });
 });

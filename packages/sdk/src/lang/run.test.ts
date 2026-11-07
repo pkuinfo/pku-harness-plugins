@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test';
+import { createHash } from 'node:crypto';
 
-import { compilePlugin } from './compile';
+import { atPath, compilePlugin, setPointer } from './compile';
 import { loadDocument, PluginDocError, type PluginDocument } from './load';
 import { runTool } from './run';
 import { replayEnv } from './testing';
@@ -492,5 +493,72 @@ describe('commands that open a screen', () => {
     expect(hrefs).toEqual(['/m/demo/pay']);
     expect(await doc(files('pay: { description: 打开, screen: nope }')).catch((e: Error) => e.message)).toContain("no screen 'nope'");
     expect(await doc(files('pay: { description: 打开, screen: pay, prompt: hi }')).catch((e: Error) => e.message)).toContain('either prompt or screen');
+  });
+});
+
+describe('signed campus forms', () => {
+  const plugin = (req: string) =>
+    doc({
+      'PLUGIN.md': md('campus: [card]\ntools:\n  order: tools/order.yaml'),
+      'tools/order.yaml': `title: 下单\ndescription: Signed order.\neffect: money\nconstants:\n  SECRET: s3cret\nsteps:\n  - let: r\n    request: ${req}\n    as: response\nreturn: r.status\n`,
+    });
+  const SIGNED = "{ campus: card, url: /order, authIn: form, form: { tranamt: '5', empty: '', NONCE: abc }, sign: { field: SIGN, case: upper, exclude: [SECRET_KEY], suffix: 'SECRET_KEY=${SECRET}' } }";
+
+  test('the token joins the form and the signature covers it; the plugin never sees it', async () => {
+    const d = await plugin(SIGNED);
+    const r = replayEnv(d, [{ match: '/order', campus: 'card', status: 302, body: '' }]);
+    expect(await runTool(r.env, 'order', {})).toBe(302);
+    const form = r.seen[0]!.form!;
+    const expected = createHash('sha256').update('NONCE=abc&synjones-auth=bearer test-token&tranamt=5&SECRET_KEY=s3cret').digest('hex').toUpperCase();
+    expect(form).toEqual({ tranamt: '5', empty: '', NONCE: 'abc', 'synjones-auth': 'bearer test-token', SIGN: expected });
+    expect(r.seen[0]!.method).toBe('POST');
+  });
+
+  test('only for campus forms', async () => {
+    const r = replayEnv(await plugin("{ campus: card, url: /order, authIn: form, json: { a: 1 } }"), []);
+    await expect(runTool(r.env, 'order', {})).rejects.toThrow('need form');
+    const r2 = replayEnv(await plugin("{ campus: card, url: /order, form: { a: 1 }, sign: { field: SIGN, hash: md5 } }"), []);
+    await expect(runTool(r2.env, 'order', {})).rejects.toThrow('only sha256');
+  });
+});
+
+describe('legacy ids', () => {
+  const files = (legacy: string) => ({
+    'PLUGIN.md': md(`tools:\n  cardBalance: tools/t.yaml\nlegacy:\n${legacy}`),
+    'tools/t.yaml': 'title: T\ndescription: Balance.\neffect: read\nreturn: 1\n',
+  });
+  const fetch = async () => ({ status: 200, url: '', headers: {}, body: '' });
+
+  test('pass through for verified plugins only; targets must exist', async () => {
+    const d = await doc(files("  pluginIds: [campus-card]\n  tools: { 'campus-card.getBalance': cardBalance }"));
+    expect(compilePlugin(d, { fetch, verified: true } as never).legacy).toEqual({ pluginIds: ['campus-card'], tools: { 'campus-card.getBalance': 'cardBalance' } });
+    expect(compilePlugin(d, { fetch, verified: false } as never).legacy).toBeUndefined();
+    expect(await doc(files("  tools: { 'campus-card.getBalance': nope }")).catch((e: Error) => e.message)).toContain("no tool 'nope'");
+    expect(await doc(files("  widgets: { 'campus-card.balance': nope }")).catch((e: Error) => e.message)).toContain("no widget 'nope'");
+  });
+});
+
+describe('live screen bindings', () => {
+  const plugin = (binding: string, kind = 'screens') =>
+    doc({
+      'PLUGIN.md': md(`tools:\n  code: tools/code.yaml\n${kind}:\n  pay: views/pay.json`),
+      'tools/code.yaml': "title: 付款码\ndescription: The code.\neffect: read\nuserOnly: true\nreturn: \"{ code: 'x' }\"\n",
+      'views/pay.json': `{ "title": "付款码", "secure": ${kind === 'screens' ? '{}' : 'null'}, "spec": { "root": "q", "elements": { "q": { "type": "QRCode", "props": { "value": { "$state": "/pay/code" } } } } }, "bindings": { "/pay": ${binding} } }`.replace('"secure": null, ', ''),
+    }).then(
+      () => '',
+      (e: Error) => e.message,
+    );
+
+  test('refreshSeconds is for screens, tools, and not with ttlMinutes', async () => {
+    expect(await plugin('{ "tool": "code", "refreshSeconds": 30 }')).toBe('');
+    expect(await plugin('{ "tool": "code", "refreshSeconds": 30 }', 'widgets')).toContain('screens only');
+    expect(await plugin('{ "tool": "code", "refreshSeconds": 30, "ttlMinutes": 1 }')).toContain('screens only');
+    expect(await plugin('{ "tool": "code", "refreshSeconds": 2 }')).toBeTruthy();
+  });
+
+  test('values land at their JSON pointer; path picks inside the result', () => {
+    expect(setPointer({ a: 1 }, '/pay', { code: 'x' })).toEqual({ a: 1, pay: { code: 'x' } });
+    expect(setPointer({ card: { n: 1 } }, '/card/code', 'x')).toEqual({ card: { n: 1, code: 'x' } });
+    expect(atPath({ list: [{ code: 'x' }] }, 'list[0].code')).toBe('x');
   });
 });
