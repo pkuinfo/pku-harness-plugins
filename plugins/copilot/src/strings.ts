@@ -30,6 +30,8 @@ export const strings = {
     "takeover": "我来接管",
     "stop": "停止 Copilot",
     "allowedApps": "允许操作的应用",
+    "selectedApps": "已选择",
+    "appScopeHint": "仅允许操作已开启的应用。你可以随时接管或停止。",
     "searchApps": "搜索应用",
     "start": "开启 Copilot 模式",
     "refresh": "刷新状态"
@@ -65,6 +67,8 @@ export const strings = {
     "takeover": "Take over",
     "stop": "Stop Copilot",
     "allowedApps": "Allowed apps",
+    "selectedApps": "Selected",
+    "appScopeHint": "Only enabled apps are available to Copilot. You can take over or stop at any time.",
     "searchApps": "Search apps",
     "start": "Start Copilot mode",
     "refresh": "Refresh status"

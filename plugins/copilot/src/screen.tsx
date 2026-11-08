@@ -5,7 +5,7 @@ import { strings } from './strings';
 import { LatestPhoneRead } from './latest-read';
 
 export function CopilotScreen({ host, services, focused = true }: PluginScreenProps) {
-  const { Screen, Text, Button, Field, Checkbox, Row, ListGroup, ListRow } = host.components;
+  const { Screen, Text, Button, Field, Switch, ListGroup, ListRow } = host.components;
   const s = strings[host.useLocale()];
   const theme = host.useTheme();
   const [status, setStatus] = useState<PhoneReadiness | null>(null);
@@ -96,17 +96,16 @@ export function CopilotScreen({ host, services, focused = true }: PluginScreenPr
           <Button title={status.handedOver ? (s.handback) : (s.takeover)} disabled={busy} onPress={() => void run(() => status.handedOver ? services.phone.handback(sessionId) : services.phone.takeover(sessionId))} />
           <Button title={s.stop} disabled={busy} onPress={() => void run(() => services.phone.end(sessionId))} />
         </View> : <View style={{ gap: theme.spacing.md }}>
-          <Field label={s.allowedApps} placeholder={s.searchApps} value={query} onChangeText={setQuery} />
-          {apps.filter((a) => `${a.label} ${a.packageName}`.toLowerCase().includes(query.toLowerCase())).map((app) => (
-            <Row key={app.packageName} gap="md" align="center">
-              <Checkbox label={app.label} value={selected.includes(app.packageName)} onValueChange={(checked) => setSelected((old) => checked ? [...old, app.packageName] : old.filter((p) => p !== app.packageName))} />
-              <View style={{ flex: 1 }}>
-                <Text>{app.label}</Text>
-                <Text variant="caption" tone="muted">{app.packageName}</Text>
-              </View>
-            </Row>
-          ))}
+          <Text variant="callout" tone="muted">{s.selectedApps}: {selected.length} / 20</Text>
           <Button title={s.start} disabled={busy || !status?.helper || !status.accessibility || selected.length === 0 || selected.length > 20} onPress={() => void run(() => services.phone.begin(selected))} />
+          <Field label={s.searchApps} placeholder={s.searchApps} value={query} onChangeText={setQuery} />
+          <ListGroup title={s.allowedApps} footer={s.appScopeHint}>
+            {apps.filter((a) => `${a.label} ${a.packageName}`.toLowerCase().includes(query.toLowerCase())).map((app) => (
+              <ListRow key={app.packageName} title={app.label} subtitle={app.packageName} accessory={
+                <Switch label={app.label} value={selected.includes(app.packageName)} disabled={busy || (selected.length >= 20 && !selected.includes(app.packageName))} onValueChange={(checked) => setSelected((old) => checked ? [...new Set([...old, app.packageName])].slice(0, 20) : old.filter((p) => p !== app.packageName))} />
+              } />
+            ))}
+          </ListGroup>
         </View>}
         <Button title={s.refresh} disabled={busy} onPress={() => void run(refresh)} />
       </View>
