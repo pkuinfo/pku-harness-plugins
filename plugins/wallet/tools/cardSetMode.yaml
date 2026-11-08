@@ -2,7 +2,7 @@
 # a name or code from getUseCardConfig's cardTypes; anything else is refused before the POST.
 title: 切换用卡方式
 summary: 把用卡方式切换成指定的一种（如从数字卡改回校园卡或 NFC卡）
-description: "Switch the card's 用卡方式 to `mode`, a name or code from wallet__cardMode (e.g. '校园卡', '数字卡', 'NFC卡'). Only 数字卡 has a payment code; the others are for the physical card or phone NFC. Only when the user asks."
+description: "Switch the card's 用卡方式 to `mode`, a name or code from wallet__cardMode (e.g. '校园卡', '数字卡', 'NFC卡'). Only 数字卡 has a payment code; the others are for the physical card or phone NFC. Quote wallet__cardMode's `notice` (the card centre's rule) to the user first; the result's `notice` is the rule after the switch. Only when the user asks."
 effect: write
 input:
   mode: { type: string, max: 20, description: "A 用卡方式 name or code from wallet__cardMode" }
@@ -37,4 +37,14 @@ steps:
     value: json(res.text, null)
   - check: env?.success && env?.code == 200
     error: 切换用卡方式失败：${env?.msg ?? env?.message ?? 'HTTP ' + res.status}
-return: "{ changed: true, from: before.name, mode: target.name }"
+  # The card centre's rule as it stands after the switch (e.g. today's choice is now fixed).
+  # The switch is done either way, so a failed re-read only leaves the notice out.
+  - let: notice
+    value: "null"
+  - try:
+      - let: after
+        call: cardMode
+      - let: notice
+        value: after.notice
+    catch: []
+return: "{ changed: true, from: before.name, mode: target.name, notice: notice }"

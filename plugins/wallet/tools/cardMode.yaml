@@ -1,8 +1,9 @@
-# The 用卡方式 screen's list: the current mode and every mode the card service offers (api.rs
-# get_use_card_config).
+# The 用卡方式 screen's list: the current mode, every mode the card service offers (api.rs
+# get_use_card_config), and the card centre's own rule for switching today (getConflictInfo, as on
+# the 付款码 screen), quoted as is.
 title: 查看用卡方式
-summary: 当前用卡方式和可选的用卡方式（如校园卡、数字卡、NFC卡）
-description: The card's current 用卡方式 and the modes it can switch to, for wallet__cardSetMode.
+summary: 当前用卡方式、可选的用卡方式（如校园卡、数字卡、NFC卡）和学校的切换说明
+description: "The card's current 用卡方式, the modes it can switch to (for wallet__cardSetMode), and `notice`: the card centre's own text on switching today, or null. Quote `notice` to the user before switching."
 effect: read
 steps:
   - let: cfg
@@ -14,4 +15,21 @@ steps:
     value: cardData(cfg)
   - let: now
     value: modeOf(c)
-return: "{ current: now.name, modes: map(c?.cardTypes ?? [], (t) => ({ name: t.name, code: t.code, current: t.code == now.code })) }"
+  - let: notice
+    value: "null"
+  # The rule is a nice-to-have: any failure leaves it out.
+  - try:
+      - let: card
+        request: { campus: card, url: '${QUERY_CARD}' }
+        as: response
+      - let: acc
+        value: "cardErr(card) == null ? cardData(card).card[0]?.account : null"
+      - if: acc
+        then:
+          - let: r
+            request: { campus: card, url: '/berserker-app/cardConflict/getConflictInfo?fromaccount=${encode(acc)}&flag=1&synAccessSource=h5' }
+            as: response
+          - let: notice
+            value: "cardErr(r) == null ? conflictText(cardData(r)) : null"
+    catch: []
+return: "{ current: now.name, modes: map(c?.cardTypes ?? [], (t) => ({ name: t.name, code: t.code, current: t.code == now.code })), notice: notice }"

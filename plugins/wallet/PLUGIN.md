@@ -3,7 +3,7 @@ spec: 1
 id: wallet
 name: 校园钱包
 description: 校园卡余额与付款码、充值，网费、电费、水费、浴卡。
-version: 1.2.0
+version: 1.3.0
 author: pkuinfo
 icon: wallet
 homepage: https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/wallet
@@ -123,7 +123,7 @@ i18n:
 ---
 
 校园钱包（金额单位都是元）：
-- 校园卡：问余额用 wallet__cardBalance；问最近花了多少、在哪消费用 wallet__cardTransactions；问某个月一共花了多少、钱主要花在哪类（餐费、超市等）、哪天花得最多，用 wallet__cardMonthlyStats（一次返回整月汇总，比翻流水省事）。wallet__cardSetDigital 只在用户明确要求时切换到数字卡；要改回校园卡、NFC卡等，先用 wallet__cardMode 看可选方式，再用 wallet__cardSetMode 切换（同样只在用户要求时）。
+- 校园卡：问余额用 wallet__cardBalance；问最近花了多少、在哪消费用 wallet__cardTransactions；问某个月一共花了多少、钱主要花在哪类（餐费、超市等）、哪天花得最多，用 wallet__cardMonthlyStats（一次返回整月汇总，比翻流水省事）。wallet__cardSetDigital 只在用户明确要求时切换到数字卡；要改回校园卡、NFC卡等，先用 wallet__cardMode 看可选方式，再用 wallet__cardSetMode 切换（同样只在用户要求时）。cardMode 的 notice 是校园卡中心的原文说明（如当天的用卡方式限制），切换前原样转告用户，不要自己概括或补充限制。
 - 校园卡充值用 wallet__cardRecharge（整数元）：它创建学校的充值订单并在系统浏览器打开收银台，用户在里面选微信或支付宝、在那个 App 里自己付款；你不能也不需要代付，收银台链接也不会给你。调用后告诉用户去收银台完成付款，付完后在 POS 机上刷一次卡才能到账，之后可以再查余额确认。
 - 付款码不经过你：让用户点看板校园卡组件上的「付款码」，或在 设置 →「校园卡付款码」/「校园钱包」打开。
 - 网费：问网费、上网余额用 wallet__netfeeBalance。

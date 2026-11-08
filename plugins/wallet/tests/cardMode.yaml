@@ -1,4 +1,4 @@
-# The current mode and the choices for the 用卡方式 screen.
+# The current mode and the choices for the 用卡方式 screen; no card account, so no notice.
 tool: cardMode
 responses:
   - match: useCard/getUseCardConfig
@@ -21,3 +21,4 @@ expect:
     - { name: 校园卡, code: 0, current: false }
     - { name: 数字卡, code: 1, current: true }
     - { name: NFC卡, code: 2, current: false }
+  notice: null

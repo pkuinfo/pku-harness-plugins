@@ -141,7 +141,7 @@ describe('wallet: payment platform', () => {
     const cfg = { match: 'useCard/getUseCardConfig', campus: 'card', text: ok({ cardType: '1', cardTypes: [{ name: '校园卡', code: 0 }, { name: '数字卡', code: 1 }, { name: 'NFC卡', code: 2 }] }) };
     const set = { match: 'useCard/setUseCardConfig', campus: 'card', text: JSON.stringify({ code: 200, success: true, data: null }) };
     const r = env([cfg, set]);
-    expect(await runTool(r.env, 'cardSetMode', { mode: 'NFC卡' })).toEqual({ changed: true, from: '数字卡', mode: 'NFC卡' });
+    expect(await runTool(r.env, 'cardSetMode', { mode: 'NFC卡' })).toEqual({ changed: true, from: '数字卡', mode: 'NFC卡', notice: null });
     expect([r.seen[1]!.method, r.seen[1]!.body]).toEqual(['POST', '{"cardType":2,"synAccessSource":"h5"}']);
     for (const mode of ['手环', '数字卡']) {
       const q = env([cfg, set]);

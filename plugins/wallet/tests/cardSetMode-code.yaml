@@ -1,4 +1,4 @@
-# A code works as well as a name.
+# A code works as well as a name. The re-read after the switch fails here, so the notice is left out.
 tool: cardSetMode
 input: { mode: '0' }
 responses:
@@ -26,3 +26,4 @@ expect:
   changed: true
   from: 数字卡
   mode: 校园卡
+  notice: null
