@@ -2,6 +2,7 @@ import type { PhoneApp, PhoneReadiness, PhonePreview, PluginScreenProps } from '
 import { useCallback, useEffect, useState } from 'react';
 import { AppState, Image, View } from 'react-native';
 import { strings } from './strings';
+import { LatestPhoneRead } from './latest-read';
 
 export function CopilotScreen({ host, services, focused = true }: PluginScreenProps) {
   const { Screen, Text, Button, Field, Checkbox, Row, ListGroup, ListRow } = host.components;
@@ -17,45 +18,51 @@ export function CopilotScreen({ host, services, focused = true }: PluginScreenPr
   const [connectPort, setConnectPort] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const refresh = useCallback(async () => setStatus(await services.phone.readiness()), [services]);
+  const [reads] = useState(() => new LatestPhoneRead());
+  const refresh = useCallback(async () => {
+    const current = reads.begin();
+    const next = await services.phone.readiness();
+    if (current()) setStatus(next);
+  }, [services, reads]);
   useEffect(() => {
     let alive = true;
-    void Promise.all([services.phone.readiness(), services.phone.apps()]).then(([s, a]) => {
-      if (alive) { setStatus(s); setApps(a); }
+    void Promise.all([refresh(), services.phone.apps()]).then(([, a]) => {
+      if (alive) setApps(a);
     }).catch((e) => { if (alive) setError(String(e)); });
     const sub = AppState.addEventListener('change', (state) => { if (state === 'active') void refresh().catch((e) => setError(String(e))); });
-    return () => { alive = false; sub.remove(); };
-  }, [services, refresh]);
+    return () => { alive = false; reads.invalidate(); sub.remove(); };
+  }, [services, refresh, reads]);
   const run = async (action: () => Promise<unknown>) => {
-    setBusy(true); setError(null);
+    reads.invalidate(); setPreview(null); setBusy(true); setError(null);
     try { await action(); await refresh(); }
     catch (e) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setBusy(false); }
   };
   const sessionId = status?.sessionId;
   useEffect(() => {
-    if (!focused) return;
+    if (!focused || busy) return;
     let alive = true;
     let timer: ReturnType<typeof setTimeout> | undefined;
     const poll = async () => {
       if (AppState.currentState === 'active') {
+        const isCurrent = reads.begin();
         try {
           const current = await services.phone.readiness();
           const frame = sessionId && current.sessionId === sessionId && !current.handedOver ? await services.phone.preview(sessionId) : null;
-          if (alive) {
+          if (alive && isCurrent()) {
             setStatus(current);
             setPreview(frame && sessionId && AppState.currentState === 'active' ? { ...frame, sessionId } : null);
           }
         } catch {
-          if (alive) setPreview(null);
+          if (alive && isCurrent()) setPreview(null);
         }
       }
       if (alive) timer = setTimeout(() => void poll(), 1000);
     };
     const sub = AppState.addEventListener('change', (state) => { if (state !== 'active') setPreview(null); });
     void poll();
-    return () => { alive = false; clearTimeout(timer); sub.remove(); setPreview(null); };
-  }, [sessionId, services, focused]);
+    return () => { alive = false; reads.invalidate(); clearTimeout(timer); sub.remove(); setPreview(null); };
+  }, [sessionId, services, focused, busy, reads]);
   const helperStatus = status?.helper ? s.connected : status?.helperStatus === 'connecting' ? s.connecting : status?.helperStatus === 'wireless-off' ? s.wirelessOff : status?.helperStatus === 'failed' ? s.connectionFailed : s.setupNeeded;
   const helperFailure = status?.helperFailure;
   const setupHint = helperFailure === 'WrongCode' || helperFailure === 'PairingWindowClosed' ? s.pairingExpired
