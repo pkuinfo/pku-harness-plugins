@@ -85,7 +85,7 @@ export function CopilotScreen({ host, services, invoke, focused = true }: Plugin
   }, [sessionId, services, invoke, focused, busy, reads, showPreview, acceptStatus]);
   const missingPackages = appsLoaded ? selected.filter((name) => !apps.some((app) => app.packageName === name)) : [];
   const visibleApps = apps.filter((app) => (appFilter === 'all' || selected.includes(app.packageName)) && `${app.label} ${app.packageName}`.toLowerCase().includes(query.trim().toLowerCase()));
-  const iconSize = theme.spacing.xxl;
+  const iconSize = theme.spacing.xl;
   const ready = !!status?.helper && !!status?.accessibility;
   const connectionOpen = connectionExpanded ?? (!!status && !ready);
   const reload = () => run(async () => {
@@ -101,31 +101,30 @@ export function CopilotScreen({ host, services, invoke, focused = true }: Plugin
     : helperFailure === 'UsbHelperStopped' ? s.usbStopped
     : helperFailure ? s.retryConnection : null;
   return (
-    <Screen title="Copilot" back trailing={<IconButton icon="refresh" label={s.refresh} variant="ghost" disabled={busy || appsLoading} onPress={() => void reload()} />}>
-      <View style={{ gap: theme.spacing.lg }}>
-        <Text variant="callout" tone="muted">{s.intro}</Text>
+    <Screen title="Copilot" appearance="plain" back trailing={<IconButton icon="refresh" label={s.refresh} variant="ghost" disabled={busy || appsLoading} onPress={() => void reload()} />}>
+      <View style={{ gap: theme.spacing.xl }}>
         {error ? <View style={{ gap: theme.spacing.sm }}><Text tone="down">{error}</Text><Button title={s.retry} variant="ghost" size="sm" disabled={busy} onPress={() => void reload()} /></View> : null}
         {!status ? <View style={{ gap: theme.spacing.sm, padding: theme.spacing.lg }}>
           <Skeleton width="65%" height={theme.spacing.lg} />
           <Skeleton width="90%" height={theme.spacing.md} />
         </View> : <>
-          <ListGroup footer={status.enabled ? s.enabledHint : s.enableHint}>
-            <ListRow title={s.enableCopilot} subtitle={status.enabled ? ready ? s.readyForTasks : s.connectionNeeded : s.off} accessory={
+          <ListGroup variant="plain">
+            <ListRow compact title={s.enableCopilot} subtitle={status.enabled ? ready ? s.readyForTasks : s.connectionNeeded : s.off} accessory={
               <Switch label={s.enableCopilot} value={status.enabled} disabled={busy || (!status.enabled && (!ready || selected.length === 0 || missingPackages.length > 0))} onValueChange={(enabled) => void configure(enabled, selected)} />
             } />
           </ListGroup>
-          <ListGroup>
-            <ListRow icon={ready ? 'check' : 'warning'} title={s.connection} subtitle={ready ? s.connectionReady : s.connectionNeeded}
+          <ListGroup variant="plain">
+            <ListRow compact leading={<Icon name={ready ? 'check' : 'warning'} size={theme.spacing.lg} color={theme.colors.textMuted} />} title={s.connection} subtitle={ready ? s.connectionReady : s.connectionNeeded}
               chevron={false} onPress={() => setConnectionExpanded(!connectionOpen)} accessory={<Icon name={connectionOpen ? 'chevronDown' : 'chevronRight'} size={theme.spacing.lg} color={theme.colors.textMuted} />} />
             {connectionOpen ? <>
-              <ListRow icon="phone" title={s.phoneHelper} subtitle={helperStatus} />
-              <ListRow icon="shield" title={s.accessibility} subtitle={status.accessibility ? s.enabled : s.setupNeeded}
+              <ListRow compact icon="phone" title={s.phoneHelper} subtitle={helperStatus} />
+              <ListRow compact icon="shield" title={s.accessibility} subtitle={status.accessibility ? s.enabled : s.setupNeeded}
                 onPress={!status.accessibility && !busy ? () => void run(() => services.phone.setup('accessibility')) : undefined} />
             </> : null}
           </ListGroup>
           {connectionOpen && !status.helper ? <View style={{ gap: theme.spacing.md }}>
             {setupHint ? <Text variant="callout" tone="down">{setupHint}</Text> : null}
-            <Segmented options={[{ label: s.reconnect, value: 'reconnect' }, { label: s.pairNew, value: 'pair' }]} value={connectionMode} onChange={setConnectionMode} />
+            <Segmented variant="tabs" options={[{ label: s.reconnect, value: 'reconnect' }, { label: s.pairNew, value: 'pair' }]} value={connectionMode} onChange={setConnectionMode} />
             {connectionMode === 'pair' ? <>
               <Text variant="caption" tone="muted">{s.pairingGuide}</Text>
               <Button title={s.developerOptions} variant="secondary" size="sm" onPress={() => void run(() => services.phone.setup('wireless'))} disabled={busy} />
@@ -141,7 +140,7 @@ export function CopilotScreen({ host, services, invoke, focused = true }: Plugin
         </>}
         {sessionId ? <View style={{ gap: theme.spacing.md }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm }}>
-            <View style={{ flex: 1 }}><Text variant="headline">{s.currentTask}</Text></View>
+            <View style={{ flex: 1 }}><Text variant="bodyStrong">{s.currentTask}</Text></View>
             <IconButton icon={showPreview ? 'eyeOff' : 'eye'} label={showPreview ? s.hidePreview : s.showPreview} variant="ghost" onPress={() => setShowPreview(!showPreview)} />
             <IconButton icon="stop" label={s.stop} variant="danger" disabled={busy} onPress={() => void run(() => services.phone.end(sessionId))} />
           </View>
@@ -150,31 +149,32 @@ export function CopilotScreen({ host, services, invoke, focused = true }: Plugin
           <Button title={status.handedOver ? s.handback : s.takeover} variant="secondary" size="sm" disabled={busy} onPress={() => void run(() => status.handedOver ? services.phone.handback(sessionId) : services.phone.takeover(sessionId))} />
         </View> : <View style={{ gap: theme.spacing.md }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm }}>
-            <View style={{ flex: 1 }}><Text variant="headline">{s.appAccess}</Text></View>
+            <View style={{ flex: 1 }}><Text variant="bodyStrong">{s.appAccess}</Text></View>
             <Text variant="caption" tone="muted">{selected.length} / 20</Text>
           </View>
           {missingPackages.length ? <View style={{ gap: theme.spacing.md }}>
-            <ListGroup title={s.unavailableApps} footer={s.unavailableHint}>
-              {missingPackages.map((name) => <ListRow key={name} title={name} titleLines={2} />)}
+            <ListGroup variant="plain" title={s.unavailableApps} footer={s.unavailableHint}>
+              {missingPackages.map((name) => <ListRow compact key={name} title={name} titleLines={2} />)}
             </ListGroup>
             <Button title={s.removeUnavailable} variant="secondary" disabled={busy} onPress={() => {
               const packages = selected.filter((name) => !missingPackages.includes(name));
               void configure(status?.enabled === true && packages.length > 0, packages);
             }} />
           </View> : null}
-          <Segmented options={[{ label: s.allApps, value: 'all' }, { label: `${s.allowedApps} (${selected.length})`, value: 'allowed' }]} value={appFilter} onChange={setAppFilter} />
+          <Text variant="caption" tone="muted">{s.appScopeHint}</Text>
+          <Segmented variant="tabs" options={[{ label: s.allApps, value: 'all' }, { label: `${s.allowedApps} (${selected.length})`, value: 'allowed' }]} value={appFilter} onChange={setAppFilter} />
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm }}>
             <View style={{ flex: 1 }}><Field placeholder={s.searchApps} value={query} onChangeText={setQuery} autoCapitalize="none" /></View>
             {query ? <IconButton icon="close" label={s.clearSearch} variant="ghost" onPress={() => setQuery('')} /> : null}
           </View>
-          <ListGroup footer={s.appScopeHint}>
+          <ListGroup variant="plain">
             {appsLoading ? [0, 1, 2].map((row) => (
               <View key={row} style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.md, padding: theme.spacing.lg }}>
                 <Skeleton width={iconSize} height={iconSize} />
                 <Skeleton width="55%" height={theme.spacing.lg} />
               </View>
             )) : visibleApps.length ? visibleApps.map((app) => (
-              <ListRow
+              <ListRow compact
                 key={app.packageName}
                 title={app.label}
                 titleLines={2}

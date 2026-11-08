@@ -18,12 +18,12 @@ type ChipTone = 'neutral' | 'accent' | 'up' | 'down' | 'warn' | 'info';
 type TextVariant = 'display' | 'title' | 'headline' | 'body' | 'bodyStrong' | 'callout' | 'caption' | 'micro' | 'numberXL' | 'numberL' | 'numberM';
 
 export interface HostComponents {
-  Screen: ComponentType<{ title: string; subtitle?: string; back?: boolean; trailing?: ReactNode; children: ReactNode; refreshControl?: ReactNode }>;
+  Screen: ComponentType<{ title: string; subtitle?: string; back?: boolean; appearance?: 'standard' | 'plain'; trailing?: ReactNode; children: ReactNode; refreshControl?: ReactNode }>;
   Text: ComponentType<{ variant?: TextVariant; tone?: Tone; align?: 'left' | 'center' | 'right'; numberOfLines?: number; selectable?: boolean; style?: Style; children?: ReactNode }>;
   Button: ComponentType<{ title: string; onPress?: () => void; variant?: 'primary' | 'secondary' | 'ghost' | 'danger'; size?: 'sm' | 'md' | 'lg'; icon?: string; loading?: boolean; disabled?: boolean; style?: Style }>;
   IconButton: ComponentType<{ icon: string; label: string; onPress?: () => void; variant?: 'primary' | 'secondary' | 'ghost' | 'danger'; size?: number; disabled?: boolean }>;
-  ListGroup: ComponentType<{ title?: string; footer?: string; children: ReactNode }>;
-  ListRow: ComponentType<{ leading?: ReactNode; icon?: string; title: string; subtitle?: string; value?: string; accessory?: ReactNode; onPress?: () => void; chevron?: boolean; titleLines?: number }>;
+  ListGroup: ComponentType<{ variant?: 'grouped' | 'plain'; title?: string; footer?: string; children: ReactNode }>;
+  ListRow: ComponentType<{ compact?: boolean; leading?: ReactNode; icon?: string; title: string; subtitle?: string; value?: string; accessory?: ReactNode; onPress?: () => void; chevron?: boolean; titleLines?: number }>;
   Chip: ComponentType<{ label: string; tone?: ChipTone; icon?: string }>;
   Surface: ComponentType<{ level?: 1 | 2 | 3; padded?: boolean; children?: ReactNode; style?: Style }>;
   EmptyState: ComponentType<{ icon: string; title: string; message?: string; action?: ReactNode }>;
@@ -33,7 +33,7 @@ export interface HostComponents {
   Stat: ComponentType<{ label: string; value: number | null; prefix?: string; suffix?: string; decimals?: number; caption?: string; icon?: string }>;
   Switch: ComponentType<{ value: boolean; onValueChange: (v: boolean) => void; label?: string; disabled?: boolean }>;
   Checkbox: ComponentType<{ value: boolean; onValueChange: (v: boolean) => void; label: string }>;
-  Segmented: ComponentType<{ options: { label: string; value: string }[]; value: string; onChange: (v: string) => void }>;
+  Segmented: ComponentType<{ variant?: 'segmented' | 'tabs'; options: { label: string; value: string }[]; value: string; onChange: (v: string) => void }>;
   Row: ComponentType<{ gap?: 'xs' | 'sm' | 'md' | 'lg'; align?: 'start' | 'center' | 'end' | 'between'; children: ReactNode }>;
   Column: ComponentType<{ gap?: 'xs' | 'sm' | 'md' | 'lg' | 'xl'; children: ReactNode }>;
   /** Tappable container with the app's press feedback. */
