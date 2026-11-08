@@ -1,4 +1,4 @@
-import type { ComponentType, ReactNode } from 'react';
+import type { ComponentType, ReactNode, Ref } from 'react';
 
 import type { z } from 'zod';
 
@@ -18,7 +18,7 @@ type ChipTone = 'neutral' | 'accent' | 'up' | 'down' | 'warn' | 'info';
 type TextVariant = 'display' | 'title' | 'headline' | 'body' | 'bodyStrong' | 'callout' | 'caption' | 'micro' | 'numberXL' | 'numberL' | 'numberM';
 
 export interface HostComponents {
-  Screen: ComponentType<{ title: string; subtitle?: string; back?: boolean; appearance?: 'standard' | 'plain'; trailing?: ReactNode; children: ReactNode; refreshControl?: ReactNode }>;
+  Screen: ComponentType<{ title: string; subtitle?: string; back?: boolean; appearance?: 'standard' | 'plain'; scrollRef?: Ref<{ scrollTo: (options: { y?: number; animated?: boolean }) => void }>; overlay?: ReactNode; trailing?: ReactNode; children: ReactNode; refreshControl?: ReactNode }>;
   Text: ComponentType<{ variant?: TextVariant; tone?: Tone; align?: 'left' | 'center' | 'right'; numberOfLines?: number; selectable?: boolean; style?: Style; children?: ReactNode }>;
   Button: ComponentType<{ title: string; onPress?: () => void; variant?: 'primary' | 'secondary' | 'ghost' | 'danger'; size?: 'sm' | 'md' | 'lg'; icon?: string; loading?: boolean; disabled?: boolean; style?: Style }>;
   IconButton: ComponentType<{ icon: string; label: string; onPress?: () => void; variant?: 'primary' | 'secondary' | 'ghost' | 'danger'; size?: number; disabled?: boolean }>;

@@ -1,13 +1,14 @@
 import type { PhoneApp, PhoneReadiness, PhonePreview, PluginScreenProps } from '@pku-harness/sdk';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AppState, Image, View } from 'react-native';
+import { AppState, Image, ScrollView, View } from 'react-native';
 import { strings } from './strings';
+import { indexApps } from './app-index';
 import { LatestPhoneRead } from './latest-read';
 
 type CopilotStatus = PhoneReadiness & { enabled: boolean; configuredPackages: string[] };
 
 export function CopilotScreen({ host, services, invoke, focused = true }: PluginScreenProps) {
-  const { Screen, Text, Button, Field, Switch, ListGroup, ListRow, Icon, IconButton, Segmented, Skeleton } = host.components;
+  const { Screen, Text, Button, Field, Switch, ListGroup, ListRow, Icon, IconButton, Segmented, Skeleton, Pressable } = host.components;
   const s = strings[host.useLocale()];
   const theme = host.useTheme();
   const [status, setStatus] = useState<CopilotStatus | null>(null);
@@ -17,6 +18,11 @@ export function CopilotScreen({ host, services, invoke, focused = true }: Plugin
   const [appsLoaded, setAppsLoaded] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
   const savingConfiguration = useRef(false);
+  const scrollRef = useRef<{ scrollTo: (options: { y?: number; animated?: boolean }) => void }>(null);
+  const appPanelY = useRef(0);
+  const listY = useRef(0);
+  const sectionY = useRef<Record<string, number>>({});
+  const [activeLetter, setActiveLetter] = useState('');
   const [query, setQuery] = useState('');
   const [appFilter, setAppFilter] = useState('all');
   const initialFilter = useRef(false);
@@ -85,6 +91,14 @@ export function CopilotScreen({ host, services, invoke, focused = true }: Plugin
   }, [sessionId, services, invoke, focused, busy, reads, showPreview, acceptStatus]);
   const missingPackages = appsLoaded ? selected.filter((name) => !apps.some((app) => app.packageName === name)) : [];
   const visibleApps = apps.filter((app) => (appFilter === 'all' || selected.includes(app.packageName)) && `${app.label} ${app.packageName}`.toLowerCase().includes(query.trim().toLowerCase()));
+  const indexedApps = indexApps(visibleApps);
+  const showIndex = appFilter === 'all' && !query.trim() && !appsLoading && !sessionId;
+  const jumpToLetter = (letter: string) => {
+    const y = sectionY.current[letter];
+    if (y === undefined) return;
+    setActiveLetter(letter);
+    scrollRef.current?.scrollTo({ y: theme.spacing.lg + appPanelY.current + listY.current + y, animated: true });
+  };
   const iconSize = theme.spacing.xl;
   const ready = !!status?.helper && !!status?.accessibility;
   const connectionOpen = connectionExpanded ?? (!!status && !ready);
@@ -101,8 +115,17 @@ export function CopilotScreen({ host, services, invoke, focused = true }: Plugin
     : helperFailure === 'UsbHelperStopped' ? s.usbStopped
     : helperFailure ? s.retryConnection : null;
   return (
-    <Screen title="Copilot" appearance="plain" back trailing={<IconButton icon="refresh" label={s.refresh} variant="ghost" disabled={busy || appsLoading} onPress={() => void reload()} />}>
-      <View style={{ gap: theme.spacing.xl }}>
+    <Screen title="Copilot" appearance="plain" scrollRef={scrollRef} overlay={showIndex ? (
+      <View pointerEvents="box-none" style={{ position: 'absolute', right: 0, top: 0, bottom: 0, justifyContent: 'center' }}>
+        <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: '100%', flexGrow: 0, backgroundColor: theme.colors.bg, borderRadius: theme.radius.md }} contentContainerStyle={{ paddingVertical: theme.spacing.sm }}>
+          {indexedApps.map(({ letter }) => <Pressable key={letter} accessibilityRole="button" accessibilityLabel={`${s.jumpToLetter} ${letter}`} onPress={() => jumpToLetter(letter)}
+            style={{ width: theme.spacing.xxl, minHeight: theme.spacing.xxl, alignItems: 'center', justifyContent: 'center' }}>
+            <Text variant="caption" tone={activeLetter === letter ? 'accent' : 'muted'}>{letter}</Text>
+          </Pressable>)}
+        </ScrollView>
+      </View>
+    ) : null} back trailing={<IconButton icon="refresh" label={s.refresh} variant="ghost" disabled={busy || appsLoading} onPress={() => void reload()} />}>
+      <View style={{ gap: theme.spacing.xl, paddingRight: showIndex ? theme.spacing.xxl : 0 }}>
         {error ? <View style={{ gap: theme.spacing.sm }}><Text tone="down">{error}</Text><Button title={s.retry} variant="ghost" size="sm" disabled={busy} onPress={() => void reload()} /></View> : null}
         {!status ? <View style={{ gap: theme.spacing.sm, padding: theme.spacing.lg }}>
           <Skeleton width="65%" height={theme.spacing.lg} />
@@ -147,7 +170,7 @@ export function CopilotScreen({ host, services, invoke, focused = true }: Plugin
           <Text variant="callout" tone="muted">{status.handedOver ? s.userControl : s.active}</Text>
           {showPreview ? focused && preview?.sessionId === sessionId && !status.handedOver ? <Image source={{ uri: preview.uri }} accessibilityLabel={s.preview} resizeMode="contain" fadeDuration={0} style={{ width: '100%', height: theme.spacing.xxxl * 4 }} /> : <Text variant="caption" tone="muted">{status.handedOver ? s.userControl : s.waitingForApp}</Text> : null}
           <Button title={status.handedOver ? s.handback : s.takeover} variant="secondary" size="sm" disabled={busy} onPress={() => void run(() => status.handedOver ? services.phone.handback(sessionId) : services.phone.takeover(sessionId))} />
-        </View> : <View style={{ gap: theme.spacing.md }}>
+        </View> : <View onLayout={(e) => { appPanelY.current = e.nativeEvent.layout.y; }} style={{ gap: theme.spacing.md }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm }}>
             <View style={{ flex: 1 }}><Text variant="bodyStrong">{s.appAccess}</Text></View>
             <Text variant="caption" tone="muted">{selected.length} / 20</Text>
@@ -167,13 +190,12 @@ export function CopilotScreen({ host, services, invoke, focused = true }: Plugin
             <View style={{ flex: 1 }}><Field placeholder={s.searchApps} value={query} onChangeText={setQuery} autoCapitalize="none" /></View>
             {query ? <IconButton icon="close" label={s.clearSearch} variant="ghost" onPress={() => setQuery('')} /> : null}
           </View>
-          <ListGroup variant="plain">
-            {appsLoading ? [0, 1, 2].map((row) => (
-              <View key={row} style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.md, padding: theme.spacing.lg }}>
-                <Skeleton width={iconSize} height={iconSize} />
-                <Skeleton width="55%" height={theme.spacing.lg} />
-              </View>
-            )) : visibleApps.length ? visibleApps.map((app) => (
+          <View onLayout={(e) => { listY.current = e.nativeEvent.layout.y; }}>
+            {appsLoading ? [0, 1, 2].map((row) => <View key={row} style={{ padding: theme.spacing.lg }}><Skeleton width="65%" height={theme.spacing.xl} /></View>)
+              : visibleApps.length ? (showIndex ? indexedApps : [{ letter: '', apps: visibleApps }]).map((group) => (
+              <View key={group.letter} onLayout={(e) => { sectionY.current[group.letter] = e.nativeEvent.layout.y; }}>
+                {group.letter ? <View style={{ paddingTop: theme.spacing.lg, paddingBottom: theme.spacing.xs }}><Text variant="caption" tone="muted">{group.letter}</Text></View> : null}
+                <ListGroup variant="plain">{group.apps.map((app) => (
               <ListRow compact
                 key={app.packageName}
                 title={app.label}
@@ -191,8 +213,10 @@ export function CopilotScreen({ host, services, invoke, focused = true }: Plugin
                   }} />
                 }
               />
+                ))}</ListGroup>
+              </View>
             )) : <View style={{ padding: theme.spacing.lg }}><Text tone="muted">{query.trim() ? s.noMatchingApps : appFilter === 'allowed' ? s.noAllowedApps : s.noApps}</Text></View>}
-          </ListGroup>
+          </View>
         </View>}
       </View>
     </Screen>

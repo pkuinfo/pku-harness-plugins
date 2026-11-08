@@ -1,5 +1,6 @@
 export const strings = {
   "zh-Hans": {
+    "jumpToLetter": "跳转到",
     "retry": "重试",
     "readyForTasks": "随时待命",
     "off": "已关闭",
@@ -61,6 +62,7 @@ export const strings = {
     "refresh": "刷新状态"
   },
   "en": {
+    "jumpToLetter": "Jump to",
     "retry": "Try again",
     "readyForTasks": "Ready for tasks",
     "off": "Off",
