@@ -23,7 +23,7 @@ export interface HostComponents {
   Button: ComponentType<{ title: string; onPress?: () => void; variant?: 'primary' | 'secondary' | 'ghost' | 'danger'; size?: 'sm' | 'md' | 'lg'; icon?: string; loading?: boolean; disabled?: boolean; style?: Style }>;
   IconButton: ComponentType<{ icon: string; label: string; onPress?: () => void; variant?: 'primary' | 'secondary' | 'ghost' | 'danger'; size?: number; disabled?: boolean }>;
   ListGroup: ComponentType<{ title?: string; footer?: string; children: ReactNode }>;
-  ListRow: ComponentType<{ icon?: string; title: string; subtitle?: string; value?: string; accessory?: ReactNode; onPress?: () => void; chevron?: boolean; titleLines?: number }>;
+  ListRow: ComponentType<{ leading?: ReactNode; icon?: string; title: string; subtitle?: string; value?: string; accessory?: ReactNode; onPress?: () => void; chevron?: boolean; titleLines?: number }>;
   Chip: ComponentType<{ label: string; tone?: ChipTone; icon?: string }>;
   Surface: ComponentType<{ level?: 1 | 2 | 3; padded?: boolean; children?: ReactNode; style?: Style }>;
   EmptyState: ComponentType<{ icon: string; title: string; message?: string; action?: ReactNode }>;
