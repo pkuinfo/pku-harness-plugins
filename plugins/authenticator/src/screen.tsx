@@ -7,7 +7,7 @@ import { strings } from './strings';
 
 /** Bind / show / remove the harness's 手机令牌. All steps are explicit button presses. */
 export function AuthenticatorScreen({ host, services }: PluginScreenProps) {
-  const { Screen, Text, Button, ListGroup, ListRow, Field, Checkbox, EmptyState, Glass, Hourglass, Pressable, FadeIn, Chip } = host.components;
+  const { Screen, Text, Button, ListGroup, ListRow, Field, Checkbox, EmptyState, Hourglass, Pressable, FadeIn, Chip } = host.components;
   const t = host.useTheme();
   const locale = host.useLocale();
   const s = strings[locale];
@@ -112,10 +112,10 @@ export function AuthenticatorScreen({ host, services }: PluginScreenProps) {
       <Screen title={s.title} subtitle={s.boundSubtitle} back>
         <View style={{ gap: t.spacing.xl }}>
           <FadeIn key={justBound ? 'bound-now' : 'bound'}>
-            <Glass radius={t.radius.xl}>
-              <View style={{ padding: t.spacing.xl, alignItems: 'center', gap: t.spacing.lg }}>
+            <View style={{ borderBottomWidth: 1, borderBottomColor: t.colors.border }}>
+              <View style={{ paddingVertical: t.spacing.lg, alignItems: 'center', gap: t.spacing.lg }}>
                 {justBound ? <Chip label={s.bound} tone="up" icon="check" /> : null}
-                <Hourglass period={30} size={72} tone={left <= 5 ? 'warn' : 'accent'} />
+                <Hourglass period={30} size={48} tone={left <= 5 ? 'warn' : 'accent'} />
                 <CopyArea host={host} code={otp?.code ?? null}>
                   <View style={{ alignItems: 'center', gap: t.spacing.xs }}>{otp ? <CodeDigits host={host} code={otp.code} variant="numberXL" /> : <Text variant="numberXL">——</Text>}</View>
                 </CopyArea>
@@ -123,7 +123,7 @@ export function AuthenticatorScreen({ host, services }: PluginScreenProps) {
                   {s.updatesIn(left)}
                 </Text>
               </View>
-            </Glass>
+            </View>
           </FadeIn>
           {noticeView}
           <ListGroup footer={s.boundFooter}>

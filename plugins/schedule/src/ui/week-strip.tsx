@@ -29,14 +29,14 @@ export function WeekStrip({ host, selected, onSelect, hasClasses }: { host: Host
                 host.haptics.select();
                 onSelect(day);
               }}
-              style={[styles.day, { gap: t.spacing.xxs, paddingVertical: t.spacing.sm, borderRadius: t.radius.md }, isSel && { backgroundColor: t.colors.brand, boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.2)' }]}>
-              <Text variant="micro" tone={isSel ? 'onAccent' : 'faint'}>
+              style={[styles.day, { gap: t.spacing.xxs, paddingVertical: t.spacing.sm, borderRadius: t.radius.md }, isSel && { backgroundColor: t.colors.surface3 }]}>
+              <Text variant="micro" tone={isSel ? 'default' : 'muted'}>
                 {label}
               </Text>
-              <Text variant="bodyStrong" tone={isSel ? 'onAccent' : isToday ? 'accent' : 'default'}>
+              <Text variant="bodyStrong" tone={isSel || isToday ? 'default' : 'muted'}>
                 {dayOfMonth(day)}
               </Text>
-              <View style={[styles.dot, { borderRadius: t.radius.full, backgroundColor: hasClasses(day) ? (isSel ? t.colors.onAccent : t.colors.textFaint) : 'transparent' }]} />
+              <View style={[styles.dot, { borderRadius: t.radius.full, backgroundColor: hasClasses(day) ? (isSel ? t.colors.text : t.colors.textFaint) : 'transparent' }]} />
             </Pressable>
           );
         })}

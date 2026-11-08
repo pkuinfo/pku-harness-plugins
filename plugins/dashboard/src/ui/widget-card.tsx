@@ -56,7 +56,6 @@ function Freshness({ host, widget }: { host: HostUI; widget: Widget }) {
 export function WidgetCard({ host, widget, onLongPress }: { host: HostUI; widget: Widget; onLongPress: () => void }) {
   const { Text, Pressable, PluginWidget } = host.components;
   const t = host.useTheme();
-  const { GlassEdges } = host.components;
   const s = strings[host.useLocale()];
   const hero = widget.size === 'lg';
   const live = !widget.source && Object.keys(widget.bindings).length > 0;
@@ -69,12 +68,11 @@ export function WidgetCard({ host, widget, onLongPress }: { host: HostUI; widget
       delayLongPress={350}
       scaleTo={0.98}
       haptic={false}
-      style={[styles.card, { backgroundColor: t.colors.surface, borderRadius: t.radius.lg, padding: t.spacing.lg, gap: t.spacing.md }, hero && { paddingVertical: t.spacing.xl }]}>
-      <GlassEdges radius={t.radius.lg} />
+      style={[styles.card, { backgroundColor: t.colors.bg, borderTopWidth: StyleSheet.hairlineWidth, borderColor: t.colors.border, padding: t.spacing.lg, gap: t.spacing.md }]}>
       {widget.size === 'sm' ? null : (
         <View style={[styles.head, { gap: t.spacing.sm }]}>
-          <Text variant="micro" tone="faint" numberOfLines={1} style={{ flex: 1 }}>
-            {widget.title.toUpperCase()}
+          <Text variant="caption" tone="muted" numberOfLines={1} style={{ flex: 1 }}>
+            {widget.title}
           </Text>
           {live ? <Freshness host={host} widget={widget} /> : null}
         </View>

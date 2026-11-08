@@ -37,7 +37,6 @@ export function ScheduleTab({ host, services }: PluginScreenProps) {
   const t = host.useTheme();
   const locale = host.useLocale();
   const s = strings[locale];
-  const { GlassEdges } = host.components;
   host.useStoreVersion();
   const now = host.useNow();
   const { courses, semester, reminderMinutes } = services.timetable.get();
@@ -62,18 +61,18 @@ export function ScheduleTab({ host, services }: PluginScreenProps) {
       accessibilityRole="button"
       accessibilityLabel={label}
       onPress={() => host.navigate(href)}
-      style={[styles.quick, { backgroundColor: t.colors.surface, gap: t.spacing.xs, paddingVertical: t.spacing.md, borderRadius: t.radius.lg }]}>
-      <GlassEdges radius={t.radius.lg} />
-      <Icon name={icon} size={16} color={t.colors.accent} />
+      style={[styles.quick, { backgroundColor: t.colors.bg, gap: t.spacing.xs, paddingVertical: t.spacing.md, borderBottomWidth: StyleSheet.hairlineWidth, borderColor: t.colors.border }]}>
+      <Icon name={icon} size={16} color={t.colors.textMuted} />
       <Text variant="callout">{label}</Text>
     </Pressable>
   );
 
   return (
-    <Screen title={s.title} subtitle={subtitle}>
+    <Screen appearance="plain" title={s.title} subtitle={subtitle}>
       <FadeIn index={0}>
         <View style={{ gap: t.spacing.md }}>
           <Segmented
+            variant="tabs"
             options={[
               { label: s.viewDay, value: 'day' },
               { label: s.viewWeek, value: 'week' },
@@ -133,16 +132,17 @@ export function ScheduleTab({ host, services }: PluginScreenProps) {
                 {s.emptyTimetable}
               </Text>
             )}
-            <ListGroup title={s.timetableSettings}>
+            <ListGroup variant="plain" title={s.timetableSettings}>
               <ListRow
+                compact
                 icon="schedule"
                 title={s.semester}
                 subtitle={semester ? s.semesterInfo(semester.name, semester.start, semester.weeks) : s.noSemester}
                 onPress={() => host.navigate(form('semester'))}
               />
-              <ListRow icon="plus" title={s.addClass} onPress={() => host.navigate(form('course', { id: 'new' }))} />
+              <ListRow compact icon="plus" title={s.addClass} onPress={() => host.navigate(form('course', { id: 'new' }))} />
               {services.registry.plugins().some((p) => p.id === 'course-sync' && p.enabled) ? (
-                <ListRow icon="refresh" title={s.syncFromSchool} subtitle={s.syncPlugin} onPress={() => host.navigate('/p/course-sync/home')} />
+                <ListRow compact icon="refresh" title={s.syncFromSchool} subtitle={s.syncPlugin} onPress={() => host.navigate('/p/course-sync/home')} />
               ) : null}
             </ListGroup>
             <View style={{ gap: t.spacing.sm }}>

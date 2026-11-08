@@ -34,7 +34,7 @@ export function ActiveScreen(props: PluginScreenProps) {
   return (
     <Screen title={s.title} subtitle={s.subtitle} back
       // The empty state already has the big "New share" button; the header one only when shares exist.
-      trailing={active.length ? <IconButton icon="plus" label={s.newShare} variant="secondary" onPress={() => host.navigate('/m/card-share/create')} /> : undefined}>
+      trailing={active.length ? <IconButton icon="plus" label={s.newShare} variant="ghost" onPress={() => host.navigate('/m/card-share/create')} /> : undefined}>
       <View style={{ gap: t.spacing.xl }}>
         {notice ? (
           <Text variant="callout" tone={notice.tone}>
@@ -83,7 +83,7 @@ function viewerLabel(r: ShareRecord, s: Strings): { label: string; tone: 'neutra
 }
 
 function ShareCard({ host, manager, record: r, now, s, onNotice }: { host: HostUI; manager: ShareManager; record: ShareRecord; now: number; s: Strings; onNotice: (n: { tone: 'up' | 'down'; text: string } | null) => void }) {
-  const { Glass, Text, Chip, Ring, Button, Row } = host.components;
+  const { Text, Chip, Ring, Button, Row } = host.components;
   const t = host.useTheme();
   const [busy, setBusy] = useState<string | null>(null);
   const session = manager.get(r.id);
@@ -114,10 +114,10 @@ function ShareCard({ host, manager, record: r, now, s, onNotice }: { host: HostU
     });
 
   return (
-    <Glass tone="strong" radius={t.radius.xl}>
-      <View style={{ padding: t.spacing.lg, gap: t.spacing.lg }}>
+    <View style={{ borderBottomWidth: 1, borderBottomColor: t.colors.border }}>
+      <View style={{ paddingVertical: t.spacing.md, gap: t.spacing.md }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.spacing.lg }}>
-          <Ring value={Math.max(0, left) / total} label={clock(left)} caption={s.activeTitle} tone={left < 120_000 ? 'warn' : 'accent'} size={104} />
+          <Ring value={Math.max(0, left) / total} label={clock(left)} caption={s.activeTitle} tone={left < 120_000 ? 'warn' : 'accent'} size={88} />
           <View style={{ flex: 1, gap: t.spacing.sm }}>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: t.spacing.xs }}>
               <Chip label={viewer.label} tone={viewer.tone} icon="person" />
@@ -125,13 +125,13 @@ function ShareCard({ host, manager, record: r, now, s, onNotice }: { host: HostU
               {r.failures ? <Chip label={s.failures(r.failures)} tone="down" icon="lock" /> : null}
             </View>
             <View style={{ flexDirection: 'row', gap: t.spacing.lg }}>
-              <View style={{ gap: 2 }}>
+              <View style={{ gap: t.spacing.xxs }}>
                 <Text variant="caption" tone="muted">
                   {s.codes}
                 </Text>
                 <Text variant="numberM">{s.codesValue(r.codesIssued)}</Text>
               </View>
-              <View style={{ gap: 2 }}>
+              <View style={{ gap: t.spacing.xxs }}>
                 <Text variant="caption" tone="muted">
                   {s.spent}
                 </Text>
@@ -180,6 +180,6 @@ function ShareCard({ host, manager, record: r, now, s, onNotice }: { host: HostU
           {r.viewer ? <Button title={s.resetViewer} variant="ghost" size="sm" icon="refresh" loading={busy === 'reset'} onPress={() => void reset()} /> : null}
         </View>
       </View>
-    </Glass>
+    </View>
   );
 }

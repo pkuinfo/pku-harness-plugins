@@ -8,7 +8,6 @@ function ClassCard({ host, course, now, isToday, isNext }: { host: HostUI; cours
   const { Text, Chip, Pressable } = host.components;
   const t = host.useTheme();
   const s = strings[host.useLocale()];
-  const { GlassEdges } = host.components;
   const color = t.courseColor(course.color);
   const status = isToday ? classStatus(course, now) : null;
   const done = status?.state === 'after';
@@ -21,10 +20,9 @@ function ClassCard({ host, course, now, isToday, isNext }: { host: HostUI; cours
       scaleTo={0.98}
       style={[
         styles.card,
-        { backgroundColor: t.colors.surface, opacity: done ? 0.55 : 1, gap: t.spacing.md, padding: t.spacing.md, borderRadius: t.radius.lg },
+        { backgroundColor: t.colors.bg, opacity: done ? 0.55 : 1, gap: t.spacing.md, paddingVertical: t.spacing.md, borderBottomColor: t.colors.border },
         ongoing && { borderColor: color.ink },
       ]}>
-      <GlassEdges radius={t.radius.lg} />
       <View style={styles.time}>
         <Text variant="bodyStrong" style={{ fontVariant: ['tabular-nums'] }}>
           {course.start}
@@ -80,7 +78,7 @@ export function ClassList({ host, classes, isToday, now }: { host: HostUI; class
 }
 
 const styles = StyleSheet.create({
-  card: { flexDirection: 'row', alignItems: 'center', borderCurve: 'continuous', borderWidth: 1, borderColor: 'transparent' },
+  card: { flexDirection: 'row', alignItems: 'center', borderCurve: 'continuous', borderBottomWidth: StyleSheet.hairlineWidth },
   time: { width: 48, alignItems: 'flex-start' },
   bar: { width: 3, alignSelf: 'stretch' },
   track: { height: 4, overflow: 'hidden' },

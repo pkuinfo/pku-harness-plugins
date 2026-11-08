@@ -9,7 +9,6 @@ export function Gallery({ host, services, invoke }: PluginScreenProps) {
   const { SheetScreen, Text, Button, Chip, PluginWidget, EmptyState } = host.components;
   const t = host.useTheme();
   const s = strings[host.useLocale()];
-  const { GlassEdges } = host.components;
   host.useStoreVersion();
   const catalog = services.widgets.catalog();
   const placed = new Set(services.widgets.list().map((w) => (w.source ? `${w.source.plugin}/${w.source.widget}` : '')));
@@ -52,8 +51,7 @@ export function Gallery({ host, services, invoke }: PluginScreenProps) {
                     <Button title={s.add} size="sm" icon="plus" loading={busy === key} onPress={() => void add(e)} />
                   )}
                 </View>
-                <View style={[styles.preview, { backgroundColor: t.colors.surface, borderRadius: t.radius.lg, padding: t.spacing.lg, gap: t.spacing.sm, borderColor: t.colors.border }]}>
-                  <GlassEdges radius={t.radius.lg} />
+                <View style={[styles.preview, { backgroundColor: t.colors.bg, borderTopWidth: StyleSheet.hairlineWidth, borderColor: t.colors.border, padding: t.spacing.lg, gap: t.spacing.sm }]}>
                   <Text variant="micro" tone="faint">
                     {e.pluginName}
                   </Text>

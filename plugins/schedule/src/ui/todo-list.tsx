@@ -74,7 +74,6 @@ const OPEN_GROUPS: Exclude<TodoGroup, 'done'>[] = ['overdue', 'today', 'upcoming
 export function TodoList({ host, services, todos, now }: { host: HostUI; services: HostServices; todos: Todo[]; now: Date }) {
   const { Text, Icon, Pressable } = host.components;
   const t = host.useTheme();
-  const { GlassEdges } = host.components;
   const s = strings[host.useLocale()];
   const [draft, setDraft] = useState('');
   const [showDone, setShowDone] = useState(false);
@@ -92,8 +91,7 @@ export function TodoList({ host, services, todos, now }: { host: HostUI; service
   };
 
   return (
-    <View style={[styles.group, { backgroundColor: t.colors.surface, borderRadius: t.radius.lg }]}>
-      <GlassEdges radius={t.radius.lg} />
+    <View style={[styles.group, { backgroundColor: t.colors.bg, borderTopWidth: StyleSheet.hairlineWidth, borderColor: t.colors.border }]}>
       {openGroups.map((g, i) => (
         <View key={g}>
           {/* One group alone needs no label, unless it is the one that matters (overdue). */}

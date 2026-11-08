@@ -20,7 +20,7 @@ const DRAFT_TTL_MS = 30 * 60_000;
  */
 export function CreateScreen(props: PluginScreenProps) {
   const { host, services, kv, cloud } = props;
-  const { SheetScreen, Text, Segmented, Switch, Field, ListGroup, ListRow, Glass, Icon, Pressable, Button, QRCode, Skeleton } = host.components;
+  const { SheetScreen, Text, Segmented, Switch, Field, ListGroup, ListRow, Icon, Pressable, Button, QRCode, Skeleton } = host.components;
   const t = host.useTheme();
   const locale = host.useLocale();
   const s = strings[locale];
@@ -160,8 +160,8 @@ export function CreateScreen(props: PluginScreenProps) {
       notice={problem ? { tone: 'down', text: problem.text, ...(problem.action ? { action: { label: problem.action.label, onPress: () => host.navigate(problem.action!.href) } } : {}) } : undefined}
     >
       <View style={{ gap: t.spacing.xl }}>
-        <Glass tone="regular" radius={t.radius.lg}>
-          <View style={{ padding: t.spacing.lg, gap: t.spacing.sm }}>
+        <View style={{ borderBottomWidth: 1, borderBottomColor: t.colors.border }}>
+          <View style={{ paddingBottom: t.spacing.md, gap: t.spacing.sm }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.spacing.sm }}>
               <Icon name="shield" size={18} color={t.colors.warn} />
               <Text variant="bodyStrong">{s.disclaimerTitle}</Text>
@@ -170,7 +170,7 @@ export function CreateScreen(props: PluginScreenProps) {
               {s.disclaimer}
             </Text>
           </View>
-        </Glass>
+        </View>
 
         <ListGroup title={s.ttl}>
           <View style={{ padding: t.spacing.md }}>

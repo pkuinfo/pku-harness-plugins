@@ -21,14 +21,15 @@ export const dayTitle = (day: string, s: Strings, locale: AppLocale) => {
 /** "+12%" / "-8%" / null. */
 export const pct = (ratio: number | null) => (ratio == null ? null : `${ratio > 0 ? '+' : ratio < 0 ? '−' : ''}${Math.abs(Math.round(ratio * 100))}%`);
 
-/** A glass card with a title row (and an optional trailing element). */
+/** A divided section with a title row (and an optional trailing element). */
 export function Card({ host, index = 0, title, trailing, children, onPress }: { host: HostUI; index?: number; title?: string; trailing?: ReactNode; children: ReactNode; onPress?: () => void }) {
-  const { Glass, FadeIn, Text } = host.components;
+  const { Pressable, FadeIn, Text } = host.components;
+  const Container = onPress ? Pressable : View;
   const t = host.useTheme();
   return (
     <FadeIn index={index}>
-      <Glass radius={t.radius.xl} onPress={onPress} accessibilityRole={onPress ? 'button' : undefined} accessibilityLabel={onPress ? title : undefined}>
-        <View style={{ padding: t.spacing.lg, gap: t.spacing.md }}>
+      <Container onPress={onPress} haptic={false} accessibilityRole={onPress ? 'button' : undefined} accessibilityLabel={onPress ? title : undefined}>
+        <View style={{ paddingVertical: t.spacing.md, borderBottomWidth: 1, borderBottomColor: t.colors.border, gap: t.spacing.md }}>
           {title || trailing ? (
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: t.spacing.sm }}>
               {title ? (
@@ -41,7 +42,7 @@ export function Card({ host, index = 0, title, trailing, children, onPress }: { 
           ) : null}
           {children}
         </View>
-      </Glass>
+      </Container>
     </FadeIn>
   );
 }
@@ -53,7 +54,7 @@ export function Switcher({ host, label, onPrev, onNext, canNext, prevLabel, next
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: t.spacing.sm }}>
       <IconButton icon="chevronLeft" label={prevLabel} variant="ghost" onPress={onPrev} />
-      <Text variant="headline" align="center" style={{ flex: 1, fontVariant: ['tabular-nums'] }}>
+      <Text variant="bodyStrong" align="center" style={{ flex: 1, fontVariant: ['tabular-nums'] }}>
         {label}
       </Text>
       <IconButton icon="chevronRight" label={nextLabel} variant="ghost" onPress={onNext} disabled={!canNext} />
@@ -88,11 +89,11 @@ export function EntryRow({ host, entry, settings, s, onPress }: { host: HostUI; 
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${entry.note ?? name} ${amount}`} scaleTo={0.985} haptic={false}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.spacing.md, paddingVertical: t.spacing.sm }}>
-        <View style={{ width: 36, height: 36, borderRadius: t.radius.full, alignItems: 'center', justifyContent: 'center', backgroundColor: income ? t.colors.upMuted : t.colors.surface2 }}>
+        <View style={{ width: 36, height: 36, borderRadius: t.radius.full, alignItems: 'center', justifyContent: 'center', backgroundColor: t.colors.surface2 }}>
           <Icon name={cat?.icon ?? 'more'} size={18} color={income ? t.colors.up : t.colors.textMuted} />
         </View>
-        <View style={{ flex: 1, gap: 2 }}>
-          <Text variant="body" numberOfLines={1}>
+        <View style={{ flex: 1, gap: t.spacing.xxs }}>
+          <Text variant="callout" numberOfLines={1}>
             {entry.note ?? name}
           </Text>
           <Text variant="caption" tone="faint" numberOfLines={1}>

@@ -55,10 +55,8 @@ function ReminderRow({ host, services, job }: { host: HostUI; services: HostServ
 /** Stand-alone reminders and checks (to-do and class reminders live with their owners). */
 export function ReminderList({ host, services, jobs }: { host: HostUI; services: HostServices; jobs: Job[] }) {
   const t = host.useTheme();
-  const { GlassEdges } = host.components;
   return (
-    <View style={[styles.group, { backgroundColor: t.colors.surface, borderRadius: t.radius.lg }]}>
-      <GlassEdges radius={t.radius.lg} />
+    <View style={[styles.group, { backgroundColor: t.colors.bg, borderTopWidth: StyleSheet.hairlineWidth, borderColor: t.colors.border }]}>
       {jobs.map((j, i) => (
         <View key={j.id} style={i > 0 ? { borderTopColor: t.colors.border, borderTopWidth: StyleSheet.hairlineWidth } : undefined}>
           <ReminderRow host={host} services={services} job={j} />
