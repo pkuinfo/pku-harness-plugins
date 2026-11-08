@@ -1,8 +1,8 @@
-# Any 用卡方式, e.g. back to 实体卡 / NFC after cardSetDigital (api.rs set_use_card_config). The mode is
+# Any 用卡方式, e.g. back to 校园卡 / NFC卡 after cardSetDigital (api.rs set_use_card_config). The mode is
 # a name or code from getUseCardConfig's cardTypes; anything else is refused before the POST.
 title: 切换用卡方式
-summary: 把用卡方式切换成指定的一种（如从数字卡改回实体卡或手机 NFC）
-description: "Switch the card's 用卡方式 to `mode`, a name or code from wallet__cardMode (e.g. 'NFC卡', '实体卡', '数字卡'). Only 数字卡 has a payment code; the others are for the physical card or phone NFC. Only when the user asks."
+summary: 把用卡方式切换成指定的一种（如从数字卡改回校园卡或 NFC卡）
+description: "Switch the card's 用卡方式 to `mode`, a name or code from wallet__cardMode (e.g. '校园卡', '数字卡', 'NFC卡'). Only 数字卡 has a payment code; the others are for the physical card or phone NFC. Only when the user asks."
 effect: write
 input:
   mode: { type: string, max: 20, description: "A 用卡方式 name or code from wallet__cardMode" }

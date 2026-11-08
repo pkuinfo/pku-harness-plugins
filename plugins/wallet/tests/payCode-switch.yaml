@@ -29,11 +29,11 @@ responses:
       data:
         cardType: "2"
         cardTypes:
-          - name: 实体卡
+          - name: 校园卡
             code: 0
           - name: 数字卡
             code: 1
-          - name: 手机 NFC
+          - name: NFC卡
             code: 2
   - match: cardConflict/getConflictInfo?fromaccount=123456&flag=1
     campus: card
@@ -42,8 +42,8 @@ responses:
       success: true
       data:
         status: "0"
-        message: <!DOCTYPE html><p>切换后&ldquo;手机 NFC&rdquo;将不可用</p>
+        message: <!DOCTYPE html><p>切换后&ldquo;NFC卡&rdquo;将不可用</p>
 expect:
   step: switch
-  current: 手机 NFC
-  notice: 切换后“手机 NFC”将不可用
+  current: NFC卡
+  notice: 切换后“NFC卡”将不可用

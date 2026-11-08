@@ -29,11 +29,11 @@ responses:
       data:
         cardType: "0"
         cardTypes:
-          - name: 实体卡
+          - name: 校园卡
             code: 0
           - name: 数字卡
             code: 1
-          - name: 手机 NFC
+          - name: NFC卡
             code: 2
   - match: cardConflict/getConflictInfo
     campus: card
@@ -41,5 +41,5 @@ responses:
     body: x
 expect:
   step: switch
-  current: 实体卡
+  current: 校园卡
   notice: null

@@ -1,6 +1,6 @@
 # The service refuses the switch.
 tool: cardSetMode
-input: { mode: 实体卡 }
+input: { mode: 校园卡 }
 responses:
   - match: useCard/getUseCardConfig
     campus: card
@@ -10,7 +10,7 @@ responses:
       data:
         cardType: "1"
         cardTypes:
-          - name: 实体卡
+          - name: 校园卡
             code: 0
           - name: 数字卡
             code: 1

@@ -10,7 +10,7 @@ responses:
       data:
         cardType: "1"
         cardTypes:
-          - name: 实体卡
+          - name: 校园卡
             code: 0
           - name: 数字卡
             code: 1
@@ -25,4 +25,4 @@ responses:
 expect:
   changed: true
   from: 数字卡
-  mode: 实体卡
+  mode: 校园卡

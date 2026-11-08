@@ -1,7 +1,7 @@
 # The 用卡方式 screen's list: the current mode and every mode the card service offers (api.rs
 # get_use_card_config).
 title: 查看用卡方式
-summary: 当前用卡方式和可选的用卡方式（数字卡、实体卡、手机 NFC 等）
+summary: 当前用卡方式和可选的用卡方式（如校园卡、数字卡、NFC卡）
 description: The card's current 用卡方式 and the modes it can switch to, for wallet__cardSetMode.
 effect: read
 steps:
