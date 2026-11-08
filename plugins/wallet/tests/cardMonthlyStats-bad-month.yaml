@@ -1,0 +1,6 @@
+# Month 13 fails before any request. (expected: the TypeScript tool on the same responses)
+tool: cardMonthlyStats
+input:
+  month: 2026-13
+responses: []
+expectError: 月份格式错误，请使用 YYYY-MM

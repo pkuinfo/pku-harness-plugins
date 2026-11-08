@@ -1,0 +1,21 @@
+# Already in that mode: no POST.
+tool: cardSetMode
+input: { mode: NFC卡 }
+responses:
+  - match: useCard/getUseCardConfig
+    campus: card
+    body:
+      code: 200
+      success: true
+      data:
+        cardType: "2"
+        cardTypes:
+          - name: 校园卡
+            code: 0
+          - name: 数字卡
+            code: 1
+          - name: NFC卡
+            code: 2
+expect:
+  changed: false
+  mode: NFC卡

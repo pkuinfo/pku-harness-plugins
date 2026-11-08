@@ -143,14 +143,22 @@ export function CreateScreen(props: PluginScreenProps) {
       if (e instanceof NotDigitalError) setProblem({ text: s.notDigital(e.current), action: { label: s.openPay, href: '/m/wallet/pay' } });
       else if (isCloudError(e, 'consent_required')) setProblem({ text: s.consent });
       else if (isCloudError(e, 'not_configured')) setProblem({ text: s.noCloud });
-      else setProblem({ text: errorText(e) });
+      else setProblem({ text: errorText(e, s) });
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <SheetScreen title={s.createTitle} primary={busy ? s.creating : s.create} onPrimary={() => void create()} loading={busy} primaryDisabled={!manager || pinBad}>
+    <SheetScreen
+      title={s.createTitle}
+      primary={busy ? s.creating : s.create}
+      onPrimary={() => void create()}
+      loading={busy}
+      primaryDisabled={!manager || pinBad}
+      // Next to the pinned button, so a failed 生成分享链接 is seen without scrolling.
+      notice={problem ? { tone: 'down', text: problem.text, ...(problem.action ? { action: { label: problem.action.label, onPress: () => host.navigate(problem.action!.href) } } : {}) } : undefined}
+    >
       <View style={{ gap: t.spacing.xl }}>
         <Glass tone="regular" radius={t.radius.lg}>
           <View style={{ padding: t.spacing.lg, gap: t.spacing.sm }}>
@@ -230,14 +238,6 @@ export function CreateScreen(props: PluginScreenProps) {
           ) : null}
         </ListGroup>
 
-        {problem ? (
-          <View style={{ gap: t.spacing.sm }}>
-            <Text variant="callout" tone="down">
-              {problem.text}
-            </Text>
-            {problem.action ? <Button title={problem.action.label} variant="secondary" size="sm" icon="card" onPress={() => host.navigate(problem.action!.href)} style={{ alignSelf: 'flex-start' }} /> : null}
-          </View>
-        ) : null}
       </View>
     </SheetScreen>
   );

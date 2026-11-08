@@ -1,0 +1,297 @@
+{
+  "title": "交作业",
+  "description": "选文件、写文字、核对后亲自点「确认提交」；助手只能准备草稿。打开方式：/交作业",
+  "presentation": "modal",
+  "bindings": {
+    "/draft": { "tool": "submitDraft", "ttlMinutes": 0 }
+  },
+  "strings": {
+    "zh-Hans": {
+      "noDraftTitle": "还没有选择作业",
+      "noDraftWhy": "从未交的作业里选一个，或让助手先帮你准备草稿。",
+      "pickAssignment": "选择作业",
+      "askAssistant": "让助手帮我准备",
+      "askText": "我要交教学网作业，帮我看看还有哪些没交，准备好交作业的草稿。",
+      "assignment": "作业",
+      "due": "截止 ",
+      "noDueDate": "无截止时间",
+      "closed": "已截止，教学网可能不再接受提交",
+      "attempted": "已有提交：",
+      "changeAssignment": "换一个作业",
+      "files": "文件",
+      "tooBig": "文件太大",
+      "chooseFile": "选择文件",
+      "replaceFile": "替换文件",
+      "removeFile": "移除文件",
+      "filesFooter": "最多 1 个文件；多个文件请先打包成 zip。",
+      "text": "文字内容",
+      "comment": "给老师的备注",
+      "noText": "没有文字",
+      "editText": "编辑文字和备注",
+      "textOptional": "文字内容（可选）",
+      "textPlaceholder": "直接写在提交框里的文字",
+      "commentOptional": "给老师的备注（可选）",
+      "commentPlaceholder": "备注",
+      "save": "保存",
+      "cancel": "取消",
+      "needContent": "选择文件或写一段文字后才能提交。",
+      "nextReview": "下一步：核对",
+      "reviewTitle": "核对提交内容",
+      "finalWarning": "提交后不能撤回。有的作业只允许提交一次，请确认文件和内容无误。",
+      "confirm": "确认提交",
+      "back": "返回修改",
+      "recorded": "教学网已记录这次提交",
+      "sentPending": "已发送，等待教学网记录",
+      "textChars": "文字 ",
+      "charsUnit": " 字",
+      "submittedAt": "提交时间 ",
+      "notRecordedYet": "教学网还没显示新的提交记录。稍后在「作业详情」里查看，或到教学网网页核对。"
+    },
+    "en": {
+      "noDraftTitle": "No assignment chosen yet",
+      "noDraftWhy": "Choose one of your open assignments, or ask the assistant to prepare a draft first.",
+      "pickAssignment": "Choose an assignment",
+      "askAssistant": "Ask the assistant",
+      "askText": "I want to hand in a Course (教学网) assignment. Check which ones I haven’t submitted and prepare a submission draft.",
+      "assignment": "Assignment",
+      "due": "Due ",
+      "noDueDate": "No due date",
+      "closed": "Closed; Blackboard may not accept submissions",
+      "attempted": "Already submitted: ",
+      "changeAssignment": "Choose another",
+      "files": "Files",
+      "tooBig": "File too large",
+      "chooseFile": "Choose file",
+      "replaceFile": "Replace file",
+      "removeFile": "Remove file",
+      "filesFooter": "One file at most; zip several files into one.",
+      "text": "Text",
+      "comment": "Note to the teacher",
+      "noText": "No text",
+      "editText": "Edit text and note",
+      "textOptional": "Text (optional)",
+      "textPlaceholder": "Text to put in the submission box",
+      "commentOptional": "Note to the teacher (optional)",
+      "commentPlaceholder": "Note",
+      "save": "Save",
+      "cancel": "Cancel",
+      "needContent": "Choose a file or write some text to submit.",
+      "nextReview": "Next: review",
+      "reviewTitle": "Review submission",
+      "finalWarning": "You can’t take a submission back, and some assignments only accept one. Check your files and text before you submit.",
+      "confirm": "Submit",
+      "back": "Edit",
+      "recorded": "Blackboard has recorded your submission",
+      "sentPending": "Sent; waiting for Blackboard to record it",
+      "textChars": "Text: ",
+      "charsUnit": " characters",
+      "submittedAt": "Submitted ",
+      "notRecordedYet": "Blackboard doesn’t show the new submission yet. Check Assignment details later, or confirm on the Blackboard website."
+    }
+  },
+  "spec": {
+    "root": "root",
+    "elements": {
+      "root": { "type": "Column", "props": { "gap": "lg" }, "children": ["noDraft", "compose", "review", "receipt", "error"] },
+
+      "noDraft": {
+        "type": "Column",
+        "props": { "gap": "md" },
+        "visible": [{ "$state": "/draft/has", "not": true }, { "$state": "/result/submit", "not": true }],
+        "children": ["noDraftTitle", "noDraftWhy", "pickButton", "askButton"]
+      },
+      "noDraftTitle": { "type": "Heading", "props": { "text": { "$state": "/t/noDraftTitle" }, "size": "md" } },
+      "noDraftWhy": { "type": "Text", "props": { "text": { "$state": "/t/noDraftWhy" }, "tone": "muted", "size": "body" } },
+      "pickButton": {
+        "type": "Button",
+        "props": { "label": { "$state": "/t/pickAssignment" }, "variant": "primary" },
+        "on": { "press": { "action": "navigate", "params": { "href": "/p/courses/pick" } } }
+      },
+      "askButton": {
+        "type": "Button",
+        "props": { "label": { "$state": "/t/askAssistant" }, "variant": "secondary" },
+        "on": { "press": { "action": "ask", "params": { "text": { "$state": "/t/askText" } } } }
+      },
+
+      "compose": {
+        "type": "Column",
+        "props": { "gap": "lg" },
+        "visible": [{ "$state": "/draft/has" }, { "$state": "/form/stage", "neq": "review" }, { "$state": "/result/submit", "not": true }],
+        "children": ["target", "files", "texts", "next", "needContent"]
+      },
+      "target": { "type": "Card", "props": { "title": null, "subtitle": null }, "children": ["targetTitle", "targetCourse", "targetDue", "targetNoDue", "targetClosed", "targetAttempt", "targetError", "changeButton"] },
+      "targetTitle": {
+        "type": "Heading",
+        "props": { "text": { "$cond": { "$state": "/draft/title" }, "$then": { "$state": "/draft/title" }, "$else": { "$state": "/t/assignment" } }, "size": "md" }
+      },
+      "targetCourse": { "type": "Text", "props": { "text": { "$state": "/draft/course" }, "tone": "muted", "size": "small" }, "visible": { "$state": "/draft/course" } },
+      "targetDue": { "type": "Text", "props": { "text": { "$template": "${/t/due}${/draft/due}" }, "tone": "muted", "size": "small" }, "visible": { "$state": "/draft/due" } },
+      "targetNoDue": {
+        "type": "Text",
+        "props": { "text": { "$state": "/t/noDueDate" }, "tone": "muted", "size": "small" },
+        "visible": [{ "$state": "/draft/due", "not": true }, { "$state": "/draft/detailError", "not": true }]
+      },
+      "targetClosed": { "type": "Text", "props": { "text": { "$state": "/t/closed" }, "tone": "down", "size": "small" }, "visible": { "$state": "/draft/closed" } },
+      "targetAttempt": { "type": "Text", "props": { "text": { "$template": "${/t/attempted}${/draft/attempt}" }, "tone": "muted", "size": "small" }, "visible": { "$state": "/draft/attempt" } },
+      "targetError": { "type": "Text", "props": { "text": { "$state": "/draft/detailError" }, "tone": "warn", "size": "small" }, "visible": { "$state": "/draft/detailError" } },
+      "changeButton": {
+        "type": "Button",
+        "props": { "label": { "$state": "/t/changeAssignment" }, "variant": "ghost" },
+        "on": { "press": { "action": "navigate", "params": { "href": "/p/courses/pick" } } }
+      },
+
+      "files": { "type": "Column", "props": { "gap": "sm" }, "children": ["filesTitle", "fileList", "chooseButton", "removeButton", "filesFooter"] },
+      "filesTitle": { "type": "Heading", "props": { "text": { "$state": "/t/files" }, "size": "sm" } },
+      "fileList": { "type": "Column", "props": { "gap": "sm" }, "repeat": { "statePath": "/draft/files", "key": "uri" }, "children": ["fileRow"] },
+      "fileRow": {
+        "type": "ListItem",
+        "props": {
+          "title": { "$item": "name" },
+          "subtitle": { "$cond": { "$item": "tooBig" }, "$then": { "$template": "${sizeText} · ${/t/tooBig}" }, "$else": { "$item": "sizeText" } },
+          "value": null,
+          "icon": "book"
+        }
+      },
+      "chooseButton": {
+        "type": "Button",
+        "props": { "label": { "$cond": { "$state": "/draft/hasFiles" }, "$then": { "$state": "/t/replaceFile" }, "$else": { "$state": "/t/chooseFile" } }, "variant": "secondary" },
+        "visible": { "$state": "/form/editing", "not": true },
+        "on": { "press": { "action": "callTool", "params": { "tool": "courses.chooseFiles", "input": {}, "resultPath": "/result/files", "errorPath": "/error" } } }
+      },
+      "removeButton": {
+        "type": "Button",
+        "props": { "label": { "$state": "/t/removeFile" }, "variant": "ghost" },
+        "visible": [{ "$state": "/draft/hasFiles" }, { "$state": "/form/editing", "not": true }],
+        "on": { "press": { "action": "callTool", "params": { "tool": "courses.editDraft", "input": { "clearFiles": true }, "errorPath": "/error" } } }
+      },
+      "filesFooter": { "type": "Text", "props": { "text": { "$state": "/t/filesFooter" }, "tone": "muted", "size": "small" } },
+
+      "texts": { "type": "Column", "props": { "gap": "sm" }, "children": ["textTitle", "textShown", "noText", "commentTitle", "commentShown", "editButton", "editor"] },
+      "textTitle": { "type": "Heading", "props": { "text": { "$state": "/t/text" }, "size": "sm" }, "visible": { "$state": "/form/editing", "not": true } },
+      "textShown": { "type": "Text", "props": { "text": { "$state": "/draft/text" }, "tone": "default", "size": "body" }, "visible": [{ "$state": "/draft/text" }, { "$state": "/form/editing", "not": true }] },
+      "noText": { "type": "Text", "props": { "text": { "$state": "/t/noText" }, "tone": "muted", "size": "small" }, "visible": [{ "$state": "/draft/text", "not": true }, { "$state": "/form/editing", "not": true }] },
+      "commentTitle": { "type": "Heading", "props": { "text": { "$state": "/t/comment" }, "size": "sm" }, "visible": [{ "$state": "/draft/comment" }, { "$state": "/form/editing", "not": true }] },
+      "commentShown": { "type": "Text", "props": { "text": { "$state": "/draft/comment" }, "tone": "default", "size": "body" }, "visible": [{ "$state": "/draft/comment" }, { "$state": "/form/editing", "not": true }] },
+      "editButton": {
+        "type": "Button",
+        "props": { "label": { "$state": "/t/editText" }, "variant": "ghost" },
+        "visible": { "$state": "/form/editing", "not": true },
+        "on": {
+          "press": [
+            { "action": "setState", "params": { "statePath": "/form/text", "value": { "$state": "/draft/text" } } },
+            { "action": "setState", "params": { "statePath": "/form/comment", "value": { "$state": "/draft/comment" } } },
+            { "action": "setState", "params": { "statePath": "/form/editing", "value": true } }
+          ]
+        }
+      },
+      "editor": { "type": "Column", "props": { "gap": "md" }, "visible": { "$state": "/form/editing" }, "children": ["textField", "commentField", "editActions"] },
+      "textField": {
+        "type": "TextField",
+        "props": { "label": { "$state": "/t/textOptional" }, "placeholder": { "$state": "/t/textPlaceholder" }, "value": { "$bindState": "/form/text" }, "keyboard": "default" }
+      },
+      "commentField": {
+        "type": "TextField",
+        "props": { "label": { "$state": "/t/commentOptional" }, "placeholder": { "$state": "/t/commentPlaceholder" }, "value": { "$bindState": "/form/comment" }, "keyboard": "default" }
+      },
+      "editActions": { "type": "Row", "props": { "gap": "sm", "align": "start", "wrap": null }, "children": ["saveButton", "cancelButton"] },
+      "saveButton": {
+        "type": "Button",
+        "props": { "label": { "$state": "/t/save" }, "variant": "primary" },
+        "on": {
+          "press": [
+            { "action": "callTool", "params": { "tool": "courses.editDraft", "input": { "text": { "$state": "/form/text" }, "comment": { "$state": "/form/comment" } }, "errorPath": "/error" } },
+            { "action": "setState", "params": { "statePath": "/form/editing", "value": false } }
+          ]
+        }
+      },
+      "cancelButton": {
+        "type": "Button",
+        "props": { "label": { "$state": "/t/cancel" }, "variant": "ghost" },
+        "on": { "press": { "action": "setState", "params": { "statePath": "/form/editing", "value": false } } }
+      },
+      "next": {
+        "type": "Button",
+        "props": { "label": { "$state": "/t/nextReview" }, "variant": "primary" },
+        "visible": [{ "$state": "/draft/canSubmit" }, { "$state": "/form/editing", "not": true }],
+        "on": {
+          "press": [
+            { "action": "setState", "params": { "statePath": "/error", "value": null } },
+            { "action": "setState", "params": { "statePath": "/form/stage", "value": "review" } }
+          ]
+        }
+      },
+      "needContent": {
+        "type": "Text",
+        "props": { "text": { "$state": "/t/needContent" }, "tone": "muted", "size": "small" },
+        "visible": [{ "$state": "/draft/canSubmit", "not": true }, { "$state": "/form/editing", "not": true }]
+      },
+
+      "review": {
+        "type": "Column",
+        "props": { "gap": "lg" },
+        "visible": [{ "$state": "/draft/has" }, { "$state": "/form/stage", "eq": "review" }, { "$state": "/result/submit", "not": true }],
+        "children": ["reviewTitle", "reviewCard", "finalWarning", "confirm", "back"]
+      },
+      "reviewTitle": { "type": "Heading", "props": { "text": { "$state": "/t/reviewTitle" }, "size": "md" } },
+      "reviewCard": { "type": "Card", "props": { "title": null, "subtitle": null }, "children": ["reviewTarget", "reviewFiles", "reviewTextTitle", "reviewText", "reviewCommentTitle", "reviewComment"] },
+      "reviewTarget": {
+        "type": "ListItem",
+        "props": {
+          "title": { "$cond": { "$state": "/draft/title" }, "$then": { "$state": "/draft/title" }, "$else": { "$state": "/t/assignment" } },
+          "subtitle": { "$cond": { "$state": "/draft/due" }, "$then": { "$template": "${/t/due}${/draft/due}" }, "$else": { "$state": "/draft/course" } },
+          "value": null,
+          "icon": "book"
+        }
+      },
+      "reviewFiles": { "type": "Column", "props": { "gap": "sm" }, "repeat": { "statePath": "/draft/files", "key": "uri" }, "children": ["reviewFile"] },
+      "reviewFile": { "type": "ListItem", "props": { "title": { "$item": "name" }, "subtitle": { "$template": "${mime} · ${sizeText}" }, "value": null, "icon": null } },
+      "reviewTextTitle": { "type": "Text", "props": { "text": { "$state": "/t/text" }, "tone": "muted", "size": "small" }, "visible": { "$state": "/draft/text" } },
+      "reviewText": { "type": "Text", "props": { "text": { "$state": "/draft/text" }, "tone": "default", "size": "body" }, "visible": { "$state": "/draft/text" } },
+      "reviewCommentTitle": { "type": "Text", "props": { "text": { "$state": "/t/comment" }, "tone": "muted", "size": "small" }, "visible": { "$state": "/draft/comment" } },
+      "reviewComment": { "type": "Text", "props": { "text": { "$state": "/draft/comment" }, "tone": "default", "size": "body" }, "visible": { "$state": "/draft/comment" } },
+      "finalWarning": { "type": "Text", "props": { "text": { "$state": "/t/finalWarning" }, "tone": "warn", "size": "body" } },
+      "confirm": {
+        "type": "Button",
+        "props": { "label": { "$state": "/t/confirm" }, "variant": "primary" },
+        "on": { "press": { "action": "callTool", "params": { "tool": "courses.submit", "input": { "rev": { "$state": "/draft/rev" } }, "resultPath": "/result/submit", "errorPath": "/error" } } }
+      },
+      "back": {
+        "type": "Button",
+        "props": { "label": { "$state": "/t/back" }, "variant": "ghost" },
+        "on": { "press": { "action": "setState", "params": { "statePath": "/form/stage", "value": "compose" } } }
+      },
+
+      "receipt": {
+        "type": "Card",
+        "props": { "title": null, "subtitle": null },
+        "visible": { "$state": "/result/submit/submitted" },
+        "children": ["recorded", "pending", "receiptTitle", "receiptAttempt", "receiptMessage", "receiptFiles", "receiptText", "receiptAt", "notRecorded"]
+      },
+      "recorded": { "type": "Badge", "props": { "label": { "$state": "/t/recorded" }, "tone": "up" }, "visible": { "$state": "/result/submit/verified" } },
+      "pending": { "type": "Badge", "props": { "label": { "$state": "/t/sentPending" }, "tone": "warn" }, "visible": { "$state": "/result/submit/verified", "not": true } },
+      "receiptTitle": {
+        "type": "Heading",
+        "props": { "text": { "$cond": { "$state": "/result/submit/title" }, "$then": { "$state": "/result/submit/title" }, "$else": { "$state": "/t/assignment" } }, "size": "md" }
+      },
+      "receiptAttempt": { "type": "Text", "props": { "text": { "$state": "/result/submit/attempt" }, "tone": "muted", "size": "body" }, "visible": { "$state": "/result/submit/attempt" } },
+      "receiptMessage": { "type": "Text", "props": { "text": { "$state": "/result/submit/message" }, "tone": "default", "size": "body" }, "visible": { "$state": "/result/submit/message" } },
+      "receiptFiles": { "type": "Column", "props": { "gap": "sm" }, "repeat": { "statePath": "/result/submit/files" }, "children": ["receiptFile"] },
+      "receiptFile": { "type": "ListItem", "props": { "title": { "$item": "" }, "subtitle": null, "value": null, "icon": "check" } },
+      "receiptText": {
+        "type": "Text",
+        "props": { "text": { "$template": "${/t/textChars}${/result/submit/textLength}${/t/charsUnit}" }, "tone": "muted", "size": "small" },
+        "visible": { "$state": "/result/submit/textLength", "gt": 0 }
+      },
+      "receiptAt": { "type": "Text", "props": { "text": { "$template": "${/t/submittedAt}${/result/submit/submittedAt}" }, "tone": "muted", "size": "small" } },
+      "notRecorded": { "type": "Text", "props": { "text": { "$state": "/t/notRecordedYet" }, "tone": "warn", "size": "small" }, "visible": { "$state": "/result/submit/verified", "not": true } },
+
+      "error": { "type": "Text", "props": { "text": { "$state": "/error" }, "tone": "down", "size": "body" }, "visible": { "$state": "/error" } }
+    },
+    "state": {
+      "draft": null,
+      "form": { "stage": "compose", "editing": false, "text": "", "comment": "" },
+      "result": { "submit": null, "files": null },
+      "error": null
+    }
+  }
+}

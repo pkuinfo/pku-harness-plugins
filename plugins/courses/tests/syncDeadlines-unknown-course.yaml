@@ -1,0 +1,10 @@
+# The to-do side is in plugins/courses-sync.test.ts (recorded tests have no to-do store).
+tool: syncDeadlines
+input:
+  courseId: _9_1
+now: 2026-10-20 12:00
+responses:
+  - match: tabAction?tab_tab_group_id=_1_1
+    campus: blackboard
+    file: courses.html
+expectError: 没有这门课：_9_1

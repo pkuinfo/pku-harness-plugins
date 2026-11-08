@@ -3,3 +3,5 @@
 **/.git
 **/data
 **/*.log
+# Viewer pages are built in the image (the `pages` stage), never copied from a local build.
+**/web/dist

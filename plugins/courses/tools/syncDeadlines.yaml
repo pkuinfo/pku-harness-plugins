@@ -1,0 +1,55 @@
+# Assignment deadlines → to-dos with reminders (TS sync.ts planSync + api.ts syncDeadlines).
+# Idempotent: kv `sync.todos` maps courseId:contentId → todoId, so a re-sync updates (deadline
+# moved), completes (submitted) or keeps, and never duplicates. A to-do the user deleted is kept
+# as null and not recreated. `legacy: true` reads the map the TS plugin stored.
+title: 作业截止同步到待办
+summary: 把没交的作业变成待办，截止前提醒
+description: "Turn unsubmitted upcoming Blackboard assignments into to-dos (due = deadline) with a reminder remindHours before. Idempotent: re-running updates moved deadlines, completes to-dos of submitted assignments and never duplicates; to-dos the user deleted are not recreated. Returns what changed."
+effect: write
+limits: { requests: 200, seconds: 120 }
+input:
+  courseId: { type: string, optional: true, description: only this course; default all current courses }
+  remindHours: { type: number, min: 0, max: 336, optional: true, description: 'hours before the deadline, default 24' }
+steps:
+  - let: list
+    call: assignments
+    input: "{ courseId: input.courseId, includePast: true }"
+  - let: hours
+    value: input.remindHours ?? 24
+  - let: saved
+    kv: get
+    key: sync.todos
+    legacy: true
+  - let: todos
+    ability: todos.list
+  # A to-do the user deleted: remember it as null so it isn't recreated.
+  - let: synced
+    value: "fromEntries(entries(saved ?? {}).map(e => [e[0], e[1] && some(todos, t => t.id == e[1]) ? e[1] : null]))"
+  - let: plan
+    value: "list.map(a => planOf(a, synced, todos, hours)).filter(s => s != null)"
+  - let: added
+    each: "plan.filter(s => s.kind == 'add')"
+    steps:
+      - let: todo
+        ability: todos.add
+        args: todoOf(item)
+      - return: "[item.key, todo.id]"
+  - each: "plan.filter(s => s.kind == 'update')"
+    steps:
+      - ability: todos.update
+        args: "{ id: item.todoId, patch: todoOf(item) }"
+  - each: "plan.filter(s => s.kind == 'done')"
+    steps:
+      - ability: todos.setDone
+        args: "{ id: item.todoId, done: true }"
+  - kv: set
+    key: sync.todos
+    value: merge(synced, fromEntries(added))
+return: |
+  {
+    added: plan.filter(s => s.kind == 'add').map(s => s.title),
+    updated: plan.filter(s => s.kind == 'update').map(s => s.title),
+    completed: plan.filter(s => s.kind == 'done').map(s => s.title ?? s.key),
+    kept: count(plan, s => s.kind == 'keep'),
+    assignments: length(list),
+  }

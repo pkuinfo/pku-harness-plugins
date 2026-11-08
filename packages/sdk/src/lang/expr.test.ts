@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'bun:test';
+import { createHash } from 'node:crypto';
 
 import { callFn, compile, evaluate, Scope, template, type EvalContext } from './expr';
 import { STDLIB } from './stdlib';
@@ -185,5 +186,38 @@ describe('json', () => {
     expect(ev("json('null', 'bad')")).toBeNull();
     expect(ev("'x'.json(0)")).toBe(0);
     expect(() => ev("json('nope')")).toThrow('not valid JSON');
+  });
+});
+
+describe('sha256 and randomId', () => {
+  test('sha256 matches node:crypto (UTF-8, padding edges)', () => {
+    for (const s of ['', 'abc', '张三😀', 'x'.repeat(55), 'x'.repeat(56), 'y'.repeat(64), 'z'.repeat(1000)])
+      expect(ev('sha256(s)', { s })).toBe(createHash('sha256').update(s).digest('hex'));
+  });
+  test('randomId gives n characters of 0-9a-z, different each time', () => {
+    const a = ev('randomId(11)') as string;
+    expect(a).toMatch(/^[0-9a-z]{11}$/);
+    expect(ev('randomId()')).toMatch(/^[0-9a-z]{16}$/);
+    expect(ev('randomId(11)')).not.toBe(a);
+  });
+  test('randomId works without globalThis.crypto (Hermes)', () => {
+    const saved = Object.getOwnPropertyDescriptor(globalThis, 'crypto');
+    Object.defineProperty(globalThis, 'crypto', { value: undefined, configurable: true, writable: true });
+    try {
+      expect(ev('randomId(11)')).toMatch(/^[0-9a-z]{11}$/);
+    } finally {
+      if (saved) Object.defineProperty(globalThis, 'crypto', saved);
+    }
+  });
+});
+
+describe('attribute values decode like a browser', () => {
+  test('&timestamp in a URL stays literal; real references decode', () => {
+    const doc = ev(`html('<iframe src="/p?a=1&timestamp=2&amp;b=3&copy=4&lt;5&#38;c=6&quot;x&quot;" data-k="a&times;b"></iframe>')`);
+    const el = ev("first(d, 'iframe')", { d: doc });
+    expect(ev("attr(e, 'src')", { e: el })).toBe('/p?a=1&timestamp=2&b=3&copy=4<5&c=6"x"');
+    expect(ev("data(e, 'k')", { e: el })).toBe('a×b');
+    expect(ev("attr(e, 'nope')", { e: el })).toBeNull();
+    expect(ev('e.attrs', { e: el })).toEqual({ src: '/p?a=1&timestamp=2&b=3&copy=4<5&c=6"x"', 'data-k': 'a×b' });
   });
 });

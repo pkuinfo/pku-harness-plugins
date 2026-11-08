@@ -1,0 +1,22 @@
+# No recording data.
+tool: play
+input:
+  courseId: _8001_1
+  url: https://course.pku.edu.cn/webapps/bb-streammedia-hqy-BBLEARN/videoPlay.action?course_id=_8001_1&sub_id=1
+now: 2026-10-20 12:00
+responses:
+  - match: videoList.action
+    campus: blackboard
+    file: videos.html
+  - match: videoPlay.action?course_id=_8001_1&sub_id=1
+    campus: blackboard
+    file: play.html
+  - match: iframe.action
+    campus: blackboard
+    url: https://onlineroomse.pku.edu.cn/player?course_id=123&sub_id=456&app_id=7&auth_data=a%2Bb
+    body: <html></html>
+  - match: get-sub-info-by-auth-data
+    campus: blackboard
+    body:
+      list: []
+expectError: 这节课没有回放数据

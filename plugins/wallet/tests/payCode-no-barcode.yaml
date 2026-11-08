@@ -1,0 +1,53 @@
+# Defaults payacc 001 / paytype 1; no barcode is an error.
+tool: payCode
+responses:
+  - match: ykt/tsm/queryCard
+    campus: card
+    body:
+      code: 200
+      success: true
+      data:
+        card:
+          - sno: "2000012345"
+            name: 张三
+            account: "123456"
+            lostflag: 0
+            freezeflag: 0
+            expdate: "20300701"
+            elec_accamt: 12345
+            accinfo:
+              - balance: 12345
+                name: 电子钱包
+                type: "001"
+                daycostamt: 1250
+                daycostlimit: 20000
+  - match: useCard/getUseCardConfig
+    campus: card
+    body:
+      code: 200
+      success: true
+      data:
+        cardType: "1"
+        cardTypes:
+          - name: 校园卡
+            code: 0
+          - name: 数字卡
+            code: 1
+          - name: NFC卡
+            code: 2
+  - match: codebarPayinfo
+    campus: card
+    body:
+      code: 200
+      success: true
+      data:
+        - name: 张三
+          elec_accamt: 1
+  - match: batchGetBarCodeGet?account=123456&payacc=001&paytype=1
+    campus: card
+    body:
+      code: 200
+      success: true
+      data:
+        barcode: []
+expectError: 未获取到付款码

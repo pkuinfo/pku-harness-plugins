@@ -1,0 +1,30 @@
+# card/tools.ts cardSetDigital (campus-card.ts cardMode + setDigitalCard; api.rs set_use_card_config).
+title: 切换到数字卡
+summary: 把用卡方式切换成付款码需要的「数字卡」
+description: "Switch the card's 用卡方式 to 数字卡, which the payment code needs. Physical card / phone NFC may stop working until switched back. Only when the user asks."
+effect: write
+steps:
+  - let: cfg
+    request: { campus: card, url: '${USE_CARD_CONFIG}' }
+    as: response
+  - check: cardErr(cfg) == null
+    error: ${cardErr(cfg)}
+  - let: before
+    value: modeOf(cardData(cfg))
+  - if: before.digital
+    then:
+      - return: "{ changed: false, mode: before.name }"
+  - let: res
+    request:
+      campus: card
+      url: /berserker-app/useCard/setUseCardConfig
+      method: POST
+      contentType: application/json
+      body: "${str({ cardType: CARD_TYPE_DIGITAL, synAccessSource: 'h5' })}"
+    as: response
+  # api.rs: success && code 200; data may be null here.
+  - let: env
+    value: json(res.text, null)
+  - check: env?.success && env?.code == 200
+    error: 切换用卡方式失败：${env?.msg ?? env?.message ?? 'HTTP ' + res.status}
+return: "{ changed: true, from: before.name, mode: '数字卡' }"

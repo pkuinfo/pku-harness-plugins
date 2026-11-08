@@ -12,12 +12,15 @@ export const SHANGHAI = { id: 'Asia/Shanghai', offsetMinutes: 480 } satisfies Cl
 /** A fixed UTC-8 (Los Angeles standard time, no DST). */
 export const MINUS_8 = { id: 'Etc/GMT+8', offsetMinutes: -480 } satisfies ClockZone;
 export const KATHMANDU = { id: 'Asia/Kathmandu', offsetMinutes: 345 } satisfies ClockZone;
+/** A named zone with DST (UTC-5, UTC-4 in summer), offsets from Intl. */
+export const NEW_YORK = { id: 'America/New_York' } satisfies ClockZone;
 
 /** The zones `eachZone` runs a suite in. */
 export const TEST_ZONES: [label: string, zone: ClockZone][] = [
   ['device', 'device'],
   ['+08:00', SHANGHAI],
   ['-08:00', MINUS_8],
+  ['America/New_York', NEW_YORK],
 ];
 
 /** Run `fn` with the clock in `zone`, then put the previous zone back. */

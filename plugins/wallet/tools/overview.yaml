@@ -1,0 +1,38 @@
+# The 校园钱包 hub (hub.tsx): every balance on one screen. Each part is the same tool its widget
+# uses, called independently: a part that fails shows its own error and the rest still load.
+title: 校园钱包总览
+summary: 钱包页显示的校园卡、网费和浴卡
+description: The wallet hub screen's data (campus card, network fee, bath card); each part fails on its own. Taps only.
+effect: read
+userOnly: true
+limits: { requests: 80 }
+steps:
+  - if: "!account.signedIn"
+    then:
+      - return: "{ signedIn: false }"
+  - let: parts
+    each: "['card', 'netfee', 'bath']"
+    concurrency: 3
+    steps:
+      - let: value
+        value: "null"
+      - let: failed
+        value: "null"
+      - try:
+          - if: "item == 'card'"
+            then:
+              - let: value
+                call: cardBalance
+          - if: "item == 'netfee'"
+            then:
+              - let: value
+                call: netfeeBalance
+          - if: "item == 'bath'"
+            then:
+              - let: value
+                call: bathCard
+        catch:
+          - let: failed
+            value: error.message
+    return: "{ value: value, error: failed }"
+return: "{ signedIn: true, card: parts[0].value, cardError: parts[0].error, netfee: parts[1].value, netfeeError: parts[1].error, bath: parts[2].value, bathError: parts[2].error }"

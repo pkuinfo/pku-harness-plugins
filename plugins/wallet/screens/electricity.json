@@ -1,0 +1,23 @@
+{
+  "title": "宿舍电费",
+  "description": "宿舍电费怎么查、怎么交（没有线上接口，查不到电量）。打开方式：/电费",
+  "presentation": "modal",
+  "strings": {
+    "zh-Hans": {
+      "note": "没有线上接口，查不到电量",
+      "guide": "宿舍电费目前只能在微信里交：关注公众号「动力中心收费服务号」→ 缴费服务 → 学生购电 → 用户绑定/解绑（首次绑定楼宇和房间）→ 充值；剩余电量也在那里看。也可以到学生宿舍 28 楼地下一层后勤服务大厅现场购电（每天 8:00–20:00，电话 62753157 / 62758015）。本 App 暂时查不到电量，也不能代缴。"
+    },
+    "en": {
+      "note": "No online access, so your meter can’t be read here",
+      "guide": "Dorm electricity can only be paid in WeChat for now: follow the 动力中心收费服务号 account → 缴费服务 → 学生购电 → 用户绑定/解绑 (bind your building and room the first time) → top up; your remaining balance is shown there too. You can also buy electricity in person at the service hall in the basement of dorm building 28 (8:00–20:00 daily, tel. 62753157 / 62758015). This app can’t read your meter or pay for you yet."
+    }
+  },
+  "spec": {
+    "root": "root",
+    "elements": {
+      "root": { "type": "Column", "props": { "gap": "md" }, "children": ["note", "guide"] },
+      "note": { "type": "Text", "props": { "text": { "$state": "/t/note" }, "tone": "muted", "size": "small" } },
+      "guide": { "type": "Text", "props": { "text": { "$state": "/t/guide" }, "tone": "default", "size": "body" } }
+    }
+  }
+}

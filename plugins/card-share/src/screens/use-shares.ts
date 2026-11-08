@@ -1,4 +1,4 @@
-import type { PluginScreenProps } from '@pku-harness/sdk';
+import { isCloudError, type PluginScreenProps } from '@pku-harness/sdk';
 import { useEffect, useMemo, useReducer, useState } from 'react';
 
 import { MOCK_KEY, shareManager, type ShareManager } from '../manager';
@@ -51,4 +51,11 @@ export function clock(ms: number): string {
   return h ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
 }
 
-export const errorText = (e: unknown) => (e instanceof Error ? e.message : String(e));
+/** What the user reads for a failure: cloud errors by code in their language (raw message to the log). */
+export function errorText(e: unknown, s: { cloudError(code: string): string }): string {
+  if (isCloudError(e)) {
+    console.warn(`[card-share] cloud ${e.code}: ${e.message}`);
+    return s.cloudError(e.code);
+  }
+  return e instanceof Error ? e.message : String(e);
+}

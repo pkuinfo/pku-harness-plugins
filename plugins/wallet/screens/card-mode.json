@@ -1,0 +1,99 @@
+{
+  "title": "用卡方式",
+  "description": "切换校园卡的用卡方式；显示校园卡中心关于当天切换的说明，切换前先确认。",
+  "bindings": {
+    "/cfg": { "tool": "cardMode" }
+  },
+  "strings": {
+    "zh-Hans": {
+      "intro": "付款码需要「数字卡」。",
+      "official": "校园卡中心说明",
+      "current": "当前",
+      "confirm1": "切换到「",
+      "confirm2": "」？",
+      "confirmButton": "切换",
+      "cancel": "取消",
+      "switched1": "已切换到「",
+      "switched2": "」"
+    },
+    "en": {
+      "intro": "The payment code needs digital card mode (数字卡).",
+      "official": "From the Campus Card Center",
+      "current": "Current",
+      "confirm1": "Switch to “",
+      "confirm2": "”?",
+      "confirmButton": "Switch",
+      "cancel": "Cancel",
+      "switched1": "Switched to “",
+      "switched2": "”"
+    }
+  },
+  "spec": {
+    "root": "root",
+    "elements": {
+      "root": { "type": "Column", "props": { "gap": "md" }, "children": ["intro", "notice", "list", "confirm", "done", "error"] },
+      "intro": { "type": "Text", "props": { "text": { "$state": "/t/intro" }, "tone": "muted", "size": "small" } },
+      "notice": {
+        "type": "Card",
+        "props": { "title": { "$state": "/t/official" }, "subtitle": null },
+        "visible": { "$state": "/cfg/notice" },
+        "children": ["noticeText"]
+      },
+      "noticeText": { "type": "Text", "props": { "text": { "$state": "/cfg/notice" }, "tone": "default", "size": "body" } },
+
+      "list": { "type": "Column", "props": { "gap": "sm" }, "repeat": { "statePath": "/cfg/modes", "key": "code" }, "children": ["row"] },
+      "row": {
+        "type": "ListItem",
+        "props": {
+          "title": { "$item": "name" },
+          "subtitle": null,
+          "value": { "$cond": { "$item": "current" }, "$then": { "$state": "/t/current" }, "$else": null },
+          "icon": { "$cond": { "$item": "current" }, "$then": "check", "$else": null }
+        },
+        "on": {
+          "press": [
+            { "action": "setState", "params": { "statePath": "/error", "value": null } },
+            { "action": "setState", "params": { "statePath": "/result", "value": null } },
+            { "action": "setState", "params": { "statePath": "/pickName", "value": { "$template": "${name}" } } },
+            { "action": "setState", "params": { "statePath": "/pickCode", "value": { "$template": "${code}" } } },
+            { "action": "setState", "params": { "statePath": "/pickCurrent", "value": { "$cond": { "$item": "current" }, "$then": true, "$else": false } } }
+          ]
+        }
+      },
+
+      "confirm": {
+        "type": "Card",
+        "props": { "title": null, "subtitle": null },
+        "visible": [{ "$state": "/pickName" }, { "$state": "/pickCurrent", "not": true }],
+        "children": ["confirmTitle", "confirmNotice", "confirmActions"]
+      },
+      "confirmTitle": { "type": "Heading", "props": { "text": { "$template": "${/t/confirm1}${/pickName}${/t/confirm2}" }, "size": "md" } },
+      "confirmNotice": { "type": "Text", "props": { "text": { "$state": "/cfg/notice" }, "tone": "warn", "size": "body" }, "visible": { "$state": "/cfg/notice" } },
+      "confirmActions": { "type": "Row", "props": { "gap": "sm" }, "children": ["confirmButton", "cancelButton"] },
+      "confirmButton": {
+        "type": "Button",
+        "props": { "label": { "$state": "/t/confirmButton" }, "variant": "primary" },
+        "on": {
+          "press": [
+            { "action": "callTool", "params": { "tool": "wallet.cardSetMode", "input": { "mode": { "$state": "/pickCode" } }, "resultPath": "/result", "errorPath": "/error" } },
+            { "action": "setState", "params": { "statePath": "/pickName", "value": null } },
+            { "action": "callTool", "params": { "tool": "wallet.cardMode", "input": {}, "resultPath": "/cfg", "errorPath": "/error" } }
+          ]
+        }
+      },
+      "cancelButton": {
+        "type": "Button",
+        "props": { "label": { "$state": "/t/cancel" }, "variant": "ghost" },
+        "on": { "press": { "action": "setState", "params": { "statePath": "/pickName", "value": null } } }
+      },
+
+      "done": {
+        "type": "Text",
+        "props": { "text": { "$template": "${/t/switched1}${/result/mode}${/t/switched2}" }, "tone": "up", "size": "small" },
+        "visible": { "$state": "/result/changed" }
+      },
+      "error": { "type": "Text", "props": { "text": { "$state": "/error" }, "tone": "down", "size": "body" }, "visible": { "$state": "/error" } }
+    },
+    "state": { "cfg": null, "pickName": null, "pickCode": null, "pickCurrent": false, "result": null, "error": null }
+  }
+}

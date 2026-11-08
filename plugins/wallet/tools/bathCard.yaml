@@ -1,0 +1,90 @@
+# utilities/api.ts bathCard: the 浴卡充值 page init (pay/web/bath/queryBathFeeInfo: card number +
+# holder) and the latest bath top-ups from 我的订单 (/pay/web/order/pageOrderlist; a failure there
+# only empties the list). available: false (not an error) when the platform doesn't offer 浴卡充值
+# to this account (the list is per account, sometimes seasonal).
+title: 浴卡信息
+summary: 浴卡卡号、持卡人和最近几次充值
+description: "Bath card (浴卡) on the PKU payment platform: masked card number, holder name, and the latest bath-card top-ups (amount in yuan, time, status 待支付/已付款). available: false means the platform doesn't offer bath top-ups to this account right now (say so plainly; not an error, retrying won't help). The card balance is stored on the card chip and cannot be read online."
+effect: read
+limits: { requests: 70 }
+steps:
+  # utilities/api.ts listProjects: top-level projects plus one level of folders (the 更多应用
+  # page). Every folder (the platform has dozens; a cap hid 浴卡充值 when it sat in a later
+  # folder), up to 60; a folder that fails is skipped. Two `each` steps: one takes at most 50.
+  - let: init
+    request:
+      campus: cwpay
+      url: "${'pay/pay/cos/merchant/getProjectTypeAndProjectInfoListInit/' + SCHOOL}"
+      method: GET
+      contentType: '${JSON_CT}'
+    as: response
+  - check: payErr(init, '缴费项目') == null
+    error: ${payErr(init, '缴费项目')}
+  - let: folders
+    value: slice(foldersIn(payData(init) ?? []), 0, 60)
+  - let: nestedA
+    each: slice(folders, 0, 50)
+    concurrency: 4
+    steps: &folder
+      - let: got
+        value: "[]"
+      - try:
+          - let: r
+            request:
+              campus: cwpay
+              url: "${'pay/pay/cos/merchant/getProjectTypeAndProjectInfoList/' + item.id}"
+              method: GET
+              contentType: '${JSON_CT}'
+            as: response
+          - let: got
+            value: "payErr(r, '缴费项目') == null ? projectsIn([{ children: payData(r) ?? [] }], item.category) : []"
+        catch: []
+    return: got
+  - let: nestedB
+    each: slice(folders, 50, 60)
+    concurrency: 4
+    steps: *folder
+    return: got
+  - let: projects
+    value: concat(projectsIn(payData(init) ?? [], ''), flat(nestedA), flat(nestedB))
+  - let: project
+    value: find(projects, (p) => isBath(p))
+  - if: project == null
+    then:
+      - return: "{ available: false, cardNo: null, holder: null, recentTopUps: [], note: BATH_CLOSED, balance: null, balanceNote: BALANCE_NOTE }"
+  - check: account.username
+    error: 还没有登录校园账号
+  - let: info
+    request:
+      campus: cwpay
+      url: "${'pay/web/bath/queryBathFeeInfo/' + encode(account.username) + '/' + encode(project.id)}"
+      method: GET
+      contentType: '${JSON_CT}'
+    as: response
+  - check: payErr(info, '浴卡信息') == null
+    error: ${payErr(info, '浴卡信息')}
+  - let: orders
+    value: "null"
+  - try:
+      - let: o
+        request:
+          campus: cwpay
+          url: /pay/web/order/pageOrderlist
+          method: POST
+          contentType: '${JSON_CT}'
+          body: "${str({ pageCurrent: 1, pageSize: 20, projectName: '', projectId: project.id, displayStatus: '', startCreateDate: '', endCreateDate: '', schoolCode: SCHOOL })}"
+        as: response
+      - let: orders
+        value: "payErr(o, '订单记录') == null ? payData(o) : null"
+    catch: []
+  - let: data
+    value: payData(info)
+return: |
+  {
+    available: true,
+    cardNo: maskId(data?.idserial),
+    holder: clean(data?.username, 20) || null,
+    recentTopUps: topUps(orders),
+    balance: null,
+    balanceNote: BALANCE_NOTE,
+  }

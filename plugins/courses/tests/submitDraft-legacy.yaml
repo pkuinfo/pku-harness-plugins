@@ -1,0 +1,33 @@
+# The TS plugin’s draft (plain kv submit.draft, no files/rev) still opens; rev falls back to savedAt.
+tool: submitDraft
+now: 2026-10-20 12:00
+kv:
+  submit.draft:
+    courseId: _8001_1
+    contentId: _11_1
+    title: 作业一
+    text: "  草稿  "
+    savedAt: 1792465200000
+responses:
+  - match: action=newAttempt&content_id=_11_1&
+    campus: blackboard
+    file: assignment-submit.html
+  - match: mode=view&content_id=_11_1&
+    campus: blackboard
+    body: <html></html>
+expect:
+  has: true
+  courseId: _8001_1
+  contentId: _11_1
+  rev: 1792465200000
+  title: 作业二
+  course: null
+  due: 2026-11-03 23:59
+  closed: false
+  attempt: null
+  detailError: null
+  text: 草稿
+  comment: ""
+  files: []
+  hasFiles: false
+  canSubmit: true

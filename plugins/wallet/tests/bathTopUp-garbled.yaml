@@ -1,0 +1,6 @@
+# Two points: not a number.
+tool: bathTopUp
+input:
+  custom: 1.2.3
+responses: []
+expectError: 请输入充值金额

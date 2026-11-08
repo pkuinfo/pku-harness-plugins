@@ -1,0 +1,18 @@
+# td_name / td_value pairs, full-width spaces removed; a name without a value is skipped. (expected: the TypeScript tool on the same responses)
+tool: netfeeBalance
+responses:
+  - match: itsUtil?operation=info
+    campus: its
+    body: |-
+      <table class="itsutil_account"><tr><td class="td_name">余　　额：</td><td class="td_value">36.50元</td>
+        <td class="td_name">本月使用</td><td class="td_value"><span>41.2 GB</span></td></tr>
+        <tr><td class="td_name">本月费用：</td><td class="td_value">10元</td><td class="td_name">账户状态</td><td class="td_name">孤立</td><td class="td_value">正常&nbsp;使用</td></tr></table>
+expect:
+  balance: 36.5
+  monthlyUsage: 41.2GB
+  monthlyFee: 10
+  fields:
+    余额: 36.50元
+    本月使用: 41.2GB
+    本月费用: 10元
+    孤立: 正常使用

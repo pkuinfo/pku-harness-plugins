@@ -1,0 +1,34 @@
+title: 课程回放
+summary: 各门课的课程回放列表
+description: "Lecture recordings (课程回放) of current courses or one course: title, recording time, teacher and the 教学网 page link. Metadata only; recordings cannot be played or downloaded here (the user plays them in the 课程回放 screen, /回放)."
+effect: read
+input:
+  courseId: { type: string, optional: true, description: from courses__list; default all current courses }
+  newest: { type: boolean, optional: true, description: newest first (for the 课程回放 screen); default oldest first per course }
+steps:
+  - let: all
+    call: list
+    input: "{ all: !!input.courseId }"
+  - let: picked
+    value: "input.courseId ? all.filter(c => c.id == input.courseId) : all"
+  - check: "!input.courseId || length(picked) > 0"
+    error: 没有这门课：${input.courseId}
+  # One course: surface its error; across courses, skip the ones that fail.
+  - let: lists
+    each: picked
+    concurrency: 3
+    steps:
+      - try:
+          - let: r
+            request: { campus: blackboard, url: '${videoListUrl(item.id)}' }
+            as: response
+          - check: r.status < 400
+            error: 教学网返回 HTTP ${r.status}
+          - return: "videos(html(r.text)).map(v => merge({ course: item.name, courseId: item.id }, v))"
+        catch:
+          - check: "!input.courseId"
+            error: ${error.message}
+          - return: "[]"
+  - let: list
+    value: "flat(lists).map(v => merge(v, { url: redact(v.url) }))"
+return: "input.newest ? sortBy(list, v => v.time, true) : list"

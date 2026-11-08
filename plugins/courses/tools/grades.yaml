@@ -1,0 +1,30 @@
+title: 我的成绩
+summary: 教学网「我的成绩」里每门课的分数
+description: "Grades from Blackboard's 我的成绩 page per course: each graded column (assignment, quiz, total) with score, points possible, status and date. Current courses, or one course (any semester) with courseId. Not the official transcript (教务成绩); teachers may not publish grades here."
+effect: read
+input:
+  courseId: { type: string, optional: true, description: from courses__list; default all current courses }
+steps:
+  - let: all
+    call: list
+    input: "{ all: !!input.courseId }"
+  - let: picked
+    value: "input.courseId ? all.filter(c => c.id == input.courseId) : all"
+  - check: "!input.courseId || length(picked) > 0"
+    error: 没有这门课：${input.courseId}
+  - let: lists
+    each: picked
+    concurrency: 3
+    steps:
+      - try:
+          - let: r
+            request: { campus: blackboard, url: '${gradesPath(item.id)}' }
+            as: response
+          - check: r.status < 400
+            error: 教学网返回 HTTP ${r.status}
+          - return: "{ course: item.name, courseId: item.id, items: gradeRows(html(r.text)) }"
+        catch:
+          - check: "!input.courseId"
+            error: ${error.message}
+          - return: "{ course: item.name, courseId: item.id, items: [], error: error.message }"
+return: "lists.map(l => merge(l, { items: l.items.map(i => merge(i, { title: cut(i.title, 120) })) }))"

@@ -1,0 +1,10 @@
+# No content listings in the course menu.
+tool: content
+input:
+  courseId: _8001_1
+now: 2026-10-20 12:00
+responses:
+  - match: course_id=_8001_1&handle=announcements_entry
+    campus: blackboard
+    body: <ul id="courseMenuPalette_contents"><li><a href="/webapps/blackboard/execute/announcement">公告</a></li></ul>
+expectError: 这门课没有可浏览的内容目录

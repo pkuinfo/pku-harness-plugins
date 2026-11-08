@@ -1,0 +1,28 @@
+# Masked card number, holder, bath top-ups only (fixtures from the TS parse tests). (expected: the TypeScript tool on the same responses)
+tool: bathCard
+responses:
+  - match: getProjectTypeAndProjectInfoListInit/10001
+    campus: cwpay
+    file: cwpay-projects.json
+  - match: getProjectTypeAndProjectInfoList/f-more
+    campus: cwpay
+    body:
+      messageCode: "0"
+      message: 成功
+      data: []
+  - match: queryBathFeeInfo/2000000000/p-bath
+    campus: cwpay
+    file: cwpay-bath-info.json
+  - match: pageOrderlist
+    campus: cwpay
+    file: cwpay-orders.json
+expect:
+  available: true
+  cardNo: 2000****45
+  holder: 张三
+  recentTopUps:
+    - amount: 50
+      createdAt: 2026-10-20 08:12:00
+      status: 已付款
+  balance: null
+  balanceNote: 浴卡余额在卡片芯片里，线上查不到；在浴卡转存机或洗浴时可看到。

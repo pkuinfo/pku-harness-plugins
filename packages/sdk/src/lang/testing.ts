@@ -12,7 +12,7 @@ import type { TestDoc } from './schema';
  */
 
 export type Recorded = NonNullable<TestDoc['responses']>[number] & { text?: string };
-export type SeenRequest = { campus?: string; url: string; method: string; body?: string; multipart?: CampusMultipart; headers: Record<string, string> };
+export type SeenRequest = { campus?: string; url: string; method: string; body?: string; form?: Record<string, string>; multipart?: CampusMultipart; headers: Record<string, string> };
 
 export function memoryKV(init: Record<string, unknown> = {}): KV & { data: Map<string, unknown> } {
   const data = new Map<string, unknown>(Object.entries(init));
@@ -43,7 +43,12 @@ export function replayEnv(doc: PluginDocument, responses: Recorded[], opts: { no
     campus: {
       ...(opts.services?.campus ?? {}),
       request: async (service: string, req: CampusRequest) => {
-        seen.push({ campus: service, url: req.url, method: req.method ?? 'GET', body: typeof req.body === 'string' ? req.body : undefined, multipart: req.multipart, headers: req.headers ?? {} });
+        // Like the app: authIn 'form' adds the session token to the form, then `sign` runs on it.
+        let form = req.form;
+        if (form && req.authIn === 'form') form = { ...form, 'synjones-auth': 'bearer test-token' };
+        if (form && req.sign) form = await req.sign(form);
+        const body = form ? new URLSearchParams(form).toString() : typeof req.body === 'string' ? req.body : undefined;
+        seen.push({ campus: service, url: req.url, method: req.method ?? 'GET', body, form, multipart: req.multipart, headers: req.headers ?? {} });
         return take(service, req.url);
       },
       otp: opts.services?.campus?.otp ?? (async () => null),

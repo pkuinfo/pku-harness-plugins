@@ -1,0 +1,58 @@
+# One recording in the system browser (api.ts playbackUrl, api.rs get_video_detail): the course's
+# recording list gives the unredacted play page; play page → player iframe (its redirects end on a
+# URL with 智云 ids + auth_data) → yjapise sub-info → signed m3u8. The URL goes to the browser only,
+# never into the result, so it never reaches the model.
+title: 播放课程回放
+summary: 在浏览器里播放一节课的回放
+description: Plays one lecture recording in the browser (the 课程回放 screen's rows). Taps only.
+effect: read
+userOnly: true
+input:
+  courseId: { type: string }
+  url: { type: string, description: the recording's link as courses__videos returns it }
+steps:
+  - let: list
+    request: { campus: blackboard, url: '${videoListUrl(input.courseId)}' }
+    as: response
+  - check: list.status < 400
+    error: 教学网返回 HTTP ${list.status}
+  - let: video
+    value: "find(videos(html(list.text)), v => v.url && (redact(v.url) == input.url || v.url == input.url))"
+  - check: video != null
+    error: 没有找到这个回放，请刷新列表
+  - check: startsWith(video.url, BB + '/')
+    error: 不是教学网的回放链接
+  - let: playPage
+    request: { campus: blackboard, url: '${video.url}' }
+    as: response
+  - check: playPage.status < 400
+    error: 教学网返回 HTTP ${playPage.status}
+  - let: iframe
+    value: iframeOf(html(playPage.text))
+  - check: iframe != null
+    error: 回放页面里没有找到播放器
+  - let: player
+    request: { campus: blackboard, url: '${iframe}' }
+    as: response
+  - let: params
+    value: playParams(player.url)
+  - check: params != null
+    error: 回放播放器没有返回播放参数
+  - let: info
+    request: { campus: blackboard, url: '${subInfoUrl(params)}', headers: { accept: 'application/json, text/plain, */*' } }
+    as: response
+  - check: info.status < 400
+    error: 获取回放信息失败（HTTP ${info.status}）
+  - let: raw
+    value: "json(info.text).list?.[0]?.sub_content ?? null"
+  - check: raw
+    error: 这节课没有回放数据
+  - let: pb
+    value: json(raw).save_playback ?? null
+  - check: pb?.contents
+    error: 这节课的回放还没有生成
+  - check: pb.is_m3u8 == 'yes'
+    error: 不支持的回放格式
+  - ability: browser.open
+    args: "{ url: pb.contents }"
+return: "{ opened: true }"

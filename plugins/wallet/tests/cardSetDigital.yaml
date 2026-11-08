@@ -1,0 +1,27 @@
+# Switches 校园卡 → 数字卡 (setUseCardConfig; data may be null). (expected: the TypeScript tool on the same responses)
+tool: cardSetDigital
+responses:
+  - match: useCard/getUseCardConfig
+    campus: card
+    body:
+      code: 200
+      success: true
+      data:
+        cardType: "0"
+        cardTypes:
+          - name: 校园卡
+            code: 0
+          - name: 数字卡
+            code: 1
+          - name: NFC卡
+            code: 2
+  - match: useCard/setUseCardConfig
+    campus: card
+    body:
+      code: 200
+      success: true
+      data: null
+expect:
+  changed: true
+  from: 校园卡
+  mode: 数字卡

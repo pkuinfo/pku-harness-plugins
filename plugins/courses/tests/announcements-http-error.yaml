@@ -1,0 +1,15 @@
+# One failing course page fails the tool (as in TS).
+tool: announcements
+now: 2026-10-20 12:00
+responses:
+  - match: tabAction?tab_tab_group_id=_1_1
+    campus: blackboard
+    file: courses.html
+  - match: course_id=_8001_1&handle=announcements_entry
+    campus: blackboard
+    file: announcements.html
+  - match: course_id=_8002_1&handle=announcements_entry
+    campus: blackboard
+    status: 502
+    body: x
+expectError: 教学网返回 HTTP 502

@@ -1,0 +1,16 @@
+# The card has no account number. (expected: the TypeScript tool on the same responses)
+tool: cardRecharge
+input:
+  amount: 10
+responses:
+  - match: ykt/tsm/queryCard
+    campus: card
+    body:
+      code: 200
+      success: true
+      data:
+        card:
+          - lostflag: 0
+            freezeflag: 0
+            elec_accamt: 1
+expectError: 校园卡缺少账户信息

@@ -1,0 +1,56 @@
+# The assignment can’t be read: the draft still shows, with the reason.
+tool: submitDraft
+now: 2026-10-20 12:00
+kv:
+  doc:submit.draft:
+    v:
+      courseId: _8001_1
+      contentId: _11_1
+      title: 作业一
+      course: 高等数学
+      text: |-
+        第一段
+
+        第二段
+      comment: 谢谢老师
+      files:
+        - name: hw1.pdf
+          mime: application/pdf
+          uri: content://picker/1
+          size: 2048
+      savedAt: 1792465200000
+      rev: 1792468740000
+responses:
+  - match: action=newAttempt&content_id=_11_1&
+    campus: blackboard
+    status: 500
+    body: ""
+  - match: mode=view&content_id=_11_1&
+    campus: blackboard
+    status: 500
+    body: ""
+expect:
+  has: true
+  courseId: _8001_1
+  contentId: _11_1
+  rev: 1792468740000
+  title: 作业一
+  course: 高等数学
+  due: null
+  closed: false
+  attempt: null
+  detailError: 没有找到这个作业（检查 courseId / contentId，或稍后再试）
+  text: |-
+    第一段
+
+    第二段
+  comment: 谢谢老师
+  files:
+    - name: hw1.pdf
+      mime: application/pdf
+      uri: content://picker/1
+      size: 2048
+      sizeText: 2.0 KB
+      tooBig: false
+  hasFiles: true
+  canSubmit: true

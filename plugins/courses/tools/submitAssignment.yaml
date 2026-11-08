@@ -1,0 +1,42 @@
+# Called by the agent this only saves a draft: files and the final tap happen in the 交作业 screen
+# (screens/submit.json → chooseFiles, submit; both userOnly). Files the user already picked for the
+# same assignment are kept.
+title: 交作业
+summary: 准备交作业的草稿（文件和确认在交作业页面完成）
+description: "Submit to a Blackboard assignment. Always needs the user's own confirmation in the 交作业 screen: called by you, it only saves a draft (courseId, contentId, optional text you drafted) and returns needsUserConfirmation; then ask the user to type /交作业 to pick files (max 1), review and confirm there. Never claim it was submitted unless the user reports the receipt."
+# 'write', not 'public': it changes the user's own record in one course and is seen only by that
+# course's teachers. The irreversible part (submit) is userOnly.
+effect: write
+input:
+  courseId: { type: string, description: e.g. _8001_1 }
+  contentId: { type: string, description: 'assignment content id, e.g. _11_1' }
+  title: { type: string, optional: true, description: 'assignment title, for the draft' }
+  text: { type: string, max: 20000, optional: true, description: text submission (书面作业文字) }
+  comment: { type: string, max: 2000, optional: true, description: comment to the teacher }
+steps:
+  - let: old
+    kv: get
+    key: submit.draft
+    legacy: true
+  - let: same
+    value: fresh(old) && old.courseId == input.courseId && old.contentId == input.contentId
+  - kv: set
+    key: submit.draft
+    value: |
+      {
+        courseId: input.courseId,
+        contentId: input.contentId,
+        title: input.title ?? (same ? old.title : null),
+        course: same ? old.course ?? null : null,
+        text: input.text ?? null,
+        comment: input.comment ?? null,
+        files: same ? old.files ?? [] : [],
+        savedAt: now,
+        rev: now,
+      }
+return: |
+  {
+    submitted: false,
+    needsUserConfirmation: true,
+    message: '没有提交。已保存草稿：请用户在聊天里输入 /交作业 打开交作业页面，选择文件、核对内容后亲自点「确认提交」。',
+  }

@@ -2,6 +2,27 @@ import { parse as parseHtml, type HTMLElement } from 'node-html-parser';
 
 import { builtin, callFn, ExprError, getProp, isFn, PROPS, stringify, type EvalContext, type Fn } from './expr';
 
+// Attribute values decoded the way browsers do (HTML spec, "character reference in attribute
+// value"): a named reference without `;` followed by a letter, digit or `=` stays literal.
+// node-html-parser decodes `&timestamp=…` in a URL as `×tamp=…` (the legacy `&times`), which broke
+// Blackboard's player link. Legacy names a browser would still decode bare in a value.
+const LEGACY_BARE = new Set(['amp', 'lt', 'gt', 'quot', 'nbsp', 'copy', 'reg']);
+const quoteAttr = (s: string) => s.replace(/"/g, '&quot;');
+
+/** One attribute of an element, spec-decoded; null when absent. */
+export function attrOf(el: HTMLElement, name: string): string | null {
+  const raw = el.rawAttributes[name] ?? el.rawAttributes[name.toLowerCase()];
+  if (raw == null) return null;
+  if (!raw.includes('&')) return raw;
+  const safe = raw.replace(/&([A-Za-z][A-Za-z0-9]*)(?![A-Za-z0-9;])/g, (m, n: string, at: number, s: string) =>
+    LEGACY_BARE.has(n) && s[at + m.length] !== '=' ? m : `&amp;${n}`,
+  );
+  return parseHtml(`<i a="${quoteAttr(safe)}"></i>`).querySelector('i')?.getAttribute('a') ?? raw;
+}
+
+/** Every attribute of an element, spec-decoded. */
+const attrsOf = (el: HTMLElement) => Object.fromEntries(Object.keys(el.rawAttributes).map((k) => [k, attrOf(el, k)]));
+
 /**
  * The plugin language's standard library (docs/PLUGIN-LANGUAGE.md §6.2). Every function is pure
  * (no I/O, no clock except `now`, which the runner binds), so a tool run replays exactly from
@@ -28,7 +49,7 @@ export function wrapNode(el: HTMLElement, url?: string): object {
         case 'tag':
           return el.tagName?.toLowerCase() ?? '';
         case 'attrs':
-          return { ...el.attributes };
+          return attrsOf(el);
         case 'url':
           return url;
         default:
@@ -86,8 +107,8 @@ function tableRows(v: unknown, opts: { header?: boolean; cells?: boolean } = {})
     let c = 0;
     for (const cell of tr.querySelectorAll('th, td').filter((x) => x.parentNode === tr)) {
       while (grid[r]![c] !== undefined) c++;
-      const rs = Math.max(1, Math.min(50, Number(cell.getAttribute('rowspan')) || 1));
-      const cs = Math.max(1, Math.min(50, Number(cell.getAttribute('colspan')) || 1));
+      const rs = Math.max(1, Math.min(50, Number(attrOf(cell, 'rowspan')) || 1));
+      const cs = Math.max(1, Math.min(50, Number(attrOf(cell, 'colspan')) || 1));
       const info: Cell = { text: squash(cell.text), row: r, col: c, rowspan: rs, colspan: cs, id: id++ };
       for (let i = 0; i < rs; i++) for (let j = 0; j < cs; j++) (grid[r + i] ??= [])[c + j] = info;
       c += cs;
@@ -437,6 +458,8 @@ const fns: Record<string, Impl> = {
     }
   },
   base64: (_c, [s]) => base64(str(s)),
+  sha256: (_c, [s]) => sha256(str(s)),
+  randomId: (_c, a) => randomId(a.length ? Number(a[0]) : 16),
   unbase64: (_c, [s]) => unbase64(str(s)),
 
   // json
@@ -458,8 +481,8 @@ const fns: Record<string, Impl> = {
     const el = node(v, 'first').querySelector(str(css));
     return el ? wrapNode(el, baseOf(v)) : null;
   },
-  attr: (_c, [v, name]) => node(v, 'attr').getAttribute(str(name)) ?? null,
-  data: (_c, [v, name]) => node(v, 'data').getAttribute(`data-${str(name)}`) ?? null,
+  attr: (_c, [v, name]) => attrOf(node(v, 'attr'), str(name)),
+  data: (_c, [v, name]) => attrOf(node(v, 'data'), `data-${str(name)}`),
   text: (_c, [v]) => (typeof v === 'string' ? squash(parseHtml(v).text) : squash(node(v, 'text').text)),
   children: (_c, [v]) =>
     node(v, 'children')
@@ -473,7 +496,7 @@ const fns: Record<string, Impl> = {
   options: (_c, [v]) =>
     node(v, 'options')
       .querySelectorAll('option')
-      .map((o) => ({ value: o.getAttribute('value') ?? squash(o.text), label: squash(o.text), selected: o.getAttribute('selected') != null })),
+      .map((o) => ({ value: attrOf(o, 'value') ?? squash(o.text), label: squash(o.text), selected: attrOf(o, 'selected') != null })),
   htmlText: (_c, [s]) => squash(parseHtml(str(s)).text),
   /** Text with line breaks kept: block elements and <br> become newlines, blank runs collapse. */
   htmlLines: (_c, [v]) => htmlLines(typeof v === 'string' ? v : node(v, 'htmlLines').innerHTML),
@@ -490,6 +513,65 @@ const fns: Record<string, Impl> = {
   typeOf: (_c, [x]) => (x === null ? 'null' : Array.isArray(x) ? 'list' : isNode(x) ? 'node' : typeof x),
 };
 
+
+// ---------------------------------------------------------------- sha256, random ids
+
+const K256 = [
+  0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5, 0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+  0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da, 0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+  0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85, 0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+  0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3, 0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
+];
+
+/** SHA-256 of the UTF-8 text, lowercase hex (request signatures; sync, so it works inside `sign`). */
+export function sha256(s: string): string {
+  const bytes = utf8(s);
+  const len = bytes.length;
+  bytes.push(0x80);
+  while (bytes.length % 64 !== 56) bytes.push(0);
+  const bits = len * 8;
+  for (let i = 7; i >= 0; i--) bytes.push(i >= 4 ? Math.floor(bits / 2 ** (8 * i)) & 0xff : (bits >>> (8 * i)) & 0xff);
+  const h = [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19];
+  const w = new Array<number>(64);
+  const rotr = (x: number, n: number) => (x >>> n) | (x << (32 - n));
+  for (let o = 0; o < bytes.length; o += 64) {
+    for (let i = 0; i < 16; i++) w[i] = (bytes[o + 4 * i]! << 24) | (bytes[o + 4 * i + 1]! << 16) | (bytes[o + 4 * i + 2]! << 8) | bytes[o + 4 * i + 3]!;
+    for (let i = 16; i < 64; i++) {
+      const s0 = rotr(w[i - 15]!, 7) ^ rotr(w[i - 15]!, 18) ^ (w[i - 15]! >>> 3);
+      const s1 = rotr(w[i - 2]!, 17) ^ rotr(w[i - 2]!, 19) ^ (w[i - 2]! >>> 10);
+      w[i] = (w[i - 16]! + s0 + w[i - 7]! + s1) | 0;
+    }
+    let [a, b, c, d, e, f, g, k] = h as [number, number, number, number, number, number, number, number];
+    for (let i = 0; i < 64; i++) {
+      const t1 = (k + (rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25)) + ((e & f) ^ (~e & g)) + K256[i]! + w[i]!) | 0;
+      const t2 = ((rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22)) + ((a & b) ^ (a & c) ^ (b & c))) | 0;
+      k = g;
+      g = f;
+      f = e;
+      e = (d + t1) | 0;
+      d = c;
+      c = b;
+      b = a;
+      a = (t1 + t2) | 0;
+    }
+    [a, b, c, d, e, f, g, k].forEach((v, i) => (h[i] = (h[i]! + v) | 0));
+  }
+  return h.map((v) => (v >>> 0).toString(16).padStart(8, '0')).join('');
+}
+
+/**
+ * `n` random characters from 0-9a-z (request nonces, not secrets): the platform's secure source
+ * when it has one. Hermes (the app) has no `crypto`, so Math.random there, as pkucli's nonce does.
+ */
+function randomId(n: number): string {
+  const len = Math.max(1, Math.min(64, Math.floor(n) || 16));
+  const bytes = new Uint8Array(len);
+  const c = (globalThis as { crypto?: { getRandomValues?: (a: Uint8Array) => Uint8Array } }).crypto;
+  if (typeof c?.getRandomValues === 'function') c.getRandomValues(bytes);
+  else for (let i = 0; i < len; i++) bytes[i] = Math.floor(Math.random() * 256);
+  const abc = '0123456789abcdefghijklmnopqrstuvwxyz';
+  return Array.from(bytes, (b) => abc[b % 36]).join('');
+}
 
 const B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 

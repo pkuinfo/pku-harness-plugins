@@ -1,0 +1,22 @@
+# Not JSON: the HTTP status is the reason. (expected: the TypeScript tool on the same responses)
+tool: cardSetDigital
+responses:
+  - match: useCard/getUseCardConfig
+    campus: card
+    body:
+      code: 200
+      success: true
+      data:
+        cardType: "0"
+        cardTypes:
+          - name: 校园卡
+            code: 0
+          - name: 数字卡
+            code: 1
+          - name: NFC卡
+            code: 2
+  - match: useCard/setUseCardConfig
+    campus: card
+    status: 500
+    body: oops
+expectError: 切换用卡方式失败：HTTP 500

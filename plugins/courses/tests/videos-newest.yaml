@@ -1,0 +1,26 @@
+# newest: true (the 课程回放 screen) sorts by time, newest first.
+tool: videos
+input:
+  courseId: _8001_1
+  newest: true
+now: 2026-10-20 12:00
+responses:
+  - match: tabAction?tab_tab_group_id=_1_1
+    campus: blackboard
+    file: courses.html
+  - match: course_id=_8001_1&mode=view
+    campus: blackboard
+    file: videos.html
+expect:
+  - course: 高等数学
+    courseId: _8001_1
+    title: 高等数学 第4周 周二
+    time: 2026-09-29 08:00
+    teacher: 王老师
+    url: https://course.pku.edu.cn/webapps/bb-streammedia-hqy-BBLEARN/videoPlay.action?course_id=_8001_1&sub_id=2
+  - course: 高等数学
+    courseId: _8001_1
+    title: 高等数学 第3周 周二
+    time: 2026-09-22 08:00
+    teacher: 王老师
+    url: https://course.pku.edu.cn/webapps/bb-streammedia-hqy-BBLEARN/videoPlay.action?course_id=_8001_1&sub_id=1

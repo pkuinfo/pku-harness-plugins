@@ -1,0 +1,35 @@
+# Start from one folder: no menu request, empty path.
+tool: content
+input:
+  courseId: _8001_1
+  folderId: _3_1
+now: 2026-10-20 12:00
+responses:
+  - match: content_id=_3_1&course_id=_8001_1
+    campus: blackboard
+    file: folder-ch2.html
+expect:
+  truncated: false
+  pages: 1
+  items:
+    - contentId: _11_1
+      title: 作业一
+      type: assignment
+      path: ""
+      description: 第一章习题
+      url: https://course.pku.edu.cn/webapps/assignment/uploadAssignment?content_id=_11_1&course_id=_8001_1
+      attachments: []
+    - contentId: _12_1
+      title: 作业二
+      type: assignment
+      path: ""
+      description: ""
+      url: https://course.pku.edu.cn/webapps/assignment/uploadAssignment?content_id=_12_1&course_id=_8001_1
+      attachments: []
+    - contentId: _13_1
+      title: 作业零
+      type: assignment
+      path: ""
+      description: ""
+      url: https://course.pku.edu.cn/webapps/assignment/uploadAssignment?content_id=_13_1&course_id=_8001_1
+      attachments: []

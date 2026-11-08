@@ -1,0 +1,6 @@
+# Zero is refused.
+tool: cardTopUp
+input:
+  custom: "0"
+responses: []
+expectError: 充值金额是 1–1000 的整数

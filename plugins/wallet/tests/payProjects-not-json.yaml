@@ -1,0 +1,7 @@
+# A 200 that isn’t JSON. (expected: the TypeScript tool on the same responses)
+tool: payProjects
+responses:
+  - match: getProjectTypeAndProjectInfoListInit/10001
+    campus: cwpay
+    body: <html>login</html>
+expectError: 收费平台返回了无法识别的内容（缴费项目）

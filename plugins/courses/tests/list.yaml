@@ -1,0 +1,16 @@
+# Current-semester portlet only; links without key= are skipped (parse.test.ts parseCourses).
+tool: list
+now: 2026-10-20 12:00
+responses:
+  - match: tabAction?tab_tab_group_id=_1_1
+    campus: blackboard
+    file: courses.html
+expect:
+  - id: _8001_1
+    title: 高等数学 (2026秋)
+    name: 高等数学
+    current: true
+  - id: _8002_1
+    title: 普通物理 (2026秋)
+    name: 普通物理
+    current: true

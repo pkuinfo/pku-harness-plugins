@@ -7,6 +7,32 @@ export const TTL_PRESETS = ['10m', '30m', '2h', 'today'] as const;
 export type TtlPreset = (typeof TTL_PRESETS)[number];
 export const CAP_PRESETS = [20, 50, 100, 200] as const;
 
+// Cloud error codes (cloud-protocol wireErrorCode) → what the user reads; the raw message is logged.
+const zhCloud: Record<string, string> = {
+  bad_request: '云服务拒绝了这个请求，可能需要更新 App 或云服务。',
+  unauthorized: '云服务的登录已失效，请稍后再试。',
+  forbidden: '云服务不允许这个操作。',
+  not_found: '这个分享已结束或不存在。',
+  gone: '这个分享已结束或不存在。',
+  conflict: '分享状态刚刚变化，请再试一次。',
+  unsupported: '当前云服务不支持付款码共享，请在 设置 → 云服务 里换一个。',
+  rate_limited: '操作太频繁，请稍后再试。',
+  quota: '已达到云服务今天的用量上限，请明天再试。',
+  server: '云服务暂时出错，请稍后再试。',
+};
+const enCloud: Record<string, string> = {
+  bad_request: 'The cloud service refused this request. The app or the service may need an update.',
+  unauthorized: 'The cloud sign-in expired. Try again in a moment.',
+  forbidden: 'The cloud service doesn’t allow this.',
+  not_found: 'This share has ended or doesn’t exist.',
+  gone: 'This share has ended or doesn’t exist.',
+  conflict: 'The share just changed. Try again.',
+  unsupported: 'This cloud service doesn’t support sharing payment codes. Choose another in Settings → Cloud.',
+  rate_limited: 'Too many tries. Wait a moment and try again.',
+  quota: 'The cloud service’s daily limit is reached. Try again tomorrow.',
+  server: 'The cloud service had a problem. Try again in a moment.',
+};
+
 const zhEnd: Record<EndReason, string> = {
   owner: '你已停止',
   expired: '已到期',
@@ -67,6 +93,7 @@ export const strings = defineStrings({
     notDigital: (current: string) => `付款码只能在「数字卡」用卡方式下使用，你现在是「${current}」。`,
     openPay: '去切换',
     pinInvalid: '口令需要 4–8 位数字',
+    cloudError: (code: string) => zhCloud[code] ?? `云服务出错（${code}），请稍后再试。`,
     // active
     activeTitle: '共享中',
     left: (t: string) => `剩 ${t}`,
@@ -160,6 +187,7 @@ export const strings = defineStrings({
     notDigital: (current: string) => `Payment codes only work in digital card mode (数字卡); you’re using “${current}”.`,
     openPay: 'Switch',
     pinInvalid: 'The PIN must be 4–8 digits',
+    cloudError: (code: string) => enCloud[code] ?? `The cloud service failed (${code}). Try again in a moment.`,
     activeTitle: 'Sharing',
     left: (t: string) => `${t} left`,
     noShares: 'Nothing is being shared',

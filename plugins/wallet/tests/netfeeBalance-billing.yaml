@@ -1,0 +1,11 @@
+# No cells: the billing text on the home page. (expected: the TypeScript tool on the same responses)
+tool: netfeeBalance
+responses:
+  - match: itsUtil?operation=info
+    campus: its
+    body: "<div>账户余额：12.34 元</div><p>本月流量: 3.5 GB 本月费用：10 元</p>"
+expect:
+  balance: 12.34
+  monthlyUsage: 3.5 GB
+  monthlyFee: 10
+  fields: {}

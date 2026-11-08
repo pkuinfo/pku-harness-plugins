@@ -1,0 +1,63 @@
+# Projects with categories and kind labels; folders one level deep. (expected: the TypeScript tool on the same responses)
+tool: payProjects
+responses:
+  - match: getProjectTypeAndProjectInfoListInit/10001
+    campus: cwpay
+    body:
+      messageCode: "0"
+      message: 成功
+      data:
+        - id: t1
+          name: 学生缴费
+          children:
+            - id: p-tuition
+              projectName: 学费住宿费
+              proModelUrl: tuitionAndDorm
+              type: "0"
+            - id: f-more
+              name: 其他
+              type: "1"
+        - id: t2
+          name: <b>生活服务</b>
+          children:
+            - id: p-net
+              projectName: 网费充值
+              proModelUrl: net
+              type: "0"
+            - id: 7
+              projectName: 供暖费
+              proModelUrl: heating
+              type: "0"
+            - projectName: no id
+  - match: getProjectTypeAndProjectInfoList/f-more
+    campus: cwpay
+    body:
+      messageCode: "0"
+      message: 成功
+      data:
+        - id: p-bath2
+          projectName: 学生浴卡充值
+          proModelUrl: common
+          type: "0"
+        - id: p-x
+          projectName: 会议费
+          proModelUrl: meeting
+          type: "0"
+expect:
+  count: 5
+  projects:
+    - name: 学费住宿费
+      category: 学生缴费
+      kind: 学费住宿费
+    - name: 网费充值
+      category: 生活服务
+      kind: 网费
+    - name: 供暖费
+      category: 生活服务
+      kind: 供暖费
+    - name: 学生浴卡充值
+      category: 学生缴费>其他
+      kind: 通用缴费
+    - name: 会议费
+      category: 学生缴费>其他
+      kind: meeting

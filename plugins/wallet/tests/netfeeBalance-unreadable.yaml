@@ -1,0 +1,7 @@
+# Neither cells nor billing text. (expected: the TypeScript tool on the same responses)
+tool: netfeeBalance
+responses:
+  - match: itsUtil?operation=info
+    campus: its
+    body: <html><body>请登录</body></html>
+expectError: 没能读到网费信息，页面结构可能变了

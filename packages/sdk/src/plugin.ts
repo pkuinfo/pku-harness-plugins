@@ -327,6 +327,12 @@ export interface ToolDef<I extends z.ZodType = z.ZodType, O = unknown> {
    * scheduler calls are refused. For gates the agent must not open itself (approving a memory).
    */
   userOnly?: boolean;
+  /**
+   * The result describes the current wall-clock day (in the app's clock zone): "today", this
+   * teaching week, today's classes. Widgets must not paint a cached result fetched on an earlier
+   * day (keep it only as the offline fallback when a fresh fetch fails).
+   */
+  dayScoped?: boolean;
   execute: (input: z.infer<I>, ctx: ToolContext) => Promise<O>;
 }
 

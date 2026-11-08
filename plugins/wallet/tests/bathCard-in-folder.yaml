@@ -1,0 +1,63 @@
+# The bath project found by name inside a folder; orders fail → no top-ups. (expected: the TypeScript tool on the same responses)
+tool: bathCard
+responses:
+  - match: getProjectTypeAndProjectInfoListInit/10001
+    campus: cwpay
+    body:
+      messageCode: "0"
+      message: 成功
+      data:
+        - id: t1
+          name: 学生缴费
+          children:
+            - id: p-tuition
+              projectName: 学费住宿费
+              proModelUrl: tuitionAndDorm
+              type: "0"
+            - id: f-more
+              name: 其他
+              type: "1"
+        - id: t2
+          name: <b>生活服务</b>
+          children:
+            - id: p-net
+              projectName: 网费充值
+              proModelUrl: net
+              type: "0"
+            - id: 7
+              projectName: 供暖费
+              proModelUrl: heating
+              type: "0"
+            - projectName: no id
+  - match: getProjectTypeAndProjectInfoList/f-more
+    campus: cwpay
+    body:
+      messageCode: "0"
+      message: 成功
+      data:
+        - id: p-bath2
+          projectName: 学生浴卡充值
+          proModelUrl: common
+          type: "0"
+        - id: p-x
+          projectName: 会议费
+          proModelUrl: meeting
+          type: "0"
+  - match: queryBathFeeInfo/2000000000/p-bath2
+    campus: cwpay
+    body:
+      messageCode: "0"
+      message: 成功
+      data:
+        idserial: "123456"
+        username: " <i>王五</i> "
+  - match: pageOrderlist
+    campus: cwpay
+    file: cwpay-error.json
+expect:
+  available: true
+  cardNo: 12**56
+  holder: 王五
+  recentTopUps: []
+  balance: null
+  balanceNote: 浴卡余额在卡片芯片里，线上查不到；在浴卡转存机或洗浴时可看到。

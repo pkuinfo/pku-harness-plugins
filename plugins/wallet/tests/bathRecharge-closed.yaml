@@ -1,0 +1,44 @@
+# No bath project: the platform doesn’t offer it. (expected: the TypeScript tool on the same responses)
+tool: bathRecharge
+input:
+  amount: 50
+responses:
+  - match: getProjectTypeAndProjectInfoListInit/10001
+    campus: cwpay
+    body:
+      messageCode: "0"
+      message: 成功
+      data:
+        - id: t1
+          name: 学生缴费
+          children:
+            - id: p-tuition
+              projectName: 学费住宿费
+              proModelUrl: tuitionAndDorm
+              type: "0"
+            - id: f-more
+              name: 其他
+              type: "1"
+        - id: t2
+          name: <b>生活服务</b>
+          children:
+            - id: p-net
+              projectName: 网费充值
+              proModelUrl: net
+              type: "0"
+            - id: 7
+              projectName: 供暖费
+              proModelUrl: heating
+              type: "0"
+            - projectName: no id
+  - match: getProjectTypeAndProjectInfoList/f-more
+    campus: cwpay
+    body:
+      messageCode: "0"
+      message: 成功
+      data:
+        - id: p-x
+          projectName: 会议费
+          proModelUrl: meeting
+          type: "0"
+expectError: 收费平台目前没有为你的账号开放浴卡充值（项目列表里没有这一项）

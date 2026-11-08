@@ -1,0 +1,52 @@
+# The 交作业 screen's edits: choose the assignment (from the 选择作业 list), change the text or
+# comment, remove the file, or drop the draft.
+title: 修改交作业草稿
+summary: 换作业、改文字或移除文件
+description: Changes the submission draft from the 交作业 screen (assignment, text, comment, files). Taps only.
+effect: read
+userOnly: true
+input:
+  courseId: { type: string, optional: true }
+  contentId: { type: string, optional: true }
+  title: { type: string, optional: true }
+  course: { type: string, optional: true }
+  text: { type: string, max: 20000, optional: true }
+  comment: { type: string, max: 2000, optional: true }
+  clearFiles: { type: boolean, optional: true }
+  clear: { type: boolean, optional: true }
+steps:
+  - if: input.clear
+    then:
+      # null (not delete): the TS-era key under the same name must not come back.
+      - kv: set
+        key: submit.draft
+        value: "null"
+      - return: "{ has: false }"
+  - let: old
+    kv: get
+    key: submit.draft
+    legacy: true
+  - let: target
+    value: "input.courseId && input.contentId"
+  - let: same
+    value: "fresh(old) && (!target || (old.courseId == input.courseId && old.contentId == input.contentId))"
+  - check: same || target
+    error: 先选择要提交的作业
+  - let: base
+    value: |
+      same ? old : { courseId: input.courseId, contentId: input.contentId, title: null, course: null, text: null, comment: null, files: [] }
+  - let: d
+    value: |
+      merge(base, {
+        title: input.title ?? base.title ?? null,
+        course: input.course ?? base.course ?? null,
+        text: input.text ?? base.text ?? null,
+        comment: input.comment ?? base.comment ?? null,
+        files: input.clearFiles ? [] : base.files ?? [],
+        savedAt: now,
+        rev: now,
+      })
+  - kv: set
+    key: submit.draft
+    value: d
+return: "{ has: true, rev: d.rev }"

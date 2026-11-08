@@ -15,17 +15,18 @@ optional: icon, homepage, shared: shared.yaml ({ constants, functions } every to
 HTTPS hosts), abilities: [verify|otp|todos|timetable|scheduler|browser|campusPage|sms|files|crypto|cloud],
 tools: { name: tools/name.yaml }, dataSources: { name: { tool, args?, ttl: 10m } },
 widgets: { name: widgets/name.json }, screens, settings, commands: { name: { description, prompt: "...{{input}}" | screen: name } },
-i18n: { en: { name, description, tools: { name: { title } } } }
+i18n: { en: { name, description, tools: { name: { title } } } }, legacy: { pluginIds, tools: { 'old.tool': tool }, widgets } (verified plugins: carry over saved ids)
 
 ## Tool file (YAML)
 title (short, Chinese) · summary (one short line for people, shown before install; translate in i18n.en.tools.<name>.summary) · description (for the AI, never shown to users) · effect: read|write|money|public ·
-untrusted?: true when results carry third-party text · input: { field: { type: string|number|integer|boolean|array|object, enum?, default?, optional?, min?, max?, pattern?, trim?, description? } } ·
+untrusted?: true when results carry third-party text · dayScoped?: true when the result is about today (widgets never show yesterday's cache) · input: { field: { type: string|number|integer|boolean|array|object, enum?, default?, optional?, min?, max?, pattern?, trim?, description? } } ·
 constants: { NAME: data } · functions: { f: "(a, b) => expr" } · steps: [...] · return: expr · limits?: { requests ≤ 200, seconds ≤ 120 }
 
 ## Steps (run in order; \`let: name\` binds the result)
 - { let, value: expr }
 - { let, request: { campus?: service, url, method?, query?, headers?, json? | form? | body?+contentType? | multipart?, timeout?, maxSize? }, as: json|text|html|response }
   campus url = path on that service; public url must be https on a network host. html → a node for select().
+  authIn: form (campus): the host adds the session token to form; sign: { field, suffix?, case?: upper, exclude? } sets field = sha256 of the sorted non-empty k=v& pairs + suffix (the plugin never sees the token).
   multipart (campus POST only): { fields: { k: v } | [[k, v], ...], files: [{ field, uri, name? }] }; each uri must be a file the user picked (files.pick). The tool needs userOnly: true.
 - { let, each: listExpr, concurrency?: 1–4, request | steps + return | value }  (item, index in scope; ≤ 50 items)
 - { let, paginate: { start?, request (uses cursor), items: expr (page), next: expr (null stops), max ≤ 30 (number or expr) } }
@@ -57,6 +58,7 @@ regexes are strings; start with (?i) for case-insensitive. // and /* */ comments
 strings: str trim squash lower upper split replace(s, re, with) replaceText match(s, re, group?) matchAll matchAt (with index) test startsWith endsWith padStart clip(s, n) fmt('{a}', obj)
 numbers: num(x, fallback) int round(x, digits) fixed abs floor ceil yuan(fen)
 dates (Beijing time, ms): date(text) formatDate(ms, 'YYYY-MM-DD HH:mm W') addDays addMinutes daysBetween startOfDay minutesOf('HH:mm'|ms) weekday (1=Mon)
+crypto: sha256(s) (hex) randomId(n = 16) (0-9a-z, for nonces)
 urls/json: url(base, path) query(url, name) encode decode base64(s) unbase64(s) (UTF-8) json(text, fallback?) (fallback instead of an error when not JSON) path(v, 'a.b[0]')
 html: html(text, url?) select(node, css) first(node, css) node.text node.html node.attrs attr(node, name) data(node, name) children parent tableRows(node, {header, cells}) options(select) htmlText(s) htmlLines(node|s) without(node, css) largestText(node)
 
@@ -65,7 +67,8 @@ html: html(text, url?) select(node, css) first(node, css) node.text node.html no
 
 ## Widgets / screens (JSON)
 { title, description?, sizes?: [sm,md,lg], secure?: { brightness? } (screens: no screenshots; payment codes), spec: { root, elements: { id: { type, props, children?, repeat?: { statePath, key }, on? } }, state? },
-  bindings: { "/path": { tool: readTool, path?, ttlMinutes? } } }
+  bindings: { "/path": { tool: readTool, path?, ttlMinutes? | refreshSeconds? (screens: live, memory only; /refreshIn) } } }
+State also has /params, /size, /t (strings) and, for campus plugins, /account { signedIn }.
 Components come from the app's UI catalog (plugins.reference doesn't list them; use ui.render's
 catalog). In a repeat: { "$item": "field" }, { "$template": "\${field}" }. Actions: ask {text},
 open {url}, navigate {href}, callTool {tool, input}.

@@ -1,0 +1,6 @@
+# checkBathAmount: above ¥100.
+tool: bathTopUp
+input:
+  custom: "100.01"
+responses: []
+expectError: 充值不能高于 100 元

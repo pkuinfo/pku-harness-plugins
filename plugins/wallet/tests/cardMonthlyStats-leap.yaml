@@ -1,0 +1,56 @@
+# February of a leap year ends on the 29th; ties keep date order for the biggest day. (expected: the TypeScript tool on the same responses)
+tool: cardMonthlyStats
+input:
+  month: 2028-02
+responses:
+  - match: turnover/count?timeFrom=2028-02-01&timeTo=2028-02-29
+    campus: card
+    body:
+      code: 200
+      success: true
+      data:
+        income: 10000.4
+        expenses: 3333
+  - match: statistics/turnover?type=2&timeFrom=2028-02-01&timeTo=2028-02-29
+    campus: card
+    body:
+      code: 200
+      success: true
+      data:
+        - turnoverType: " 餐费 "
+          amount: 2222
+        - turnoverType: 洗衣
+          amount: 1111
+  - match: sum/user?dateStr=2028-02
+    campus: card
+    body:
+      code: 200
+      success: true
+      data:
+        2028-02-29: 1111
+        2028-02-10: 1111
+        2028-02-11: 1111
+expect:
+  month: 2028-02
+  income: 100
+  expenses: 33.33
+  net: 66.67
+  categories:
+    - category: 餐费
+      amount: 22.22
+      share: 0.667
+    - category: 洗衣
+      amount: 11.11
+      share: 0.333
+  daily:
+    - date: 2028-02-10
+      amount: 11.11
+    - date: 2028-02-11
+      amount: 11.11
+    - date: 2028-02-29
+      amount: 11.11
+  activeDays: 3
+  averagePerActiveDay: 11.11
+  biggestDay:
+    date: 2028-02-10
+    amount: 11.11

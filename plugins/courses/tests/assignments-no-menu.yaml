@@ -1,0 +1,13 @@
+# A course without content listings has no assignments.
+tool: assignments
+input:
+  courseId: _8002_1
+now: 2026-10-20 12:00
+responses:
+  - match: tabAction?tab_tab_group_id=_1_1
+    campus: blackboard
+    file: courses.html
+  - match: course_id=_8002_1&handle=announcements_entry
+    campus: blackboard
+    body: <ul id="courseMenuPalette_contents"></ul>
+expect: []

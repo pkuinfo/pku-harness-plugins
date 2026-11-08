@@ -1,0 +1,82 @@
+# Per course (api.rs list_assignments_for_course): crawl the content folders (as content.yaml),
+# then each assignment's submit page (deadline) and review page (attempt). One course surfaces its
+# error; across courses, failing ones are skipped. A whole semester can take ~150 requests.
+title: 作业与截止时间
+summary: 各门课的作业、截止时间和是否已提交
+description: Assignments of current courses (or one course) with deadline and whether something was submitted. Unsubmitted and upcoming first.
+effect: read
+limits: { requests: 200, seconds: 120 }
+input:
+  courseId: { type: string, optional: true }
+  includePast: { type: boolean, optional: true, description: include assignments past their deadline }
+steps:
+  - let: all
+    call: list
+    input: "{ all: !!input.courseId }"
+  - let: picked
+    value: "input.courseId ? all.filter(c => c.id == input.courseId) : all"
+  - check: "!input.courseId || length(picked) > 0"
+    error: 没有这门课：${input.courseId}
+  - let: lists
+    each: picked
+    concurrency: 3
+    steps:
+      - try:
+          - let: course
+            value: item
+          - let: menuPage
+            request: { campus: blackboard, url: '${coursePage(course.id)}' }
+            as: response
+          - check: menuPage.status < 400
+            error: 教学网返回 HTTP ${menuPage.status}
+          - let: rootList
+            value: roots(html(menuPage.text))
+          - let: crawl
+            value: "[]"
+          - if: length(rootList) > 0
+            then:
+              - let: crawl
+                paginate:
+                  start: crawlStart(rootList)
+                  max: MAX_PAGES
+                  request: { campus: blackboard, url: '${listUrl(course.id, cursor.queue[0].id)}' }
+                  as: response
+                  items: "[crawlStep(cursor, page)]"
+                  next: crawlMore(crawlStep(cursor, page), MAX_PAGES)
+          - let: found
+            value: |
+              slice(flatMap(crawl, s => s.items)
+                .filter(i => i.type == 'assignment' && i.url && param(i.url, 'content_id'))
+                .map(i => ({ id: param(i.url, 'content_id'), title: i.title })), 0, 50)
+          - let: submitPages
+            each: found
+            concurrency: 4
+            request: { campus: blackboard, url: '${assignmentUrl(course.id, item.id, false)}' }
+            as: response
+          - let: viewPages
+            each: found
+            concurrency: 4
+            request: { campus: blackboard, url: '${assignmentUrl(course.id, item.id, true)}' }
+            as: response
+          - return: |
+              found.map((a, i) => assignmentOf(course, a, brief(submitPages[i]), brief(viewPages[i])))
+        catch:
+          - check: "!input.courseId"
+            error: ${error.message}
+          - return: "[]"
+functions:
+  assignmentOf: "(c, a, d, v) => assignmentFin(c, a, d, v?.attempt ?? d?.attempt ?? null)"
+  assignmentFin: |
+    (c, a, d, attempt) => ({
+      course: c.name,
+      courseId: c.id,
+      contentId: a.id,
+      title: a.title,
+      deadline: deadline(d?.deadlineText ?? null),
+      deadlineText: d?.deadlineText ?? null,
+      submitted: attempt != null,
+      attempt,
+    })
+return: |
+  sortBy(flat(lists).filter(a => input.includePast || a.deadline == null || a.deadline > now), a => (a.submitted ? 1e15 : 0) + (a.deadline ?? 9e14))
+    .map(a => merge(a, { due: fmt(a.deadline) }))

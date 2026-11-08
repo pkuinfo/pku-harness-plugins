@@ -4,7 +4,6 @@ import { authenticatorPlugin } from './authenticator/src';
 import { copilotPlugin } from './copilot/src';
 import { calendarPlugin } from './calendar/src';
 import { cardSharePlugin } from './card-share/src';
-import { coursesPlugin } from './courses/src';
 import { dashboardPlugin } from './dashboard/src';
 import { deepseekPlugin } from './deepseek/src';
 import { ledgerPlugin } from './ledger/src';
@@ -16,7 +15,6 @@ import { schedulerPlugin } from './scheduler/src';
 import { timetablePlugin } from './timetable/src';
 import { todoPlugin } from './todo/src';
 import { uiPlugin } from './ui/src';
-import { walletPlugin } from './wallet/src';
 
 /**
  * TypeScript plugins bundled with the app (the harness's own features and integrations not yet
@@ -37,10 +35,8 @@ export const builtinPlugins: PluginDef[] = [
   timetablePlugin,
   authenticatorPlugin,
   calendarPlugin,
-  walletPlugin,
   cardSharePlugin,
   ledgerPlugin,
-  coursesPlugin,
   memoryPlugin,
   pluginsPlugin,
   deepseekPlugin,

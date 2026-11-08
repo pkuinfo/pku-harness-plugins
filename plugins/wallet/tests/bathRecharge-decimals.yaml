@@ -1,0 +1,6 @@
+# At most two decimals (checkBathAmount), before any request. (expected: the TypeScript tool on the same responses)
+tool: bathRecharge
+input:
+  amount: 10.005
+responses: []
+expectError: 金额最多两位小数

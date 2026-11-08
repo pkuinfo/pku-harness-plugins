@@ -1,0 +1,66 @@
+{
+  "title": "课程回放",
+  "description": "课程回放，新的在前；点一下在浏览器里播放。打开方式：/回放，或 /p/courses/videos?courseId=…&name=… 看一门课。",
+  "bindings": {
+    "/courses": { "tool": "list", "ttlMinutes": 1440 },
+    "/videos": { "tool": "videos", "args": { "courseId": { "$param": "courseId" }, "newest": true }, "ttlMinutes": 30 }
+  },
+  "strings": {
+    "zh-Hans": {
+      "byCourse": "按课程",
+      "all": "全部回放",
+      "noVideos": "还没有回放",
+      "noVideosHint": "老师开启录播后，回放会出现在这里。",
+      "footer": "点一下在浏览器里播放；链接只在本机生成，有效期较短。"
+    },
+    "en": {
+      "byCourse": "By course",
+      "all": "All recordings",
+      "noVideos": "No recordings yet",
+      "noVideosHint": "Recordings show up here once the teacher turns them on.",
+      "footer": "Tap to play in the browser. Links are made on this device and expire soon."
+    }
+  },
+  "spec": {
+    "root": "root",
+    "elements": {
+      "root": { "type": "Column", "props": { "gap": "lg" }, "children": ["courseName", "courses", "videosTitle", "footer", "error", "list", "empty", "emptyHint"] },
+      "courseName": { "type": "Heading", "props": { "text": { "$state": "/params/name" }, "size": "md" }, "visible": { "$state": "/params/name" } },
+      "courses": {
+        "type": "Column",
+        "props": { "gap": "sm" },
+        "visible": { "$state": "/params/courseId", "not": true },
+        "children": ["coursesTitle", "courseList"]
+      },
+      "coursesTitle": { "type": "Heading", "props": { "text": { "$state": "/t/byCourse" }, "size": "sm" } },
+      "courseList": { "type": "Column", "props": { "gap": "sm" }, "repeat": { "statePath": "/courses", "key": "id" }, "children": ["courseRow"] },
+      "courseRow": {
+        "type": "ListItem",
+        "props": { "title": { "$item": "name" }, "subtitle": null, "value": null, "icon": "book" },
+        "on": { "press": { "action": "navigate", "params": { "href": { "$template": "/p/courses/videos?courseId=${id}&name=${name}" } } } }
+      },
+      "videosTitle": { "type": "Heading", "props": { "text": { "$state": "/t/all" }, "size": "sm" }, "visible": { "$state": "/params/courseId", "not": true } },
+      "footer": { "type": "Text", "props": { "text": { "$state": "/t/footer" }, "tone": "muted", "size": "small" }, "visible": { "$state": "/videos/0" } },
+      "error": { "type": "Text", "props": { "text": { "$state": "/error" }, "tone": "down", "size": "body" }, "visible": { "$state": "/error" } },
+      "list": { "type": "Column", "props": { "gap": "sm" }, "repeat": { "statePath": "/videos" }, "children": ["video"] },
+      "video": {
+        "type": "ListItem",
+        "props": {
+          "title": { "$item": "title" },
+          "subtitle": { "$cond": { "$state": "/params/courseId" }, "$then": { "$template": "${time} · ${teacher}" }, "$else": { "$template": "${course} · ${time} · ${teacher}" } },
+          "value": null,
+          "icon": "sparkles"
+        },
+        "on": {
+          "press": {
+            "action": "callTool",
+            "params": { "tool": "courses.play", "input": { "courseId": { "$template": "${courseId}" }, "url": { "$template": "${url}" } }, "resultPath": "/result/play", "errorPath": "/error" }
+          }
+        }
+      },
+      "empty": { "type": "Heading", "props": { "text": { "$state": "/t/noVideos" }, "size": "sm" }, "visible": { "$state": "/videos/0", "not": true } },
+      "emptyHint": { "type": "Text", "props": { "text": { "$state": "/t/noVideosHint" }, "tone": "muted", "size": "small" }, "visible": { "$state": "/videos/0", "not": true } }
+    },
+    "state": { "courses": null, "videos": null, "result": { "play": null }, "error": null }
+  }
+}

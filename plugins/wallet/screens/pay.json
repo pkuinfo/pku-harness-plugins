@@ -1,0 +1,121 @@
+{
+  "title": "付款码",
+  "description": "校园卡付款码：每 30 秒自动刷新，打开时禁止截屏并调到最亮。付款码不经过助手。",
+  "presentation": "modal",
+  "secure": { "brightness": true },
+  "bindings": {
+    "/pay": { "tool": "payCode", "refreshSeconds": 30 }
+  },
+  "strings": {
+    "zh-Hans": {
+      "signInCampus": "登录校园账号",
+      "paySignedOut": "付款码来自校园卡系统，需要先登录校园账号。",
+      "switchTitle": "需要切换到「数字卡」",
+      "switchBody1": "付款码只能在「数字卡」用卡方式下使用，你现在是「",
+      "switchBody2": "」。切换后实体卡或手机 NFC 刷卡可能无法使用，之后可以在「用卡方式」里改回来。",
+      "switchButton": "切换到数字卡",
+      "balance": "余额",
+      "showCashier": " · 向收银员出示",
+      "refreshIn1": "",
+      "refreshIn2": " 秒后自动刷新",
+      "shareFriend": "分享给朋友",
+      "cardMode": "用卡方式"
+    },
+    "en": {
+      "signInCampus": "Sign in to campus account",
+      "paySignedOut": "The payment code comes from the Campus Card system, so sign in to your campus account first.",
+      "switchTitle": "Switch to digital card",
+      "switchBody1": "Payment codes only work in digital card mode (数字卡), and you’re using “",
+      "switchBody2": "”. After switching, your physical card or phone NFC may stop working; you can switch back under Card mode.",
+      "switchButton": "Switch to digital card",
+      "balance": "Balance",
+      "showCashier": " · Show this to the cashier",
+      "refreshIn1": "Refreshes in ",
+      "refreshIn2": " s",
+      "shareFriend": "Share with a friend",
+      "cardMode": "Card mode"
+    }
+  },
+  "spec": {
+    "root": "root",
+    "elements": {
+      "root": { "type": "Column", "props": { "gap": "lg" }, "children": ["signedOut", "switch", "code", "afterSwitch", "error"] },
+
+      "signedOut": {
+        "type": "Column",
+        "props": { "gap": "md" },
+        "visible": { "$state": "/pay/step", "eq": "signedOut" },
+        "children": ["signedOutText", "signIn"]
+      },
+      "signedOutText": { "type": "Text", "props": { "text": { "$state": "/t/paySignedOut" }, "tone": "muted", "size": "body" } },
+      "signIn": {
+        "type": "Button",
+        "props": { "label": { "$state": "/t/signInCampus" }, "variant": "primary" },
+        "on": { "press": { "action": "navigate", "params": { "href": "/campus" } } }
+      },
+
+      "switch": {
+        "type": "Column",
+        "props": { "gap": "md" },
+        "visible": [{ "$state": "/pay/step", "eq": "switch" }, { "$state": "/result/pay/step", "neq": "code" }],
+        "children": ["switchTitle", "switchBody", "switchNotice", "switchButton", "mode"]
+      },
+      "switchTitle": { "type": "Heading", "props": { "text": { "$state": "/t/switchTitle" }, "size": "md" } },
+      "switchBody": { "type": "Text", "props": { "text": { "$template": "${/t/switchBody1}${/pay/current}${/t/switchBody2}" }, "tone": "muted", "size": "body" } },
+      "switchNotice": { "type": "Text", "props": { "text": { "$state": "/pay/notice" }, "tone": "warn", "size": "small" }, "visible": { "$state": "/pay/notice" } },
+      "switchButton": {
+        "type": "Button",
+        "props": { "label": { "$state": "/t/switchButton" }, "variant": "primary" },
+        "on": {
+          "press": [
+            { "action": "callTool", "params": { "tool": "wallet.cardSetDigital", "input": {}, "resultPath": "/result/switch", "errorPath": "/error" } },
+            { "action": "callTool", "params": { "tool": "wallet.payCode", "input": {}, "resultPath": "/result/pay", "errorPath": "/error" } }
+          ]
+        }
+      },
+
+      "code": {
+        "type": "Column",
+        "props": { "gap": "lg" },
+        "visible": { "$state": "/pay/step", "eq": "code" },
+        "children": ["qr", "balance", "holder", "refresh", "share", "mode"]
+      },
+      "qr": { "type": "QRCode", "props": { "value": { "$state": "/pay/code" }, "size": "lg", "ecl": null } },
+      "balance": {
+        "type": "Stat",
+        "props": { "label": { "$state": "/t/balance" }, "value": { "$state": "/pay/balance" }, "prefix": "¥", "suffix": null, "decimals": 2, "delta": null, "deltaTone": null, "caption": null, "icon": null, "size": "lg" },
+        "visible": { "$state": "/pay/balance", "neq": null }
+      },
+      "holder": { "type": "Text", "props": { "text": { "$template": "${/pay/name}${/t/showCashier}" }, "tone": "muted", "size": "small" } },
+      "refresh": { "type": "Badge", "props": { "label": { "$template": "${/t/refreshIn1}${/refreshIn}${/t/refreshIn2}" }, "tone": "neutral" } },
+      "share": {
+        "type": "Button",
+        "props": { "label": { "$state": "/t/shareFriend" }, "variant": "ghost" },
+        "on": { "press": { "action": "navigate", "params": { "href": "/m/card-share/create" } } }
+      },
+
+      "mode": {
+        "type": "Button",
+        "props": { "label": { "$state": "/t/cardMode" }, "variant": "ghost" },
+        "on": { "press": { "action": "navigate", "params": { "href": "/m/wallet/card-mode" } } }
+      },
+
+      "afterSwitch": {
+        "type": "Column",
+        "props": { "gap": "lg" },
+        "visible": [{ "$state": "/pay/step", "neq": "code" }, { "$state": "/result/pay/step", "eq": "code" }],
+        "children": ["qr2", "balance2", "holder2", "mode"]
+      },
+      "qr2": { "type": "QRCode", "props": { "value": { "$state": "/result/pay/code" }, "size": "lg", "ecl": null } },
+      "balance2": {
+        "type": "Stat",
+        "props": { "label": { "$state": "/t/balance" }, "value": { "$state": "/result/pay/balance" }, "prefix": "¥", "suffix": null, "decimals": 2, "delta": null, "deltaTone": null, "caption": null, "icon": null, "size": "lg" },
+        "visible": { "$state": "/result/pay/balance", "neq": null }
+      },
+      "holder2": { "type": "Text", "props": { "text": { "$template": "${/result/pay/name}${/t/showCashier}" }, "tone": "muted", "size": "small" } },
+
+      "error": { "type": "Text", "props": { "text": { "$state": "/error" }, "tone": "down", "size": "body" }, "visible": { "$state": "/error" } }
+    },
+    "state": { "pay": null, "result": { "pay": null, "switch": null }, "error": null }
+  }
+}

@@ -37,7 +37,10 @@ describe('static plugin pages', () => {
     const { id } = await json<{ id: string }>(await s.request(paths.channels(), { method: 'POST', token, json: channelBody(shareKeys(), { page: 'view' }) }));
     const r = await s.request(`${paths.shareRedirect(id)}?utm=evil&t=x`);
     expect(r.status).toBe(302);
-    expect(r.headers.get('location')).toBe(`/w/card-share/view?c=${id}`);
+    expect(r.headers.get('location')).toBe(`../w/card-share/view?c=${id}`);
+    // Relative, so it keeps a path prefix the proxy stripped, and works at the root too.
+    expect(new URL(r.headers.get('location')!, `https://h.example/cloud/s/${id}`).href).toBe(`https://h.example/cloud/w/card-share/view?c=${id}`);
+    expect(new URL(r.headers.get('location')!, `https://h.example/s/${id}`).href).toBe(`https://h.example/w/card-share/view?c=${id}`);
     expect(r.headers.get('cache-control')).toBe('no-store');
     expect((await s.request(paths.shareRedirect('AAAAAAAAAAAAAAAAAAAAAA'))).status).toBe(404);
     // a channel without a page has nothing to redirect to

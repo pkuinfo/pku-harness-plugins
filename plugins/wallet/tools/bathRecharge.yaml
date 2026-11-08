@@ -1,0 +1,86 @@
+# utilities/api.ts createBathOrder: checks the project is open (getProjectIsAllowPayment), creates
+# the order (pay/web/bath/createOrder, the page's `next()`), then opens the signed-in mobile site
+# (我的订单 → 待支付) through the harness; the hand-off URL carries the platform session token and
+# never reaches the plugin or the result.
+title: 浴卡充值
+summary: 在收费平台创建浴卡充值订单并打开收费平台付款
+description: 'Top up the bath card: creates a 10–100 yuan bath-card order on the PKU payment platform and opens the platform (signed in) in the system browser, where the user pays the pending order with WeChat Pay or Alipay. Does not pay and cannot confirm payment. After paying, the user must tap the card on a 浴卡转存机 to load the money.'
+effect: money
+limits: { requests: 70 }
+input:
+  amount: { type: number, min: 10, max: 100, description: 'yuan, 10–100, at most 2 decimals' }
+steps:
+  # parse.ts checkBathAmount (the input schema already enforces 10–100).
+  - check: round(input.amount * 100) == input.amount * 100
+    error: 金额最多两位小数
+  # utilities/api.ts listProjects: top-level projects plus one level of folders (the 更多应用
+  # page). Every folder (the platform has dozens; a cap hid 浴卡充值 when it sat in a later
+  # folder), up to 60; a folder that fails is skipped. Two `each` steps: one takes at most 50.
+  - let: init
+    request:
+      campus: cwpay
+      url: "${'pay/pay/cos/merchant/getProjectTypeAndProjectInfoListInit/' + SCHOOL}"
+      method: GET
+      contentType: '${JSON_CT}'
+    as: response
+  - check: payErr(init, '缴费项目') == null
+    error: ${payErr(init, '缴费项目')}
+  - let: folders
+    value: slice(foldersIn(payData(init) ?? []), 0, 60)
+  - let: nestedA
+    each: slice(folders, 0, 50)
+    concurrency: 4
+    steps: &folder
+      - let: got
+        value: "[]"
+      - try:
+          - let: r
+            request:
+              campus: cwpay
+              url: "${'pay/pay/cos/merchant/getProjectTypeAndProjectInfoList/' + item.id}"
+              method: GET
+              contentType: '${JSON_CT}'
+            as: response
+          - let: got
+            value: "payErr(r, '缴费项目') == null ? projectsIn([{ children: payData(r) ?? [] }], item.category) : []"
+        catch: []
+    return: got
+  - let: nestedB
+    each: slice(folders, 50, 60)
+    concurrency: 4
+    steps: *folder
+    return: got
+  - let: projects
+    value: concat(projectsIn(payData(init) ?? [], ''), flat(nestedA), flat(nestedB))
+  - let: project
+    value: find(projects, (p) => isBath(p))
+  - check: project != null
+    error: ${BATH_CLOSED}
+  - let: allowed
+    request:
+      campus: cwpay
+      url: "${'pay/project/getProjectIsAllowPayment'}"
+      method: POST
+      contentType: '${JSON_CT}'
+      body: "${str({ projectId: project.id })}"
+    as: response
+  - check: payErr(allowed, '浴卡充值') == null
+    error: ${payErr(allowed, '浴卡充值')}
+  - let: order
+    request:
+      campus: cwpay
+      url: "${'pay/web/bath/createOrder'}"
+      method: POST
+      contentType: '${JSON_CT}'
+      body: "${str({ schoolCode: SCHOOL, projectId: project.id, payamtStr: input.amount })}"
+    as: response
+  - check: payErr(order, '浴卡充值') == null
+    error: ${payErr(order, '浴卡充值')}
+  - let: orderId
+    value: payData(order)?.PayOrderTrade?.id
+  - check: orderId != null && orderId != ''
+    error: 收费平台没有返回订单号
+  - ability: campusPage.open
+    args: "{ service: 'cwpay' }"
+# The hand-off URL carries the platform session token: never part of the result.
+return: "{ amount: input.amount, orderCreated: true, platformOpened: true, next: '在收费平台「我的订单」里找到这笔待支付的浴卡订单，用微信或支付宝付款；付款后拿浴卡到浴卡转存机贴卡激活才到账' }"

@@ -1,0 +1,28 @@
+# Submit page (instructions, attachments, deadline) merged with the review page (attempt, grade).
+tool: assignment
+input:
+  courseId: _8001_1
+  contentId: _11_1
+now: 2026-10-20 12:00
+responses:
+  - match: action=newAttempt&content_id=_11_1&
+    campus: blackboard
+    file: assignment-submit.html
+  - match: mode=view&content_id=_11_1&
+    campus: blackboard
+    file: assignment-view.html
+expect:
+  courseId: _8001_1
+  contentId: _11_1
+  title: 作业二
+  deadline: 1793721540000
+  deadlineText: "截止日期: 2026年11月3日 星期二 下午11:59"
+  instructions: 完成习题 2.1–2.5，提交 PDF。
+  attachments:
+    - name: hw2.pdf
+      url: https://course.pku.edu.cn/bbcswebdav/xid-77_1
+  status: 未提交
+  submitted: true
+  attempt: 尝试 2026-10-19 下午10:01
+  grade: 92 /100
+  due: 2026-11-03 23:59

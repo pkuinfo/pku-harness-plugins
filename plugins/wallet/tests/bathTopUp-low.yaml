@@ -1,0 +1,7 @@
+# checkBathAmount: below ¥10.
+tool: bathTopUp
+input:
+  preset: 50
+  custom: "5"
+responses: []
+expectError: 充值不能低于 10 元

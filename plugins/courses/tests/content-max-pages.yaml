@@ -1,0 +1,31 @@
+# Page budget: one listing, truncated.
+tool: content
+input:
+  courseId: _8001_1
+  maxPages: 1
+now: 2026-10-20 12:00
+responses:
+  - match: course_id=_8001_1&handle=announcements_entry
+    campus: blackboard
+    file: menu.html
+  - match: content_id=_1_1&course_id=_8001_1
+    campus: blackboard
+    file: folder-root.html
+expect:
+  truncated: true
+  pages: 1
+  items:
+    - contentId: _2_1
+      title: 第一章
+      type: folder
+      path: 课程资料
+      description: ""
+      url: https://course.pku.edu.cn/webapps/blackboard/content/listContent.jsp?content_id=_2_1&course_id=_8001_1
+      attachments: []
+    - contentId: _3_1
+      title: 第二章
+      type: folder
+      path: 课程资料
+      description: ""
+      url: https://course.pku.edu.cn/webapps/blackboard/content/listContent.jsp?content_id=_3_1&course_id=_8001_1
+      attachments: []

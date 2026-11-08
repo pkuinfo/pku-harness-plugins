@@ -1,0 +1,28 @@
+# card/tools.ts cardTransactions (campus-card.ts turnoverPage; api.rs get_turnover).
+title: 查询消费记录
+summary: 最近的校园卡交易，新的在前
+description: Recent card transactions, newest first. Amounts in yuan; negative = spending.
+effect: read
+input:
+  limit: { type: integer, optional: true, min: 1, max: 50 }
+  from: { type: string, optional: true, pattern: '^\d{4}-\d{2}-\d{2}$', description: YYYY-MM-DD }
+  to: { type: string, optional: true, pattern: '^\d{4}-\d{2}-\d{2}$' }
+steps:
+  - let: res
+    request: { campus: card, url: '${turnoverUrl(input.limit ?? 20, input.from, input.to)}' }
+    as: response
+  - check: cardErr(res) == null
+    error: ${cardErr(res)}
+  - let: page
+    value: cardData(res)
+return: |
+  {
+    total: page.total,
+    items: map(page.records, (t) => ({
+      title: t.resume ?? '未知交易',
+      type: t.icon ?? t.turnoverType ?? null,
+      amount: (includes(INCOME_ICONS, t.icon ?? '') ? 1 : -1) * (yuan2(t.tranamt) ?? 0),
+      balanceAfter: yuan2(t.cardBalance),
+      time: t.effectdateStr ?? null,
+    })),
+  }

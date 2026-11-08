@@ -1,4 +1,4 @@
-import { createElement, useMemo, type ComponentType } from 'react';
+import { createElement, useEffect, useMemo, useState, type ComponentType } from 'react';
 import { z } from 'zod';
 
 import type { Capability, PluginDef, PluginTranslation, ToolDef, ToolEffect } from '../plugin';
@@ -107,41 +107,105 @@ const titleWith = (title: string, params: Record<string, string | undefined>) =>
  * the bound data, `/params` (screen route parameters), `/size` (widget size) and `/t` (the
  * view's `strings` in the app language, zh-Hans fallback).
  */
-function viewComponent(pluginId: string, view: ViewDoc, tools: Record<string, ToolDoc> = {}): ComponentType<PluginWidgetProps | PluginScreenProps> {
+/** `a.b[0]` into a value (binding `path`). */
+export function atPath(v: unknown, path?: string): unknown {
+  if (!path) return v;
+  let cur = v;
+  for (const part of path.replace(/\[(\d+)\]/g, '.$1').split('.').filter(Boolean)) cur = cur == null ? undefined : (cur as Record<string, unknown>)[part];
+  return cur;
+}
+
+/** Set a JSON pointer like /pay or /card/code in a state object (copying along the way). */
+export function setPointer(state: Record<string, unknown>, ptr: string, value: unknown): Record<string, unknown> {
+  const keys = ptr.split('/').slice(1).map((k) => k.replace(/~1/g, '/').replace(/~0/g, '~'));
+  const out = { ...state };
+  let cur = out;
+  keys.forEach((k, i) => {
+    if (i === keys.length - 1) cur[k] = value;
+    else cur = cur[k] = { ...((cur[k] as Record<string, unknown>) ?? {}) };
+  });
+  return out;
+}
+
+type LiveBinding = { tool: string; args?: Record<string, unknown>; path?: string; refreshSeconds: number };
+
+/**
+ * `refreshSeconds` bindings: run the tools as the user when the screen opens and again every N
+ * seconds, in memory only (never the widget cache, so a payment code never reaches disk and an
+ * old one is never shown). Nothing until the first answer arrives.
+ */
+function useLive(invoke: PluginScreenProps['invoke'] | undefined, live: [string, LiveBinding][], key: string, nowMs: number) {
+  const [state, setState] = useState<{ values: Record<string, unknown> | null; error: string | null; next: number }>({ values: null, error: null, next: 0 });
+  useEffect(() => {
+    if (!live.length || !invoke) return;
+    let alive = true;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const every = Math.min(...live.map(([, b]) => b.refreshSeconds)) * 1000;
+    const tick = async () => {
+      try {
+        const values: Record<string, unknown> = {};
+        for (const [ptr, b] of live) values[ptr] = atPath(await invoke(b.tool, b.args ?? {}), b.path);
+        if (alive) setState({ values, error: null, next: Date.now() + every });
+      } catch (e) {
+        if (alive) setState({ values: null, error: e instanceof Error ? e.message : String(e), next: Date.now() + every });
+      }
+      if (alive) timer = setTimeout(() => void tick(), every);
+    };
+    void tick();
+    return () => {
+      alive = false;
+      if (timer) clearTimeout(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
+  return { ...state, refreshIn: state.next ? Math.max(0, Math.ceil((state.next - nowMs) / 1000)) : null };
+}
+
+function viewComponent(pluginId: string, view: ViewDoc, tools: Record<string, ToolDoc> = {}, campus = false): ComponentType<PluginWidgetProps | PluginScreenProps> {
   const spec = view.spec as Record<string, unknown> & { state?: Record<string, unknown> };
+  const all = Object.entries(view.bindings ?? {});
+  const hasLive = all.some(([, b]) => b.refreshSeconds);
   function DocView(props: PluginWidgetProps | PluginScreenProps) {
     const { host } = props;
     const params = ('params' in props ? props.params : undefined) ?? {};
     const size = 'size' in props ? props.size : undefined;
     const locale = host.useLocale();
     const key = JSON.stringify(params);
-    const bindings = useMemo(
+    const resolved = useMemo(
       () =>
-        Object.fromEntries(
-          Object.entries(view.bindings ?? {}).map(([ptr, { fn, tool, args, ...b }]) => [
+        all.map(([ptr, { fn, tool, args, ...b }]) => [
             ptr,
             {
               ...b,
               ...(args ? { args: withParams(args, params, tool && !tool.includes('.') ? tools[tool]?.input : undefined) as Record<string, unknown> } : {}),
               tool: fn ? `${pluginId}.${fnToolName(fn)}` : fullTool(pluginId, tool!),
             },
-          ]),
-        ),
+          ] as const),
       // eslint-disable-next-line react-hooks/exhaustive-deps
       [key],
     );
+    const bindings = useMemo(() => Object.fromEntries(resolved.filter(([, b]) => !b.refreshSeconds)), [resolved]);
+    const now = hasLive ? host.useNow(1000).getTime() : 0;
+    const live = useLive(hasLive ? props.invoke : undefined, resolved.filter(([, b]) => b.refreshSeconds) as [string, LiveBinding][], key, now);
     const data = host.useWidgetData({ spec, bindings });
     const { GenUI, Skeleton, Text } = host.components;
     const t = { ...(view.strings?.['zh-Hans'] ?? {}), ...(locale === 'en' ? (view.strings?.en ?? {}) : {}) };
-    if (data.status === 'loading') return createElement(Skeleton, { height: 56 });
-    if (data.status === 'error' && !data.value) return createElement(Text, { variant: 'caption', tone: 'muted' } as never, data.error ?? (locale === 'en' ? 'Couldn’t load' : '加载失败'));
-    return createElement(GenUI, { spec: { ...spec, state: { ...(spec.state ?? {}), ...(data.value ?? {}), params, size: size ?? null, t } } });
+    if (data.status === 'loading' || (hasLive && !live.values && !live.error)) return createElement(Skeleton, { height: 56 });
+    const fallback = locale === 'en' ? 'Couldn’t load' : '加载失败';
+    if (data.status === 'error' && !data.value) return createElement(Text, { variant: 'caption', tone: 'muted' } as never, data.error ?? fallback);
+    // A failed refresh drops the live value: an expired payment code is never left on screen.
+    if (hasLive && !live.values) return createElement(Text, { variant: 'caption', tone: 'muted' } as never, live.error ?? fallback);
+    let state: Record<string, unknown> = { ...(spec.state ?? {}), ...(data.value ?? {}), params, size: size ?? null, t };
+    for (const [ptr, v] of Object.entries(live.values ?? {})) state = setPointer(state, ptr, v);
+    if (hasLive) state.refreshIn = live.refreshIn;
+    if (campus) state.account = { signedIn: accountOf(props.services).signedIn };
+    return createElement(GenUI, { spec: { ...spec, state } });
   }
   return DocView;
 }
 
-function screenComponent(pluginId: string, view: ViewDoc, tools: Record<string, ToolDoc>, enTitle?: string): ComponentType<PluginScreenProps> {
-  const Body = viewComponent(pluginId, view, tools) as ComponentType<PluginScreenProps>;
+function screenComponent(pluginId: string, view: ViewDoc, tools: Record<string, ToolDoc>, enTitle?: string, campus = false): ComponentType<PluginScreenProps> {
+  const Body = viewComponent(pluginId, view, tools, campus) as ComponentType<PluginScreenProps>;
   const secure = view.secure;
   function DocScreen(props: PluginScreenProps) {
     // `secure` is fixed per screen, so the hook is called on every render or on none.
@@ -187,6 +251,7 @@ export function compilePlugin(doc: PluginDocument, opts: CompileOptions): Plugin
       effect: t.effect,
       untrusted: t.untrusted ?? !opts.verified,
       userOnly: t.userOnly,
+      dayScoped: t.dayScoped,
       execute: async (input, ctx) => {
         try {
           // Plugins that declare campus services may read who is signed in (the student ID some
@@ -249,6 +314,8 @@ export function compilePlugin(doc: PluginDocument, opts: CompileOptions): Plugin
       ? Object.fromEntries(Object.entries(m.dataSources).map(([k, d]) => [k, { title: d.title ?? doc.tools[d.tool]?.title ?? k, tool: d.tool, args: d.args, ttlMs: durationMs(d.ttl) }]))
       : undefined,
     instructions: doc.instructions || undefined,
+    // Taking over another plugin's ids moves the user's saved checks and widgets: official plugins only.
+    ...(m.legacy && opts.verified ? { legacy: m.legacy } : {}),
     contributes: {
       commands: m.commands
         ? Object.fromEntries(
@@ -262,10 +329,10 @@ export function compilePlugin(doc: PluginDocument, opts: CompileOptions): Plugin
         : undefined,
       widgets: Object.keys(doc.widgets).length
         ? Object.fromEntries(
-            Object.entries(doc.widgets).map(([k, v]) => [k, { title: v.title, description: v.description ?? v.title, sizes: v.sizes, defaultSize: v.defaultSize, component: viewComponent(m.id, v, doc.tools) as ComponentType<PluginWidgetProps> }]),
+            Object.entries(doc.widgets).map(([k, v]) => [k, { title: v.title, description: v.description ?? v.title, sizes: v.sizes, defaultSize: v.defaultSize, component: viewComponent(m.id, v, doc.tools, !!m.campus?.length) as ComponentType<PluginWidgetProps> }]),
           )
         : undefined,
-      screens: Object.keys(doc.screens).length ? Object.fromEntries(Object.entries(doc.screens).map(([k, v]) => [k, { title: v.title, presentation: v.presentation, component: screenComponent(m.id, v, doc.tools, m.i18n?.en?.screens?.[k]?.title) }])) : undefined,
+      screens: Object.keys(doc.screens).length ? Object.fromEntries(Object.entries(doc.screens).map(([k, v]) => [k, { title: v.title, presentation: v.presentation, component: screenComponent(m.id, v, doc.tools, m.i18n?.en?.screens?.[k]?.title, !!m.campus?.length) }])) : undefined,
       settings: m.settings,
     },
     i18n: translation(doc) ? { en: translation(doc) } : undefined,

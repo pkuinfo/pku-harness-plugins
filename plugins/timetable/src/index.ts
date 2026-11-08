@@ -79,6 +79,7 @@ export const timetablePlugin = definePlugin({
       description: 'Classes on a day (default today) with status, and the next class.',
       input: z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional() }),
       effect: 'read',
+      dayScoped: true,
       execute: async ({ date }, ctx) => {
         const now = Date.now();
         const day = date ? at(...(date.split('-').map(Number) as [number, number, number])) : now;

@@ -1,0 +1,162 @@
+# Constants and helpers every wallet tool sees (PLUGIN.md shared:). Ported from the TypeScript
+# plugin: card/ (pkucli crates/campuscard api.rs, commands.rs, display.rs; plugins/shared/
+# campus-card.ts), netfee/ (pkucli crates/portal/src/netfee.rs) and utilities/ (the cwpay.pku.edu.cn
+# mobile bundle, 2026-10-21).
+constants:
+  # Read when a response isn't JSON (json(text, NOT_JSON)).
+  NOT_JSON: "\u0001not json"
+
+  # ── 校园卡 (bdcard.pku.edu.cn, synjones JWT added by the harness; amounts in fen) ──
+  QUERY_CARD: /berserker-app/ykt/tsm/queryCard?synAccessSource=h5
+  USE_CARD_CONFIG: /berserker-app/useCard/getUseCardConfig?synAccessSource=h5
+  # 用卡方式 code for 数字卡; the payment code only works with it (api.rs CARD_TYPE_DIGITAL).
+  CARD_TYPE_DIGITAL: 1
+  INCOME_ICONS: [recharge, subsidy, refund]
+  # The widget's low-balance warning (the TS widget's warnBelow default).
+  WARN_BELOW: 50
+  # card/recharge.ts: amounts the official 收银台 offers (commands.rs cmd_recharge), the cap, and
+  # the PKU app's signing credentials (api.rs sign_params; public in the app and in pkucli).
+  RECHARGE_PRESETS: [10, 50, 100, 200, 500, 800]
+  RECHARGE_MAX: 1000
+  APP_ID: '56321'
+  SECRET: 0osTIhce7uPvDKHz6aa67bhCukaKoYl4
+  # `type` the stats endpoints use for spending (commands.rs passes 2 = 支出).
+  TYPE_EXPENSE: 2
+
+  # ── 北京大学收费平台 (cwpay.pku.edu.cn; the harness session adds X-Token and decrypts) ──
+  JSON_CT: application/json;charset=UTF-8
+  SCHOOL: '10001'
+  ORDER_STATUS: { '101': 待支付, '103': 已付款 }
+  # What a project kind means for the user (anything else: the kind itself).
+  PROJECT_KINDS:
+    tuitionAndDorm: 学费住宿费
+    bathRecharge: 浴卡充值
+    eCardRecharge: 校园卡充值
+    net: 网费
+    chargeElectricity: 电费（收费平台页面尚未实现）
+    heating: 供暖费
+    common: 通用缴费
+  # The 浴卡充值 page's limits (chunk-09728569 `next`: 充值不能低于10元 / 不能高于100元).
+  BATH_MIN: 10
+  BATH_MAX: 100
+  BATH_CLOSED: 收费平台目前没有为你的账号开放浴卡充值（项目列表里没有这一项）
+  BALANCE_NOTE: 浴卡余额在卡片芯片里，线上查不到；在浴卡转存机或洗浴时可看到。
+functions:
+  # ── 校园卡 envelope (campus-card.ts unwrap): `{ code, success, data, msg|message }` ──
+  cardEnv: "(r) => json(r.text, NOT_JSON)"
+  cardErr: |
+    (r) => cardEnvErr(cardEnv(r), r.status)
+  cardEnvErr: |
+    (env, status) => env == NOT_JSON ? '校园卡服务返回了无法识别的内容（HTTP ' + status + '）'
+      : env?.code == 401 ? '校园卡登录已失效：' + str(env?.message ?? env?.msg ?? '')
+      : !env?.success || env?.code != 200 || env?.data == null ? '校园卡接口错误：' + str(env?.message ?? env?.msg ?? '未知错误')
+      : null
+  cardData: "(r) => cardEnv(r).data"
+  # Fen → yuan (campus-card.ts yuan).
+  yuan2: "(fen) => fen == null ? null : round(fen) / 100"
+  # stats.ts toYuan: not a finite number → 0.
+  toYuan: "(fen) => typeOf(fen) == 'number' ? round(fen) / 100 : 0"
+  # campus-card.ts cardMode: the 用卡方式 name and whether it is 数字卡.
+  modeOf: |
+    (c) => modeFor(num(c?.cardType), c?.cardTypes ?? [])
+  modeFor: |
+    (code, types) => ({ code: code, name: find(types, (t) => t.code == code)?.name ?? '未知', digital: code == CARD_TYPE_DIGITAL })
+  # campus-card.ts conflictNotice: plain text, or null.
+  conflictText: |
+    (r) => r?.status != '0' || !r?.message ? null
+      : trim(replaceText(replaceText(replace(r.message, '<!DOCTYPE[^>]*>|<[^>]+>', ''), '&ldquo;', '“'), '&rdquo;', '”'))
+  # campus-card.ts turnoverUrl.
+  turnoverUrl: |
+    (size, from, to) => '/berserker-search/search/personal/turnover?' + join(filter(['size=' + size, 'current=1', 'synAccessSource=h5', from ? 'timeFrom=' + from : '', to ? 'timeTo=' + to : ''], (x) => x != ''), '&')
+
+  # ── 月度统计 (stats.ts) ──
+  leap: "(y) => y % 4 == 0 && (y % 100 != 0 || y % 400 == 0)"
+  lastDay: "(y, m) => m == 2 ? (leap(y) ? 29 : 28) : includes([4, 6, 9, 11], m) ? 30 : 31"
+  # stats.ts statsUrls (api.rs).
+  statsUrls: |
+    (month, from, to) => [
+      '/berserker-search/statistics/turnover/count?timeFrom=' + from + '&timeTo=' + to + '&synAccessSource=h5',
+      '/berserker-search/statistics/turnover?type=' + TYPE_EXPENSE + '&timeFrom=' + from + '&timeTo=' + to + '&synAccessSource=h5',
+      '/berserker-search/statistics/turnover/sum/user?dateStr=' + month + '&dateType=month&statisticsDateStr=day&type=' + TYPE_EXPENSE + '&synAccessSource=h5',
+    ]
+  # stats.ts summarizeMonth (display.rs print_monthly_stats).
+  categoriesOf: |
+    (categories, expenses) => map(
+      sortBy(filter(map(categories ?? [], (c) => ({ category: trim(c?.turnoverType) || '其他', amount: toYuan(c?.amount) })), (c) => c.amount > 0), (c) => c.amount, true),
+      (c) => ({ category: c.category, amount: c.amount, share: expenses > 0 ? round((c.amount / expenses) * 1000) / 1000 : null }))
+  daysOf: |
+    (daily) => sortBy(filter(map(entries(daily ?? {}), (e) => ({ date: e[0], amount: toYuan(e[1]) })), (d) => d.amount > 0), (d) => d.date)
+  summary: |
+    (month, income, expenses, cats, days) => ({
+      month: month,
+      income: income,
+      expenses: expenses,
+      net: round((income - expenses) * 100) / 100,
+      categories: cats,
+      daily: days,
+      activeDays: length(days),
+      averagePerActiveDay: length(days) ? round((reduce(days, (s, d) => s + d.amount, 0) / length(days)) * 100) / 100 : null,
+      biggestDay: reduce(days, (best, d) => best == null || d.amount > best.amount ? d : best, null),
+    })
+
+  # ── 网费 (netfee/parse.ts) ──
+  # td.td_name / td.td_value cells, full-width spaces removed, a trailing colon dropped.
+  itsCells: |
+    (html) => map(matchAll(html, '(?i)<td[^>]*class=["\'][^"\']*\b(td_name|td_value)\b[^"\']*["\'][^>]*>([\s\S]*?)</td>'),
+      (m) => ({ name: lower(m[1]) == 'td_name', text: replace(replace(replaceText(replace(m[2], '<[^>]+>', ''), '&nbsp;', ' '), '[　 \s]', ''), '[:：]$', '') }))
+  # A name cell followed by a value cell is one pair; the value cell is then skipped.
+  itsPairs: |
+    (cells) => reduce(range(0, max(0, length(cells) - 1)),
+      (acc, i) => acc.skip ? { pairs: acc.pairs, skip: false }
+        : cells[i].name && !cells[i + 1].name ? { pairs: merge(acc.pairs, fromEntries([[cells[i].text, cells[i + 1].text]])), skip: true }
+        : acc,
+      { pairs: {}, skip: false }).pairs
+  billing: |
+    (html) => ({
+      balance: match(html, '(?:账户余额|余\s*额)\s*[:：]?\s*([0-9.-]+)\s*元', 1),
+      monthlyUsage: match(html, '(?:本月使用|已用流量|本月流量)\s*[:：]?\s*([0-9.]+\s*(?:MB|GB|KB|mb|gb))', 1),
+      monthlyFee: match(html, '(?:本月费用|月\s*费用)\s*[:：]?\s*([0-9.]+)\s*元', 1),
+    })
+  # parse.ts toNumber: parseFloat of the text without a trailing 元.
+  toNumber: |
+    (s) => !s ? null : num(match(replace(s, '元$', ''), '^\s*([+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?)', 1))
+
+  # ── 收费平台 envelope (utilities/api.ts call + parse.ts unwrapCwpay) ──
+  payErr: |
+    (r, what) => r.status >= 500 && !startsWith(trim(r.text), '{') ? '收费平台暂时不可用（HTTP ' + r.status + '）' : envErr(json(r.text, NOT_JSON), what)
+  envErr: |
+    (env, what) => env == NOT_JSON ? '收费平台返回了无法识别的内容（' + what + '）'
+      : str(env?.messageCode ?? '') == '0' || str(env?.messageCode ?? '') == '6003' ? null
+      : '收费平台：' + ((typeOf(env?.data) == 'string' && env.data) || env?.message || '请求失败') + '（' + what + '）'
+  payData: "(r) => json(r.text)?.data"
+  # Untrusted server text: no tags, no control characters, single spaces, bounded length.
+  clean: |
+    (s, max) => slice(trim(replace(replace(replace(str(s), '<[^>]*>', ''), '[\u0000-\u001f\u007f]', ' '), '\s+', ' ')), 0, max ?? 120)
+  fenToYuan: |
+    (fen) => fenNum(typeOf(fen) == 'number' ? fen : typeOf(fen) == 'string' && trim(fen) != '' ? num(fen) : null)
+  fenNum: "(n) => n == null ? null : round(n) / 100"
+  # 2000012345 → 2000****45 (enough to recognise, not to copy).
+  maskId: "(id) => maskOf(clean(id, 40))"
+  maskOf: |
+    (s) => !s ? null : length(s) <= 4 ? padStart('', length(s), '*')
+      : slice(s, 0, length(s) <= 8 ? 2 : 4) + padStart('', max(2, length(s) - (length(s) <= 8 ? 2 : 4) - 2), '*') + slice(s, -2)
+
+  # getProjectTypeAndProjectInfoList*: categories → children; type "1" = folder.
+  projectsIn: |
+    (cats, category) => flatMap(isList(cats) ? cats : [], (c) => projectRows(c, category || clean(c?.name ?? c?.projectName, 40)))
+  projectRows: |
+    (c, label) => map(filter(isList(c?.children) ? c.children : [], (p) => p?.id != null && p.type != '1'),
+      (p) => ({ id: str(p.id), name: clean(p.projectName ?? p.name, 60), kind: clean(p.proModelUrl, 40), category: label }))
+  foldersIn: |
+    (cats) => flatMap(isList(cats) ? cats : [], (c) => folderRows(c, clean(c?.name ?? c?.projectName, 40)))
+  folderRows: |
+    (c, label) => map(filter(isList(c?.children) ? c.children : [], (p) => p?.id != null && p.type == '1'),
+      (p) => ({ id: str(p.id), category: label + '>' + clean(p.name ?? p.projectName, 40) }))
+  # The 浴卡充值 project: route `/bathRechargePay` = proModelUrl "bathRecharge".
+  isBath: "(p) => p.kind == 'bathRecharge' || test(p.name, '浴')"
+  # Bath top-ups among /pay/web/order/pageOrderlist records, newest first as the server sends them.
+  topUps: |
+    (data) => map(slice(filter(isList(data?.records) ? data.records : [], (o) => test(str(o?.projectName ?? ''), '浴')), 0, 5),
+      (o) => topUp(o, str(o.displayStatus ?? '')))
+  topUp: |
+    (o, code) => ({ amount: fenToYuan(o.amount), createdAt: clean(o.createDate, 20), status: ORDER_STATUS[code] ?? (code != '' ? '状态 ' + code : '未知') })

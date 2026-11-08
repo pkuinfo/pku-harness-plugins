@@ -1,0 +1,19 @@
+# Unknown modes are refused before any POST.
+tool: cardSetMode
+input: { mode: 手环 }
+responses:
+  - match: useCard/getUseCardConfig
+    campus: card
+    body:
+      code: 200
+      success: true
+      data:
+        cardType: "1"
+        cardTypes:
+          - name: 校园卡
+            code: 0
+          - name: 数字卡
+            code: 1
+          - name: NFC卡
+            code: 2
+expectError: 没有「手环」这种用卡方式，可选：校园卡、数字卡、NFC卡

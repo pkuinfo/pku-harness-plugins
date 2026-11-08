@@ -1,0 +1,54 @@
+{
+  "title": "选择作业",
+  "description": "还没截止、尚未提交的作业；点一个进入交作业。",
+  "bindings": {
+    "/items": { "tool": "assignments", "ttlMinutes": 120 }
+  },
+  "strings": {
+    "zh-Hans": { "footer": "只列出还没截止、尚未提交的作业。", "due": "截止 ", "nothingDue": "没有待交的作业", "allSubmitted": "本学期还没截止的作业都交了" },
+    "en": { "footer": "Only open assignments you haven’t submitted are listed.", "due": "Due ", "nothingDue": "Nothing due", "allSubmitted": "You’ve handed in everything due this semester" }
+  },
+  "spec": {
+    "root": "root",
+    "elements": {
+      "root": { "type": "Column", "props": { "gap": "md" }, "children": ["footer", "list", "empty", "emptyWhy", "error"] },
+      "footer": { "type": "Text", "props": { "text": { "$state": "/t/footer" }, "tone": "muted", "size": "small" } },
+      "list": { "type": "Column", "props": { "gap": "sm" }, "repeat": { "statePath": "/items", "key": "contentId" }, "children": ["row"] },
+      "row": {
+        "type": "ListItem",
+        "visible": { "$item": "submitted", "not": true },
+        "props": {
+          "title": { "$item": "title" },
+          "subtitle": { "$cond": { "$item": "due" }, "$then": { "$template": "${course} · ${/t/due}${due}" }, "$else": { "$item": "course" } },
+          "value": null,
+          "icon": "book"
+        },
+        "on": {
+          "press": [
+            {
+              "action": "callTool",
+              "params": {
+                "tool": "courses.editDraft",
+                "input": { "courseId": { "$template": "${courseId}" }, "contentId": { "$template": "${contentId}" }, "title": { "$template": "${title}" }, "course": { "$template": "${course}" } },
+                "errorPath": "/error"
+              }
+            },
+            { "action": "navigate", "params": { "href": "/m/courses/submit" } }
+          ]
+        }
+      },
+      "empty": {
+        "type": "Heading",
+        "props": { "text": { "$state": "/t/nothingDue" }, "size": "sm" },
+        "visible": { "$or": [{ "$state": "/items/0", "not": true }, { "$state": "/items/0/submitted" }] }
+      },
+      "emptyWhy": {
+        "type": "Text",
+        "props": { "text": { "$state": "/t/allSubmitted" }, "tone": "muted", "size": "small" },
+        "visible": { "$or": [{ "$state": "/items/0", "not": true }, { "$state": "/items/0/submitted" }] }
+      },
+      "error": { "type": "Text", "props": { "text": { "$state": "/error" }, "tone": "down", "size": "small" }, "visible": { "$state": "/error" } }
+    },
+    "state": { "items": null, "error": null }
+  }
+}

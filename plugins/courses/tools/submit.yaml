@@ -1,0 +1,97 @@
+# The 确认提交 tap (api.ts submitAssignment): only for the draft revision the user reviewed. Reads
+# the newAttempt form for a fresh nonce, POSTs the multipart body (submit.ts buildSubmission), reads
+# Blackboard's receipt, then re-reads the review page to confirm the attempt. userOnly: the agent
+# can never send files or submit.
+title: 确认提交作业
+summary: 把核对过的文件和文字交到教学网
+description: Submits the reviewed draft to Blackboard (the 交作业 screen's 确认提交 button). Irreversible; taps only.
+effect: write
+userOnly: true
+input:
+  rev: { type: number, description: the draft revision shown on the screen }
+steps:
+  - let: d
+    kv: get
+    key: submit.draft
+    legacy: true
+  - check: fresh(d)
+    error: 没有待提交的草稿，请重新打开交作业页面
+  - check: revOf(d) == input.rev
+    error: 确认已失效或内容有变化，请重新核对后再提交
+  - let: files
+    value: d.files ?? []
+  - let: text
+    value: trim(d.text ?? '')
+  - let: comment
+    value: trim(d.comment ?? '')
+  - check: length(files) > 0 || text != ''
+    error: 至少要提交一个文件或一段文字
+  - check: length(files) <= MAX_FILES
+    error: 目前一次最多提交 ${MAX_FILES} 个文件（可以先打包成 zip）
+  - check: "!some(files, f => f.size != null && f.size > MAX_FILE_BYTES)"
+    error: 文件太大（最大 200 MB）
+  - let: formUrl
+    value: assignmentUrl(d.courseId, d.contentId, false)
+  - let: page
+    request: { campus: blackboard, url: '${formUrl}' }
+    as: response
+  - check: page.status < 400
+    error: 教学网返回 HTTP ${page.status}
+  - let: form
+    value: formOf(html(page.text))
+  - check: form.open
+    error: "${form.message ? '教学网不接受提交：' + form.message : '这个作业现在不能提交（可能已截止，或没有剩余的提交次数）'}"
+  - check: "!(form.fields.course_id && form.fields.course_id != d.courseId) && !(form.fields.content_id && form.fields.content_id != d.contentId)"
+    error: 教学网返回的提交表单与这个作业不一致，已停止提交
+  - let: missing
+    value: "REQUIRED.filter(k => form.fields[k] == null)"
+  - check: length(missing) == 0
+    error: 教学网提交表单缺少字段：${join(missing, ', ')}（页面可能已改版，请在网页上提交）
+  - try:
+      - let: res
+        request:
+          campus: blackboard
+          url: '${SUBMIT_PATH}'
+          method: POST
+          headers: { origin: '${BB}', referer: '${BB + formUrl}', accept: '*/*' }
+          multipart:
+            fields: '${submission(form.fields, text, comment, files)}'
+            files: '${submitFiles(files)}'
+        as: response
+    catch:
+      # Picks last for the app session: after a restart the file must be chosen again.
+      - check: "!test(error.message, 'files.pick')"
+        error: 文件需要重新选择（应用重启后之前选的文件失效了）
+      - check: "false"
+        error: ${error.message}
+  - let: result
+    value: receipt(res.status, res.text)
+  - check: result.ok
+    error: 提交失败：${result.message ?? '未知原因'}
+  - let: viewAttempt
+    value: "null"
+  - try:
+      - let: view
+        request: { campus: blackboard, url: '${assignmentUrl(d.courseId, d.contentId, true)}' }
+        as: response
+      - let: viewAttempt
+        value: "view.status < 400 ? attemptOf(html(view.text)) : null"
+    catch: []
+  # null, not delete: the TS-era draft under the same key must not come back.
+  - kv: set
+    key: submit.draft
+    value: "null"
+return: |
+  {
+    submitted: true,
+    courseId: d.courseId,
+    contentId: d.contentId,
+    title: d.title ?? null,
+    verified: viewAttempt != null,
+    attempt: viewAttempt,
+    message: result.message,
+    files: files.map(f => f.name),
+    textLength: length(text),
+    at: now,
+    submittedAt: fmt(now),
+  }

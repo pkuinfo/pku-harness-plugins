@@ -1,0 +1,44 @@
+# No month: the current month (Beijing time; 31 days in October). (expected: the TypeScript tool on the same responses)
+tool: cardMonthlyStats
+now: 2026-10-20 12:00
+responses:
+  - match: turnover/count?timeFrom=2026-10-01&timeTo=2026-10-31
+    campus: card
+    body:
+      code: 200
+      success: true
+      data:
+        income: 0
+        expenses: 1200
+  - match: statistics/turnover?type=2&timeFrom=2026-10-01&timeTo=2026-10-31
+    campus: card
+    body:
+      code: 200
+      success: true
+      data:
+        - turnoverType: 餐费
+          amount: 1200
+  - match: sum/user?dateStr=2026-10
+    campus: card
+    body:
+      code: 200
+      success: true
+      data:
+        2026-10-20: 1200
+expect:
+  month: 2026-10
+  income: 0
+  expenses: 12
+  net: -12
+  categories:
+    - category: 餐费
+      amount: 12
+      share: 1
+  daily:
+    - date: 2026-10-20
+      amount: 12
+  activeDays: 1
+  averagePerActiveDay: 12
+  biggestDay:
+    date: 2026-10-20
+    amount: 12
