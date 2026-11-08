@@ -1,4 +1,4 @@
-// Where this page's share comes from. GET /s/:id redirects to /w/card-share/view?c=<id> and the
+// Where this page's share comes from. GET /s/:id redirects to ../w/card-share/view?c=<id> and the
 // browser carries the #k=… fragment across the redirect; the fragment never reaches a server.
 
 import { buildAppShareLink, CHANNEL_ID_RE, parseKeyFragment } from "@pku-harness/cloud-protocol";

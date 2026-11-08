@@ -129,7 +129,9 @@ export function pageRoutes(app: Hono<AppEnv>, deps: Deps) {
   /**
    * Share link → viewer page. The target is built from the channel record alone: the request's
    * query string is dropped, and the browser carries the `#k=…` fragment across the redirect
-   * by itself (the server never sees it). The page gets the channel id as `?c=<id>`.
+   * by itself (the server never sees it). The page gets the channel id as `?c=<id>`. The target
+   * is relative, so a server mounted under a path prefix (a proxy that strips `/cloud`) sends
+   * `<prefix>/s/<id>` to `<prefix>/w/…`.
    */
   app.get('/s/:id', async (c) => {
     const id = c.req.param('id');
@@ -138,6 +140,6 @@ export function pageRoutes(app: Hono<AppEnv>, deps: Deps) {
     if (!channelIdSchema.safeParse(id).success) return c.text('not found', 404);
     const ch = await deps.storage.getChannel(id);
     if (!ch?.page || !deps.pages.has(ch.plugin, ch.page)) return c.text('not found', 404);
-    return c.redirect(`/w/${ch.plugin}/${ch.page}?c=${id}`, 302);
+    return c.redirect(`../w/${ch.plugin}/${ch.page}?c=${id}`, 302);
   });
 }
