@@ -27,7 +27,7 @@ const relPathSchema = z
   .min(1)
   .refine((p) => !/^[a-z]+:|^\/|(^|\/)\.\.(\/|$)|\\/.test(p), 'a relative path inside the plugin folder');
 
-export const capabilitySchema = z.enum(['network', 'campus-network', 'campus-session', 'notifications', 'background', 'cloud', 'ongoing']);
+export const capabilitySchema = z.enum(['network', 'campus-network', 'campus-session', 'notifications', 'background', 'cloud', 'ongoing', 'phone-control']);
 export const abilitySchema = z.enum(['verify', 'otp', 'todos', 'timetable', 'scheduler', 'browser', 'campusPage', 'sms', 'files', 'crypto', 'cloud']);
 export type Ability = z.infer<typeof abilitySchema>;
 
@@ -121,6 +121,7 @@ export const manifestSchema = z
     homepage: z.string().url().optional(),
     minApp: z.string().regex(/^\d+\.\d+\.\d+$/).optional(),
     requires: z.array(capabilitySchema).optional(),
+    maxAgentSteps: z.number().int().min(10).max(60).optional(),
     campus: z.array(z.string().regex(/^[a-z][a-z0-9-]{1,30}$/)).optional(),
     network: z.array(z.string().regex(/^(\*\.)?[a-z0-9-]+(\.[a-z0-9-]+)+$/i, 'a host like example.com or *.example.com')).optional(),
     abilities: z.array(abilitySchema).optional(),

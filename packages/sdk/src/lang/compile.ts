@@ -238,6 +238,7 @@ export function compilePlugin(doc: PluginDocument, opts: CompileOptions): Plugin
     name: m.name,
     description: m.description,
     version: m.version,
+    maxAgentSteps: m.maxAgentSteps,
     icon: m.icon,
     requires: [...requires],
     cloud,

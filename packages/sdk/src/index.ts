@@ -6,6 +6,7 @@ export * from './format';
 export * from './genui';
 export * from './notify';
 export * from './plugin';
+export * from './phone';
 export * from './pointer';
 export * from './scheduler/check';
 export * from './scheduler/policy';

@@ -1,6 +1,7 @@
 import type { PluginDef } from '@pku-harness/sdk';
 
 import { authenticatorPlugin } from './authenticator/src';
+import { copilotPlugin } from './copilot/src';
 import { calendarPlugin } from './calendar/src';
 import { cardSharePlugin } from './card-share/src';
 import { coursesPlugin } from './courses/src';
@@ -27,6 +28,7 @@ import { walletPlugin } from './wallet/src';
  * downloading code). Order = order in Settings and the system prompt.
  */
 export const builtinPlugins: PluginDef[] = [
+  copilotPlugin,
   uiPlugin,
   dashboardPlugin,
   schedulerPlugin,

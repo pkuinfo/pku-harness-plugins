@@ -184,6 +184,8 @@ export interface HostUI {
 }
 
 export interface PluginScreenProps {
+  /** Whether this screen is currently focused; hosts may keep covered screens mounted. */
+  focused?: boolean;
   host: HostUI;
   services: HostServices;
   /** This plugin's store. */

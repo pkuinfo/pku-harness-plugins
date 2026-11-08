@@ -1,4 +1,5 @@
 import type { z } from 'zod';
+import type { PhoneService } from './phone';
 
 import type { CampusRequest, CampusResponse, CampusService, CampusStatus, OtpCode, OtpStatus, PickedFile } from './campus';
 import type { CloudManifest, PluginCloud } from './cloud';
@@ -36,6 +37,12 @@ export type PluginTranslation = {
 /** What a tool changes. Drives per-plugin permission modes in the app. */
 export type ToolEffect = 'read' | 'write' | 'money' | 'public';
 
+/** A host-observed action target, shown separately from model-supplied tool arguments. */
+export type ToolAssessment = {
+  effect: ToolEffect;
+  target?: { label: string; context?: string };
+};
+
 /** Who invoked a tool. */
 export type Actor = 'user' | 'agent' | 'scheduler';
 
@@ -54,6 +61,7 @@ export type Capability =
   | 'shell' // never available on phones; plugins needing it must run remotely
   | 'filesystem'
   | 'cloud' // a PKU Harness Cloud provider is configured (docs/CLOUD.md); see PluginDef.cloud
+  | 'phone-control'
   | 'ongoing'; // a persistent ongoing notification / foreground service (Android only); see HostServices.ongoing
 
 /** Minimal namespaced JSON store each plugin gets. */
@@ -109,6 +117,8 @@ export interface OngoingHandle {
 }
 
 export interface HostServices {
+  /** Native Copilot sessions. Scope and setup are selected by the user. */
+  phone: PhoneService;
   /**
    * Hand the user to a web page in the system browser tab (Custom Tabs / SFSafariViewController),
    * outside the app: a payment cashier, a login the harness can't do, a document. App links on
@@ -282,6 +292,8 @@ export interface TurnInfo {
 }
 
 export interface ToolContext {
+  /** Effect approved for this invocation after optional native classification. */
+  effect?: ToolEffect;
   pluginId: string;
   actor: Actor;
   /** Set for agent calls inside a chat turn. */
@@ -303,6 +315,8 @@ export interface ToolDef<I extends z.ZodType = z.ZodType, O = unknown> {
   description: Dynamic<string>;
   input: I;
   effect: ToolEffect;
+  /** Additional effect inferred from current external state, checked alongside the base effect. */
+  resolveEffect?: (input: z.infer<I>, services: HostServices) => Promise<ToolEffect | ToolAssessment>;
   /**
    * Returns content written by third parties (forum posts, notices, event blurbs). Calling it
    * taints the agent's turn (`ToolContext.turn.tainted`). Remote plugins' tools always count.
@@ -398,6 +412,8 @@ export interface PluginDef {
   name: string;
   description: string;
   version: string;
+  /** Requested model steps after a tool from this plugin is used. Host bounds: 10–60. */
+  maxAgentSteps?: number;
   /** Icon name from the host's icon set (e.g. 'card', 'book', 'alarm'). */
   icon?: string;
   /** Part of the harness experience: always on, can't be disabled. */
