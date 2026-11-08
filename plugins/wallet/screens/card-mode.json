@@ -1,0 +1,51 @@
+{
+  "title": "用卡方式",
+  "description": "切换校园卡的用卡方式：付款码要「数字卡」，刷实体卡或手机 NFC 要改回对应的方式。",
+  "bindings": {
+    "/cfg": { "tool": "cardMode" }
+  },
+  "strings": {
+    "zh-Hans": {
+      "intro": "付款码只能在「数字卡」下使用；切到数字卡后，实体卡或手机 NFC 刷卡可能失效，在这里改回来即可。",
+      "current": "当前",
+      "switched1": "已切换到「",
+      "switched2": "」"
+    },
+    "en": {
+      "intro": "Payment codes only work in digital card mode (数字卡). While it’s on, your physical card or phone NFC may not work; switch back here.",
+      "current": "Current",
+      "switched1": "Switched to “",
+      "switched2": "”"
+    }
+  },
+  "spec": {
+    "root": "root",
+    "elements": {
+      "root": { "type": "Column", "props": { "gap": "md" }, "children": ["intro", "list", "done", "error"] },
+      "intro": { "type": "Text", "props": { "text": { "$state": "/t/intro" }, "tone": "muted", "size": "small" } },
+      "list": { "type": "Column", "props": { "gap": "sm" }, "repeat": { "statePath": "/cfg/modes", "key": "code" }, "children": ["row"] },
+      "row": {
+        "type": "ListItem",
+        "props": {
+          "title": { "$item": "name" },
+          "subtitle": null,
+          "value": { "$cond": { "$item": "current" }, "$then": { "$state": "/t/current" }, "$else": null },
+          "icon": { "$cond": { "$item": "current" }, "$then": "check", "$else": null }
+        },
+        "on": {
+          "press": [
+            { "action": "callTool", "params": { "tool": "wallet.cardSetMode", "input": { "mode": { "$template": "${code}" } }, "resultPath": "/result", "errorPath": "/error" } },
+            { "action": "callTool", "params": { "tool": "wallet.cardMode", "input": {}, "resultPath": "/cfg", "errorPath": "/error" } }
+          ]
+        }
+      },
+      "done": {
+        "type": "Text",
+        "props": { "text": { "$template": "${/t/switched1}${/result/mode}${/t/switched2}" }, "tone": "up", "size": "small" },
+        "visible": { "$state": "/result/changed" }
+      },
+      "error": { "type": "Text", "props": { "text": { "$state": "/error" }, "tone": "down", "size": "body" }, "visible": { "$state": "/error" } }
+    },
+    "state": { "cfg": null, "result": null, "error": null }
+  }
+}

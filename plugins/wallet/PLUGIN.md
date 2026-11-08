@@ -3,7 +3,7 @@ spec: 1
 id: wallet
 name: 校园钱包
 description: 校园卡余额与付款码、充值，网费、电费、水费、浴卡。
-version: 1.1.0
+version: 1.2.0
 author: pkuinfo
 icon: wallet
 homepage: https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/wallet
@@ -22,6 +22,8 @@ shared: shared.yaml
 tools:
   cardBalance: tools/cardBalance.yaml
   cardSetDigital: tools/cardSetDigital.yaml
+  cardMode: tools/cardMode.yaml
+  cardSetMode: tools/cardSetMode.yaml
   cardRecharge: tools/cardRecharge.yaml
   cardMonthlyStats: tools/cardMonthlyStats.yaml
   cardTransactions: tools/cardTransactions.yaml
@@ -41,6 +43,7 @@ widgets:
 screens:
   wallet: screens/wallet.json
   pay: screens/pay.json
+  card-mode: screens/card-mode.json
   recharge: screens/recharge.json
   bath-recharge: screens/bath-recharge.json
   electricity: screens/electricity.json
@@ -81,6 +84,8 @@ i18n:
     tools:
       cardBalance: { title: Check Campus Card balance, summary: 'Campus Card balance, today’s spending and card status' }
       cardSetDigital: { title: Switch to digital card, summary: Switch the card to digital mode (数字卡) for the payment code }
+      cardMode: { title: Card mode, summary: 'The current card mode and the modes it can switch to (digital, physical card, phone NFC)' }
+      cardSetMode: { title: Switch card mode, summary: 'Switch the card to a given mode, e.g. back to physical card or NFC from digital' }
       cardRecharge: { title: Top up Campus Card, summary: Create a top-up order and open the university’s cashier to pay with WeChat or Alipay }
       cardMonthlyStats: { title: Monthly spending, summary: 'One month of Campus Card income, spending by category and per day' }
       cardTransactions: { title: Transactions, summary: 'Recent Campus Card transactions, newest first' }
@@ -100,6 +105,7 @@ i18n:
     screens:
       wallet: { title: Campus wallet }
       pay: { title: Payment code }
+      card-mode: { title: Card mode }
       recharge: { title: Top up }
       bath-recharge: { title: Top up bath card }
       electricity: { title: Dorm electricity }
@@ -117,7 +123,7 @@ i18n:
 ---
 
 校园钱包（金额单位都是元）：
-- 校园卡：问余额用 wallet__cardBalance；问最近花了多少、在哪消费用 wallet__cardTransactions；问某个月一共花了多少、钱主要花在哪类（餐费、超市等）、哪天花得最多，用 wallet__cardMonthlyStats（一次返回整月汇总，比翻流水省事）。wallet__cardSetDigital 只在用户明确要求时切换到数字卡。
+- 校园卡：问余额用 wallet__cardBalance；问最近花了多少、在哪消费用 wallet__cardTransactions；问某个月一共花了多少、钱主要花在哪类（餐费、超市等）、哪天花得最多，用 wallet__cardMonthlyStats（一次返回整月汇总，比翻流水省事）。wallet__cardSetDigital 只在用户明确要求时切换到数字卡；要改回实体卡、手机 NFC 等，先用 wallet__cardMode 看可选方式，再用 wallet__cardSetMode 切换（同样只在用户要求时）。
 - 校园卡充值用 wallet__cardRecharge（整数元）：它创建学校的充值订单并在系统浏览器打开收银台，用户在里面选微信或支付宝、在那个 App 里自己付款；你不能也不需要代付，收银台链接也不会给你。调用后告诉用户去收银台完成付款，付完后在 POS 机上刷一次卡才能到账，之后可以再查余额确认。
 - 付款码不经过你：让用户点看板校园卡组件上的「付款码」，或在 设置 →「校园卡付款码」/「校园钱包」打开。
 - 网费：问网费、上网余额用 wallet__netfeeBalance。

@@ -1,0 +1,28 @@
+# 数字卡 → NFC卡 by name: the restore path after cardSetDigital.
+tool: cardSetMode
+input: { mode: NFC卡 }
+responses:
+  - match: useCard/getUseCardConfig
+    campus: card
+    body:
+      code: 200
+      success: true
+      data:
+        cardType: "1"
+        cardTypes:
+          - name: 实体卡
+            code: 0
+          - name: 数字卡
+            code: 1
+          - name: NFC卡
+            code: 2
+  - match: useCard/setUseCardConfig
+    campus: card
+    body:
+      code: 200
+      success: true
+      data: null
+expect:
+  changed: true
+  from: 数字卡
+  mode: NFC卡

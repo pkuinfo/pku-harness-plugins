@@ -1,0 +1,23 @@
+# The current mode and the choices for the 用卡方式 screen.
+tool: cardMode
+responses:
+  - match: useCard/getUseCardConfig
+    campus: card
+    body:
+      code: 200
+      success: true
+      data:
+        cardType: "1"
+        cardTypes:
+          - name: 实体卡
+            code: 0
+          - name: 数字卡
+            code: 1
+          - name: NFC卡
+            code: 2
+expect:
+  current: 数字卡
+  modes:
+    - { name: 实体卡, code: 0, current: false }
+    - { name: 数字卡, code: 1, current: true }
+    - { name: NFC卡, code: 2, current: false }

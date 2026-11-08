@@ -1,0 +1,40 @@
+# Any 用卡方式, e.g. back to 实体卡 / NFC after cardSetDigital (api.rs set_use_card_config). The mode is
+# a name or code from getUseCardConfig's cardTypes; anything else is refused before the POST.
+title: 切换用卡方式
+summary: 把用卡方式切换成指定的一种（如从数字卡改回实体卡或手机 NFC）
+description: "Switch the card's 用卡方式 to `mode`, a name or code from wallet__cardMode (e.g. 'NFC卡', '实体卡', '数字卡'). Only 数字卡 has a payment code; the others are for the physical card or phone NFC. Only when the user asks."
+effect: write
+input:
+  mode: { type: string, max: 20, description: "A 用卡方式 name or code from wallet__cardMode" }
+steps:
+  - let: cfg
+    request: { campus: card, url: '${USE_CARD_CONFIG}' }
+    as: response
+  - check: cardErr(cfg) == null
+    error: ${cardErr(cfg)}
+  - let: types
+    value: cardData(cfg)?.cardTypes ?? []
+  - let: want
+    value: trim(input.mode)
+  - let: target
+    value: find(types, (t) => t.name == want || str(t.code) == want)
+  - check: target != null
+    error: 没有「${want}」这种用卡方式，可选：${join(map(types, (t) => t.name), '、')}
+  - let: before
+    value: modeOf(cardData(cfg))
+  - if: before.code == target.code
+    then:
+      - return: "{ changed: false, mode: target.name }"
+  - let: res
+    request:
+      campus: card
+      url: /berserker-app/useCard/setUseCardConfig
+      method: POST
+      contentType: application/json
+      body: "${str({ cardType: target.code, synAccessSource: 'h5' })}"
+    as: response
+  - let: env
+    value: json(res.text, null)
+  - check: env?.success && env?.code == 200
+    error: 切换用卡方式失败：${env?.msg ?? env?.message ?? 'HTTP ' + res.status}
+return: "{ changed: true, from: before.name, mode: target.name }"
