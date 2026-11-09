@@ -18,3 +18,9 @@ test('handles empty names, whitespace and duplicate labels deterministically', (
   expect(indexApps([app(''), app('  browser'), app('Browser', 'b'), app('Browser', 'a')]).map((g) => g.letter)).toEqual(['B', '#']);
   expect(indexApps([app('Browser', 'b'), app('Browser', 'a')])[0]?.apps.map((a) => a.packageName)).toEqual(['a', 'b']);
 });
+
+test('files Chinese names by their pinyin sort key', () => {
+  const groups = indexApps([{ label: '微信', packageName: 'w', sortKey: 'wei xin' }, { label: '支付宝', packageName: 'z', sortKey: 'zhi fu bao' }, { label: 'WPS', packageName: 'p' }]);
+  expect(groups.map((g) => g.letter)).toEqual(['W', 'Z']);
+  expect(groups[0]?.apps.map((a) => a.label)).toEqual(['微信', 'WPS']);
+});

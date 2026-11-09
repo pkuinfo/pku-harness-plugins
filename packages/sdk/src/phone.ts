@@ -6,13 +6,16 @@ export type PhoneReadiness = {
   helperStatus: string;
   helperFailure?: string | null;
   locked: boolean;
+  /** Android blocks accessibility for this install until the user allows restricted settings in App info. */
+  restricted?: boolean;
   sessionId: string | null;
   packages: string[];
   handedOver: boolean;
   paused?: boolean;
 };
 
-export type PhoneApp = { packageName: string; label: string; iconUri?: string | null; launchable?: boolean };
+/** sortKey: the label in lowercase Latin letters (pinyin for Chinese), for sorting and the A–Z index. */
+export type PhoneApp = { packageName: string; label: string; sortKey?: string; iconUri?: string | null; launchable?: boolean };
 /** Physical main-display brightness; percent follows Android's perceptual slider scale. */
 export type PhoneBrightness = {
   displayId: 0;
@@ -60,7 +63,7 @@ export type PhoneResult = PhoneSnapshot | { ok: boolean; error?: string; hint?: 
 
 export interface PhoneService {
   readiness(signal?: AbortSignal): Promise<PhoneReadiness>;
-  setup(kind: 'accessibility' | 'wireless'): Promise<void>;
+  setup(kind: 'accessibility' | 'wireless' | 'appInfo'): Promise<void>;
   pair(code: string, port: number): Promise<PhoneReadiness>;
   connect(port?: number): Promise<PhoneReadiness>;
   disconnect(): Promise<void>;

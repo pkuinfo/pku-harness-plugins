@@ -1,14 +1,17 @@
 import type { PhoneApp, PhoneReadiness, PhonePreview, PluginScreenProps } from '@pku-harness/sdk';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AppState, Image, ScrollView, View } from 'react-native';
+import { AppState, Image, StyleSheet, View } from 'react-native';
 import { strings } from './strings';
 import { indexApps } from './app-index';
 import { LatestPhoneRead } from './latest-read';
 
+/** Height of one letter in the A–Z strip. */
+const INDEX_ROW = 18;
+
 type CopilotStatus = PhoneReadiness & { enabled: boolean; configuredPackages: string[] };
 
 export function CopilotScreen({ host, services, invoke, focused = true }: PluginScreenProps) {
-  const { Screen, Text, Button, Field, Switch, ListGroup, ListRow, Icon, IconButton, Segmented, Skeleton, Pressable } = host.components;
+  const { Screen, Text, Button, Field, Switch, ListGroup, ListRow, Icon, IconButton, Segmented, Skeleton } = host.components;
   const s = strings[host.useLocale()];
   const theme = host.useTheme();
   const [status, setStatus] = useState<CopilotStatus | null>(null);
@@ -23,6 +26,8 @@ export function CopilotScreen({ host, services, invoke, focused = true }: Plugin
   const listY = useRef(0);
   const sectionY = useRef<Record<string, number>>({});
   const [activeLetter, setActiveLetter] = useState('');
+  const [scrubbing, setScrubbing] = useState(false);
+  const scrubOrigin = useRef(0);
   const [query, setQuery] = useState('');
   const [appFilter, setAppFilter] = useState('all');
   const initialFilter = useRef(false);
@@ -93,11 +98,18 @@ export function CopilotScreen({ host, services, invoke, focused = true }: Plugin
   const visibleApps = apps.filter((app) => (appFilter === 'all' || selected.includes(app.packageName)) && `${app.label} ${app.packageName}`.toLowerCase().includes(query.trim().toLowerCase()));
   const indexedApps = indexApps(visibleApps);
   const showIndex = appFilter === 'all' && !query.trim() && !appsLoading && !sessionId;
-  const jumpToLetter = (letter: string) => {
+  const letters = indexedApps.map((g) => g.letter);
+  const jumpToLetter = (letter: string, animated = true) => {
     const y = sectionY.current[letter];
     if (y === undefined) return;
     setActiveLetter(letter);
-    scrollRef.current?.scrollTo({ y: theme.spacing.lg + appPanelY.current + listY.current + y, animated: true });
+    scrollRef.current?.scrollTo({ y: theme.spacing.lg + appPanelY.current + listY.current + y, animated });
+  };
+  const scrubTo = (y: number) => {
+    const letter = letters[Math.min(letters.length - 1, Math.max(0, Math.floor((y - theme.spacing.sm) / INDEX_ROW)))];
+    if (!letter || letter === activeLetter) return;
+    host.haptics.select();
+    jumpToLetter(letter, false);
   };
   const iconSize = theme.spacing.xl;
   const ready = !!status?.helper && !!status?.accessibility;
@@ -115,17 +127,32 @@ export function CopilotScreen({ host, services, invoke, focused = true }: Plugin
     : helperFailure === 'UsbHelperStopped' ? s.usbStopped
     : helperFailure ? s.retryConnection : null;
   return (
-    <Screen title="Copilot" appearance="plain" scrollRef={scrollRef} overlay={showIndex ? (
+    <Screen title="Copilot" appearance="plain" scrollRef={scrollRef} overlay={showIndex && letters.length > 1 ? (
       <View pointerEvents="box-none" style={{ position: 'absolute', right: 0, top: 0, bottom: 0, justifyContent: 'center' }}>
-        <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: '100%', flexGrow: 0, backgroundColor: theme.colors.bg, borderRadius: theme.radius.md }} contentContainerStyle={{ paddingVertical: theme.spacing.sm }}>
-          {indexedApps.map(({ letter }) => <Pressable key={letter} accessibilityRole="button" accessibilityLabel={`${s.jumpToLetter} ${letter}`} onPress={() => jumpToLetter(letter)}
-            style={{ width: theme.spacing.xxl, minHeight: theme.spacing.xxl, alignItems: 'center', justifyContent: 'center' }}>
-            <Text variant="caption" tone={activeLetter === letter ? 'accent' : 'muted'}>{letter}</Text>
-          </Pressable>)}
-        </ScrollView>
+        {scrubbing && activeLetter ? (
+          <View pointerEvents="none" style={{ position: 'absolute', right: theme.spacing.xxl + theme.spacing.sm, alignSelf: 'center', width: theme.spacing.xxxl + theme.spacing.md, height: theme.spacing.xxxl + theme.spacing.md,
+            borderRadius: theme.radius.lg, borderCurve: 'continuous', backgroundColor: theme.colors.elevated, borderWidth: StyleSheet.hairlineWidth, borderColor: theme.colors.border, alignItems: 'center', justifyContent: 'center' }}>
+            <Text variant="title">{activeLetter}</Text>
+          </View>
+        ) : null}
+        {/* Fast scroller: touch or drag along the strip to jump; children ignore touches so locationY is the strip's. */}
+        <View accessibilityRole="adjustable" accessibilityLabel={s.jumpToLetter} accessibilityValue={{ text: activeLetter || letters[0] }}
+          accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
+          onAccessibilityAction={(e) => { const i = Math.max(0, letters.indexOf(activeLetter)); jumpToLetter(letters[Math.min(letters.length - 1, Math.max(0, i + (e.nativeEvent.actionName === 'increment' ? 1 : -1)))]!); }}
+          onStartShouldSetResponder={() => true} onMoveShouldSetResponder={() => true} onResponderTerminationRequest={() => false}
+          onResponderGrant={(e) => { scrubOrigin.current = e.nativeEvent.pageY - e.nativeEvent.locationY; setScrubbing(true); scrubTo(e.nativeEvent.locationY); }}
+          onResponderMove={(e) => scrubTo(e.nativeEvent.pageY - scrubOrigin.current)}
+          onResponderRelease={() => setScrubbing(false)} onResponderTerminate={() => setScrubbing(false)}
+          style={{ width: theme.spacing.xl + theme.spacing.xs, paddingVertical: theme.spacing.sm, marginRight: theme.spacing.xxs, borderRadius: theme.radius.full, backgroundColor: scrubbing ? theme.colors.surface2 : 'transparent' }}>
+          {letters.map((letter) => (
+            <View key={letter} pointerEvents="none" style={{ height: INDEX_ROW, alignItems: 'center', justifyContent: 'center' }}>
+              <Text variant="micro" tone={activeLetter === letter ? 'accent' : 'muted'}>{letter}</Text>
+            </View>
+          ))}
+        </View>
       </View>
     ) : null} back trailing={<IconButton icon="refresh" label={s.refresh} variant="ghost" disabled={busy || appsLoading} onPress={() => void reload()} />}>
-      <View style={{ gap: theme.spacing.xl, paddingRight: showIndex ? theme.spacing.xxl : 0 }}>
+      <View style={{ gap: theme.spacing.xl, paddingRight: showIndex && letters.length > 1 ? theme.spacing.xl : 0 }}>
         {error ? <View style={{ gap: theme.spacing.sm }}><Text tone="down">{error}</Text><Button title={s.retry} variant="ghost" size="sm" disabled={busy} onPress={() => void reload()} /></View> : null}
         {!status ? <View style={{ gap: theme.spacing.sm, padding: theme.spacing.lg }}>
           <Skeleton width="65%" height={theme.spacing.lg} />
@@ -141,10 +168,14 @@ export function CopilotScreen({ host, services, invoke, focused = true }: Plugin
               chevron={false} onPress={() => setConnectionExpanded(!connectionOpen)} accessory={<Icon name={connectionOpen ? 'chevronDown' : 'chevronRight'} size={theme.spacing.lg} color={theme.colors.textMuted} />} />
             {connectionOpen ? <>
               <ListRow compact icon="phone" title={s.phoneHelper} subtitle={helperStatus} />
-              <ListRow compact icon="shield" title={s.accessibility} subtitle={status.accessibility ? s.enabled : s.setupNeeded}
-                onPress={!status.accessibility && !busy ? () => void run(() => services.phone.setup('accessibility')) : undefined} />
+              <ListRow compact icon="shield" title={s.accessibility} subtitle={status.accessibility ? s.enabled : s.setupNeeded} />
             </> : null}
           </ListGroup>
+          {connectionOpen && !status.accessibility ? <View style={{ gap: theme.spacing.md }}>
+            <Text variant="caption" tone="muted">{status.helper ? s.accessibilityViaHelper : status.restricted ? s.restrictedHint : s.accessibilitySettingsHint}</Text>
+            <Button title={s.enableAccessibility} size="sm" disabled={busy} onPress={() => void run(() => services.phone.setup('accessibility'))} />
+            {!status.helper ? <Button title={s.openAppInfo} variant="secondary" size="sm" disabled={busy} onPress={() => void run(() => services.phone.setup('appInfo'))} /> : null}
+          </View> : null}
           {connectionOpen && !status.helper ? <View style={{ gap: theme.spacing.md }}>
             {setupHint ? <Text variant="callout" tone="down">{setupHint}</Text> : null}
             <Segmented variant="tabs" options={[{ label: s.reconnect, value: 'reconnect' }, { label: s.pairNew, value: 'pair' }]} value={connectionMode} onChange={setConnectionMode} />
