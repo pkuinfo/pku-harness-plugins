@@ -76,7 +76,7 @@ export function CreateScreen(props: PluginScreenProps) {
 
   if (!cloud)
     return (
-      <SheetScreen title={s.createTitle} primary={s.close} onPrimary={() => host.dismiss('/dashboard')}>
+      <SheetScreen title={s.createTitle} primary={s.openCloud} onPrimary={() => host.navigate('/cloud-settings')} secondary={s.close} onSecondary={() => host.dismiss('/dashboard')}>
         <Text variant="callout" tone="muted">
           {s.noCloud}
         </Text>

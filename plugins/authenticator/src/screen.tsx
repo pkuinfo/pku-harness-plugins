@@ -16,6 +16,13 @@ export function AuthenticatorScreen({ host, services }: PluginScreenProps) {
   const [status, setStatus] = useState<OtpStatus | null>(null);
   const [agreed, setAgreed] = useState(false);
   const [sentTo, setSentTo] = useState<string | null | undefined>(undefined); // undefined = not sent
+  // One SMS a minute, like the sign-in verification prompt.
+  const [cooldown, setCooldown] = useState(0);
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const id = setTimeout(() => setCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(id);
+  }, [cooldown]);
   const [sms, setSms] = useState('');
   const [busy, setBusy] = useState<'send' | 'bind' | 'remove' | null>(null);
   /** Set on a successful bind so the bound view arrives as a moment, not a silent swap. */
@@ -48,6 +55,7 @@ export function AuthenticatorScreen({ host, services }: PluginScreenProps) {
     try {
       const r = await services.campus.otpBindStart();
       setSentTo(r.sentTo);
+      setCooldown(60);
       setNotice({ tone: 'muted', text: r.sentTo ? s.sentTo(r.sentTo) : s.sentToPhone });
     } catch (e) {
       fail(e);
@@ -160,7 +168,7 @@ export function AuthenticatorScreen({ host, services }: PluginScreenProps) {
           <View style={{ gap: t.spacing.md }}>
             <Field label={s.smsCode} value={sms} onChangeText={setSms} placeholder={s.smsPlaceholder} keyboardType="number-pad" autoFocus hint={sentTo ? s.smsSentTo(sentTo) : undefined} />
             <Button title={s.finish} icon="check" disabled={!/^\d{4,8}$/.test(sms.trim())} loading={busy === 'bind'} onPress={() => void bind()} />
-            <Button title={s.resend} variant="ghost" size="sm" loading={busy === 'send'} onPress={() => void send()} />
+            <Button title={cooldown > 0 ? `${s.resend} (${cooldown})` : s.resend} variant="ghost" size="sm" disabled={cooldown > 0} loading={busy === 'send'} onPress={() => void send()} />
           </View>
         )}
         {noticeView}

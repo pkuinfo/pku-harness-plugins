@@ -88,6 +88,7 @@ export const strings = defineStrings({
     // errors
     needSignIn: '付款码来自校园卡系统，需要先登录校园账号。',
     signIn: '登录校园账号',
+    openCloud: '去设置云服务',
     noCloud: '付款码共享通过云服务转发加密后的付款码。请先在 设置 → 云服务 里选择一个服务，并允许本插件使用。',
     consent: '还没有允许「付款码共享」使用云服务：在 设置 → 插件 → 付款码共享 里打开「允许使用云服务」。',
     notDigital: (current: string) => `付款码只能在「数字卡」用卡方式下使用，你现在是「${current}」。`,
@@ -182,6 +183,7 @@ export const strings = defineStrings({
     keepOpenIos: 'Keep this app open while sharing.',
     needSignIn: 'The payment code comes from the Campus Card system, so sign in to your campus account first.',
     signIn: 'Sign in to campus account',
+    openCloud: 'Set up cloud',
     noCloud: 'Sharing relays encrypted payment codes through a cloud service. Choose one in Settings → Cloud and allow this plugin to use it.',
     consent: 'Share payment code isn’t allowed to use the cloud yet: turn on “Allow cloud” in Settings → Plugins → Share payment code.',
     notDigital: (current: string) => `Payment codes only work in digital card mode (数字卡); you’re using “${current}”.`,
