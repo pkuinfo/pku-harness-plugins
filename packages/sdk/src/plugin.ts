@@ -32,6 +32,8 @@ export type PluginTranslation = {
   /** Provider plugins: display name, description, credential hint and model names/descriptions. */
   providers?: Record<string, { name?: string; description?: string; credentialHint?: string; models?: Record<string, { name?: string; description?: string }> }>;
   dataSources?: Record<string, { title?: string }>;
+  /** Access scopes written as prose (not a host name), keyed by the source text in `scopes`. */
+  scopes?: Record<string, string>;
 };
 
 /** What a tool changes. Drives per-plugin permission modes in the app. */

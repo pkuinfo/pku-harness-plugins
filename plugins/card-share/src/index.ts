@@ -35,6 +35,7 @@ export const cardSharePlugin = definePlugin({
     en: {
       name: 'Share payment code',
       description: 'Lend your Campus Card payment code to a friend for a while: end-to-end encrypted relay, optional spend cap, PIN and name check, stop at any time.',
+      scopes: { 'PKU Harness Cloud（加密转发）': 'PKU Harness Cloud (encrypted relay)' },
       tools: {
         list: { title: 'View payment-code shares' },
         revoke: { title: 'Stop payment-code sharing' },

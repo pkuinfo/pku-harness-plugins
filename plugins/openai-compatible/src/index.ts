@@ -12,6 +12,7 @@ export const openAICompatiblePlugin = definePlugin({
     en: {
       name: 'OpenAI-compatible',
       description: 'Connect any model service that supports the OpenAI Chat Completions API.',
+      scopes: { '用户填写的 Base URL': 'The base URL you enter' },
       providers: {
         custom: {
           name: 'OpenAI-compatible',

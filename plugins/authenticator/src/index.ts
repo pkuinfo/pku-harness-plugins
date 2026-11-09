@@ -20,6 +20,7 @@ export const authenticatorPlugin = definePlugin({
     en: {
       name: 'Authenticator',
       description: 'Makes this app your IAAA mobile authenticator (手机令牌), so two-step verification happens on its own.',
+      scopes: { 'iaaa.pku.edu.cn（手机令牌绑定）': 'iaaa.pku.edu.cn (mobile authenticator binding)' },
       tools: { status: { title: 'Authenticator status' } },
       widgets: { code: { title: 'Authenticator', description: 'Your current 6-digit IAAA code, shown large, with an hourglass counting down to the next one (30 s). Tap to copy.' } },
       screens: { home: { title: 'Authenticator' } },

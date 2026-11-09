@@ -31,6 +31,7 @@ export const copilotPlugin = definePlugin({
       handoff: { title: 'Hand control to you' }, readBrightness: { title: 'Read screen brightness' }, setBrightness: { title: 'Adjust screen brightness' },
     },
     name: 'Copilot', description: 'Operate the apps you select on a separate screen.',
+    scopes: { '用户选择的手机应用': 'Phone apps you select' },
     screens: { home: { title: 'Copilot' } },
     settings: { home: { title: 'Copilot', subtitle: 'Phone setup and app control' } },
     commands: { copilot: { description: 'Set up, preview, or stop phone control', aliases: ['phone'] } },

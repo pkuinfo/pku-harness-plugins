@@ -39,6 +39,8 @@ describe('plugin manifests have English', () => {
       };
       check('name', p.name, en?.name);
       check('description', p.description, en?.description);
+      // Host names and campus:<id> scopes need no translation; scopes written in Chinese do.
+      for (const s of p.scopes) if (CJK.test(s)) check(`scopes[${JSON.stringify(s)}]`, s, en?.scopes?.[s]);
       for (const [k, t] of Object.entries(p.tools)) check(`tools.${k}.title`, t.title, en?.tools?.[k]?.title);
       for (const [k, d] of Object.entries(p.dataSources ?? {})) check(`dataSources.${k}.title`, d.title, en?.dataSources?.[k]?.title);
       const c = p.contributes ?? {};
