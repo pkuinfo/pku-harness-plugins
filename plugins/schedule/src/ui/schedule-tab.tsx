@@ -1,5 +1,5 @@
 import { classesOn, formatLocalDate, weekOf, type HostUI, type PluginScreenProps } from '@pku-harness/sdk';
-import { useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { ClassList } from './class-list';
@@ -44,6 +44,13 @@ export function ScheduleTab({ host, services }: PluginScreenProps) {
   const jobs = services.scheduler.list();
   const [view, setView] = useState<'day' | 'week'>('day');
   const [selected, setSelected] = useState(() => new Date());
+  // Past midnight, a view that was on today moves on to the new today.
+  const lastNow = useRef(now);
+  useEffect(() => {
+    const prev = lastNow.current;
+    lastNow.current = now;
+    if (!sameDay(prev, now) && sameDay(selected, prev)) setSelected(now);
+  }, [now, selected]);
 
   const dayClasses = classesOn(courses, selected, semester);
   const week = weekOf(semester, selected);

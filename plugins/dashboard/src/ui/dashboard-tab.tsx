@@ -115,7 +115,7 @@ export function DashboardTab({ host, services }: PluginScreenProps) {
                     <Text variant="bodyStrong" numberOfLines={1} style={{ flex: 1 }}>
                       {w.title}
                     </Text>
-                    <Pressable accessibilityRole="button" accessibilityLabel={s.resizeA11y(s.sizes[w.size])} onPress={() => resize(w)}>
+                    <Pressable accessibilityRole="button" accessibilityLabel={s.resizeA11y(s.sizes[w.size])} onPress={() => resize(w)} style={{ minHeight: 48, justifyContent: 'center' }}>
                       <Chip label={s.sizes[w.size]} />
                     </Pressable>
                     <IconButton icon="trash" label={s.remove(w.title)} variant="danger" size={36} onPress={() => remove(w)} />

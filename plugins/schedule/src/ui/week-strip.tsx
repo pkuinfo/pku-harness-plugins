@@ -69,8 +69,9 @@ export function WeekNav({ host, selected, onSelect, week }: { host: HostUI; sele
 
 const styles = StyleSheet.create({
   wrap: { flexDirection: 'row', alignItems: 'center' },
-  days: { flex: 1, flexDirection: 'row', justifyContent: 'space-between' },
-  day: { alignItems: 'center', width: 40, borderCurve: 'continuous' },
+  days: { flex: 1, flexDirection: 'row', justifyContent: 'space-between', gap: 2 },
+  // Flexible, so seven days and both arrows fit a 360 dp screen (or a large display size).
+  day: { alignItems: 'center', flex: 1, maxWidth: 44, borderCurve: 'continuous' },
   dot: { width: 4, height: 4 },
   nav: { flex: 1, alignItems: 'center' },
 });

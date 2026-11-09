@@ -3,7 +3,7 @@ import { defineStrings, plural, type WidgetSize } from '@pku-harness/sdk';
 export const strings = defineStrings({
   'zh-Hans': {
     title: '看板',
-    subtitle: 'Dashboard',
+    subtitle: '',
     ideas: ['把校园卡余额放到看板最上面', '加一个显示本学期第几周的卡片', '显示我接下来的三个提醒'],
     sizes: { sm: '小', md: '宽', lg: '大' } as Record<WidgetSize, string>,
     done: '完成',

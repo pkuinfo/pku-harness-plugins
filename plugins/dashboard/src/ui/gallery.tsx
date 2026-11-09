@@ -13,20 +13,25 @@ export function Gallery({ host, services, invoke }: PluginScreenProps) {
   const catalog = services.widgets.catalog();
   const placed = new Set(services.widgets.list().map((w) => (w.source ? `${w.source.plugin}/${w.source.widget}` : '')));
   const [busy, setBusy] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const add = async (e: WidgetCatalogEntry) => {
     const key = `${e.plugin}/${e.widget}`;
     setBusy(key);
+    setError(null);
     try {
       await invoke('dashboard.addPluginWidget', { plugin: e.plugin, widget: e.widget });
       host.haptics.success();
+    } catch (err) {
+      host.haptics.warning();
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setBusy(null);
     }
   };
 
   return (
-    <SheetScreen title={s.galleryTitle} primary={s.done} onPrimary={() => host.dismiss('/dashboard')}>
+    <SheetScreen title={s.galleryTitle} primary={s.done} onPrimary={() => host.dismiss('/dashboard')} notice={error ? { tone: 'down', text: error } : undefined}>
       {catalog.length === 0 ? (
         <EmptyState icon="puzzle" title={s.galleryEmpty} message={s.galleryEmptyHint} />
       ) : (
