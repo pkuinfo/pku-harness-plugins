@@ -106,3 +106,13 @@ test('Disable is persisted before a disconnected native readiness probe can fail
   await expect(configureCopilot(f.kv, f.phone, { enabled: false, packages: ['org.example.notes'] })).rejects.toThrow('native unavailable');
   expect((await loadCopilotPreferences(f.kv)).enabled).toBe(false);
 });
+
+test('start names the unfinished setup steps instead of opening a session', async () => {
+  const f = fixture();
+  await configureCopilot(f.kv, f.phone, { enabled: true, packages: ['org.example.notes'] });
+  f.setState({ helper: false, accessibility: false });
+  await expect(startCopilot(f.kv, f.phone)).rejects.toThrow('missing: phone helper, accessibility');
+  f.setState({ helper: true });
+  await expect(startCopilot(f.kv, f.phone)).rejects.toThrow('missing: accessibility');
+  expect(f.begun).toEqual([]);
+});

@@ -54,6 +54,8 @@ export function startCopilot(kv: KV, phone: PhoneService, signal?: AbortSignal) 
     signal?.throwIfAborted();
     const state = await phone.readiness(signal);
     if (state.sessionId) return { sessionId: state.sessionId, packages: state.packages };
+    const missing = [!state.helper && 'phone helper', !state.accessibility && 'accessibility'].filter(Boolean);
+    if (missing.length) throw new Error(`Copilot setup is not finished (missing: ${missing.join(', ')}). Ask the user to open /copilot and complete the highlighted step.`);
     return phone.begin(preferences.packages, signal);
   });
 }

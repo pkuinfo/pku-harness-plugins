@@ -1,9 +1,11 @@
-import type { PhoneApp, PhoneReadiness, PhonePreview, PluginScreenProps } from '@pku-harness/sdk';
+import type { NotifyPermission, PhoneApp, PhoneReadiness, PhonePreview, PluginScreenProps } from '@pku-harness/sdk';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, Image, StyleSheet, View } from 'react-native';
-import { strings } from './strings';
+import { fill, strings } from './strings';
 import { indexApps } from './app-index';
 import { LatestPhoneRead } from './latest-read';
+import { becameReady, canEnable, connectionMode, deriveSetup, helperHint, type CopilotSetup, type SetupStep as Step, type SetupStepId } from './setup';
+import { SetupStep } from './setup-step';
 
 /** Height of one letter in the A–Z strip. */
 const INDEX_ROW = 18;
@@ -11,7 +13,7 @@ const INDEX_ROW = 18;
 type CopilotStatus = PhoneReadiness & { enabled: boolean; configuredPackages: string[] };
 
 export function CopilotScreen({ host, services, invoke, focused = true }: PluginScreenProps) {
-  const { Screen, Text, Button, Field, Switch, ListGroup, ListRow, Icon, IconButton, Segmented, Skeleton } = host.components;
+  const { Screen, Text, Button, Field, Switch, ListGroup, ListRow, Icon, IconButton, Segmented, Skeleton, EmptyState, FadeIn, Surface } = host.components;
   const s = strings[host.useLocale()];
   const theme = host.useTheme();
   const [status, setStatus] = useState<CopilotStatus | null>(null);
@@ -31,8 +33,14 @@ export function CopilotScreen({ host, services, invoke, focused = true }: Plugin
   const [query, setQuery] = useState('');
   const [appFilter, setAppFilter] = useState('all');
   const initialFilter = useRef(false);
-  const [connectionExpanded, setConnectionExpanded] = useState<boolean | null>(null);
-  const [connectionMode, setConnectionMode] = useState('reconnect');
+  // Helper form: pair a never-paired phone, else reconnect; the user can switch.
+  const [pickedMode, setPickedMode] = useState<string | null>(null);
+  // The step the user opened, remembered against the current step so finishing a step opens the next.
+  const [opened, setOpened] = useState<{ id: SetupStepId | null; at: SetupStepId | null } | null>(null);
+  const [permissionsOpen, setPermissionsOpen] = useState(false);
+  const [notifications, setNotifications] = useState<NotifyPermission | null>(null);
+  const [celebrate, setCelebrate] = useState(false);
+  const lastPhase = useRef<CopilotSetup['phase'] | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [code, setCode] = useState('');
   const [port, setPort] = useState('');
@@ -42,6 +50,8 @@ export function CopilotScreen({ host, services, invoke, focused = true }: Plugin
   const [reads] = useState(() => new LatestPhoneRead());
   const acceptStatus = useCallback((next: CopilotStatus) => {
     setStatus(next); setSelected(next.configuredPackages);
+    // Fixed from the first read, so a failed pairing attempt doesn't swap the form under the user.
+    setPickedMode((mode) => mode ?? connectionMode(next));
     if (!initialFilter.current) { setAppFilter(next.configuredPackages.length ? 'allowed' : 'all'); initialFilter.current = true; }
   }, []);
   const refresh = useCallback(async () => {
@@ -49,14 +59,21 @@ export function CopilotScreen({ host, services, invoke, focused = true }: Plugin
     const next = await invoke('copilot.status') as CopilotStatus;
     if (current()) acceptStatus(next);
   }, [invoke, reads, acceptStatus]);
+  const refreshNotifications = useCallback(async () => {
+    try { setNotifications((await services.notify.readiness()).notifications); } catch { /* stays unknown; it never blocks */ }
+  }, [services]);
   useEffect(() => {
     let alive = true;
+    void refreshNotifications();
     void Promise.all([refresh(), services.phone.apps()]).then(([, a]) => {
       if (alive) { setApps(a); setAppsLoaded(true); }
     }).catch((e) => { if (alive) setError(String(e)); }).finally(() => { if (alive) setAppsLoading(false); });
-    const sub = AppState.addEventListener('change', (state) => { if (state === 'active') void refresh().catch((e) => setError(String(e))); });
+    // Back from a system screen: re-read every requirement at once.
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') { void refresh().catch((e) => setError(String(e))); void refreshNotifications(); }
+    });
     return () => { alive = false; reads.invalidate(); sub.remove(); };
-  }, [services, refresh, reads]);
+  }, [services, refresh, reads, refreshNotifications]);
   const run = async (action: () => Promise<unknown>) => {
     reads.invalidate(); setPreview(null); setBusy(true); setError(null);
     try { await action(); await refresh(); }
@@ -112,20 +129,114 @@ export function CopilotScreen({ host, services, invoke, focused = true }: Plugin
     jumpToLetter(letter, false);
   };
   const iconSize = theme.spacing.xl;
-  const ready = !!status?.helper && !!status?.accessibility;
-  const connectionOpen = connectionExpanded ?? (!!status && !ready);
   const reload = () => run(async () => {
     setAppsLoading(true);
     try { setApps(await services.phone.apps()); setAppsLoaded(true); }
     finally { setAppsLoading(false); }
   });
-  const helperStatus = status?.helper ? s.connected : status?.helperStatus === 'connecting' ? s.connecting : status?.helperStatus === 'wireless-off' ? s.wirelessOff : status?.helperStatus === 'failed' ? s.connectionFailed : s.setupNeeded;
-  const helperFailure = status?.helperFailure;
-  const setupHint = helperFailure === 'WrongCode' || helperFailure === 'PairingWindowClosed' ? s.pairingExpired
-    : helperFailure === 'NoWifi' || helperFailure === 'WifiNotAllowed' ? s.wifiNeeded
-    : helperFailure === 'AuthorizationRevoked' || helperFailure === 'KeyUnreadable' ? s.pairAgain
-    : helperFailure === 'UsbHelperStopped' ? s.usbStopped
-    : helperFailure ? s.retryConnection : null;
+  const setup = status ? deriveSetup({ readiness: status, enabled: status.enabled, configuredPackages: selected, missingPackages: missingPackages.length, notifications }) : null;
+  const phase = setup?.phase ?? null;
+  // "You're set": only when this screen watched setup finish, never on a plain visit.
+  useEffect(() => {
+    if (!phase) return;
+    if (becameReady(lastPhase.current, phase)) { setCelebrate(true); host.haptics.success(); }
+    lastPhase.current = phase;
+  }, [phase, host]);
+  const expandedStep = setup && opened && opened.at === setup.current ? opened.id : setup?.current ?? null;
+  const toggleStep = (id: SetupStepId) => setOpened({ id: expandedStep === id ? null : id, at: setup?.current ?? null });
+  const mode = pickedMode ?? 'reconnect';
+  const hint = helperHint(status?.helperFailure);
+  const enableAllowed = !!setup && canEnable(setup);
+  const goToApps = () => {
+    setAppFilter('all');
+    scrollRef.current?.scrollTo({ y: theme.spacing.lg + appPanelY.current, animated: true });
+  };
+  const stepTitle: Record<SetupStepId, string> = { helper: s.helperTitle, accessibility: s.accessibilityTitle, notifications: s.notificationsTitle, apps: s.appsTitle, enable: s.enableTitle };
+  const stepStatus = (step: Step): string => {
+    if (step.state === 'working') return s.connecting;
+    switch (step.id) {
+      case 'helper': return step.state === 'done' ? s.connected : step.state === 'attention' ? s.connectionFailed : s.stepNeeded;
+      case 'accessibility': return step.state === 'done' ? s.enabled : s.stepNeeded;
+      case 'notifications': return step.state === 'done' ? s.allowed : s.stepRecommended;
+      case 'apps': return step.state === 'attention' ? fill(s.appsMissing, { n: missingPackages.length }) : step.state === 'done' ? fill(s.appsCount, { n: selected.length }) : s.stepNeeded;
+      case 'enable': return step.state === 'done' ? s.on : s.stepNeeded;
+    }
+  };
+  const numbered = (items: string[]) => items.map((text, i) => (
+    <View key={text} style={{ flexDirection: 'row', gap: theme.spacing.sm }}>
+      <Text variant="callout" tone="muted">{`${i + 1}.`}</Text>
+      <View style={{ flex: 1 }}><Text variant="callout">{text}</Text></View>
+    </View>
+  ));
+  const stepBody = (step: Step) => {
+    if (!status) return null;
+    const why = (text: string) => <Text variant="callout" tone="muted">{text}</Text>;
+    switch (step.id) {
+      case 'helper':
+        return <>
+          {why(s.helperWhy)}
+          {step.state !== 'done' ? <>
+            {hint ? <Text variant="callout" tone="down">{s[hint]}</Text> : null}
+            <Segmented variant="tabs" options={[{ label: s.pairNew, value: 'pair' }, { label: s.reconnect, value: 'reconnect' }]} value={mode} onChange={setPickedMode} />
+            {mode === 'pair' ? <>
+              {numbered([s.pairStep1, s.pairStep2, s.pairStep3])}
+              <Button title={s.openWirelessDebugging} variant="secondary" size="sm" disabled={busy} onPress={() => void run(() => services.phone.setup('wireless'))} />
+              <Text variant="caption" tone="muted">{s.noDeveloperOptions}</Text>
+              <Field label={s.pairingPort} value={port} onChangeText={setPort} keyboardType="number-pad" />
+              <Field label={s.pairingCode} value={code} onChangeText={setCode} keyboardType="number-pad" secureTextEntry />
+              <Button title={s.pair} loading={busy} disabled={busy || !/^\d{6}$/.test(code) || !/^\d{1,5}$/.test(port) || Number(port) < 1 || Number(port) > 65535} onPress={() => void run(async () => { await services.phone.pair(code, Number(port)); setCode(''); })} />
+            </> : <>
+              <Text variant="caption" tone="muted">{s.reconnectHint}</Text>
+              <Field label={s.connectionPort} value={connectPort} onChangeText={setConnectPort} keyboardType="number-pad" />
+              <Button title={s.reconnect} loading={busy} disabled={busy || (connectPort !== '' && (!/^\d{1,5}$/.test(connectPort) || Number(connectPort) < 1 || Number(connectPort) > 65535))} onPress={() => void run(() => services.phone.connect(connectPort ? Number(connectPort) : undefined))} />
+            </>}
+          </> : null}
+        </>;
+      case 'accessibility':
+        return <>
+          {why(s.accessibilityWhy)}
+          {step.state !== 'done' ? <>
+            <Text variant="caption" tone="muted">{status.helper ? s.accessibilityViaHelper : status.restricted ? s.restrictedHint : s.accessibilitySettingsHint}</Text>
+            <Button title={status.helper ? s.turnOnAccessibility : s.openAccessibilitySettings} loading={busy} disabled={busy} onPress={() => void run(() => services.phone.setup('accessibility'))} />
+            {!status.helper && status.restricted ? <Button title={s.openAppInfo} variant="secondary" size="sm" disabled={busy} onPress={() => void run(() => services.phone.setup('appInfo'))} /> : null}
+          </> : null}
+        </>;
+      case 'notifications':
+        return <>
+          {why(s.notificationsWhy)}
+          {step.state !== 'done' ? <>
+            {notifications === 'denied' ? <Text variant="caption" tone="muted">{s.notificationsDenied}</Text> : null}
+            <Button title={notifications === 'denied' ? s.openNotificationSettings : s.allowNotifications} variant="secondary" size="sm" disabled={busy}
+              onPress={() => void run(async () => { setNotifications((await services.notify.fix('notifications')).notifications); })} />
+          </> : null}
+        </>;
+      case 'apps':
+        return <>
+          {why(s.appsWhy)}
+          {step.state === 'attention' ? <Text variant="callout" tone="warn">{s.unavailableHint}</Text> : null}
+          {!sessionId ? <Button title={s.chooseApps} variant={step.state === 'done' ? 'secondary' : 'primary'} size="sm" onPress={goToApps} /> : null}
+        </>;
+      case 'enable':
+        return <>
+          {why(s.enableWhy)}
+          {step.state !== 'done' ? <>
+            {!enableAllowed ? <Text variant="caption" tone="muted">{s.enableBlocked}</Text> : null}
+            <Button title={s.enableTitle} loading={busy} disabled={busy || !enableAllowed} onPress={() => void configure(true, selected)} />
+          </> : null}
+        </>;
+    }
+  };
+  const checklist = setup ? (
+    <View>
+      {setup.steps.map((step, i) => (
+        <SetupStep key={step.id} host={host} index={i + 1} total={setup.steps.length} title={step.required ? stepTitle[step.id] : `${stepTitle[step.id]} · ${s.optional}`}
+          status={stepStatus(step)} state={step.state} current={setup.current === step.id} stepLabel={fill(s.stepOf, { n: i + 1, total: setup.steps.length })}
+          expanded={expandedStep === step.id} onToggle={() => toggleStep(step.id)}>
+          {stepBody(step)}
+        </SetupStep>
+      ))}
+    </View>
+  ) : null;
   return (
     <Screen title="Copilot" appearance="plain" scrollRef={scrollRef} overlay={showIndex && letters.length > 1 ? (
       <View pointerEvents="box-none" style={{ position: 'absolute', right: 0, top: 0, bottom: 0, justifyContent: 'center' }}>
@@ -154,43 +265,49 @@ export function CopilotScreen({ host, services, invoke, focused = true }: Plugin
     ) : null} back trailing={<IconButton icon="refresh" label={s.refresh} variant="ghost" disabled={busy || appsLoading} onPress={() => void reload()} />}>
       <View style={{ gap: theme.spacing.xl, paddingRight: showIndex && letters.length > 1 ? theme.spacing.xl : 0 }}>
         {error ? <View style={{ gap: theme.spacing.sm }}><Text tone="down">{error}</Text><Button title={s.retry} variant="ghost" size="sm" disabled={busy} onPress={() => void reload()} /></View> : null}
-        {!status ? <View style={{ gap: theme.spacing.sm, padding: theme.spacing.lg }}>
+        {!status || !setup ? <View style={{ gap: theme.spacing.sm, padding: theme.spacing.lg }}>
           <Skeleton width="65%" height={theme.spacing.lg} />
           <Skeleton width="90%" height={theme.spacing.md} />
-        </View> : <>
-          <ListGroup variant="plain">
-            <ListRow compact title={s.enableCopilot} subtitle={status.enabled ? ready ? s.readyForTasks : s.connectionNeeded : s.off} accessory={
-              <Switch label={s.enableCopilot} value={status.enabled} disabled={busy || (!status.enabled && (!ready || selected.length === 0 || missingPackages.length > 0))} onValueChange={(enabled) => void configure(enabled, selected)} />
+        </View> : setup.phase === 'unsupported' ? <EmptyState icon="phone" title={s.unsupported} /> : <>
+          {celebrate && setup.phase === 'ready' ? <FadeIn>
+            <Surface level={1} padded>
+              <View style={{ gap: theme.spacing.md }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.md }}>
+                  <View style={{ width: theme.spacing.xxl, height: theme.spacing.xxl, borderRadius: theme.radius.full, backgroundColor: theme.colors.upMuted, alignItems: 'center', justifyContent: 'center' }}>
+                    <Icon name="check" size={theme.spacing.lg} color={theme.colors.up} />
+                  </View>
+                  <View style={{ flex: 1 }}><Text variant="headline">{s.readyTitle}</Text></View>
+                  <IconButton icon="close" label={s.close} variant="ghost" onPress={() => setCelebrate(false)} />
+                </View>
+                <Text variant="callout" tone="muted">{s.readyBody}</Text>
+                <Button title={s.goToChat} icon="chat" onPress={() => host.navigate('/')} />
+              </View>
+            </Surface>
+          </FadeIn> : null}
+          {setup.phase === 'ready' || status.enabled ? <ListGroup variant="plain">
+            <ListRow compact title={s.enableCopilot} subtitle={status.enabled ? setup.phase === 'ready' ? s.readyForTasks : s.connectionNeeded : s.off} accessory={
+              <Switch label={s.enableCopilot} value={status.enabled} disabled={busy || (!status.enabled && !enableAllowed)} onValueChange={(enabled) => void configure(enabled, selected)} />
             } />
-          </ListGroup>
-          <ListGroup variant="plain">
-            <ListRow compact leading={<Icon name={ready ? 'check' : 'warning'} size={theme.spacing.lg} color={theme.colors.textMuted} />} title={s.connection} subtitle={ready ? s.connectionReady : s.connectionNeeded}
-              chevron={false} onPress={() => setConnectionExpanded(!connectionOpen)} accessory={<Icon name={connectionOpen ? 'chevronDown' : 'chevronRight'} size={theme.spacing.lg} color={theme.colors.textMuted} />} />
-            {connectionOpen ? <>
-              <ListRow compact icon="phone" title={s.phoneHelper} subtitle={helperStatus} />
-              <ListRow compact icon="shield" title={s.accessibility} subtitle={status.accessibility ? s.enabled : s.setupNeeded} />
-            </> : null}
-          </ListGroup>
-          {connectionOpen && !status.accessibility ? <View style={{ gap: theme.spacing.md }}>
-            <Text variant="caption" tone="muted">{status.helper ? s.accessibilityViaHelper : status.restricted ? s.restrictedHint : s.accessibilitySettingsHint}</Text>
-            <Button title={s.enableAccessibility} size="sm" disabled={busy} onPress={() => void run(() => services.phone.setup('accessibility'))} />
-            {!status.helper ? <Button title={s.openAppInfo} variant="secondary" size="sm" disabled={busy} onPress={() => void run(() => services.phone.setup('appInfo'))} /> : null}
-          </View> : null}
-          {connectionOpen && !status.helper ? <View style={{ gap: theme.spacing.md }}>
-            {setupHint ? <Text variant="callout" tone="down">{setupHint}</Text> : null}
-            <Segmented variant="tabs" options={[{ label: s.reconnect, value: 'reconnect' }, { label: s.pairNew, value: 'pair' }]} value={connectionMode} onChange={setConnectionMode} />
-            {connectionMode === 'pair' ? <>
-              <Text variant="caption" tone="muted">{s.pairingGuide}</Text>
-              <Button title={s.developerOptions} variant="secondary" size="sm" onPress={() => void run(() => services.phone.setup('wireless'))} disabled={busy} />
-              <Field label={s.pairingPort} value={port} onChangeText={setPort} keyboardType="number-pad" />
-              <Field label={s.pairingCode} value={code} onChangeText={setCode} keyboardType="number-pad" secureTextEntry />
-              <Button title={s.pair} disabled={busy || !/^\d{6}$/.test(code) || !/^\d{1,5}$/.test(port) || Number(port) < 1 || Number(port) > 65535} onPress={() => void run(async () => { await services.phone.pair(code, Number(port)); setCode(''); })} />
-            </> : <>
-              <Text variant="caption" tone="muted">{s.reconnectHint}</Text>
-              <Field label={s.connectionPort} value={connectPort} onChangeText={setConnectPort} keyboardType="number-pad" />
-              <Button title={s.reconnect} size="sm" disabled={busy || (connectPort !== '' && (!/^\d{1,5}$/.test(connectPort) || Number(connectPort) < 1 || Number(connectPort) > 65535))} onPress={() => void run(() => services.phone.connect(connectPort ? Number(connectPort) : undefined))} />
-            </>}
-          </View> : null}
+          </ListGroup> : null}
+          {setup.phase === 'ready' ? <ListGroup variant="plain">
+            <ListRow compact leading={<Icon name="shield" size={theme.spacing.lg} color={theme.colors.textMuted} />} title={s.permissions} subtitle={s.permissionsReady}
+              chevron={false} onPress={() => setPermissionsOpen(!permissionsOpen)} accessory={<Icon name={permissionsOpen ? 'chevronDown' : 'chevronRight'} size={theme.spacing.lg} color={theme.colors.textMuted} />} />
+            {permissionsOpen ? checklist : null}
+          </ListGroup> : <View style={{ gap: theme.spacing.md }}>
+            <View style={{ gap: theme.spacing.sm }}>
+              <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: theme.spacing.sm }}>
+                <View style={{ flex: 1 }}><Text variant="headline">{s.setupTitle}</Text></View>
+                <Text variant="caption" tone="muted">{fill(s.setupProgress, { done: setup.done, total: setup.required })}</Text>
+              </View>
+              <View accessible={false} importantForAccessibility="no-hide-descendants" style={{ flexDirection: 'row', gap: theme.spacing.xs }}>
+                {Array.from({ length: setup.required }, (_, i) => (
+                  <View key={i} style={{ flex: 1, height: theme.spacing.xs, borderRadius: theme.radius.full, backgroundColor: i < setup.done ? theme.colors.up : theme.colors.surface2 }} />
+                ))}
+              </View>
+              <Text variant="callout" tone="muted">{s.setupIntro}</Text>
+            </View>
+            {checklist}
+          </View>}
         </>}
         {sessionId ? <View style={{ gap: theme.spacing.md }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm }}>

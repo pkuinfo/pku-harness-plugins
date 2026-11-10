@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { CopilotScreen } from './screen';
 import { createBrightnessTools } from './brightness-tools';
 import { copilotPreferencesSchema, loadCopilotPreferences, configureCopilot, startCopilot } from './preferences';
+import { deriveSetup, missingSteps } from './setup';
 
 const session = z.object({ sessionId: z.string().uuid() });
 const target = session.extend({ snapshotId: z.string(), ref: z.string() });
@@ -33,12 +34,12 @@ export const copilotPlugin = definePlugin({
     name: 'Copilot', description: 'Operate the apps you select on a separate screen.',
     scopes: { '用户选择的手机应用': 'Phone apps you select' },
     screens: { home: { title: 'Copilot' } },
-    settings: { home: { title: 'Copilot', subtitle: 'Phone setup and app control' } },
+    settings: { home: { title: 'Copilot', subtitle: 'Permissions and allowed apps' } },
     commands: { copilot: { description: 'Set up, preview, or stop phone control', aliases: ['phone'] } },
   } },
   contributes: {
     screens: { home: { title: 'Copilot', component: CopilotScreen } },
-    settings: [{ screen: 'home', title: 'Copilot', subtitle: '手机连接与应用操作', icon: 'phone' }],
+    settings: [{ screen: 'home', title: 'Copilot', subtitle: '权限设置与允许的应用', icon: 'phone' }],
     commands: {
       copilot: { description: '设置、查看或停止手机操作', aliases: ['手机助手'], run: (_input, { navigate }) => { navigate('/p/copilot/home'); } },
     },
@@ -47,7 +48,7 @@ export const copilotPlugin = definePlugin({
 The user can keep using other apps while you work. Floating controls show your progress and approvals. Do not hand off just to show a result; use handoff only when explicitly requested or a manual step is necessary.
 System UI and Settings search are separately selectable companion apps. They can display controls opened by a selected app but may not have launcher activities; do not launch them directly. If a necessary companion is outside scope, explain which selection is needed rather than repeatedly trying blocked actions.
 Call status to obtain the active session ID and saved allowed app package names. If no session is active and enabled is true, call start to open a task using only the saved apps. If disabled or no apps are saved, ask the user to enable Copilot in /copilot. Never configure or widen app access yourself.
-If helper or accessibility is not ready, send the user to /copilot: pair the phone helper first (wireless debugging), then tap Enable Copilot accessibility there, which turns it on through the helper. If restricted is true, Android blocks accessibility for this downloaded install; the helper route avoids that, or the user can allow restricted settings from App info (⋮ menu). If the user stops your session, do not restart it in this run; wait for a new user message.
+status.setupMissing lists the setup steps still needed, in order (helper, accessibility, apps, enable). If it is not empty, tell the user in one sentence which steps remain and to open /copilot, which walks through each step and opens the exact system screen. Do not describe the steps in detail yourself. The phone helper (wireless debugging) comes first; with it connected, the accessibility step is one tap. If restricted is true, Android blocks accessibility for this downloaded install; the helper route avoids that, or the user can allow restricted settings from App info (⋮ menu). If the user stops your session, do not restart it in this run; wait for a new user message.
 Launch a selected app, then use the returned screen's snapshotId and element refs. Observe again after any stale-screen error.
 Use submit on the current editable field to activate Search/Go/Enter after typing. Typing a newline does not submit.
 For device brightness, prefer readBrightness/setBrightness: the virtual display’s Settings page may have no hardware brightness slider. These typed tools affect the physical main display without opening Settings or handing over; Settings must be in the saved scope. Read the current level and adaptive mode first. For a requested fixed brightness, pass adaptive=false and report any mode change; enable adaptive only when requested. Omit adaptive only when preserving the current mode is intended. Check verified and after.percent before reporting success; adaptive brightness can change afterward. Describe this as a direct change to the physical screen, not as work performed on a separate app display.
@@ -66,7 +67,9 @@ When the requested phone work is finished, end the session. Never operate apps f
     handoff: defineTool({ title: '交给你操作', description: 'Move the current app to the user’s screen for login, verification, payment, or another manual step. The session waits for the user to hand it back.', input: session, effect: 'write', execute: async (a, c) => { await control(c).takeover(a.sessionId, c.signal); return { handedOver: true }; } }),
     status: defineTool({ title: 'Copilot 状态', description: 'Read phone readiness, the active session, and the apps the user saved for future tasks.', input: z.object({}), effect: 'read', execute: async (_, c) => {
       const [state, preferences] = await Promise.all([control(c).readiness(c.signal), loadCopilotPreferences(c.kv)]);
-      return { ...state, enabled: preferences.enabled, configuredPackages: preferences.packages };
+      // Notifications never block, and uninstalled apps surface when configuring, so neither is read here.
+      const setup = deriveSetup({ readiness: state, enabled: preferences.enabled, configuredPackages: preferences.packages, missingPackages: 0, notifications: null });
+      return { ...state, enabled: preferences.enabled, configuredPackages: preferences.packages, setupMissing: missingSteps(setup) };
     } }),
     configure: defineTool({ title: 'Copilot 设置', description: 'Save the apps Copilot may use and enable or disable future phone tasks. The user only.', input: copilotPreferencesSchema, effect: 'write', userOnly: true, execute: (input, c) => configureCopilot(c.kv, control(c), input) }),
     // begin only allocates a lazy session + controls; it does not open/read/operate an app.
