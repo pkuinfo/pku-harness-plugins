@@ -149,7 +149,8 @@ export function CopilotScreen({ host, services, invoke, focused = true }: Plugin
   }, [phase, host]);
   const expandedStep = setup && opened && opened.at === setup.current ? opened.id : setup?.current ?? null;
   const toggleStep = (id: SetupStepId) => setOpened({ id: expandedStep === id ? null : id, at: setup?.current ?? null });
-  const mode = pickedMode ?? 'reconnect';
+  // A phone that never paired can only pair; the Reconnect tab appears once it has.
+  const mode = status?.paired ? pickedMode ?? 'reconnect' : 'pair';
   const hint = helperHint(status?.helperFailure);
   const progress = status ? pairingProgress(status) : null;
   const manualOpen = manualCode || notifications === 'denied';
@@ -184,10 +185,11 @@ export function CopilotScreen({ host, services, invoke, focused = true }: Plugin
           {why(s.helperWhy)}
           {step.state !== 'done' ? <>
             {hint ? <Text variant="callout" tone="down">{s[hint]}</Text> : null}
-            <Segmented variant="tabs" options={[{ label: s.pairNew, value: 'pair' }, { label: s.reconnect, value: 'reconnect' }]} value={mode} onChange={setPickedMode} />
+            {/* Reconnect only means something for a phone that has paired before. */}
+            {status.paired ? <Segmented variant="tabs" options={[{ label: s.pairNew, value: 'pair' }, { label: s.reconnect, value: 'reconnect' }]} value={mode} onChange={setPickedMode} /> : null}
             {mode === 'pair' ? <>
               {numbered(wirelessSteps(status).map((key) => ({ developerOptions: s.wsDeveloperOptions, wireless: s.wsWireless, pairDialog: s.wsPairDialog, enterCode: s.wsEnterCode })[key]))}
-              <Button title={s.openWirelessDebugging} loading={busy} disabled={busy} onPress={() => void run(async () => {
+              <Button title={status.developerOptions === false ? s.openAboutPhone : s.openWirelessDebugging} loading={busy} disabled={busy} onPress={() => void run(async () => {
                 // The code box lives in a notification: ask for it first (the system prompt, only while undecided).
                 if (notifications === 'undetermined') setNotifications((await services.notify.fix('notifications')).notifications);
                 await services.phone.startPairing();
