@@ -52,7 +52,12 @@ export function CopilotScreen({ host, services, invoke, focused = true }: Plugin
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reads] = useState(() => new LatestPhoneRead());
+  // Switches answer at once: the choice shows immediately and saves in the background, newest
+  // choice wins; a status read meanwhile must not flip a switch back to the saved state.
+  const pendingChoice = useRef<{ enabled: boolean; packages: string[] } | null>(null);
+  const savingChoice = useRef(false);
   const acceptStatus = useCallback((next: CopilotStatus) => {
+    if (savingChoice.current || pendingChoice.current) { setStatus((prev) => ({ ...next, enabled: prev?.enabled ?? next.enabled })); return; }
     setStatus(next); setSelected(next.configuredPackages);
     // Fixed from the first read, so a failed pairing attempt doesn't swap the form under the user.
     setPickedMode((mode) => mode ?? connectionMode(next));
@@ -91,6 +96,30 @@ export function CopilotScreen({ host, services, invoke, focused = true }: Plugin
     try { await action(); await refresh(); }
     catch (e) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setBusy(false); }
+  };
+  const choose = (enabled: boolean, packages: string[]) => {
+    setSelected(packages);
+    setStatus((prev) => (prev ? { ...prev, enabled } : prev));
+    setError(null);
+    pendingChoice.current = { enabled, packages };
+    if (savingChoice.current) return;
+    savingChoice.current = true;
+    void (async () => {
+      try {
+        while (pendingChoice.current) {
+          const next = pendingChoice.current;
+          pendingChoice.current = null;
+          await invoke('copilot.configure', next);
+        }
+      } catch (e) {
+        pendingChoice.current = null;
+        setError(e instanceof Error ? e.message : String(e));
+      } finally {
+        savingChoice.current = false;
+        // The saved state (also after a failure, which puts the switches back).
+        await refresh().catch(() => {});
+      }
+    })();
   };
   const configure = async (enabled: boolean, packages: string[]) => {
     if (savingConfiguration.current) return;
@@ -322,7 +351,7 @@ export function CopilotScreen({ host, services, invoke, focused = true }: Plugin
           </FadeIn> : null}
           {setup.phase === 'ready' || status.enabled ? <ListGroup variant="plain">
             <ListRow compact title={s.enableCopilot} subtitle={status.enabled ? setup.phase === 'ready' ? s.readyForTasks : s.connectionNeeded : s.off} accessory={
-              <Switch label={s.enableCopilot} value={status.enabled} disabled={busy || (!status.enabled && !enableAllowed)} onValueChange={(enabled) => void configure(enabled, selected)} />
+              <Switch label={s.enableCopilot} value={status.enabled} disabled={!status.enabled && !enableAllowed} onValueChange={(enabled) => choose(enabled, selected)} />
             } />
           </ListGroup> : null}
           {setup.phase === 'ready' ? <ListGroup variant="plain">
@@ -391,9 +420,9 @@ export function CopilotScreen({ host, services, invoke, focused = true }: Plugin
                   </View>
                 }
                 accessory={
-                  <Switch label={app.label} value={selected.includes(app.packageName)} disabled={busy || !status || (selected.length >= 20 && !selected.includes(app.packageName))} onValueChange={(checked) => {
+                  <Switch label={app.label} value={selected.includes(app.packageName)} disabled={!status || (selected.length >= 20 && !selected.includes(app.packageName))} onValueChange={(checked) => {
                     const packages = checked ? [...new Set([...selected, app.packageName])].slice(0, 20) : selected.filter((name) => name !== app.packageName);
-                    void configure(status?.enabled === true && packages.length > 0, packages);
+                    choose(status?.enabled === true && packages.length > 0, packages);
                   }} />
                 }
               />
