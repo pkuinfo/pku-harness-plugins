@@ -86,6 +86,11 @@ export interface PhoneService {
   disconnect(): Promise<void>;
   apps(): Promise<PhoneApp[]>;
   begin(packages: string[], signal?: AbortSignal): Promise<{ sessionId: string; packages: string[] }>;
+  /**
+   * Add one installed app to a running session's scope. Only after the user granted it (a
+   * `grant` tool's prompt); the session's other apps and state are kept.
+   */
+  allow(sessionId: string, packageName: string, signal?: AbortSignal): Promise<{ sessionId: string; packages: string[] }>;
   readBrightness(sessionId: string, signal?: AbortSignal): Promise<PhoneBrightness>;
   setBrightness(sessionId: string, percent: number, adaptive?: boolean, signal?: AbortSignal): Promise<PhoneBrightnessChange>;
   preview(sessionId: string): Promise<PhonePreview | null>;

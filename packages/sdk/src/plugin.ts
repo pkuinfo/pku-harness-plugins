@@ -304,6 +304,11 @@ export interface ToolContext {
   kv: KV;
   services: HostServices;
   /**
+   * How the user answered the prompt of a `grant` tool: 'once' (this task only) or 'always'
+   * (remember it). Unset for direct user calls, which need no prompt.
+   */
+  grant?: 'once' | 'always';
+  /**
    * PKU Harness Cloud, bound to this plugin (consent, manifest `uses` and `e2e` enforced by the
    * host). Plugins declaring `PluginDef.cloud` get it; optional until every host build wires it.
    */
@@ -329,6 +334,14 @@ export interface ToolDef<I extends z.ZodType = z.ZodType, O = unknown> {
    * scheduler calls are refused. For gates the agent must not open itself (approving a memory).
    */
   userOnly?: boolean;
+  /**
+   * The tool gives the agent access it doesn't have yet (an app outside Copilot's scope). Every
+   * agent call waits for the user's tap, whatever the plugin's modes say ('auto' never skips it;
+   * 'off' still blocks); scheduled calls are refused. The prompt offers Allow once / Always allow
+   * and the answer reaches `execute` as `ctx.grant`. `resolveEffect` should return a target that
+   * names what is granted (shown as the prompt's headline).
+   */
+  grant?: boolean;
   /**
    * The result describes the current wall-clock day (in the app's clock zone): "today", this
    * teaching week, today's classes. Widgets must not paint a cached result fetched on an earlier
