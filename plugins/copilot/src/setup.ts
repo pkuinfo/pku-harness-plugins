@@ -2,15 +2,17 @@ import type { NotifyPermission, PhoneReadiness } from '@pku-harness/sdk';
 
 /**
  * What Copilot needs before it can take a task, in the order the setup screen walks through it.
+ * - notifications: carries the pairing-code box during setup and the Stop action during tasks.
+ *   Recommended, never blocking (the code can also be typed on the setup screen).
  * - helper: the on-device helper started through Wireless debugging (virtual display, input).
- * - accessibility: Copilot's accessibility service (reads screens, floating controls).
- * - notifications: the ongoing task notification with Stop. Recommended, never blocking.
+ * - accessibility: Copilot's accessibility service (reads screens, floating controls). Turned on
+ *   by the helper itself once it connects.
  * - apps: at least one allowed app, all still installed.
  * - enable: the user's switch for future tasks.
  */
 export type SetupStepId = 'helper' | 'accessibility' | 'notifications' | 'apps' | 'enable';
 
-/** done; todo = not done yet; working = in progress (helper connecting); attention = failed or broken. */
+/** done; todo = not done yet; working = in progress (helper connecting, accessibility turning on); attention = failed or broken. */
 export type SetupStepState = 'done' | 'todo' | 'working' | 'attention';
 
 export type SetupStep = { id: SetupStepId; state: SetupStepState; required: boolean };
@@ -36,7 +38,7 @@ export type CopilotSetup = {
   required: number;
 };
 
-const ORDER: readonly SetupStepId[] = ['helper', 'accessibility', 'notifications', 'apps', 'enable'];
+const ORDER: readonly SetupStepId[] = ['notifications', 'helper', 'accessibility', 'apps', 'enable'];
 
 function stateOf(id: SetupStepId, input: SetupInput): SetupStepState {
   const { readiness: r } = input;
@@ -46,7 +48,8 @@ function stateOf(id: SetupStepId, input: SetupInput): SetupStepState {
       if (r.helperStatus === 'connecting') return 'working';
       return r.helperStatus === 'failed' ? 'attention' : 'todo';
     case 'accessibility':
-      return r.accessibility ? 'done' : 'todo';
+      if (r.accessibility) return 'done';
+      return r.accessibilityAuto ? 'working' : 'todo';
     case 'notifications':
       return input.notifications === 'granted' ? 'done' : 'todo';
     case 'apps':
@@ -86,6 +89,21 @@ export function becameReady(previous: CopilotSetup['phase'] | null, next: Copilo
 export function connectionMode(readiness: Pick<PhoneReadiness, 'helperStatus' | 'helperFailure'>): 'pair' | 'reconnect' {
   if (readiness.helperStatus === 'not-paired') return 'pair';
   return readiness.helperFailure === 'AuthorizationRevoked' || readiness.helperFailure === 'KeyUnreadable' ? 'pair' : 'reconnect';
+}
+
+/**
+ * Where a pairing that is being followed stands, for the line under the helper button: still
+ * looking for Settings' pairing dialog, or found it (the code box in the notification is live).
+ */
+export function pairingProgress(r: Pick<PhoneReadiness, 'helper' | 'helperStatus' | 'pairingActive' | 'pairing'>): 'waitingForDialog' | 'dialogFound' | null {
+  if (r.helper || !r.pairingActive || r.helperStatus === 'connecting') return null;
+  return r.pairing === 'found' ? 'dialogFound' : 'waitingForDialog';
+}
+
+/** The system steps the user takes in Settings; turning on Developer options first only when they're off. */
+export function wirelessSteps(r: Pick<PhoneReadiness, 'developerOptions'>): ('developerOptions' | 'wireless' | 'pairDialog' | 'enterCode')[] {
+  const steps = ['wireless', 'pairDialog', 'enterCode'] as const;
+  return r.developerOptions === false ? ['developerOptions', ...steps] : [...steps];
 }
 
 export type HelperHint = 'pairingExpired' | 'wifiNeeded' | 'pairAgain' | 'usbStopped' | 'retryConnection';

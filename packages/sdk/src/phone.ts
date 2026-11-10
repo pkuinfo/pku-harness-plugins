@@ -5,6 +5,16 @@ export type PhoneReadiness = {
   helper: boolean;
   helperStatus: string;
   helperFailure?: string | null;
+  /** This phone was paired through Wireless debugging (the helper can restart itself). */
+  paired?: boolean;
+  /** Settings' "Pair device with pairing code" dialog: looked for, found, or not looked for. */
+  pairing?: 'idle' | 'searching' | 'found';
+  /** A pairing is being followed: the notification with the code box is (or will be) posted. */
+  pairingActive?: boolean;
+  developerOptions?: boolean;
+  wirelessDebugging?: boolean;
+  /** The connected helper is turning accessibility on by itself; no tap needed. */
+  accessibilityAuto?: boolean;
   locked: boolean;
   /** Android blocks accessibility for this install until the user allows restricted settings in App info. */
   restricted?: boolean;
@@ -64,7 +74,14 @@ export type PhoneResult = PhoneSnapshot | { ok: boolean; error?: string; hint?: 
 export interface PhoneService {
   readiness(signal?: AbortSignal): Promise<PhoneReadiness>;
   setup(kind: 'accessibility' | 'wireless' | 'appInfo'): Promise<void>;
-  pair(code: string, port: number): Promise<PhoneReadiness>;
+  /** Pair with the six-digit code; without a port, the pairing dialog found on this phone is used. */
+  pair(code: string, port?: number): Promise<PhoneReadiness>;
+  /**
+   * Look for the pairing dialog and post a notification whose reply box takes the code, so the
+   * user never leaves Settings. Ends by itself once the helper connects (or after 10 minutes).
+   */
+  startPairing(): Promise<PhoneReadiness>;
+  stopPairing(): Promise<void>;
   connect(port?: number): Promise<PhoneReadiness>;
   disconnect(): Promise<void>;
   apps(): Promise<PhoneApp[]>;

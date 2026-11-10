@@ -4,7 +4,7 @@ import { AppState, Image, StyleSheet, View } from 'react-native';
 import { fill, strings } from './strings';
 import { indexApps } from './app-index';
 import { LatestPhoneRead } from './latest-read';
-import { becameReady, canEnable, connectionMode, deriveSetup, helperHint, parsePort, type CopilotSetup, type SetupStep as Step, type SetupStepId } from './setup';
+import { becameReady, canEnable, connectionMode, deriveSetup, helperHint, pairingProgress, parsePort, wirelessSteps, type CopilotSetup, type SetupStep as Step, type SetupStepId } from './setup';
 import { SetupStep } from './setup-step';
 
 /** Height of one letter in the A–Z strip. */
@@ -45,6 +45,9 @@ export function CopilotScreen({ host, services, invoke, focused = true }: Plugin
   const [code, setCode] = useState('');
   const [port, setPort] = useState('');
   const [connectPort, setConnectPort] = useState('');
+  // Fallbacks kept out of the main path: typing the code here, opening accessibility settings.
+  const [manualCode, setManualCode] = useState(false);
+  const [manualAccessibility, setManualAccessibility] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reads] = useState(() => new LatestPhoneRead());
@@ -148,6 +151,8 @@ export function CopilotScreen({ host, services, invoke, focused = true }: Plugin
   const toggleStep = (id: SetupStepId) => setOpened({ id: expandedStep === id ? null : id, at: setup?.current ?? null });
   const mode = pickedMode ?? 'reconnect';
   const hint = helperHint(status?.helperFailure);
+  const progress = status ? pairingProgress(status) : null;
+  const manualOpen = manualCode || notifications === 'denied';
   const enableAllowed = !!setup && canEnable(setup);
   const goToApps = () => {
     setAppFilter('all');
@@ -155,10 +160,10 @@ export function CopilotScreen({ host, services, invoke, focused = true }: Plugin
   };
   const stepTitle: Record<SetupStepId, string> = { helper: s.helperTitle, accessibility: s.accessibilityTitle, notifications: s.notificationsTitle, apps: s.appsTitle, enable: s.enableTitle };
   const stepStatus = (step: Step): string => {
-    if (step.state === 'working') return s.connecting;
+    if (step.state === 'working') return step.id === 'accessibility' ? s.accessibilityTurningOn : s.connecting;
     switch (step.id) {
       case 'helper': return step.state === 'done' ? s.connected : step.state === 'attention' ? s.connectionFailed : s.stepNeeded;
-      case 'accessibility': return step.state === 'done' ? s.enabled : s.stepNeeded;
+      case 'accessibility': return step.state === 'done' ? s.enabled : status?.helper ? s.stepNeeded : s.stepAutomatic;
       case 'notifications': return step.state === 'done' ? s.allowed : s.stepRecommended;
       case 'apps': return step.state === 'attention' ? fill(s.appsMissing, { n: missingPackages.length }) : step.state === 'done' ? fill(s.appsCount, { n: selected.length }) : s.stepNeeded;
       case 'enable': return step.state === 'done' ? s.on : s.stepNeeded;
@@ -181,12 +186,22 @@ export function CopilotScreen({ host, services, invoke, focused = true }: Plugin
             {hint ? <Text variant="callout" tone="down">{s[hint]}</Text> : null}
             <Segmented variant="tabs" options={[{ label: s.pairNew, value: 'pair' }, { label: s.reconnect, value: 'reconnect' }]} value={mode} onChange={setPickedMode} />
             {mode === 'pair' ? <>
-              {numbered([s.pairStep1, s.pairStep2, s.pairStep3])}
-              <Button title={s.openWirelessDebugging} variant="secondary" size="sm" disabled={busy} onPress={() => void run(() => services.phone.setup('wireless'))} />
-              <Text variant="caption" tone="muted">{s.noDeveloperOptions}</Text>
-              <Field label={s.pairingPort} value={port} onChangeText={setPort} placeholder="192.168.1.5:37145" autoCapitalize="none" />
-              <Field label={s.pairingCode} value={code} onChangeText={setCode} keyboardType="number-pad" secureTextEntry />
-              <Button title={s.pair} loading={busy} disabled={busy || !/^\d{6}$/.test(code) || !parsePort(port)} onPress={() => void run(async () => { await services.phone.pair(code, parsePort(port)!); setCode(''); })} />
+              {numbered(wirelessSteps(status).map((key) => ({ developerOptions: s.wsDeveloperOptions, wireless: s.wsWireless, pairDialog: s.wsPairDialog, enterCode: s.wsEnterCode })[key]))}
+              <Button title={s.openWirelessDebugging} loading={busy} disabled={busy} onPress={() => void run(async () => {
+                // The code box lives in a notification: ask for it first (the system prompt, only while undecided).
+                if (notifications === 'undetermined') setNotifications((await services.notify.fix('notifications')).notifications);
+                await services.phone.startPairing();
+                await services.phone.setup('wireless');
+              })} />
+              {progress ? <Text variant="caption" tone="accent">{s[progress]}</Text> : null}
+              {notifications === 'denied' ? <Text variant="caption" tone="muted">{s.notificationsOffForCode}</Text> : null}
+              {manualOpen ? <>
+                <Field label={s.pairingCode} value={code} onChangeText={setCode} keyboardType="number-pad" secureTextEntry />
+                <Field label={s.pairingPort} value={port} onChangeText={setPort} placeholder="192.168.1.5:37145" autoCapitalize="none" />
+                <Button title={s.pair} variant="secondary" loading={busy} disabled={busy || !/^\d{6}$/.test(code.replace(/[\s-]/g, '')) || (port.trim() !== '' && !parsePort(port))}
+                  onPress={() => void run(async () => { await services.phone.pair(code.replace(/[\s-]/g, ''), parsePort(port) ?? undefined); setCode(''); })} />
+              </> : null}
+              {notifications !== 'denied' ? <Button title={manualCode ? s.hideManual : s.enterManually} variant="ghost" size="sm" onPress={() => setManualCode(!manualCode)} /> : null}
             </> : <>
               <Text variant="caption" tone="muted">{s.reconnectHint}</Text>
               <Field label={s.connectionPort} value={connectPort} onChangeText={setConnectPort} placeholder="192.168.1.5:41234" autoCapitalize="none" />
@@ -197,10 +212,17 @@ export function CopilotScreen({ host, services, invoke, focused = true }: Plugin
       case 'accessibility':
         return <>
           {why(s.accessibilityWhy)}
-          {step.state !== 'done' ? <>
-            <Text variant="caption" tone="muted">{status.helper ? s.accessibilityViaHelper : status.restricted ? s.restrictedHint : s.accessibilitySettingsHint}</Text>
-            <Button title={status.helper ? s.turnOnAccessibility : s.openAccessibilitySettings} loading={busy} disabled={busy} onPress={() => void run(() => services.phone.setup('accessibility'))} />
-            {!status.helper && status.restricted ? <Button title={s.openAppInfo} variant="secondary" size="sm" disabled={busy} onPress={() => void run(() => services.phone.setup('appInfo'))} /> : null}
+          {step.state === 'todo' ? status.helper ? <>
+            {/* The helper turns it on by itself; this is the fallback when that didn't happen. */}
+            <Text variant="caption" tone="muted">{s.accessibilityViaHelper}</Text>
+            <Button title={s.turnOnAccessibility} loading={busy} disabled={busy} onPress={() => void run(() => services.phone.setup('accessibility'))} />
+          </> : <>
+            <Text variant="caption" tone="muted">{s.accessibilityAutoHint}</Text>
+            {manualAccessibility ? <>
+              <Text variant="caption" tone="muted">{status.restricted ? s.restrictedHint : s.accessibilitySettingsHint}</Text>
+              <Button title={s.openAccessibilitySettings} variant="secondary" size="sm" disabled={busy} onPress={() => void run(() => services.phone.setup('accessibility'))} />
+              {status.restricted ? <Button title={s.openAppInfo} variant="secondary" size="sm" disabled={busy} onPress={() => void run(() => services.phone.setup('appInfo'))} /> : null}
+            </> : <Button title={s.accessibilityManually} variant="ghost" size="sm" onPress={() => setManualAccessibility(true)} />}
           </> : null}
         </>;
       case 'notifications':

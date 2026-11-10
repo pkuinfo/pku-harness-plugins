@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import type { PhoneReadiness } from '@pku-harness/sdk';
-import { becameReady, canEnable, connectionMode, deriveSetup, helperHint, missingSteps, parsePort, type SetupInput } from './setup';
+import { becameReady, canEnable, connectionMode, deriveSetup, helperHint, missingSteps, pairingProgress, parsePort, wirelessSteps, type SetupInput } from './setup';
 
 const readiness: PhoneReadiness = { supported: true, accessibility: false, helper: false, helperStatus: 'not-paired', locked: false, sessionId: null, packages: [], handedOver: false };
 const fresh: SetupInput = { readiness, enabled: false, configuredPackages: [], missingPackages: 0, notifications: 'undetermined' };
@@ -12,7 +12,7 @@ describe('deriveSetup', () => {
     const setup = deriveSetup(fresh);
     expect(setup.phase).toBe('setup');
     expect(setup.current).toBe('helper');
-    expect(setup.steps.map((s) => s.id)).toEqual(['helper', 'accessibility', 'notifications', 'apps', 'enable']);
+    expect(setup.steps.map((s) => s.id)).toEqual(['notifications', 'helper', 'accessibility', 'apps', 'enable']);
     expect(setup).toMatchObject({ done: 0, required: 4 });
   });
 
@@ -41,6 +41,14 @@ describe('deriveSetup', () => {
     expect(states({ ...fresh, readiness: { ...readiness, helperStatus: 'connecting' } }).helper).toBe('working');
     expect(states({ ...fresh, readiness: { ...readiness, helperStatus: 'failed', helperFailure: 'WrongCode' } }).helper).toBe('attention');
     expect(states({ ...fresh, readiness: { ...readiness, helperStatus: 'wireless-off' } }).helper).toBe('todo');
+  });
+
+  test('accessibility shows progress while the helper turns it on by itself', () => {
+    const connected = { ...readiness, helper: true, helperStatus: 'running' };
+    expect(states({ ...fresh, readiness: { ...connected, accessibilityAuto: true } }).accessibility).toBe('working');
+    expect(states({ ...fresh, readiness: { ...connected, accessibilityAuto: false } }).accessibility).toBe('todo');
+    expect(states({ ...fresh, readiness: { ...connected, accessibility: true, accessibilityAuto: true } }).accessibility).toBe('done');
+    expect(deriveSetup({ ...fresh, readiness: { ...connected, accessibilityAuto: true } }).current).toBe('accessibility');
   });
 
   test('uninstalled saved apps need attention and block readiness', () => {
@@ -83,6 +91,20 @@ test('connectionMode pairs a never-paired or revoked phone, reconnects otherwise
   expect(connectionMode({ helperStatus: 'failed', helperFailure: 'AuthorizationRevoked' })).toBe('pair');
   expect(connectionMode({ helperStatus: 'wireless-off' })).toBe('reconnect');
   expect(connectionMode({ helperStatus: 'failed', helperFailure: 'NoWifi' })).toBe('reconnect');
+});
+
+test('pairingProgress follows the dialog search only while pairing is followed', () => {
+  expect(pairingProgress({ helper: false, helperStatus: 'not-paired' })).toBeNull();
+  expect(pairingProgress({ helper: false, helperStatus: 'not-paired', pairingActive: true, pairing: 'searching' })).toBe('waitingForDialog');
+  expect(pairingProgress({ helper: false, helperStatus: 'not-paired', pairingActive: true, pairing: 'found' })).toBe('dialogFound');
+  expect(pairingProgress({ helper: false, helperStatus: 'connecting', pairingActive: true, pairing: 'found' })).toBeNull();
+  expect(pairingProgress({ helper: true, helperStatus: 'running', pairingActive: true, pairing: 'found' })).toBeNull();
+});
+
+test('wirelessSteps adds Developer options only when they are off', () => {
+  expect(wirelessSteps({ developerOptions: true })).toEqual(['wireless', 'pairDialog', 'enterCode']);
+  expect(wirelessSteps({})).toEqual(['wireless', 'pairDialog', 'enterCode']);
+  expect(wirelessSteps({ developerOptions: false })).toEqual(['developerOptions', 'wireless', 'pairDialog', 'enterCode']);
 });
 
 test('helperHint maps native failures to recovery copy', () => {
