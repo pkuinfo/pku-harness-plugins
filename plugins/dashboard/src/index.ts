@@ -61,7 +61,7 @@ export const dashboardPlugin = definePlugin({
 - 没有合适的，再用 dashboard__upsertWidget 自己搭一个；修改时传入已有 id。
 - spec 与 ui__render 相同（同一套组件），但看板组件不要放按钮表单，重点是数字：通常一个 Card 或 Column 里放 Stat / ListItem / Progress。
 - 实时数据用 bindings：{ "/card": { tool: "wallet.cardBalance", path: "balance", ttlMinutes: 5 } }，然后在 props 里写 { "$state": "/card" }；文本可用 { "$template": "第 \${/today/semester/week} 周" }。
-- size：sm 半宽小卡片（单个数字），md 全宽，lg 全宽重点卡片。
+- size：sm 半宽小卡片（单个数字），md 全宽、高度随内容，lg 全宽且更高的重点卡片（标题在上、内容在下）。spec 里可用 { "$state": "/size" } 按尺寸调整内容（如 lg 用更大的 Stat、多显示几行）。
 - 可绑定的数据源用 dashboard__sources 查看；只读工具都可以绑定。创建后看返回的 preview 确认数据正确。
 - 刷新：数据超过 ttlMinutes 就会在用户打开看板、回到 App 时自动重新获取，看板可见时也会按 ttl 定时刷新，用户还可以下拉强制刷新。余额类 5–15 分钟，学期周次这类 60 分钟以上。`,
   tools: {

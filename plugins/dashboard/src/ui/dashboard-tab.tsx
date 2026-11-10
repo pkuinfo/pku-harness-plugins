@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { RefreshControl, StyleSheet, View } from 'react-native';
 
 import { Greeting } from './greeting';
+import { widgetMinHeight, widgetWidth } from './layout';
 import { strings } from './strings';
 import { WidgetCard } from './widget-card';
 
@@ -22,8 +23,7 @@ export function DashboardTab({ host, services }: PluginScreenProps) {
 
   const columns = t.contentWidth >= 700 ? 3 : 2;
   const gridWidth = t.contentWidth - t.spacing.lg * 2;
-  const small = (gridWidth - t.spacing.md * (columns - 1)) / columns;
-  const widthOf = (size: WidgetSize) => (size === 'sm' ? small : gridWidth);
+  const widthOf = (size: WidgetSize) => widgetWidth(size, gridWidth, columns, t.spacing.md);
 
   const enterEdit = () => {
     host.haptics.tap();
@@ -129,7 +129,7 @@ export function DashboardTab({ host, services }: PluginScreenProps) {
         <View style={[styles.grid, { gap: t.spacing.md }]}>
           {widgets.map((w, i) => (
             <FadeIn key={w.id} index={i} style={{ width: widthOf(w.size) }}>
-              <WidgetCard host={host} widget={w} onLongPress={enterEdit} />
+              <WidgetCard host={host} widget={w} minHeight={widgetMinHeight(w.size, widthOf(w.size))} onLongPress={enterEdit} />
             </FadeIn>
           ))}
           <Pressable

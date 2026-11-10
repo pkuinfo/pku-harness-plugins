@@ -10,8 +10,9 @@ function SpecBody({ host, widget, hero }: { host: HostUI; widget: Widget; hero: 
   const t = host.useTheme();
   const s = strings[host.useLocale()];
   const data = host.useWidgetData(widget);
-  // Stable spec object so the renderer keeps its state between renders.
-  const spec = useMemo(() => (data.value ? { ...widget.spec, state: data.value } : null), [data.value, widget.spec]);
+  // Stable spec object so the renderer keeps its state between renders. `/size` lets the spec
+  // adapt to its card (e.g. a bigger Stat or more rows when Large), like plugin widgets do.
+  const spec = useMemo(() => (data.value ? { ...widget.spec, state: { size: widget.size, ...data.value } } : null), [data.value, widget.spec, widget.size]);
   if (data.status === 'loading')
     return (
       <View style={{ gap: t.spacing.sm }}>
@@ -52,8 +53,11 @@ function Freshness({ host, widget }: { host: HostUI; widget: Widget }) {
   );
 }
 
-/** One widget card: chrome (title, freshness, long-press to edit) around an AI-built or plugin body. */
-export function WidgetCard({ host, widget, onLongPress }: { host: HostUI; widget: Widget; onLongPress: () => void }) {
+/**
+ * One widget card: chrome (title, freshness, long-press to edit) around an AI-built or plugin body.
+ * `minHeight` (layout.ts) makes a Large card a taller hero than a Wide one: title on top, body at the bottom.
+ */
+export function WidgetCard({ host, widget, minHeight, onLongPress }: { host: HostUI; widget: Widget; minHeight?: number; onLongPress: () => void }) {
   const { Text, Pressable, PluginWidget } = host.components;
   const t = host.useTheme();
   const s = strings[host.useLocale()];
@@ -68,7 +72,11 @@ export function WidgetCard({ host, widget, onLongPress }: { host: HostUI; widget
       delayLongPress={350}
       scaleTo={0.98}
       haptic={false}
-      style={[styles.card, { backgroundColor: t.colors.bg, borderTopWidth: StyleSheet.hairlineWidth, borderColor: t.colors.border, padding: t.spacing.lg, gap: t.spacing.md }]}>
+      style={[
+        styles.card,
+        { backgroundColor: t.colors.bg, borderTopWidth: StyleSheet.hairlineWidth, borderColor: t.colors.border, padding: t.spacing.lg, gap: t.spacing.md },
+        minHeight ? { minHeight, justifyContent: 'space-between' } : null,
+      ]}>
       {widget.size === 'sm' ? null : (
         <View style={[styles.head, { gap: t.spacing.sm }]}>
           <Text variant="caption" tone="muted" numberOfLines={1} style={{ flex: 1 }}>
