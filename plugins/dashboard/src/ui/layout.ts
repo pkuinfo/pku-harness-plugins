@@ -17,3 +17,15 @@ export function widgetMinHeight(size: WidgetSize, width: number): number | undef
   if (size !== 'lg') return undefined;
   return Math.round(Math.min(320, Math.max(180, width / 2)));
 }
+
+const ORDER: WidgetSize[] = ['sm', 'md', 'lg'];
+
+/** The size after `size` when cycling in edit mode, skipping sizes the widget doesn't support (undefined = all). */
+export function nextWidgetSize(size: WidgetSize, supported?: readonly WidgetSize[]): WidgetSize {
+  const allowed = supported?.length ? supported : ORDER;
+  for (let i = 1; i <= ORDER.length; i++) {
+    const next = ORDER[(ORDER.indexOf(size) + i) % ORDER.length];
+    if (allowed.includes(next)) return next;
+  }
+  return size;
+}

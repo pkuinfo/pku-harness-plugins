@@ -3,11 +3,10 @@ import { useState } from 'react';
 import { RefreshControl, StyleSheet, View } from 'react-native';
 
 import { Greeting } from './greeting';
-import { widgetMinHeight, widgetWidth } from './layout';
+import { nextWidgetSize, widgetMinHeight, widgetWidth } from './layout';
 import { strings } from './strings';
 import { WidgetCard } from './widget-card';
 
-const NEXT_SIZE: Record<WidgetSize, WidgetSize> = { sm: 'md', md: 'lg', lg: 'sm' };
 const ROW = 64;
 
 /** Dashboard tab: widgets the agent builds and the user arranges. Contributed to the harness's dashboard slot. */
@@ -19,7 +18,8 @@ export function DashboardTab({ host, services }: PluginScreenProps) {
   const widgets = services.widgets.list();
   const [editing, setEditing] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const hasGallery = services.widgets.catalog().length > 0;
+  const catalog = services.widgets.catalog();
+  const hasGallery = catalog.length > 0;
 
   const columns = t.contentWidth >= 700 ? 3 : 2;
   const gridWidth = t.contentWidth - t.spacing.lg * 2;
@@ -39,9 +39,13 @@ export function DashboardTab({ host, services }: PluginScreenProps) {
     host.haptics.warning();
     services.widgets.remove(w.id);
   };
+  // Plugin widgets only cycle through the sizes their catalog entry declares.
   const resize = (w: Widget) => {
+    const entry = w.source ? catalog.find((e) => e.plugin === w.source?.plugin && e.widget === w.source?.widget) : undefined;
+    const size = nextWidgetSize(w.size, entry?.sizes);
+    if (size === w.size) return;
     host.haptics.select();
-    services.widgets.put({ ...w, size: NEXT_SIZE[w.size], updatedAt: Date.now() });
+    services.widgets.put({ ...w, size, updatedAt: Date.now() });
   };
 
   return (

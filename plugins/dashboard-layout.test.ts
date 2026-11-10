@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 
-import { widgetMinHeight, widgetWidth } from './dashboard/src/ui/layout';
+import { nextWidgetSize, widgetMinHeight, widgetWidth } from './dashboard/src/ui/layout';
 
 describe('dashboard widget sizes', () => {
   test('sm is one column; md and lg are full width', () => {
@@ -20,5 +20,13 @@ describe('dashboard widget sizes', () => {
   test('the large frame stays within bounds on narrow and wide screens', () => {
     expect(widgetMinHeight('lg', 240)).toBe(180);
     expect(widgetMinHeight('lg', 1000)).toBe(320);
+  });
+
+  test('resizing cycles only through the sizes a widget supports', () => {
+    expect(nextWidgetSize('sm')).toBe('md');
+    expect(nextWidgetSize('lg')).toBe('sm');
+    expect(nextWidgetSize('sm', ['sm', 'lg'])).toBe('lg');
+    expect(nextWidgetSize('lg', ['md', 'lg'])).toBe('md');
+    expect(nextWidgetSize('md', ['md'])).toBe('md');
   });
 });

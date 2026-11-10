@@ -17,7 +17,7 @@ export const openAICompatiblePlugin = definePlugin({
         custom: {
           name: 'OpenAI-compatible',
           description: 'Your own base URL, model and API key',
-          credentialHint: 'The API key from your provider; leave empty for a local server',
+          credentialHint: 'The API key from your provider; leave empty if your server needs no key',
         },
       },
     },
@@ -35,7 +35,7 @@ export const openAICompatiblePlugin = definePlugin({
       editableBaseURL: true,
       models: [],
       defaultModel: '',
-      credentialHint: '服务商提供的 API Key；本地服务可留空',
+      credentialHint: '服务商提供的 API Key；服务不需要密钥时可留空',
       listModels: listOpenAIModels,
       createModel: (config) => openAICompatibleModel('custom', config),
     },
