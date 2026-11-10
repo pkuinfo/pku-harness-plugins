@@ -45,7 +45,7 @@ export const authenticatorPlugin = definePlugin({
   },
   instructions: `手机令牌（IAAA 动态验证码）由本 App 保管：绑定后，学校登录、树洞课表/成绩的二次验证都会自动完成。
 - 用户问是否绑定了手机令牌、为什么还要验证码时，调用 authenticator__status。
-- 你不能替用户绑定或查看验证码/密钥；需要绑定时让用户打开「设置 → 手机令牌」，并提醒：绑定会让之前在其他 App 绑定的令牌失效。
+- 你不能替用户绑定或查看验证码/密钥；需要绑定时让用户打开「设置 → 插件 → 手机令牌」，并提醒：绑定会让之前在其他 App 绑定的令牌失效。
 - 用户想在看板上看验证码时，可添加本插件的 code 组件。`,
   tools: {
     status: defineTool({
@@ -60,7 +60,7 @@ export const authenticatorPlugin = definePlugin({
           name: s.userName,
           boundAt: s.boundAt ? new Date(s.boundAt).toISOString() : null,
           bindingInProgress: s.pending,
-          howToBind: s.bound ? undefined : '设置 → 手机令牌（用户自己操作）',
+          howToBind: s.bound ? undefined : '设置 → 插件 → 手机令牌（用户自己操作）',
         };
       },
     }),
