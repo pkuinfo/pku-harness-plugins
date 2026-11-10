@@ -32,7 +32,7 @@ export function createVisionTools(control: (context: ToolContext) => PhoneServic
   return {
     look: defineTool({
       title: '查看截图',
-      description: 'Only when observe shows no or too few usable elements for an allowed app (for example WeChat) and the user turned screenshots on. Shows you a screenshot of the controlled app (never the user’s own screen; protected screens are refused) in the next message, plus the screen’s elements if any. Its snapshotId and width×height (screenshot pixels, origin top-left) are what tapAt/typeAt take. Look again after every action.',
+      description: 'Only when observe shows no or too few usable elements for an allowed app (for example WeChat) and the user turned screenshots on. Shows you a screenshot of the controlled app (never the user’s own screen; protected screens are refused) in the next message, plus the screen’s elements if any. Its snapshotId and width×height (screenshot pixels, origin top-left) are what tapAt/typeAt take. The screenshot carries a magenta grid: a line every tenth of the width and height, with its pixel value labelled on the top and left edges. Read a target’s position off those rulers (between which labelled lines it lies) instead of estimating pixels. Look again after every action.',
       input: session, effect: 'read', untrusted: true,
       execute: async (a, c) => {
         await requireVision(c);
