@@ -99,3 +99,14 @@ export function helperHint(failure: string | null | undefined): HelperHint | nul
   if (failure === 'UsbHelperStopped') return 'usbStopped';
   return 'retryConnection';
 }
+
+/**
+ * The port from what the user copied out of Android's pairing or Wireless debugging screen: a bare
+ * port, or "IP address & Port" as shown there (192.168.1.5:37145, [fe80::1]:37145). The helper
+ * always connects to this phone itself, so only the port matters. null when there is no valid port.
+ */
+export function parsePort(input: string): number | null {
+  const m = /^(?:.*:)?(\d{1,5})$/.exec(input.trim().replace(/\s+/g, ''));
+  const port = m ? Number(m[1]) : NaN;
+  return port >= 1 && port <= 65535 ? port : null;
+}

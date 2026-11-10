@@ -4,7 +4,7 @@ import { AppState, Image, StyleSheet, View } from 'react-native';
 import { fill, strings } from './strings';
 import { indexApps } from './app-index';
 import { LatestPhoneRead } from './latest-read';
-import { becameReady, canEnable, connectionMode, deriveSetup, helperHint, type CopilotSetup, type SetupStep as Step, type SetupStepId } from './setup';
+import { becameReady, canEnable, connectionMode, deriveSetup, helperHint, parsePort, type CopilotSetup, type SetupStep as Step, type SetupStepId } from './setup';
 import { SetupStep } from './setup-step';
 
 /** Height of one letter in the A–Z strip. */
@@ -184,13 +184,13 @@ export function CopilotScreen({ host, services, invoke, focused = true }: Plugin
               {numbered([s.pairStep1, s.pairStep2, s.pairStep3])}
               <Button title={s.openWirelessDebugging} variant="secondary" size="sm" disabled={busy} onPress={() => void run(() => services.phone.setup('wireless'))} />
               <Text variant="caption" tone="muted">{s.noDeveloperOptions}</Text>
-              <Field label={s.pairingPort} value={port} onChangeText={setPort} keyboardType="number-pad" />
+              <Field label={s.pairingPort} value={port} onChangeText={setPort} placeholder="192.168.1.5:37145" autoCapitalize="none" />
               <Field label={s.pairingCode} value={code} onChangeText={setCode} keyboardType="number-pad" secureTextEntry />
-              <Button title={s.pair} loading={busy} disabled={busy || !/^\d{6}$/.test(code) || !/^\d{1,5}$/.test(port) || Number(port) < 1 || Number(port) > 65535} onPress={() => void run(async () => { await services.phone.pair(code, Number(port)); setCode(''); })} />
+              <Button title={s.pair} loading={busy} disabled={busy || !/^\d{6}$/.test(code) || !parsePort(port)} onPress={() => void run(async () => { await services.phone.pair(code, parsePort(port)!); setCode(''); })} />
             </> : <>
               <Text variant="caption" tone="muted">{s.reconnectHint}</Text>
-              <Field label={s.connectionPort} value={connectPort} onChangeText={setConnectPort} keyboardType="number-pad" />
-              <Button title={s.reconnect} loading={busy} disabled={busy || (connectPort !== '' && (!/^\d{1,5}$/.test(connectPort) || Number(connectPort) < 1 || Number(connectPort) > 65535))} onPress={() => void run(() => services.phone.connect(connectPort ? Number(connectPort) : undefined))} />
+              <Field label={s.connectionPort} value={connectPort} onChangeText={setConnectPort} placeholder="192.168.1.5:41234" autoCapitalize="none" />
+              <Button title={s.reconnect} loading={busy} disabled={busy || (connectPort.trim() !== '' && !parsePort(connectPort))} onPress={() => void run(() => services.phone.connect(parsePort(connectPort) ?? undefined))} />
             </>}
           </> : null}
         </>;

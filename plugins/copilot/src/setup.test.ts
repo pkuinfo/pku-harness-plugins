@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import type { PhoneReadiness } from '@pku-harness/sdk';
-import { becameReady, canEnable, connectionMode, deriveSetup, helperHint, missingSteps, type SetupInput } from './setup';
+import { becameReady, canEnable, connectionMode, deriveSetup, helperHint, missingSteps, parsePort, type SetupInput } from './setup';
 
 const readiness: PhoneReadiness = { supported: true, accessibility: false, helper: false, helperStatus: 'not-paired', locked: false, sessionId: null, packages: [], handedOver: false };
 const fresh: SetupInput = { readiness, enabled: false, configuredPackages: [], missingPackages: 0, notifications: 'undetermined' };
@@ -99,4 +99,20 @@ test('fill replaces known placeholders and keeps unknown ones', async () => {
   const { fill } = await import('./strings');
   expect(fill('{done} of {total} done', { done: 2, total: 4 })).toBe('2 of 4 done');
   expect(fill('{n} allowed {x}', { n: 3 })).toBe('3 allowed {x}');
+});
+
+describe('parsePort', () => {
+  test('takes a bare port or the address Android shows', () => {
+    expect(parsePort('37145')).toBe(37145);
+    expect(parsePort('192.168.1.5:37145')).toBe(37145);
+    expect(parsePort(' 192.168.1.5 : 37145 ')).toBe(37145);
+    expect(parsePort('[fe80::1]:40001')).toBe(40001);
+  });
+  test('rejects anything without a valid port', () => {
+    expect(parsePort('')).toBeNull();
+    expect(parsePort('192.168.1.5')).toBeNull();
+    expect(parsePort('70000')).toBeNull();
+    expect(parsePort('0')).toBeNull();
+    expect(parsePort('abc')).toBeNull();
+  });
 });
