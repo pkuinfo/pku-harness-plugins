@@ -4,6 +4,7 @@ export * from './cloud';
 export * from './dashboard';
 export * from './format';
 export * from './genui';
+export * from './model-image';
 export * from './notify';
 export * from './plugin';
 export * from './phone';

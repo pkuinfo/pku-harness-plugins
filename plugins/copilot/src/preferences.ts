@@ -172,3 +172,22 @@ export async function restoreAccessibility(phone: PhoneService, signal?: AbortSi
   }
   return state;
 }
+
+const VISION_KEY = 'vision-preferences';
+const visionSchema = z.object({ screenshots: z.boolean() });
+export type CopilotVision = z.infer<typeof visionSchema>;
+
+/**
+ * "Let the AI see screenshots" (off by default): Copilot's fallback for apps that hide their
+ * contents from accessibility (WeChat). Only the user changes it; absent or malformed is off.
+ */
+export async function loadCopilotVision(kv: KV): Promise<CopilotVision> {
+  const stored = visionSchema.safeParse(await kv.get(VISION_KEY));
+  return stored.success ? stored.data : { screenshots: false };
+}
+
+export async function saveCopilotVision(kv: KV, value: CopilotVision): Promise<CopilotVision> {
+  const parsed = visionSchema.parse(value);
+  await kv.set(VISION_KEY, parsed);
+  return parsed;
+}

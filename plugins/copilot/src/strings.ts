@@ -101,6 +101,8 @@ export const strings = {
     "unavailableHint": "这些已保存的应用已卸载或不再可用。移除后可重新启用 Copilot。",
     "removeUnavailable": "移除不可用的应用",
     "enableCopilot": "启用 Copilot",
+    "screenshots": "允许 AI 查看截图",
+    "screenshotsWhy": "用于微信等不向 Copilot 显示内容的应用：截图只取 Copilot 正在操作的应用，会发送给你的 AI 服务商；不会截取你自己的屏幕，也不会截取密码、支付等受保护的画面。",
     "refresh": "刷新状态"
   },
   "en": {
@@ -205,6 +207,8 @@ export const strings = {
     "unavailableHint": "These saved apps were removed or are no longer available. Remove them before enabling Copilot again.",
     "removeUnavailable": "Remove unavailable apps",
     "enableCopilot": "Enable Copilot",
+    "screenshots": "Let the AI see screenshots",
+    "screenshotsWhy": "For apps like WeChat that hide their contents from Copilot: screenshots of the app Copilot is operating are sent to your AI provider. Never of your own screen, and never of protected screens such as passwords or payments.",
     "refresh": "Refresh status"
   }
 } as const;

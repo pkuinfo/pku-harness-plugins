@@ -2,7 +2,8 @@ import { definePlugin, defineTool, type ToolContext } from '@pku-harness/sdk';
 import { z } from 'zod';
 import { CopilotScreen } from './screen';
 import { createBrightnessTools } from './brightness-tools';
-import { assessCopilotApp, copilotPreferencesSchema, grantCopilotApp, loadCopilotPreferences, configureCopilot, startCopilot } from './preferences';
+import { createVisionTools } from './vision-tools';
+import { assessCopilotApp, copilotPreferencesSchema, grantCopilotApp, loadCopilotPreferences, loadCopilotVision, configureCopilot, saveCopilotVision, startCopilot } from './preferences';
 import { deriveSetup, missingSteps } from './setup';
 
 const session = z.object({ sessionId: z.string().uuid() });
@@ -30,6 +31,7 @@ export const copilotPlugin = definePlugin({
       launch: { title: 'Open app' }, tap: { title: 'Tap element' }, type: { title: 'Enter text' }, submit: { title: 'Submit field' }, setProgress: { title: 'Adjust slider' },
       scroll: { title: 'Scroll screen' }, back: { title: 'Go back' }, wait: { title: 'Wait for screen' }, end: { title: 'End Copilot' },
       handoff: { title: 'Hand control to you' }, requestApp: { title: 'Use another app' }, readBrightness: { title: 'Read screen brightness' }, setBrightness: { title: 'Adjust screen brightness' },
+      look: { title: 'Look at a screenshot' }, tapAt: { title: 'Tap a screenshot point' }, typeAt: { title: 'Type at a screenshot point' }, setScreenshots: { title: 'Screenshot setting' },
     },
     name: 'Copilot', description: 'Operate the apps you select on a separate screen.',
     scopes: { '用户选择的手机应用': 'Phone apps you select' },
@@ -62,9 +64,13 @@ If the result is unclear, observe before choosing another action. Do not repeat 
 If repeated observations show no progress, explain what is blocked and hand off instead of spending the remaining steps on the same action.
 For passwords, login verification, payments, or a necessary app the user declined, call handoff to move the task to the user's screen and explain the step they need to complete.
 After handoff, finish your reply. The user can return control from /copilot and send a new message to resume. Do not end a handed-over session unless asked to stop.
-When the requested phone work is finished, end the session. Never operate apps for an unrelated purpose.`,
+When the requested phone work is finished, end the session. Never operate apps for an unrelated purpose.
+Some apps (notably WeChat) hide their contents from Copilot: observe then shows no or only a few unlabeled elements although the app is open. Only then: if status.screenshots is true, use look to see a screenshot, then tapAt/typeAt with that screenshot's snapshotId and pixel coordinates, and look again after every action to check the result (scroll and back also accept a look's snapshotId). If look says screenshots are off or the model cannot read images, relay that in one sentence and stop; never ask the user to turn screenshots on for an app that observe can read. Never use tapAt/typeAt when observe or look returned an element you could use instead; never for payments or passwords. The first time you operate WeChat in a conversation, mention once in one sentence that WeChat's terms forbid automated operation and Tencent may restrict accounts that use it.`,
   tools: {
     ...createBrightnessTools(control),
+    ...createVisionTools(control),
+    setScreenshots: defineTool({ title: '截图设置', description: 'Turn "Let the AI see screenshots" on or off. The user only, from /copilot.', input: z.object({ screenshots: z.boolean() }), effect: 'write', userOnly: true,
+      execute: (input, c) => saveCopilotVision(c.kv, input) }),
     handoff: defineTool({ title: '交给你操作', description: 'Move the current app to the user’s screen for login, verification, payment, or another manual step. The session waits for the user to hand it back.', input: session, effect: 'write', execute: async (a, c) => { await control(c).takeover(a.sessionId, c.signal); return { handedOver: true }; } }),
     requestApp: defineTool({ title: '使用新应用',
       description: 'Ask the user to let Copilot use one installed app that is outside the current scope (also when Copilot is off or has no apps). app: package name (preferred) or the exact name shown on the phone. Only the user can answer: Allow once adds it for this task, Always allow also saves it. Returns the session with the app added; launch it next. Errors if the app is already allowed or setup is unfinished.',
@@ -81,16 +87,16 @@ When the requested phone work is finished, end the session. Never operate apps f
         return grantCopilotApp(c.kv, phone, { app: a.app, sessionId: a.sessionId, remember: c.grant === 'always' }, c.signal);
       } }),
     status: defineTool({ title: 'Copilot 状态', description: 'Read phone readiness, the active session, and the apps the user saved for future tasks.', input: z.object({}), effect: 'read', execute: async (_, c) => {
-      const [state, preferences] = await Promise.all([control(c).readiness(c.signal), loadCopilotPreferences(c.kv)]);
+      const [state, preferences, vision] = await Promise.all([control(c).readiness(c.signal), loadCopilotPreferences(c.kv), loadCopilotVision(c.kv)]);
       // Notifications never block, and uninstalled apps surface when configuring, so neither is read here.
       const setup = deriveSetup({ readiness: state, enabled: preferences.enabled, configuredPackages: preferences.packages, missingPackages: 0, notifications: null });
-      return { ...state, enabled: preferences.enabled, configuredPackages: preferences.packages, setupMissing: missingSteps(setup) };
+      return { ...state, enabled: preferences.enabled, configuredPackages: preferences.packages, screenshots: vision.screenshots, setupMissing: missingSteps(setup) };
     } }),
     configure: defineTool({ title: 'Copilot 设置', description: 'Save the apps Copilot may use and enable or disable future phone tasks. The user only.', input: copilotPreferencesSchema, effect: 'write', userOnly: true, execute: (input, c) => configureCopilot(c.kv, control(c), input) }),
     // begin only allocates a lazy session + controls; it does not open/read/operate an app.
     // Actual launch/input retain their write/public approvals after the bubble exists.
     start: defineTool({ title: '开始手机任务', description: 'Start a phone task with the apps the user saved. Takes no app scope from the agent; use requestApp for another app. Never restart after the user stops this run.', input: z.object({}), effect: 'read', execute: (_, c) => startCopilot(c.kv, control(c), c.signal) }),
-    observe: defineTool({ title: '查看手机界面', description: 'Read the selected app’s screen and element references.', input: session, effect: 'read', untrusted: true, execute: (a, c) => control(c).execute(a.sessionId, 'observe', {}, c.signal) }),
+    observe: defineTool({ title: '查看手机界面', description: 'Read the selected app’s screen and element references. Always try this first; look is only a fallback.', input: session, effect: 'read', untrusted: true, execute: (a, c) => control(c).execute(a.sessionId, 'observe', {}, c.signal) }),
     launch: defineTool({ title: '打开应用', description: 'Open an app in the session scope (requestApp first for any other app). Optional restart resets the agent-owned app task to recover from a blocked screen and may discard unsaved state; never use it for unsaved user work.', input: session.extend({ packageName: z.string(), restart: z.boolean().optional() }), effect: 'write', untrusted: true, execute: (a, c) => control(c).execute(a.sessionId, 'launch', { packageName: a.packageName, restart: a.restart }, c.signal) }),
     tap: defineTool({ title: '点按控件', description: 'Tap a current screen element. Explain the intended effect before a consequential action.', input: target, effect: 'write', untrusted: true,
       resolveEffect: (a, services) => services.phone.assessTap(a.sessionId, a.snapshotId, a.ref),

@@ -43,9 +43,17 @@ export type PhoneBrightnessChange = {
   verified: boolean;
 };
 export type PhoneTapAssessment = { effect: 'write' | 'public' | 'money'; target: { label: string; context?: string } };
-/** Ephemeral, local UI image. Do not persist or return from a model-facing tool. */
+/**
+ * Ephemeral, local UI image (the floating/in-app preview). Do not persist it or return it from a
+ * model-facing tool. The one exception is Copilot's opt-in screenshots (`PhoneService.look`, off
+ * by default): those reach the model only through `withModelImage`, never as tool output.
+ */
 export type PhonePreview = { uri: string; width: number; height: number };
-export type PhoneOperation = 'observe' | 'launch' | 'tap' | 'submit' | 'setProgress' | 'type' | 'scroll' | 'back' | 'wait';
+/**
+ * `tapAt` / `typeAt` take `{ snapshotId, x, y }` (+ `text`) in the pixels of the screenshot
+ * returned by `look` with that snapshotId, plus `authorizedEffect` from `assessAt`.
+ */
+export type PhoneOperation = 'observe' | 'launch' | 'tap' | 'submit' | 'setProgress' | 'type' | 'scroll' | 'back' | 'wait' | 'tapAt' | 'typeAt';
 export type PhoneElement = {
   ref: string;
   role: string;
@@ -70,6 +78,12 @@ export type PhoneSnapshot = {
   handoff: boolean | null;
 };
 export type PhoneResult = PhoneSnapshot | { ok: boolean; error?: string; hint?: string | null; changed?: boolean | null; screen: PhoneSnapshot };
+/**
+ * A screenshot of the controlled display for the model (Copilot's opt-in vision fallback) and the
+ * observation it belongs to. `image.data` is base64; `image.width`/`height` are the coordinate
+ * space of `tapAt`/`typeAt` for `screen.snapshotId`. Never taken of a protected screen.
+ */
+export type PhoneLook = { screen: PhoneSnapshot; image: { data: string; mediaType: string; width: number; height: number } };
 
 export interface PhoneService {
   readiness(signal?: AbortSignal): Promise<PhoneReadiness>;
@@ -96,6 +110,13 @@ export interface PhoneService {
   preview(sessionId: string): Promise<PhonePreview | null>;
   assessSubmit(sessionId: string, snapshotId: string, ref: string): Promise<PhoneTapAssessment>;
   assessTap(sessionId: string, snapshotId: string, ref: string): Promise<PhoneTapAssessment>;
+  /** Approval target of a point on the screenshot `snapshotId` (screenshot pixels). Refuses money screens. */
+  assessAt(sessionId: string, snapshotId: string, x: number, y: number): Promise<PhoneTapAssessment>;
+  /**
+   * Observe and capture the controlled display for the model. Only call it when the user turned
+   * screenshots on; refuses protected screens and other apps on the display.
+   */
+  look(sessionId: string, signal?: AbortSignal): Promise<PhoneLook>;
   execute(sessionId: string, operation: PhoneOperation, args: Record<string, unknown>, signal?: AbortSignal): Promise<PhoneResult>;
   end(sessionId: string, signal?: AbortSignal): Promise<void>;
   takeover(sessionId: string, signal?: AbortSignal): Promise<void>;

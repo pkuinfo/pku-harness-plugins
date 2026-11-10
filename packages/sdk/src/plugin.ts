@@ -291,6 +291,11 @@ export interface TurnInfo {
    * even when the turn is tainted.
    */
   userAsked?: boolean;
+  /**
+   * The turn's model reads images (its catalog entry lists 'image' in `inputModalities`). Only
+   * then may a tool return an image for the model (`withModelImage`).
+   */
+  acceptsImages?: boolean;
 }
 
 export interface ToolContext {
@@ -342,6 +347,13 @@ export interface ToolDef<I extends z.ZodType = z.ZodType, O = unknown> {
    * names what is granted (shown as the prompt's headline).
    */
   grant?: boolean;
+  /**
+   * Every agent call waits for the user's approval, whatever the plugin's modes say ('auto' never
+   * skips it; 'off' still blocks); scheduled calls are refused. For actions the host cannot judge
+   * from an observed target (Copilot's taps at screenshot coordinates). `resolveEffect` should
+   * name what will happen for the prompt.
+   */
+  alwaysAsk?: boolean;
   /**
    * The result describes the current wall-clock day (in the app's clock zone): "today", this
    * teaching week, today's classes. Widgets must not paint a cached result fetched on an earlier

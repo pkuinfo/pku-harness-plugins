@@ -11,7 +11,7 @@ import { restoreAccessibility } from './preferences';
 /** Height of one letter in the A–Z strip. */
 const INDEX_ROW = 18;
 
-type CopilotStatus = PhoneReadiness & { enabled: boolean; configuredPackages: string[] };
+type CopilotStatus = PhoneReadiness & { enabled: boolean; configuredPackages: string[]; screenshots?: boolean };
 
 export function CopilotScreen({ host, services, invoke, focused = true }: PluginScreenProps) {
   const { Screen, Text, Button, Field, Switch, ListGroup, ListRow, Icon, IconButton, Segmented, Skeleton, EmptyState, FadeIn, Surface } = host.components;
@@ -120,6 +120,11 @@ export function CopilotScreen({ host, services, invoke, focused = true }: Plugin
         await refresh().catch(() => {});
       }
     })();
+  };
+  // Off by default; the change shows at once and the saved value comes back with the next status.
+  const setScreenshots = (screenshots: boolean) => {
+    setStatus((prev) => (prev ? { ...prev, screenshots } : prev));
+    void invoke('copilot.setScreenshots', { screenshots }).catch((e) => setError(e instanceof Error ? e.message : String(e))).then(() => refresh()).catch(() => {});
   };
   const configure = async (enabled: boolean, packages: string[]) => {
     if (savingConfiguration.current) return;
@@ -352,6 +357,11 @@ export function CopilotScreen({ host, services, invoke, focused = true }: Plugin
           {setup.phase === 'ready' || status.enabled ? <ListGroup variant="plain">
             <ListRow compact title={s.enableCopilot} subtitle={status.enabled ? setup.phase === 'ready' ? s.readyForTasks : s.connectionNeeded : s.off} accessory={
               <Switch label={s.enableCopilot} value={status.enabled} disabled={!status.enabled && !enableAllowed} onValueChange={(enabled) => choose(enabled, selected)} />
+            } />
+          </ListGroup> : null}
+          {setup.phase === 'ready' || status.enabled ? <ListGroup variant="plain" footer={s.screenshotsWhy}>
+            <ListRow compact title={s.screenshots} accessory={
+              <Switch label={s.screenshots} value={status.screenshots === true} onValueChange={setScreenshots} />
             } />
           </ListGroup> : null}
           {setup.phase === 'ready' ? <ListGroup variant="plain">
