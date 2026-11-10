@@ -135,6 +135,8 @@ export function CopilotScreen({ host, services, invoke, focused = true }: Plugin
     finally { setAppsLoading(false); }
   });
   const setup = status ? deriveSetup({ readiness: status, enabled: status.enabled, configuredPackages: selected, missingPackages: missingPackages.length, notifications }) : null;
+  // The A–Z rail floats over the whole screen, so it only appears once the setup checklist is gone.
+  const rail = showIndex && setup?.phase === 'ready' && letters.length > 1;
   const phase = setup?.phase ?? null;
   // "You're set": only when this screen watched setup finish, never on a plain visit.
   useEffect(() => {
@@ -238,7 +240,7 @@ export function CopilotScreen({ host, services, invoke, focused = true }: Plugin
     </View>
   ) : null;
   return (
-    <Screen title="Copilot" appearance="plain" scrollRef={scrollRef} overlay={showIndex && letters.length > 1 ? (
+    <Screen title="Copilot" appearance="plain" scrollRef={scrollRef} overlay={rail ? (
       <View pointerEvents="box-none" style={{ position: 'absolute', right: 0, top: 0, bottom: 0, justifyContent: 'center' }}>
         {scrubbing && activeLetter ? (
           <View pointerEvents="none" style={{ position: 'absolute', right: theme.spacing.xxl + theme.spacing.sm, alignSelf: 'center', width: theme.spacing.xxxl + theme.spacing.md, height: theme.spacing.xxxl + theme.spacing.md,
@@ -263,7 +265,7 @@ export function CopilotScreen({ host, services, invoke, focused = true }: Plugin
         </View>
       </View>
     ) : null} back trailing={<IconButton icon="refresh" label={s.refresh} variant="ghost" disabled={busy || appsLoading} onPress={() => void reload()} />}>
-      <View style={{ gap: theme.spacing.xl, paddingRight: showIndex && letters.length > 1 ? theme.spacing.xl : 0 }}>
+      <View style={{ gap: theme.spacing.xl, paddingRight: rail ? theme.spacing.xl : 0 }}>
         {error ? <View style={{ gap: theme.spacing.sm }}><Text tone="down">{error}</Text><Button title={s.retry} variant="ghost" size="sm" disabled={busy} onPress={() => void reload()} /></View> : null}
         {!status || !setup ? <View style={{ gap: theme.spacing.sm, padding: theme.spacing.lg }}>
           <Skeleton width="65%" height={theme.spacing.lg} />
