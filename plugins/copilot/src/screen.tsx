@@ -6,6 +6,7 @@ import { indexApps } from './app-index';
 import { LatestPhoneRead } from './latest-read';
 import { becameReady, canEnable, connectionMode, deriveSetup, helperHint, pairingProgress, parsePort, wirelessSteps, type CopilotSetup, type SetupStep as Step, type SetupStepId } from './setup';
 import { SetupStep } from './setup-step';
+import { restoreAccessibility } from './preferences';
 
 /** Height of one letter in the A–Z strip. */
 const INDEX_ROW = 18;
@@ -62,6 +63,14 @@ export function CopilotScreen({ host, services, invoke, focused = true }: Plugin
     const next = await invoke('copilot.status') as CopilotStatus;
     if (current()) acceptStatus(next);
   }, [invoke, reads, acceptStatus]);
+  // Copilot is on and the helper is connected, but Android dropped the accessibility service (it does
+  // on force-stop): turn it back on through the helper once, instead of asking for a tap.
+  const restoredOnce = useRef(false);
+  useEffect(() => {
+    if (!status?.enabled || !status.helper || status.accessibility || restoredOnce.current) return;
+    restoredOnce.current = true;
+    void restoreAccessibility(services.phone).catch(() => undefined).then(() => refresh());
+  }, [status, services, refresh]);
   const refreshNotifications = useCallback(async () => {
     try { setNotifications((await services.notify.readiness()).notifications); } catch { /* stays unknown; it never blocks */ }
   }, [services]);
@@ -144,7 +153,8 @@ export function CopilotScreen({ host, services, invoke, focused = true }: Plugin
   // "You're set": only when this screen watched setup finish, never on a plain visit.
   useEffect(() => {
     if (!phase) return;
-    if (becameReady(lastPhase.current, phase)) { setCelebrate(true); host.haptics.success(); }
+    // A silent accessibility restore (Copilot was already set up) is not a setup finishing.
+    if (becameReady(lastPhase.current, phase) && !restoredOnce.current) { setCelebrate(true); host.haptics.success(); }
     lastPhase.current = phase;
   }, [phase, host]);
   const expandedStep = setup && opened && opened.at === setup.current ? opened.id : setup?.current ?? null;

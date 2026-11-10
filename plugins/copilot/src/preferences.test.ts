@@ -116,3 +116,24 @@ test('start names the unfinished setup steps instead of opening a session', asyn
   await expect(startCopilot(f.kv, f.phone)).rejects.toThrow('missing: accessibility');
   expect(f.begun).toEqual([]);
 });
+
+test('a dropped accessibility service is restored through the helper before a task starts', async () => {
+  const f = fixture();
+  await saveCopilotPreferences(f.kv, { enabled: true, packages: ['org.example.notes'] });
+  f.setState({ accessibility: false });
+  const setups: string[] = [];
+  f.phone.setup = async (kind) => { setups.push(kind); f.setState({ accessibility: true }); };
+  await startCopilot(f.kv, f.phone);
+  expect(setups).toEqual(['accessibility']);
+  expect(f.begun).toEqual([['org.example.notes']]);
+});
+
+test('without the helper a missing accessibility service still stops the task', async () => {
+  const f = fixture();
+  await saveCopilotPreferences(f.kv, { enabled: true, packages: ['org.example.notes'] });
+  f.setState({ accessibility: false, helper: false, helperStatus: 'wireless-off' });
+  const setups: string[] = [];
+  f.phone.setup = async (kind) => { setups.push(kind); };
+  await expect(startCopilot(f.kv, f.phone)).rejects.toThrow('not finished');
+  expect(setups).toEqual([]);
+});

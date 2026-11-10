@@ -1,4 +1,4 @@
-import type { KV, PhoneService } from '@pku-harness/sdk';
+import type { KV, PhoneReadiness, PhoneService } from '@pku-harness/sdk';
 import { z } from 'zod';
 
 const packageName = z.string().regex(/^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z][A-Za-z0-9_]*)+$/);
@@ -52,10 +52,35 @@ export function startCopilot(kv: KV, phone: PhoneService, signal?: AbortSignal) 
     const preferences = await loadCopilotPreferences(kv);
     if (!preferences.enabled || !preferences.packages.length) throw new Error('Enable Copilot and select apps in /copilot first.');
     signal?.throwIfAborted();
-    const state = await phone.readiness(signal);
+    let state = await phone.readiness(signal);
     if (state.sessionId) return { sessionId: state.sessionId, packages: state.packages };
+    // If the helper can't restore it, the missing step is reported below as before.
+    if (state.helper && !state.accessibility) state = await restoreAccessibility(phone, signal).catch((e) => {
+      if (signal?.aborted) throw e;
+      return state;
+    });
     const missing = [!state.helper && 'phone helper', !state.accessibility && 'accessibility'].filter(Boolean);
     if (missing.length) throw new Error(`Copilot setup is not finished (missing: ${missing.join(', ')}). Ask the user to open /copilot and complete the highlighted step.`);
     return phone.begin(preferences.packages, signal);
   });
+}
+
+const RESTORE_WAIT_MS = 3000;
+const RESTORE_POLL_MS = 250;
+
+/**
+ * Copilot is on but Android dropped its accessibility service (it does so when the app is
+ * force-stopped). The connected helper turns it back on without Settings; the switch in
+ * /copilot, not that side effect, is the user's choice. Waits briefly for the service to bind.
+ */
+export async function restoreAccessibility(phone: PhoneService, signal?: AbortSignal): Promise<PhoneReadiness> {
+  await phone.setup('accessibility');
+  const until = Date.now() + RESTORE_WAIT_MS;
+  let state = await phone.readiness(signal);
+  while (!state.accessibility && Date.now() < until) {
+    await new Promise((r) => setTimeout(r, RESTORE_POLL_MS));
+    signal?.throwIfAborted();
+    state = await phone.readiness(signal);
+  }
+  return state;
 }
