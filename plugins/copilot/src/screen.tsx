@@ -371,7 +371,7 @@ export function CopilotScreen({ host, services, invoke, focused = true }: Plugin
           </ListGroup> : null}
           {setup.phase === 'ready' || status.enabled ? <ListGroup variant="plain" footer={s.screenshotsWhy}>
             <ListRow compact title={s.screenshots} accessory={
-              <Switch label={s.screenshots} value={status.screenshots === true} onValueChange={setScreenshots} />
+              <Switch label={s.screenshots} value={status.screenshots !== false} onValueChange={setScreenshots} />
             } />
           </ListGroup> : null}
           {setup.phase === 'ready' ? <ListGroup variant="plain">

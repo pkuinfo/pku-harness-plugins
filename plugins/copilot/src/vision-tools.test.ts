@@ -23,12 +23,14 @@ function fixture(opts: { screenshots?: boolean; acceptsImages?: boolean; actor?:
   const context = { actor: opts.actor ?? 'agent', kv, signal: new AbortController().signal, effect: 'write', services: { phone },
     turn: { tainted: false, acceptsImages: opts.acceptsImages ?? true } } as unknown as ToolContext;
   const tools = createVisionTools(() => phone);
-  const ready = opts.screenshots === false ? Promise.resolve() : saveCopilotVision(kv, { screenshots: true }).then(() => {});
+  // Absent storage reads as on (the default); only an explicit false turns screenshots off.
+  const ready = opts.screenshots === undefined ? Promise.resolve() : saveCopilotVision(kv, { screenshots: opts.screenshots }).then(() => {});
   return { tools, context, looks, executed, ready, phone, setShot: (value: PhoneLook) => { next = value; } };
 }
 
-test('look is off unless the user turned screenshots on, and needs a model that reads images', async () => {
+test('look is on by default, off only when the user turned it off, and needs a model that reads images', async () => {
   const off = fixture({ screenshots: false });
+  await off.ready;
   await expect(off.tools.look.execute({ sessionId }, off.context)).rejects.toThrow(SCREENSHOTS_OFF);
   const blind = fixture({ acceptsImages: false });
   await blind.ready;
@@ -43,6 +45,7 @@ test('look returns the coordinate space and hands the image to the host, not as 
   const f = fixture();
   await f.ready;
   const result = await f.tools.look.execute({ sessionId }, f.context);
+  expect(f.looks.length).toBe(1);
   const { output, image } = takeModelImage(result);
   expect(image).toEqual({ data: 'aGVsbG8=', mediaType: 'image/jpeg' });
   expect(output).toMatchObject({ snapshotId: `${sessionId}:3`, width: 324, height: 720, packageName: 'com.tencent.mm' });
@@ -51,11 +54,11 @@ test('look returns the coordinate space and hands the image to the host, not as 
   await expect(f.tools.look.execute({ sessionId }, f.context)).rejects.toThrow('protected');
 });
 
-test('point actions always ask, carry the approved effect and the AI-stated target', async () => {
+test('point actions follow the normal write approval, carry the approved effect and the AI-stated target', async () => {
   const f = fixture();
   await f.ready;
-  expect(f.tools.tapAt.alwaysAsk).toBe(true);
-  expect(f.tools.typeAt.alwaysAsk).toBe(true);
+  expect(f.tools.tapAt.alwaysAsk).toBeUndefined();
+  expect(f.tools.typeAt.alwaysAsk).toBeUndefined();
   expect(f.tools.tapAt.effect).toBe('write');
   const raw = { sessionId, snapshotId: `${sessionId}:3`, x: 10, y: 20, target: '发送' };
   const input = f.tools.tapAt.input.parse(raw);

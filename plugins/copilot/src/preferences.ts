@@ -178,12 +178,13 @@ const visionSchema = z.object({ screenshots: z.boolean() });
 export type CopilotVision = z.infer<typeof visionSchema>;
 
 /**
- * "Let the AI see screenshots" (off by default): Copilot's fallback for apps that hide their
- * contents from accessibility (WeChat). Only the user changes it; absent or malformed is off.
+ * "Let the AI see screenshots" (on by default): Copilot's fallback for apps that hide their
+ * contents from accessibility (Taobao, WeChat). Only the user changes it. Saving writes an explicit
+ * boolean, so a user who turned it off stays off; never set (absent or malformed) reads as on.
  */
 export async function loadCopilotVision(kv: KV): Promise<CopilotVision> {
   const stored = visionSchema.safeParse(await kv.get(VISION_KEY));
-  return stored.success ? stored.data : { screenshots: false };
+  return stored.success ? stored.data : { screenshots: true };
 }
 
 export async function saveCopilotVision(kv: KV, value: CopilotVision): Promise<CopilotVision> {

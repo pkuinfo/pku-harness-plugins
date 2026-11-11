@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test';
 import type { KV, PhoneService, PhoneReadiness } from '@pku-harness/sdk';
-import { assessCopilotApp, configureCopilot, grantCopilotApp, loadCopilotPreferences, resolveCopilotApp, saveCopilotPreferences, startCopilot } from './preferences';
+import { assessCopilotApp, configureCopilot, grantCopilotApp, loadCopilotPreferences, loadCopilotVision, resolveCopilotApp, saveCopilotPreferences, saveCopilotVision, startCopilot } from './preferences';
 
 function fixture() {
   const values = new Map<string, unknown>();
@@ -212,4 +212,15 @@ test('a grant still needs finished setup before it opens a session', async () =>
   await expect(grantCopilotApp(f.kv, f.phone, { app: 'Browser', remember: true })).rejects.toThrow('not finished');
   expect(f.begun).toEqual([]);
   expect(await loadCopilotPreferences(f.kv)).toEqual({ enabled: false, packages: [] });
+});
+
+test('screenshots are on when never set and stay off once the user turned them off', async () => {
+  const f = fixture();
+  expect(await loadCopilotVision(f.kv)).toEqual({ screenshots: true });
+  f.values.set('vision-preferences', { screenshots: 'yes' });
+  expect(await loadCopilotVision(f.kv)).toEqual({ screenshots: true });
+  await saveCopilotVision(f.kv, { screenshots: false });
+  expect(await loadCopilotVision(f.kv)).toEqual({ screenshots: false });
+  await saveCopilotVision(f.kv, { screenshots: true });
+  expect(await loadCopilotVision(f.kv)).toEqual({ screenshots: true });
 });

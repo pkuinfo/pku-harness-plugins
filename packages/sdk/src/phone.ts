@@ -45,8 +45,8 @@ export type PhoneBrightnessChange = {
 export type PhoneTapAssessment = { effect: 'write' | 'public' | 'money'; target: { label: string; context?: string } };
 /**
  * Ephemeral, local UI image (the floating/in-app preview). Do not persist it or return it from a
- * model-facing tool. The one exception is Copilot's opt-in screenshots (`PhoneService.look`, off
- * by default): those reach the model only through `withModelImage`, never as tool output.
+ * model-facing tool. The one exception is Copilot's screenshots (`PhoneService.look`, on by
+ * default, the user can turn them off): those reach the model only through `withModelImage`, never as tool output.
  */
 export type PhonePreview = { uri: string; width: number; height: number };
 /**
@@ -79,7 +79,7 @@ export type PhoneSnapshot = {
 };
 export type PhoneResult = PhoneSnapshot | { ok: boolean; error?: string; hint?: string | null; changed?: boolean | null; screen: PhoneSnapshot };
 /**
- * A screenshot of the controlled display for the model (Copilot's opt-in vision fallback) and the
+ * A screenshot of the controlled display for the model (Copilot's vision fallback) and the
  * observation it belongs to. `image.data` is base64; `image.width`/`height` are the coordinate
  * space of `tapAt`/`typeAt` for `screen.snapshotId`. Never taken of a protected screen.
  */
@@ -113,8 +113,8 @@ export interface PhoneService {
   /** Approval target of a point on the screenshot `snapshotId` (screenshot pixels). Refuses money screens. */
   assessAt(sessionId: string, snapshotId: string, x: number, y: number): Promise<PhoneTapAssessment>;
   /**
-   * Observe and capture the controlled display for the model. Only call it when the user turned
-   * screenshots on; refuses protected screens and other apps on the display.
+   * Observe and capture the controlled display for the model. Only call it while the user has
+   * screenshots on (the default); refuses protected screens and other apps on the display.
    */
   look(sessionId: string, signal?: AbortSignal): Promise<PhoneLook>;
   execute(sessionId: string, operation: PhoneOperation, args: Record<string, unknown>, signal?: AbortSignal): Promise<PhoneResult>;

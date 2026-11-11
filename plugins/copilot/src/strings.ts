@@ -102,7 +102,7 @@ export const strings = {
     "removeUnavailable": "移除不可用的应用",
     "enableCopilot": "启用 Copilot",
     "screenshots": "允许 AI 查看截图",
-    "screenshotsWhy": "用于微信等不向 Copilot 显示内容的应用：截图只取 Copilot 正在操作的应用，会发送给你的 AI 服务商；不会截取你自己的屏幕，也不会截取密码、支付等受保护的画面。",
+    "screenshotsWhy": "默认开启，可随时关闭。用于淘宝、微信等不向 Copilot 显示内容的应用：截图只取 Copilot 正在操作的应用，会发送给你的 AI 服务商；不会截取你自己的屏幕，也不会截取密码、支付等受保护的画面。",
     "refresh": "刷新状态"
   },
   "en": {
@@ -208,7 +208,7 @@ export const strings = {
     "removeUnavailable": "Remove unavailable apps",
     "enableCopilot": "Enable Copilot",
     "screenshots": "Let the AI see screenshots",
-    "screenshotsWhy": "For apps like WeChat that hide their contents from Copilot: screenshots of the app Copilot is operating are sent to your AI provider. Never of your own screen, and never of protected screens such as passwords or payments.",
+    "screenshotsWhy": "On by default; you can turn it off at any time. For apps like Taobao and WeChat that hide their contents from Copilot: screenshots of the app Copilot is operating are sent to your AI provider. Never of your own screen, and never of protected screens such as passwords or payments.",
     "refresh": "Refresh status"
   }
 } as const;

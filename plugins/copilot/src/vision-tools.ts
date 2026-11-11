@@ -3,12 +3,13 @@ import { z } from 'zod';
 import { loadCopilotVision } from './preferences';
 
 /**
- * Vision fallback for apps that hide their accessibility tree from Copilot (WeChat ≥ 8.0.5x).
- * Off unless the user turned on "Let the AI see screenshots" in /copilot. `look` shows the model
+ * Vision fallback for apps that hide their accessibility tree from Copilot (Taobao, WeChat ≥ 8.0.5x).
+ * On unless the user turned off "Let the AI see screenshots" in /copilot. `look` shows the model
  * a screenshot of the controlled display (never the user's own screen, never a protected one);
- * `tapAt` / `typeAt` act on a point of that screenshot and ask the user every time.
+ * `tapAt` / `typeAt` act on a point of that screenshot under the plugin's normal write approval,
+ * like `tap`; money screens are refused by `assessAt` (the user pays after a handoff).
  */
-export const SCREENSHOTS_OFF = 'Screenshots are off. Tell the user, in one sentence, that this app hides its contents from Copilot and that they can turn on "Let the AI see screenshots" in /copilot (Settings → Copilot) if they want you to continue by looking at screenshots.';
+export const SCREENSHOTS_OFF = 'The user turned off "Let the AI see screenshots" in /copilot. Tell them, in one sentence, that this app hides its contents from Copilot, so you cannot continue in it without screenshots; then stop.';
 export const NO_IMAGE_MODEL = 'The current chat model cannot read images. Tell the user to switch to a model that reads images (for example DeepSeek-V4.1-Flash) in the model picker, then ask again.';
 
 const session = z.object({ sessionId: z.string().uuid() });
@@ -32,7 +33,7 @@ export function createVisionTools(control: (context: ToolContext) => PhoneServic
   return {
     look: defineTool({
       title: '查看截图',
-      description: 'Only when observe shows no or too few usable elements for an allowed app (for example WeChat) and the user turned screenshots on. Shows you a screenshot of the controlled app (never the user’s own screen; protected screens are refused) in the next message, plus the screen’s elements if any. Its snapshotId and width×height (screenshot pixels, origin top-left) are what tapAt/typeAt take. The screenshot carries a magenta grid: a line every tenth of the width and height, with its pixel value labelled on the top and left edges. Read a target’s position off those rulers (between which labelled lines it lies) instead of estimating pixels. Look again after every action.',
+      description: 'When observe shows no or only a few unlabeled elements for an allowed app (for example Taobao or WeChat). Shows you a screenshot of the controlled app (never the user’s own screen; protected screens are refused) in the next message, plus the screen’s elements if any. Its snapshotId and width×height (screenshot pixels, origin top-left) are what tapAt/typeAt take. The screenshot carries a magenta grid: a line every tenth of the width and height, with its pixel value labelled on the top and left edges. Read a target’s position off those rulers (between which labelled lines it lies) instead of estimating pixels. Look again after every action.',
       input: session, effect: 'read', untrusted: true, serial: true,
       execute: async (a, c) => {
         await requireVision(c);
@@ -53,8 +54,8 @@ export function createVisionTools(control: (context: ToolContext) => PhoneServic
     }),
     tapAt: defineTool({
       title: '点按截图位置',
-      description: 'Tap a point of the latest look screenshot (x, y in its pixels; its snapshotId). target: what you are tapping, as written on the screen (e.g. "发送"); the user approves every tap. Never use it when observe or look returned an element you could tap instead, and never for payments or passwords.',
-      input: point, effect: 'write', untrusted: true, alwaysAsk: true, serial: true,
+      description: 'Tap a point of the latest look screenshot (x, y in its pixels; its snapshotId). target: what you are tapping, as written on the screen (e.g. "发送"); if its text keeps changing (a rotating search hint), name what the latest look shows. Never use it when observe or look returned an element you could tap instead, and never for payments or passwords.',
+      input: point, effect: 'write', untrusted: true, serial: true,
       resolveEffect: async (a, services) => {
         const assessed = await services.phone.assessAt(a.sessionId, a.snapshotId, a.x, a.y);
         return { effect: assessed.effect, target: pointTarget(a, assessed.target.context ?? '') };
@@ -66,8 +67,8 @@ export function createVisionTools(control: (context: ToolContext) => PhoneServic
     }),
     typeAt: defineTool({
       title: '在截图位置输入',
-      description: 'Tap the input field at a point of the latest look screenshot, then enter text (replacing what it holds). target: the field as shown on the screen (e.g. "输入框"); the user approves every call. Typing never sends: tap the send button separately. Never for passwords. Look again to check the result.',
-      input: point.extend({ text: z.string().min(1).max(10_000) }), effect: 'write', untrusted: true, alwaysAsk: true, serial: true,
+      description: 'Tap the input field at a point of the latest look screenshot, then enter text (replacing what it holds). target: the field as shown on the screen (e.g. "输入框"). Typing never sends: tap the send button separately. Never for passwords. Look again to check the result.',
+      input: point.extend({ text: z.string().min(1).max(10_000) }), effect: 'write', untrusted: true, serial: true,
       resolveEffect: async (a, services) => {
         const assessed = await services.phone.assessAt(a.sessionId, a.snapshotId, a.x, a.y);
         return { effect: assessed.effect, target: pointTarget(a, assessed.target.context ?? '') };
