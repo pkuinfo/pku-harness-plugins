@@ -1,0 +1,15 @@
+{
+  "name": "@pku-harness/plugin-speech",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Speech-to-text services for voice input (bring your own key)",
+  "type": "module",
+  "main": "src/index.ts",
+  "license": "MIT",
+  "pkuHarness": {
+    "builtin": true
+  },
+  "peerDependencies": {
+    "@pku-harness/sdk": "*"
+  }
+}

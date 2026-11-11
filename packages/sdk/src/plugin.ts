@@ -31,6 +31,7 @@ export type PluginTranslation = {
   commands?: Record<string, { description?: string; argHint?: string; aliases?: string[]; prompt?: string }>;
   /** Provider plugins: display name, description, credential hint and model names/descriptions. */
   providers?: Record<string, { name?: string; description?: string; credentialHint?: string; models?: Record<string, { name?: string; description?: string }> }>;
+  speech?: Record<string, { name?: string; description?: string; credentialHint?: string; models?: Record<string, { name?: string; description?: string }> }>;
   dataSources?: Record<string, { title?: string }>;
   /** Access scopes written as prose (not a host name), keyed by the source text in `scopes`. */
   scopes?: Record<string, string>;
@@ -446,6 +447,42 @@ export interface ProviderDef {
   createModel: (config: ProviderConfig) => unknown;
 }
 
+export interface SpeechConfig {
+  baseURL: string;
+  model: string;
+  /** API key from the host's secure storage. */
+  credential?: string;
+  /** The host's fetch (uploads `SpeechAudio.file` in a FormData). */
+  fetch: typeof fetch;
+}
+
+/** A recording to transcribe: a local file the host recorded (m4a/AAC unless `mimeType` says otherwise). */
+export interface SpeechAudio {
+  /** The recording as a Blob the host's `fetch` can upload (append it to a FormData). */
+  file: Blob;
+  uri: string;
+  name: string;
+  mimeType: string;
+  durationMs?: number;
+}
+
+/**
+ * A speech-to-text service for the composer's voice input (bring your own key). The recording
+ * goes from the phone straight to `baseURL`; `transcribe` returns the text.
+ */
+export interface SpeechProviderDef {
+  name: string;
+  description: string;
+  defaultBaseURL: string;
+  editableBaseURL?: boolean;
+  models: { id: string; name: string; description?: string }[];
+  defaultModel: string;
+  credentialHint?: string;
+  /** Where to get a key, shown under the field. */
+  keyURL?: string;
+  transcribe: (config: SpeechConfig, audio: SpeechAudio, signal?: AbortSignal) => Promise<string>;
+}
+
 export interface PluginDef {
   id: string;
   name: string;
@@ -473,6 +510,8 @@ export interface PluginDef {
   tools: Record<string, ToolDef>;
   dataSources?: Record<string, DataSourceDef>;
   providers?: Record<string, ProviderDef>;
+  /** Speech-to-text services for voice input, keyed by local id (host id: `<plugin>.<key>`). */
+  speech?: Record<string, SpeechProviderDef>;
   /** Extra guidance appended to the agent's system prompt. */
   instructions?: Dynamic<string>;
   /**

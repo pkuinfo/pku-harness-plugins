@@ -12,6 +12,7 @@ import { openAICompatiblePlugin } from './openai-compatible/src';
 import { pluginsPlugin } from './plugins/src';
 import { schedulePlugin } from './schedule/src';
 import { schedulerPlugin } from './scheduler/src';
+import { speechPlugin } from './speech/src';
 import { timetablePlugin } from './timetable/src';
 import { todoPlugin } from './todo/src';
 import { uiPlugin } from './ui/src';
@@ -41,5 +42,6 @@ export const builtinPlugins: PluginDef[] = [
   pluginsPlugin,
   deepseekPlugin,
   openAICompatiblePlugin,
+  speechPlugin,
 ];
 export { bundledDocuments } from './documents.generated';

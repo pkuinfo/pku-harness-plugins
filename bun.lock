@@ -168,6 +168,13 @@
         "zod": "^4.0.0",
       },
     },
+    "plugins/speech": {
+      "name": "@pku-harness/plugin-speech",
+      "version": "0.1.0",
+      "peerDependencies": {
+        "@pku-harness/sdk": "*",
+      },
+    },
     "plugins/timetable": {
       "name": "@pku-harness/plugin-timetable",
       "version": "0.3.0",
@@ -302,6 +309,8 @@
     "@pku-harness/plugin-schedule": ["@pku-harness/plugin-schedule@workspace:plugins/schedule"],
 
     "@pku-harness/plugin-scheduler": ["@pku-harness/plugin-scheduler@workspace:plugins/scheduler"],
+
+    "@pku-harness/plugin-speech": ["@pku-harness/plugin-speech@workspace:plugins/speech"],
 
     "@pku-harness/plugin-timetable": ["@pku-harness/plugin-timetable@workspace:plugins/timetable"],
 
