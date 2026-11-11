@@ -39,7 +39,7 @@ export function createVisionTools(control: (context: ToolContext) => PhoneServic
         await requireVision(c);
         const shot = await control(c).look(a.sessionId, c.signal);
         // Native refuses protected screens; never pass one on even if it slipped through.
-        if (shot.screen.protected) throw new Error('This protected screen requires the user; it is never captured.');
+        if (shot.screen.protected) throw new Error('This screen blocks screenshots; use observe and tap its elements.');
         const mediaType = shot.image.mediaType === 'image/png' ? 'image/png' : 'image/jpeg';
         return withModelImage({
           sessionId: shot.screen.sessionId,

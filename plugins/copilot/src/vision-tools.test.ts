@@ -51,7 +51,7 @@ test('look returns the coordinate space and hands the image to the host, not as 
   expect(output).toMatchObject({ snapshotId: `${sessionId}:3`, width: 324, height: 720, packageName: 'com.tencent.mm' });
   expect(MODEL_IMAGE_KEY in (output as object)).toBe(false);
   f.setShot({ ...shot, screen: { ...shot.screen, protected: true } });
-  await expect(f.tools.look.execute({ sessionId }, f.context)).rejects.toThrow('protected');
+  await expect(f.tools.look.execute({ sessionId }, f.context)).rejects.toThrow('blocks screenshots');
 });
 
 test('point actions follow the normal write approval, carry the approved effect and the AI-stated target', async () => {
