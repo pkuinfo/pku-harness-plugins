@@ -355,6 +355,12 @@ export interface ToolDef<I extends z.ZodType = z.ZodType, O = unknown> {
    */
   alwaysAsk?: boolean;
   /**
+   * Calls of this plugin's serial tools run one at a time, approval included, in the order the
+   * model made them (it may batch several in one step). For tools acting on one shared state that
+   * a parallel call would change underneath them (Copilot's observe and tap on the same screen).
+   */
+  serial?: boolean;
+  /**
    * The result describes the current wall-clock day (in the app's clock zone): "today", this
    * teaching week, today's classes. Widgets must not paint a cached result fetched on an earlier
    * day (keep it only as the offline fallback when a fresh fetch fails).

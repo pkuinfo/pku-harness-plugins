@@ -33,7 +33,7 @@ export function createVisionTools(control: (context: ToolContext) => PhoneServic
     look: defineTool({
       title: '查看截图',
       description: 'Only when observe shows no or too few usable elements for an allowed app (for example WeChat) and the user turned screenshots on. Shows you a screenshot of the controlled app (never the user’s own screen; protected screens are refused) in the next message, plus the screen’s elements if any. Its snapshotId and width×height (screenshot pixels, origin top-left) are what tapAt/typeAt take. The screenshot carries a magenta grid: a line every tenth of the width and height, with its pixel value labelled on the top and left edges. Read a target’s position off those rulers (between which labelled lines it lies) instead of estimating pixels. Look again after every action.',
-      input: session, effect: 'read', untrusted: true,
+      input: session, effect: 'read', untrusted: true, serial: true,
       execute: async (a, c) => {
         await requireVision(c);
         const shot = await control(c).look(a.sessionId, c.signal);
@@ -54,7 +54,7 @@ export function createVisionTools(control: (context: ToolContext) => PhoneServic
     tapAt: defineTool({
       title: '点按截图位置',
       description: 'Tap a point of the latest look screenshot (x, y in its pixels; its snapshotId). target: what you are tapping, as written on the screen (e.g. "发送"); the user approves every tap. Never use it when observe or look returned an element you could tap instead, and never for payments or passwords.',
-      input: point, effect: 'write', untrusted: true, alwaysAsk: true,
+      input: point, effect: 'write', untrusted: true, alwaysAsk: true, serial: true,
       resolveEffect: async (a, services) => {
         const assessed = await services.phone.assessAt(a.sessionId, a.snapshotId, a.x, a.y);
         return { effect: assessed.effect, target: pointTarget(a, assessed.target.context ?? '') };
@@ -67,7 +67,7 @@ export function createVisionTools(control: (context: ToolContext) => PhoneServic
     typeAt: defineTool({
       title: '在截图位置输入',
       description: 'Tap the input field at a point of the latest look screenshot, then enter text (replacing what it holds). target: the field as shown on the screen (e.g. "输入框"); the user approves every call. Typing never sends: tap the send button separately. Never for passwords. Look again to check the result.',
-      input: point.extend({ text: z.string().min(1).max(10_000) }), effect: 'write', untrusted: true, alwaysAsk: true,
+      input: point.extend({ text: z.string().min(1).max(10_000) }), effect: 'write', untrusted: true, alwaysAsk: true, serial: true,
       resolveEffect: async (a, services) => {
         const assessed = await services.phone.assessAt(a.sessionId, a.snapshotId, a.x, a.y);
         return { effect: assessed.effect, target: pointTarget(a, assessed.target.context ?? '') };

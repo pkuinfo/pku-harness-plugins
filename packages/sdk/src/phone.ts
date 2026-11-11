@@ -120,5 +120,11 @@ export interface PhoneService {
   execute(sessionId: string, operation: PhoneOperation, args: Record<string, unknown>, signal?: AbortSignal): Promise<PhoneResult>;
   end(sessionId: string, signal?: AbortSignal): Promise<void>;
   takeover(sessionId: string, signal?: AbortSignal): Promise<void>;
+  /**
+   * takeover that names the step for the user (shown on the floating panel beside a Done
+   * button), then waits until they tap Done, the session ends, or `timeoutMs` passes. Lets a task
+   * continue by itself after a payment or login. Missing on hosts or APKs that predate it.
+   */
+  handoffAndWait?(sessionId: string, note: string, timeoutMs: number, signal?: AbortSignal): Promise<{ handedBack: boolean; ended: boolean; timedOut?: boolean }>;
   handback(sessionId: string): Promise<void>;
 }
