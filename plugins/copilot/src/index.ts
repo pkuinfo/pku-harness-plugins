@@ -10,6 +10,8 @@ const session = z.object({ sessionId: z.string().uuid() });
 const target = session.extend({ snapshotId: z.string(), ref: z.string() });
 /** How long a handoff waits for the user's Done before the reply ends (they can still resume later). */
 const HANDOFF_WAIT_MS = 10 * 60_000;
+/** Reads of the screen after a handback before giving up (the app moves back between displays). */
+const HANDBACK_READS = 4;
 
 function control(context: ToolContext) {
   if (context.actor === 'scheduler') throw new Error('Copilot requires an interactive chat; scheduled tasks cannot access a phone session.');
@@ -85,7 +87,15 @@ Right after an app opens it may still be on its splash screen (WeChat's first st
       }
       const r = await phone.handoffAndWait(a.sessionId, a.note ?? '', HANDOFF_WAIT_MS, c.signal);
       if (!r.handedBack) return { handedOver: !r.ended, ...r };
-      return { handedBack: true, screen: await phone.execute(a.sessionId, 'observe', {}, c.signal) };
+      // The app is still moving back to Copilot's display for a moment: read once it has settled.
+      for (let attempt = 1; ; attempt++) {
+        try {
+          return { handedBack: true, screen: await phone.execute(a.sessionId, 'observe', {}, c.signal) };
+        } catch (e) {
+          if (attempt >= HANDBACK_READS || c.signal?.aborted) return { handedBack: true, screen: null, note: `Read the screen with observe: ${e instanceof Error ? e.message : String(e)}` };
+          await new Promise((done) => setTimeout(done, 700));
+        }
+      }
     } }),
     requestApp: defineTool({ title: '使用新应用',
       description: 'Ask the user to let Copilot use one installed app that is outside the current scope (also when Copilot is off or has no apps). app: package name (preferred) or the exact name shown on the phone. Only the user can answer: Allow once adds it for this task, Always allow also saves it. Returns the session with the app added; launch it next. Errors if the app is already allowed or setup is unfinished.',
