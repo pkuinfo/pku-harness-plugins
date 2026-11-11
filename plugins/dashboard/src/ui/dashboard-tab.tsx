@@ -20,6 +20,9 @@ export function DashboardTab({ host, services }: PluginScreenProps) {
   const [refreshing, setRefreshing] = useState(false);
   const catalog = services.widgets.catalog();
   const hasGallery = catalog.length > 0;
+  // A plugin's card shows the plugin's own title in the app language (the stored one is a copy
+  // in the language it was added in).
+  const titleOf = (w: Widget) => (w.source ? catalog.find((e) => e.plugin === w.source?.plugin && e.widget === w.source?.widget)?.title : undefined) ?? w.title;
 
   const columns = t.contentWidth >= 700 ? 3 : 2;
   const gridWidth = t.contentWidth - t.spacing.lg * 2;
@@ -117,12 +120,12 @@ export function DashboardTab({ host, services }: PluginScreenProps) {
                   <View style={[styles.row, { backgroundColor: t.colors.bg, borderTopWidth: StyleSheet.hairlineWidth, borderColor: t.colors.border, gap: t.spacing.md, paddingRight: t.spacing.md, height: ROW }]}>
                     {handle}
                     <Text variant="bodyStrong" numberOfLines={1} style={{ flex: 1 }}>
-                      {w.title}
+                      {titleOf(w)}
                     </Text>
                     <Pressable accessibilityRole="button" accessibilityLabel={s.resizeA11y(s.sizes[w.size])} onPress={() => resize(w)} style={{ minHeight: 48, justifyContent: 'center' }}>
                       <Chip label={s.sizes[w.size]} />
                     </Pressable>
-                    <IconButton icon="trash" label={s.remove(w.title)} variant="danger" size={36} onPress={() => remove(w)} />
+                    <IconButton icon="trash" label={s.remove(titleOf(w))} variant="danger" size={36} onPress={() => remove(w)} />
                   </View>
                 );
               }}
@@ -133,7 +136,7 @@ export function DashboardTab({ host, services }: PluginScreenProps) {
         <View style={[styles.grid, { gap: t.spacing.md }]}>
           {widgets.map((w, i) => (
             <FadeIn key={w.id} index={i} style={{ width: widthOf(w.size) }}>
-              <WidgetCard host={host} widget={w} minHeight={widgetMinHeight(w.size, widthOf(w.size))} onLongPress={enterEdit} />
+              <WidgetCard host={host} widget={w.source ? { ...w, title: titleOf(w) } : w} minHeight={widgetMinHeight(w.size, widthOf(w.size))} onLongPress={enterEdit} />
             </FadeIn>
           ))}
           <Pressable

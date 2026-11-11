@@ -8,6 +8,8 @@ type Semester = { name: string; start: string; weeks: number };
 
 const DAY = 86_400_000;
 const WEEKDAY = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+const WEEKDAY_EN = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const MONTH_EN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
 /** Week number (1-based) of `now` in a semester whose week 1 starts on the Monday of `start`. */
 export function semesterWeek(sem: Semester, now: Date | number) {
@@ -90,6 +92,9 @@ export const calendarPlugin = definePlugin({
           month: p.month,
           day: p.day,
           weekday: WEEKDAY[p.weekday % 7],
+          // English names for display templates (dashboard widgets in the English UI).
+          weekdayEn: WEEKDAY_EN[p.weekday % 7],
+          monthEn: MONTH_EN[p.month - 1],
           semester: sem && w ? { name: sem.name, week: w.week, totalWeeks: sem.weeks, inSemester: w.inSemester, daysLeft: w.daysLeft } : null,
         };
       },

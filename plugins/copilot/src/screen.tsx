@@ -10,6 +10,8 @@ import { restoreAccessibility } from './preferences';
 
 /** Height of one letter in the A–Z strip. */
 const INDEX_ROW = 18;
+/** The rail always shows the whole alphabet (like the system contacts), whatever the installed apps. */
+const ALPHABET = [...'ABCDEFGHIJKLMNOPQRSTUVWXYZ', '#'];
 
 type CopilotStatus = PhoneReadiness & { enabled: boolean; configuredPackages: string[]; screenshots?: boolean };
 
@@ -161,15 +163,23 @@ export function CopilotScreen({ host, services, invoke, focused = true }: Plugin
   const visibleApps = apps.filter((app) => (appFilter === 'all' || selected.includes(app.packageName)) && `${app.label} ${app.packageName}`.toLowerCase().includes(query.trim().toLowerCase()));
   const indexedApps = indexApps(visibleApps);
   const showIndex = appFilter === 'all' && !query.trim() && !appsLoading && !sessionId;
-  const letters = indexedApps.map((g) => g.letter);
-  const jumpToLetter = (letter: string, animated = true) => {
-    const y = sectionY.current[letter];
-    if (y === undefined) return;
+  const present = indexedApps.map((g) => g.letter);
+  const letters = ALPHABET;
+  /** The letter itself when it has apps, else the nearest following one (or preceding, at the end). */
+  const targetOf = (letter: string) => {
+    if (present.includes(letter)) return letter;
+    const i = ALPHABET.indexOf(letter);
+    return ALPHABET.slice(i + 1).find((l) => present.includes(l)) ?? [...ALPHABET.slice(0, i)].reverse().find((l) => present.includes(l));
+  };
+  const jumpToLetter = (picked: string, animated = true) => {
+    const letter = targetOf(picked);
+    const y = letter === undefined ? undefined : sectionY.current[letter];
+    if (letter === undefined || y === undefined) return;
     setActiveLetter(letter);
     scrollRef.current?.scrollTo({ y: theme.spacing.lg + appPanelY.current + listY.current + y, animated });
   };
   const scrubTo = (y: number) => {
-    const letter = letters[Math.min(letters.length - 1, Math.max(0, Math.floor((y - theme.spacing.sm) / INDEX_ROW)))];
+    const letter = targetOf(letters[Math.min(letters.length - 1, Math.max(0, Math.floor((y - theme.spacing.sm) / INDEX_ROW)))]!);
     if (!letter || letter === activeLetter) return;
     host.haptics.select();
     jumpToLetter(letter, false);
@@ -182,7 +192,7 @@ export function CopilotScreen({ host, services, invoke, focused = true }: Plugin
   });
   const setup = status ? deriveSetup({ readiness: status, enabled: status.enabled, configuredPackages: selected, missingPackages: missingPackages.length, notifications }) : null;
   // The A–Z rail floats over the whole screen, so it only appears once the setup checklist is gone.
-  const rail = showIndex && setup?.phase === 'ready' && letters.length > 1;
+  const rail = showIndex && setup?.phase === 'ready' && present.length > 1;
   const phase = setup?.phase ?? null;
   // "You're set": only when this screen watched setup finish, never on a plain visit.
   useEffect(() => {
@@ -317,17 +327,17 @@ export function CopilotScreen({ host, services, invoke, focused = true }: Plugin
           </View>
         ) : null}
         {/* Fast scroller: touch or drag along the strip to jump; children ignore touches so locationY is the strip's. */}
-        <View accessibilityRole="adjustable" accessibilityLabel={s.jumpToLetter} accessibilityValue={{ text: activeLetter || letters[0] }}
+        <View accessibilityRole="adjustable" accessibilityLabel={s.jumpToLetter} accessibilityValue={{ text: activeLetter || present[0] }}
           accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
-          onAccessibilityAction={(e) => { const i = Math.max(0, letters.indexOf(activeLetter)); jumpToLetter(letters[Math.min(letters.length - 1, Math.max(0, i + (e.nativeEvent.actionName === 'increment' ? 1 : -1)))]!); }}
+          onAccessibilityAction={(e) => { const i = Math.max(0, present.indexOf(activeLetter)); jumpToLetter(present[Math.min(present.length - 1, Math.max(0, i + (e.nativeEvent.actionName === 'increment' ? 1 : -1)))]!); }}
           onStartShouldSetResponder={() => true} onMoveShouldSetResponder={() => true} onResponderTerminationRequest={() => false}
           onResponderGrant={(e) => { scrubOrigin.current = e.nativeEvent.pageY - e.nativeEvent.locationY; setScrubbing(true); scrubTo(e.nativeEvent.locationY); }}
           onResponderMove={(e) => scrubTo(e.nativeEvent.pageY - scrubOrigin.current)}
           onResponderRelease={() => setScrubbing(false)} onResponderTerminate={() => setScrubbing(false)}
-          style={{ width: theme.spacing.xl + theme.spacing.xs, paddingVertical: theme.spacing.sm, marginRight: theme.spacing.xxs, borderRadius: theme.radius.full, backgroundColor: scrubbing ? theme.colors.surface2 : 'transparent' }}>
+          style={{ width: theme.spacing.xl + theme.spacing.xs, paddingVertical: theme.spacing.sm, marginRight: theme.spacing.xxs, borderRadius: theme.radius.full, backgroundColor: theme.colors.surface2, opacity: scrubbing ? 1 : 0.85 }}>
           {letters.map((letter) => (
             <View key={letter} pointerEvents="none" style={{ height: INDEX_ROW, alignItems: 'center', justifyContent: 'center' }}>
-              <Text variant="micro" tone={activeLetter === letter ? 'accent' : 'muted'}>{letter}</Text>
+              <Text variant="micro" tone={activeLetter === letter ? 'accent' : present.includes(letter) ? 'default' : 'faint'}>{letter}</Text>
             </View>
           ))}
         </View>
