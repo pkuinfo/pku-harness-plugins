@@ -1,0 +1,16 @@
+{
+  "name": "@pku-harness/plugin-files",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Read and search documents attached in a chat",
+  "type": "module",
+  "main": "src/index.ts",
+  "license": "MIT",
+  "pkuHarness": {
+    "builtin": true
+  },
+  "peerDependencies": {
+    "@pku-harness/sdk": "*",
+    "zod": "^4.0.0"
+  }
+}

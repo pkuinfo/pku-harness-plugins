@@ -5,6 +5,7 @@ import type { CampusRequest, CampusResponse, CampusService, CampusStatus, OtpCod
 import type { CloudManifest, PluginCloud } from './cloud';
 import type { Binding, Widget, WidgetSize } from './dashboard';
 import type { SpecCheck, UISpec } from './genui';
+import type { FilesService } from './files';
 import type { NotifyFixKind, NotifyReadiness } from './notify';
 import type { Action, Job, JobSource, Trigger } from './scheduler/types';
 import type { Course, Semester } from './timetable';
@@ -137,8 +138,11 @@ export interface HostServices {
    * submissions). Only the user can pick: call it from a screen in response to a tap, never from
    * an agent tool. Resolves [] when the user cancels. Files are copied into the app's cache, so
    * the URIs stay readable for this app session; the plugin gets references, not bytes.
+   *
+   * `list` / `read` / `search` ({@link FilesService}) reach the documents attached in the current
+   * chat as extracted text (third-party content: tools returning it are `untrusted`).
    */
-  files: {
+  files: FilesService & {
     pick(opts?: { /** MIME types, wildcards allowed (e.g. ['application/pdf', 'image/*']); default any. */ types?: string[]; multiple?: boolean }): Promise<PickedFile[]>;
   };
   /** Hashing for request signatures (plugins have no crypto of their own). */

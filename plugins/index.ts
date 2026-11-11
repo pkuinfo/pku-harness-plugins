@@ -7,6 +7,7 @@ import { calendarPlugin } from './calendar/src';
 import { cardSharePlugin } from './card-share/src';
 import { dashboardPlugin } from './dashboard/src';
 import { deepseekPlugin } from './deepseek/src';
+import { filesPlugin } from './files/src';
 import { ledgerPlugin } from './ledger/src';
 import { memoryPlugin } from './memory/src';
 import { openAICompatiblePlugin } from './openai-compatible/src';
@@ -40,6 +41,7 @@ export const builtinPlugins: PluginDef[] = [
   cardSharePlugin,
   ledgerPlugin,
   memoryPlugin,
+  filesPlugin,
   pluginsPlugin,
   deepseekPlugin,
   openAICompatiblePlugin,

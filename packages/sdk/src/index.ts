@@ -2,6 +2,7 @@ export * from './campus';
 export * from './clock';
 export * from './cloud';
 export * from './dashboard';
+export * from './files';
 export * from './format';
 export * from './genui';
 export * from './model-image';

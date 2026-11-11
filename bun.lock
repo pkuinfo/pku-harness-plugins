@@ -66,6 +66,13 @@
         "zod": "^4.0.0",
       },
     },
+    "plugins/aliyun-bailian": {
+      "name": "@pku-harness/plugin-aliyun-bailian",
+      "version": "0.1.0",
+      "peerDependencies": {
+        "@pku-harness/sdk": "*",
+      },
+    },
     "plugins/authenticator": {
       "name": "@pku-harness/plugin-authenticator",
       "version": "0.1.0",
@@ -112,6 +119,14 @@
       "version": "0.3.0",
       "peerDependencies": {
         "@ai-sdk/openai-compatible": "^3.0.0",
+        "@pku-harness/sdk": "*",
+        "zod": "^4.0.0",
+      },
+    },
+    "plugins/files": {
+      "name": "@pku-harness/plugin-files",
+      "version": "0.1.0",
+      "peerDependencies": {
         "@pku-harness/sdk": "*",
         "zod": "^4.0.0",
       },
@@ -168,8 +183,8 @@
         "zod": "^4.0.0",
       },
     },
-    "plugins/speech": {
-      "name": "@pku-harness/plugin-speech",
+    "plugins/siliconflow": {
+      "name": "@pku-harness/plugin-siliconflow",
       "version": "0.1.0",
       "peerDependencies": {
         "@pku-harness/sdk": "*",
@@ -288,6 +303,8 @@
 
     "@pku-harness/example-mock-llm": ["@pku-harness/example-mock-llm@workspace:examples/mock-llm"],
 
+    "@pku-harness/plugin-aliyun-bailian": ["@pku-harness/plugin-aliyun-bailian@workspace:plugins/aliyun-bailian"],
+
     "@pku-harness/plugin-authenticator": ["@pku-harness/plugin-authenticator@workspace:plugins/authenticator"],
 
     "@pku-harness/plugin-calendar": ["@pku-harness/plugin-calendar@workspace:plugins/calendar"],
@@ -297,6 +314,8 @@
     "@pku-harness/plugin-dashboard": ["@pku-harness/plugin-dashboard@workspace:plugins/dashboard"],
 
     "@pku-harness/plugin-deepseek": ["@pku-harness/plugin-deepseek@workspace:plugins/deepseek"],
+
+    "@pku-harness/plugin-files": ["@pku-harness/plugin-files@workspace:plugins/files"],
 
     "@pku-harness/plugin-ledger": ["@pku-harness/plugin-ledger@workspace:plugins/ledger"],
 
@@ -310,7 +329,7 @@
 
     "@pku-harness/plugin-scheduler": ["@pku-harness/plugin-scheduler@workspace:plugins/scheduler"],
 
-    "@pku-harness/plugin-speech": ["@pku-harness/plugin-speech@workspace:plugins/speech"],
+    "@pku-harness/plugin-siliconflow": ["@pku-harness/plugin-siliconflow@workspace:plugins/siliconflow"],
 
     "@pku-harness/plugin-timetable": ["@pku-harness/plugin-timetable@workspace:plugins/timetable"],
 

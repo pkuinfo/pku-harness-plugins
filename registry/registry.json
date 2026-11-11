@@ -549,6 +549,27 @@
       "verified": true
     },
     {
+      "id": "files",
+      "name": "文件",
+      "description": "读取和搜索你在对话里附上的文档：PDF、Word、Excel、PPT 和录音转写。",
+      "i18n": {
+        "en": {
+          "name": "Files",
+          "description": "Reads and searches documents you attach in a chat: PDF, Word, Excel, PowerPoint and audio transcripts."
+        }
+      },
+      "author": "pkuinfo",
+      "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/files",
+      "kind": "builtin",
+      "icon": "file",
+      "requires": [],
+      "scopes": [],
+      "tags": [
+        "official"
+      ],
+      "verified": true
+    },
+    {
       "id": "plugins",
       "name": "插件管理",
       "description": "查看已安装的插件，安装或移除远程（MCP）插件。",
