@@ -1,8 +1,8 @@
 {
-  "name": "@pku-harness/plugin-speech",
+  "name": "@pku-harness/plugin-siliconflow",
   "private": true,
   "version": "0.1.0",
-  "description": "Speech-to-text services for voice input (bring your own key)",
+  "description": "SiliconFlow speech-to-text for voice input",
   "type": "module",
   "main": "src/index.ts",
   "license": "MIT",

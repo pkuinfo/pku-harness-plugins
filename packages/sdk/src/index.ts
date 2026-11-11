@@ -18,3 +18,4 @@ export * from './timetable';
 export * from './todo';
 export * from './ui';
 export * from './lang';
+export * from './speech';

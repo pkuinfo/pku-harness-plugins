@@ -1,0 +1,15 @@
+{
+  "name": "@pku-harness/plugin-aliyun-bailian",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Alibaba Cloud Bailian realtime speech-to-text for voice input",
+  "type": "module",
+  "main": "src/index.ts",
+  "license": "MIT",
+  "pkuHarness": {
+    "builtin": true
+  },
+  "peerDependencies": {
+    "@pku-harness/sdk": "*"
+  }
+}

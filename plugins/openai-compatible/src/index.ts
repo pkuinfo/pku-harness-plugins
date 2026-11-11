@@ -1,4 +1,4 @@
-import { definePlugin } from '@pku-harness/sdk';
+import { definePlugin, openAITranscribe } from '@pku-harness/sdk';
 
 import { listOpenAIModels, openAICompatibleModel } from './model';
 
@@ -20,6 +20,13 @@ export const openAICompatiblePlugin = definePlugin({
           credentialHint: 'The API key from your provider; leave empty if your server needs no key',
         },
       },
+      speech: {
+        custom: {
+          name: 'OpenAI-compatible',
+          description: 'Any service with an /audio/transcriptions endpoint; text arrives in phrases',
+          credentialHint: 'The API key from your provider',
+        },
+      },
     },
   },
   requires: ['network'],
@@ -38,6 +45,19 @@ export const openAICompatiblePlugin = definePlugin({
       credentialHint: '服务商提供的 API Key；服务不需要密钥时可留空',
       listModels: listOpenAIModels,
       createModel: (config) => openAICompatibleModel('custom', config),
+    },
+  },
+  // Voice input through any OpenAI-style transcription endpoint (OpenAI, Groq, a LAN Whisper …).
+  speech: {
+    custom: {
+      name: 'OpenAI 兼容',
+      description: '任意提供 /audio/transcriptions 接口的服务；文字按句子出现',
+      defaultBaseURL: 'https://api.openai.com/v1',
+      editableBaseURL: true,
+      models: [],
+      defaultModel: 'gpt-4o-mini-transcribe',
+      credentialHint: '服务商提供的 API Key',
+      transcribe: openAITranscribe,
     },
   },
 });

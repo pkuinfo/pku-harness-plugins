@@ -1,5 +1,6 @@
 import type { PluginDef } from '@pku-harness/sdk';
 
+import { aliyunBailianPlugin } from './aliyun-bailian/src';
 import { authenticatorPlugin } from './authenticator/src';
 import { copilotPlugin } from './copilot/src';
 import { calendarPlugin } from './calendar/src';
@@ -12,7 +13,7 @@ import { openAICompatiblePlugin } from './openai-compatible/src';
 import { pluginsPlugin } from './plugins/src';
 import { schedulePlugin } from './schedule/src';
 import { schedulerPlugin } from './scheduler/src';
-import { speechPlugin } from './speech/src';
+import { siliconflowPlugin } from './siliconflow/src';
 import { timetablePlugin } from './timetable/src';
 import { todoPlugin } from './todo/src';
 import { uiPlugin } from './ui/src';
@@ -42,6 +43,7 @@ export const builtinPlugins: PluginDef[] = [
   pluginsPlugin,
   deepseekPlugin,
   openAICompatiblePlugin,
-  speechPlugin,
+  siliconflowPlugin,
+  aliyunBailianPlugin,
 ];
 export { bundledDocuments } from './documents.generated';

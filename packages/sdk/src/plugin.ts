@@ -454,9 +454,11 @@ export interface SpeechConfig {
   credential?: string;
   /** The host's fetch (uploads `SpeechAudio.file` in a FormData). */
   fetch: typeof fetch;
+  /** Open a WebSocket with request headers (for realtime services that authenticate in the handshake). */
+  webSocket: (url: string, headers: Record<string, string>) => WebSocket;
 }
 
-/** A recording to transcribe: a local file the host recorded (m4a/AAC unless `mimeType` says otherwise). */
+/** A recording to transcribe: a local file the host recorded (16 kHz mono WAV unless `mimeType` says otherwise). */
 export interface SpeechAudio {
   /** The recording as a Blob the host's `fetch` can upload (append it to a FormData). */
   file: Blob;
@@ -466,9 +468,27 @@ export interface SpeechAudio {
   durationMs?: number;
 }
 
+/** What a realtime service reports while the user talks. */
+export interface SpeechStreamHandlers {
+  /** The whole transcript so far (confirmed text plus the provisional tail), replacing the last one. */
+  onText: (text: string) => void;
+}
+
+/** A live transcription session: the host sends audio as it is captured, then finishes. */
+export interface SpeechStream {
+  /** 100 ms of 16 kHz mono 16-bit little-endian PCM, base64. */
+  send: (pcmBase64: string) => void;
+  /** No more audio: resolves with the final transcript. */
+  finish: () => Promise<string>;
+  /** Drop the session without a result. */
+  cancel: () => void;
+}
+
 /**
- * A speech-to-text service for the composer's voice input (bring your own key). The recording
- * goes from the phone straight to `baseURL`; `transcribe` returns the text.
+ * A speech-to-text service for the composer's voice input (bring your own key). The audio goes
+ * from the phone straight to `baseURL`. Implement `stream` for a realtime service (text appears
+ * while the user talks) or `transcribe` for one that takes a finished recording (the host sends
+ * it in pieces cut at pauses, so most of it is done when the user stops).
  */
 export interface SpeechProviderDef {
   name: string;
@@ -480,7 +500,8 @@ export interface SpeechProviderDef {
   credentialHint?: string;
   /** Where to get a key, shown under the field. */
   keyURL?: string;
-  transcribe: (config: SpeechConfig, audio: SpeechAudio, signal?: AbortSignal) => Promise<string>;
+  transcribe?: (config: SpeechConfig, audio: SpeechAudio, signal?: AbortSignal) => Promise<string>;
+  stream?: (config: SpeechConfig, handlers: SpeechStreamHandlers) => Promise<SpeechStream>;
 }
 
 export interface PluginDef {
