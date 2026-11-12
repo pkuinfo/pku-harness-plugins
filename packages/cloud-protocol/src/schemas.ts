@@ -1,5 +1,5 @@
 /**
- * Wire schemas for PKU Harness Cloud protocol v1 (docs/CLOUD.md §2.3). Every provider
+ * Wire schemas for PKU harness Cloud protocol v1 (docs/CLOUD.md §2.3). Every provider
  * (official, self-hosted, BYO) serves exactly these shapes; the app, the reference server and
  * viewer pages validate with the same objects. Unknown object keys are stripped on parse, so a
  * newer server may add fields without breaking older clients.

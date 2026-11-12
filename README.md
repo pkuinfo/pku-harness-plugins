@@ -1,10 +1,10 @@
 <div align="center">
 
-<img src="https://harness.novadiffusion.com/icon.png" width="88" alt="PKU Harness logo" />
+<img src="https://harness.novadiffusion.com/icon.png" width="88" alt="PKU harness logo" />
 
-# PKU Harness Plugins
+# PKU harness Plugins
 
-**Every campus service in [PKU Harness](https://github.com/pkuinfo/pku-harness), as a plugin you can read, share and write yourself.**
+**Every campus service in [PKU harness](https://github.com/pkuinfo/pku-harness), as a plugin you can read, share and write yourself.**
 
 [![CI](https://github.com/pkuinfo/pku-harness-plugins/actions/workflows/ci.yml/badge.svg)](https://github.com/pkuinfo/pku-harness-plugins/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -16,7 +16,7 @@
 
 ---
 
-PKU Harness is an open-source, AI-native app for Peking University students. The app itself is
+PKU harness is an open-source, AI-native app for Peking University students. The app itself is
 only a harness: an agent, a design system and host services. **Everything it can do comes from
 plugins**, and this repository holds all of them: the official ones that ship with the app, the
 SDK, the plugin language, and the marketplace registry.
@@ -176,7 +176,7 @@ approvals, widgets and the agent work the same way for each.
 | [`plugins/<id>/src`](plugins) | TypeScript plugins (`builtinPlugins` in `plugins/index.ts`) |
 | [`plugins/shared`](plugins/shared) | Code shared by TypeScript plugins |
 | [`packages/sdk`](packages/sdk) | The plugin contract, pure helpers, and the plugin language in `src/lang` (schemas, interpreter, abilities, loader) |
-| [`packages/cloud-protocol`](packages/cloud-protocol) | Wire protocol of PKU Harness Cloud (schemas, envelope crypto, share links) |
+| [`packages/cloud-protocol`](packages/cloud-protocol) | Wire protocol of PKU harness Cloud (schemas, envelope crypto, share links) |
 | [`packages/cloud-server`](packages/cloud-server) | Reference Cloud server (Bun + Hono + SQLite) |
 | [`registry`](registry) | Marketplace schema and `registry.json` |
 | [`templates/remote-plugin`](templates/remote-plugin) | Starting point for a remote (MCP) plugin |
@@ -213,7 +213,7 @@ please follow the [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Security
 
-PKU Harness handles campus credentials. Please report vulnerabilities privately as described in
+PKU harness handles campus credentials. Please report vulnerabilities privately as described in
 [SECURITY.md](SECURITY.md), never in a public issue.
 
 ## Related repositories

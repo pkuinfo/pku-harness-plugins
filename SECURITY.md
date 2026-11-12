@@ -1,6 +1,6 @@
 # Security Policy
 
-PKU Harness stores campus credentials, the IAAA authenticator secret and AI service keys on the
+PKU harness stores campus credentials, the IAAA authenticator secret and AI service keys on the
 user's phone, and lets an AI agent act on campus services on the user's behalf. Plugins are the
 code (or documents) that reach those services, so we take security reports very seriously.
 

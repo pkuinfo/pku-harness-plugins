@@ -2,7 +2,7 @@
   "name": "@pku-harness/cloud-protocol",
   "version": "0.1.1",
   "private": true,
-  "description": "PKU Harness Cloud wire protocol v1: zod schemas, envelope crypto, share links and proof of work. Pure TypeScript for Hermes, Bun and browsers.",
+  "description": "PKU harness Cloud wire protocol v1: zod schemas, envelope crypto, share links and proof of work. Pure TypeScript for Hermes, Bun and browsers.",
   "type": "module",
   "main": "src/index.ts",
   "types": "src/index.ts",

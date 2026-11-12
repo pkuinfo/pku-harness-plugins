@@ -14,7 +14,7 @@ import type { Todo, TodoInput } from './todo';
 import type { Contributions } from './ui';
 
 /**
- * The plugin contract of PKU Harness. The app is only a harness: it runs plugins, gives them
+ * The plugin contract of PKU harness. The app is only a harness: it runs plugins, gives them
  * host services through `ctx.services`, and renders their output. Built-in and community
  * plugins use exactly this contract; none can import app internals.
  */
@@ -67,7 +67,7 @@ export type Capability =
   | 'background' // periodic background execution
   | 'shell' // never available on phones; plugins needing it must run remotely
   | 'filesystem'
-  | 'cloud' // a PKU Harness Cloud provider is configured (docs/CLOUD.md); see PluginDef.cloud
+  | 'cloud' // a PKU harness Cloud provider is configured (docs/CLOUD.md); see PluginDef.cloud
   | 'phone-control'
   | 'ongoing'; // a persistent ongoing notification / foreground service (Android only); see HostServices.ongoing
 
@@ -324,7 +324,7 @@ export interface ToolContext {
    */
   grant?: 'once' | 'always';
   /**
-   * PKU Harness Cloud, bound to this plugin (consent, manifest `uses` and `e2e` enforced by the
+   * PKU harness Cloud, bound to this plugin (consent, manifest `uses` and `e2e` enforced by the
    * host). Plugins declaring `PluginDef.cloud` get it; optional until every host build wires it.
    */
   cloud?: PluginCloud;
@@ -527,7 +527,7 @@ export interface PluginDef {
   /** What the plugin needs from the device; unmet requirements hide it (see Capability). */
   requires?: Capability[];
   /**
-   * PKU Harness Cloud use (docs/CLOUD.md §2.2): services, what leaves the device (consent
+   * PKU harness Cloud use (docs/CLOUD.md §2.2): services, what leaves the device (consent
    * sheet), E2E. Without `optional: true`, also list 'cloud' in `requires`.
    */
   cloud?: CloudManifest;

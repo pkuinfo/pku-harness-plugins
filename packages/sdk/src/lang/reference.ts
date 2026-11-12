@@ -2,7 +2,7 @@
  * The plugin language in one page, for the model (`plugins.reference`) and other tools. Keep it
  * in step with pku-harness docs/PLUGIN-LANGUAGE.md; it is sent only when the agent asks for it.
  */
-export const LANGUAGE_REFERENCE = `# PKU Harness plugin language (spec 1)
+export const LANGUAGE_REFERENCE = `# PKU harness plugin language (spec 1)
 
 A plugin is a folder: PLUGIN.md (YAML frontmatter = manifest, Markdown body = instructions for
 the AI) + files it names (tools/*.yaml, widgets/*.json, screens/*.json). Pass them to plugins

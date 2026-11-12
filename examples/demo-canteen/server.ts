@@ -1,4 +1,4 @@
-// Example remote plugin for PKU Harness: an MCP server over Streamable HTTP (stateless).
+// Example remote plugin for PKU harness: an MCP server over Streamable HTTP (stateless).
 // Mock data only. Run: bun examples/demo-canteen/server.ts, then add http://<host>:8787/mcp
 // with token demo-token in the app (设置 → 插件 → 添加远程插件).
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';

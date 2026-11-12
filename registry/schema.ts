@@ -7,11 +7,11 @@ import { z } from 'zod';
  */
 export const capability = z.enum(['network', 'campus-network', 'campus-session', 'notifications', 'background', 'shell', 'filesystem', 'cloud', 'ongoing']);
 
-/** PKU Harness Cloud services (docs/CLOUD.md §2.2, SDK `CloudService`). */
+/** PKU harness Cloud services (docs/CLOUD.md §2.2, SDK `CloudService`). */
 export const cloudService = z.enum(['store', 'channels', 'push', 'files', 'functions']);
 
 /**
- * What a plugin sends to PKU Harness Cloud, so the market can show "uses cloud" before install.
+ * What a plugin sends to PKU harness Cloud, so the market can show "uses cloud" before install.
  * Mirrors the plugin's `PluginDef.cloud` (checked for built-ins by plugins/registry-cloud.test.ts).
  */
 export const registryCloud = z.object({

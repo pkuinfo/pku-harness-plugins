@@ -1,4 +1,4 @@
-# Contributing to PKU Harness Plugins
+# Contributing to PKU harness Plugins
 
 Thank you for helping make campus life at Peking University a little easier. This guide covers
 how to set up the repository, the rules every plugin follows, and how changes are reviewed.
@@ -137,7 +137,7 @@ reviewed plugins. To add a remote (MCP) plugin to it:
 ```
 
 Use the registry `id` as your MCP server `name`: the app installs remote plugins as
-`mcp-<server name>`. A plugin that uses PKU Harness Cloud also copies its `cloud` declaration,
+`mcp-<server name>`. A plugin that uses PKU harness Cloud also copies its `cloud` declaration,
 whose `disclosure` must say in plain words what leaves the device. Maintainers review new entries
 and mark them `verified` after checking the source.
 

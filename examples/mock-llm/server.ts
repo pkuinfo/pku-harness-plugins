@@ -1,4 +1,4 @@
-// Scripted OpenAI-compatible Chat Completions server for testing PKU Harness without a model key.
+// Scripted OpenAI-compatible Chat Completions server for testing PKU harness without a model key.
 // Run: bun examples/mock-llm/server.ts → in the app, AI 服务 → OpenAI 兼容, Base URL http://<host>:8788/v1,
 // model mock-agent. It picks a tool from keywords (remind / soon / dash / form / canteen / remember)
 // in the last user message, then summarizes the tool result; 'who' echoes injected <context>.

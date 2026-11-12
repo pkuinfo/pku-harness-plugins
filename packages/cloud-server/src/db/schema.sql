@@ -1,4 +1,4 @@
--- PKU Harness Cloud reference server, SQLite schema (idempotent).
+-- PKU harness Cloud reference server, SQLite schema (idempotent).
 -- Nothing here is plaintext user content: store values and mailbox blobs are whatever the
 -- client sent (envelopes when the plugin is e2e), channel meta is an envelope, and frames are
 -- never written at all. Times are Unix milliseconds.

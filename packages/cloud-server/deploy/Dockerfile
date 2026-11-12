@@ -1,4 +1,4 @@
-# PKU Harness Cloud reference server.
+# PKU harness Cloud reference server.
 # Build from the plugins repo root (the server imports workspace packages and serves the viewer
 # pages plugins/*/web/dist, which the `pages` stage builds from source):
 #   docker build -f packages/cloud-server/deploy/Dockerfile -t pku-harness-cloud .

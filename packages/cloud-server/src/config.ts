@@ -118,7 +118,7 @@ export function defaultConfig(overrides: Partial<Omit<Config, 'rates'>> & { rate
     powDifficulty: DEFAULT_POW_DIFFICULTY,
     powRotateS: 6 * 3600,
     limits,
-    operator: { name: 'PKU Harness Cloud (self-hosted)', contact: '' },
+    operator: { name: 'PKU harness Cloud (self-hosted)', contact: '' },
     pagesDir: resolve(import.meta.dir, '../../../plugins'),
     trustProxy: false,
     gcIntervalMs: 15_000,

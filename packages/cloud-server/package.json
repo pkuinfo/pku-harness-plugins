@@ -2,7 +2,7 @@
   "name": "@pku-harness/cloud-server",
   "version": "0.1.0",
   "private": true,
-  "description": "Reference server for the PKU Harness Cloud protocol v1: a blind, end-to-end-encrypted relay and store. Bun + Hono + SQLite.",
+  "description": "Reference server for the PKU harness Cloud protocol v1: a blind, end-to-end-encrypted relay and store. Bun + Hono + SQLite.",
   "type": "module",
   "main": "src/index.ts",
   "scripts": {

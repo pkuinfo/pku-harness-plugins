@@ -1,7 +1,7 @@
 import type { z } from 'zod';
 
 /**
- * PKU Harness Cloud, the plugin side (docs/CLOUD.md §2). A plugin declares what it uses in
+ * PKU harness Cloud, the plugin side (docs/CLOUD.md §2). A plugin declares what it uses in
  * `PluginDef.cloud` and gets a client bound to itself (`ctx.cloud`, `props.cloud`): the host
  * holds the device identity, tokens and keys, enforces the user's consent and the manifest,
  * and talks to whichever provider the user chose (official, self-hosted or any URL). Plugins

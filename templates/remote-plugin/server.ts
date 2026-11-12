@@ -1,4 +1,4 @@
-// Template for a PKU Harness remote plugin: an MCP server over Streamable HTTP.
+// Template for a PKU harness remote plugin: an MCP server over Streamable HTTP.
 // 1. Rename the server, add tools with registerTool (title + description are shown to the
 //    model and the user; annotations.readOnlyHint=true marks a read-only tool, everything
 //    else asks the user first by default).

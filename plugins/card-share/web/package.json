@@ -2,7 +2,7 @@
   "name": "@pku-harness/card-share-web",
   "version": "0.1.0",
   "private": true,
-  "description": "Web viewer for card-share links (served by PKU Harness Cloud at /w/card-share/view). Port of pkubdcard/web UseFlow.",
+  "description": "Web viewer for card-share links (served by PKU harness Cloud at /w/card-share/view). Port of pkubdcard/web UseFlow.",
   "type": "module",
   "scripts": {
     "dev": "vite",

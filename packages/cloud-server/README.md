@@ -1,6 +1,6 @@
 # @pku-harness/cloud-server
 
-Reference server for the PKU Harness Cloud protocol v1 (`docs/CLOUD.md` in the app repo):
+Reference server for the PKU harness Cloud protocol v1 (`docs/CLOUD.md` in the app repo):
 a blind, end-to-end-encrypted relay and store that every plugin can use through `ctx.cloud`.
 Bun + Hono + `bun:sqlite` (WAL). Every request and response is validated with the schemas
 in [`@pku-harness/cloud-protocol`](../cloud-protocol), the same file the app and viewer pages use.

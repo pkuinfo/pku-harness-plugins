@@ -1,5 +1,5 @@
 /**
- * Envelope crypto for PKU Harness Cloud (docs/CLOUD.md §1.3, §2.2). Pure JavaScript on the
+ * Envelope crypto for PKU harness Cloud (docs/CLOUD.md §1.3, §2.2). Pure JavaScript on the
  * audited noble libraries, so the app (Hermes), the reference server (Bun) and viewer pages
  * (WeChat webview, no WebCrypto) share this one file and encryption cannot drift.
  *

@@ -2,7 +2,7 @@
   "name": "@pku-harness/sdk",
   "version": "0.1.1",
   "private": true,
-  "description": "Plugin contract and pure helpers for PKU Harness plugins.",
+  "description": "Plugin contract and pure helpers for PKU harness plugins.",
   "type": "module",
   "main": "src/index.ts",
   "types": "src/index.ts",

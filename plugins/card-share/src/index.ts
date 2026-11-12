@@ -8,7 +8,7 @@ import { tools } from './tools';
 /**
  * 付款码共享: lend the Campus Card payment code to a friend for a while (docs/CLOUD.md §3.3).
  * The phone stays the only place that can mint codes: it encrypts each one to the friend with
- * a key in the share link's #fragment, and PKU Harness Cloud only relays ciphertext. Gates
+ * a key in the share link's #fragment, and PKU harness Cloud only relays ciphertext. Gates
  * (PIN, masked name) and the spend cap run on the phone. Successor of pkubdcard, without
  * handing the card session to a server.
  */
@@ -30,12 +30,12 @@ export const cardSharePlugin = definePlugin({
     },
   },
   defaultModes: { read: 'auto', write: 'auto', money: 'ask' },
-  scopes: ['bdcard.pku.edu.cn', 'PKU Harness Cloud（加密转发）'],
+  scopes: ['bdcard.pku.edu.cn', 'PKU harness Cloud（加密转发）'],
   i18n: {
     en: {
       name: 'Share payment code',
       description: 'Lend your Campus Card payment code to a friend for a while: end-to-end encrypted relay, optional spend cap, PIN and name check, stop at any time.',
-      scopes: { 'PKU Harness Cloud（加密转发）': 'PKU Harness Cloud (encrypted relay)' },
+      scopes: { 'PKU harness Cloud（加密转发）': 'PKU harness Cloud (encrypted relay)' },
       tools: {
         list: { title: 'View payment-code shares' },
         revoke: { title: 'Stop payment-code sharing' },
