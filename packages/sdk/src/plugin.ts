@@ -387,6 +387,11 @@ export interface ToolDef<I extends z.ZodType = z.ZodType, O = unknown> {
    */
   userOnly?: boolean;
   /**
+   * Rarely needed (plugin authoring, say): left out of the tools a chat starts with, even for a
+   * core plugin, until the chat loads the plugin with plugins.use. Keeps every request smaller.
+   */
+  onDemand?: boolean;
+  /**
    * The tool gives the agent access it doesn't have yet (an app outside Copilot's scope). Every
    * agent call waits for the user's tap, whatever the plugin's modes say ('auto' never skips it;
    * 'off' still blocks); scheduled calls are refused. The prompt offers Allow once / Always allow
@@ -476,6 +481,9 @@ export interface ProviderConfig {
   fetch: typeof fetch;
 }
 
+/** A thinking-effort level, as the AI SDK names it (`reasoning`). */
+export type ReasoningEffort = 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max';
+
 /** A model provider. `createModel` returns an AI SDK `LanguageModel` (typed loosely here). */
 export interface ProviderDef {
   name: string;
@@ -485,6 +493,12 @@ export interface ProviderDef {
   editableBaseURL?: boolean;
   models: ProviderModel[];
   defaultModel: string;
+  /**
+   * Thinking-effort levels the API takes, low to high (the AI SDK `reasoning` option, sent as
+   * e.g. `reasoning_effort`). The user picks one in the model picker, or Auto: the provider's
+   * default, with the lowest level for quick steps such as the next Copilot tap.
+   */
+  efforts?: readonly ReasoningEffort[];
   credentialHint?: string;
   listModels?: (config: ProviderConfig) => Promise<ProviderModel[]>;
   signIn?: () => Promise<string>;

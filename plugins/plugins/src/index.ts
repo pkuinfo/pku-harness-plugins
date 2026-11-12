@@ -58,12 +58,9 @@ export const pluginsPlugin = definePlugin({
   core: true,
   instructions: `你一开始只带着核心工具（设置、文件、日程、提醒、看板、记忆、界面）。其他能力都在插件里，按需加载：
 - 用户要的事现有工具做不到时，先看 <可加载插件> 里有没有合适的，有就 plugins__use { ids } 加载，它会返回该插件的用法，之后它的工具就能用了；没有就 plugins__search { query } 搜索已安装插件和社区插件市场。
-- 搜到的社区插件用 plugins__install { link } 打开确认页（远程插件用 plugins__installRemote），由用户决定是否安装；安装后再 plugins__use 加载。
-- 都没有时，可以和用户一起写一个新插件（见下）。不要说“我做不到”之前没搜过。
-- 不要向用户罗列你有哪些插件或能力；用户问什么就做什么，需要时自己去找。
-插件可以由你和用户一起写：一个插件就是一个 PLUGIN.md 文件夹（YAML 前言 + 给 AI 的说明 + tools/*.yaml），由 App 解释执行，不运行代码。
-写插件的流程：plugins__reference 读语言参考 → 写出文件 → plugins__validate 直到没有问题 → 对只读工具用 plugins__tryTool 实际跑一次给用户看结果 → plugins__install 打开权限确认页，由用户决定安装。
-用户贴出插件链接（GitHub 文件夹或 PLUGIN.md 链接）时，用 plugins__install { link } 打开确认页。改已有插件：plugins__source 读源码再改。`,
+- 搜到的社区插件用 plugins__install { link } 打开确认页，由用户决定是否安装；安装后再 plugins__use 加载。用户贴出插件链接（GitHub 文件夹或 PLUGIN.md 链接）时也用 plugins__install { link }。
+- 都没有时，可以和用户一起写一个新插件。写插件、改插件、卸载插件或安装远程（MCP）插件时，先 plugins__use { ids: ["plugins"] } 加载编写工具，再按 plugins__reference 的说明做。
+- 不要向用户罗列你有哪些插件或能力；用户问什么就做什么，需要时自己去找。`,
   scopes: [],
   defaultModes: { write: 'ask' },
   tools: {
@@ -114,6 +111,7 @@ export const pluginsPlugin = definePlugin({
       execute: async (_input, ctx) => ctx.services.registry.plugins(),
     }),
     installRemote: defineTool({
+      onDemand: true,
       title: '安装远程插件',
       description: 'Install a remote plugin from an MCP (Streamable HTTP) endpoint URL. Its tools become available after install.',
       input: z.object({
@@ -125,13 +123,15 @@ export const pluginsPlugin = definePlugin({
       execute: async (input, ctx) => ctx.services.remote.install(input),
     }),
     reference: defineTool({
+      onDemand: true,
       title: '插件语言参考',
-      description: 'The plugin language (PLUGIN.md documents) in one page: manifest, steps, expressions, stdlib, abilities, limits, an example. Read it before writing or editing a plugin.',
+      description: 'Start here when writing a plugin with the user. A plugin is a folder: PLUGIN.md (YAML front matter + instructions for the AI) and tools/*.yaml, interpreted by the app (no code runs). Workflow: read this reference, write the files, plugins__validate until there are no issues, run each read tool once with plugins__tryTool and show the user the result, then plugins__install { files } to open the permission sheet; the user decides. To change an installed plugin, read it with plugins__source first. The plugin language (PLUGIN.md documents) in one page: manifest, steps, expressions, stdlib, abilities, limits, an example. Read it before writing or editing a plugin.',
       input: z.object({}),
       effect: 'read',
       execute: async () => LANGUAGE_REFERENCE,
     }),
     validate: defineTool({
+      onDemand: true,
       title: '检查插件',
       description: 'Validate a draft plugin folder. Returns { ok, id, tools, widgets, campus, network, abilities } or { ok: false, issues } with the file and step of each problem.',
       input: z.object({ files: filesSchema }),
@@ -156,6 +156,7 @@ export const pluginsPlugin = definePlugin({
       },
     }),
     tryTool: defineTool({
+      onDemand: true,
       title: '试运行插件工具',
       description: 'Run one READ tool of a draft plugin for real (live requests, the user’s campus sessions for declared services, a throwaway store) without installing it. Use it to show the user real results before installing.',
       input: z.object({ files: filesSchema, tool: z.string(), input: z.record(z.string(), z.unknown()).optional() }),
@@ -171,6 +172,7 @@ export const pluginsPlugin = definePlugin({
       },
     }),
     source: defineTool({
+      onDemand: true,
       title: '读取插件源码',
       description: 'The files of an installed plugin document (PLUGIN.md and the files it names), to explain, fix or fork it. Built-in TypeScript plugins have no document.',
       input: z.object({ id: z.string() }),
@@ -194,6 +196,7 @@ export const pluginsPlugin = definePlugin({
       },
     }),
     uninstall: defineTool({
+      onDemand: true,
       title: '移除远程插件',
       description: 'Remove an installed remote plugin.',
       input: z.object({ id: z.string() }),

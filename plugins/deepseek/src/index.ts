@@ -46,6 +46,8 @@ export const deepseekPlugin = definePlugin({
         { id: 'deepseek-v4-pro', name: 'DeepSeek-V4-Pro', description: '更强的推理与复杂任务', contextWindow: 1_000_000, inputModalities: ['text'], pricing: PRICING['deepseek-v4-pro'] },
       ],
       defaultModel: 'deepseek-flash',
+      // api-docs.deepseek.com/guides/thinking_mode: reasoning_effort low | high | max; default high.
+      efforts: ['low', 'high', 'max'],
       credentialHint: '在 platform.deepseek.com 的 API Keys 页面创建',
       listModels: listOpenAIModels,
       balance: fetchBalance,
