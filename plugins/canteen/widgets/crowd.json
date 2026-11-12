@@ -6,6 +6,10 @@
   "bindings": {
     "/crowd": { "tool": "crowd", "args": { "sort": "least" }, "ttlMinutes": 2 }
   },
+  "strings": {
+    "zh-Hans": { "idle": "空闲", "moderate": "适中", "busy": "较挤", "packed": "拥挤", "time": "数据时间 " },
+    "en": { "idle": "Quiet", "moderate": "Moderate", "busy": "Busy", "packed": "Packed", "time": "Updated " }
+  },
   "spec": {
     "root": "root",
     "elements": {
@@ -25,7 +29,23 @@
       "load": {
         "type": "Text",
         "props": {
-          "text": { "$template": "${diners}/${seats} · ${level}" },
+          "text": {
+            "$cond": { "$item": "level", "eq": "空闲" },
+            "$then": { "$template": "${diners}/${seats} · ${/t/idle}" },
+            "$else": {
+              "$cond": { "$item": "level", "eq": "适中" },
+              "$then": { "$template": "${diners}/${seats} · ${/t/moderate}" },
+              "$else": {
+                "$cond": { "$item": "level", "eq": "较挤" },
+                "$then": { "$template": "${diners}/${seats} · ${/t/busy}" },
+                "$else": {
+                  "$cond": { "$item": "level", "eq": "拥挤" },
+                  "$then": { "$template": "${diners}/${seats} · ${/t/packed}" },
+                  "$else": { "$template": "${diners}/${seats} · ${level}" }
+                }
+              }
+            }
+          },
           "tone": {
             "$cond": { "$item": "level", "eq": "空闲" },
             "$then": "up",
@@ -40,7 +60,7 @@
       },
       "time": {
         "type": "Text",
-        "props": { "text": { "$template": "数据时间 ${/crowd/time}" }, "tone": "muted", "size": "small" },
+        "props": { "text": { "$template": "${/t/time}${/crowd/time}" }, "tone": "muted", "size": "small" },
         "visible": { "$state": "/crowd/time", "neq": null }
       }
     },
