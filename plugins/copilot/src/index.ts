@@ -1,9 +1,9 @@
-import { definePlugin, defineTool, type ToolContext } from '@pku-harness/sdk';
+import { definePlugin, definePreference, defineTool, type ToolContext } from '@pku-harness/sdk';
 import { z } from 'zod';
 import { CopilotScreen } from './screen';
 import { createBrightnessTools } from './brightness-tools';
 import { createVisionTools } from './vision-tools';
-import { assessCopilotApp, copilotPreferencesSchema, grantCopilotApp, loadCopilotPreferences, loadCopilotVision, configureCopilot, saveCopilotVision, startCopilot } from './preferences';
+import { assessCopilotApp, copilotPackagesSchema, copilotPreferencesSchema, grantCopilotApp, loadCopilotPreferences, loadCopilotVision, configureCopilot, saveCopilotVision, startCopilot } from './preferences';
 import { deriveSetup, missingSteps } from './setup';
 
 const session = z.object({ sessionId: z.string().uuid() });
@@ -41,8 +41,30 @@ export const copilotPlugin = definePlugin({
     scopes: { '用户选择的手机应用': 'Phone apps you select' },
     screens: { home: { title: 'Copilot' } },
     settings: { home: { title: 'Copilot', subtitle: 'Permissions and allowed apps' } },
+    preferences: {
+      enabled: { title: 'Copilot on', description: 'Let the assistant start phone tasks in the allowed apps.' },
+      apps: { title: 'Apps Copilot may use', description: 'Android package names, e.g. com.tencent.mm for WeChat.' },
+      screenshots: { title: 'Let the AI see screenshots', description: 'For apps that hide their contents from Copilot (Taobao, WeChat).' },
+    },
     commands: { copilot: { description: 'Set up, preview, or stop phone control', aliases: ['phone'] } },
   } },
+  preferences: {
+    enabled: definePreference({
+      title: 'Copilot 开关', description: '允许助手在允许的 App 里开始手机任务。', kind: 'boolean', input: z.boolean(),
+      get: async (c) => (await loadCopilotPreferences(c.kv)).enabled,
+      set: async (c, enabled) => { await configureCopilot(c.kv, c.services.phone, { ...(await loadCopilotPreferences(c.kv)), enabled }); },
+    }),
+    apps: definePreference({
+      title: 'Copilot 可用的 App', description: 'Android 包名，例如微信是 com.tencent.mm。', kind: 'list', input: copilotPackagesSchema,
+      get: async (c) => (await loadCopilotPreferences(c.kv)).packages,
+      set: async (c, packages) => { await configureCopilot(c.kv, c.services.phone, { ...(await loadCopilotPreferences(c.kv)), packages }); },
+    }),
+    screenshots: definePreference({
+      title: '允许 AI 查看截图', description: '用于不向 Copilot 显示内容的 App（淘宝、微信）。', kind: 'boolean', input: z.boolean(),
+      get: async (c) => (await loadCopilotVision(c.kv)).screenshots,
+      set: async (c, screenshots) => { await saveCopilotVision(c.kv, { screenshots }); },
+    }),
+  },
   contributes: {
     screens: { home: { title: 'Copilot', component: CopilotScreen } },
     settings: [{ screen: 'home', title: 'Copilot', subtitle: '权限设置与允许的应用', icon: 'phone' }],

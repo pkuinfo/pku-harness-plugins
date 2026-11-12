@@ -10,6 +10,7 @@ export * from './notify';
 export * from './plugin';
 export * from './phone';
 export * from './pointer';
+export * from './settings';
 export * from './scheduler/check';
 export * from './scheduler/policy';
 export * from './scheduler/recurrence';

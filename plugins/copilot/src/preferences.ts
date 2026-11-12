@@ -2,9 +2,10 @@ import type { KV, PhoneApp, PhoneReadiness, PhoneService } from '@pku-harness/sd
 import { z } from 'zod';
 
 const packageName = z.string().regex(/^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z][A-Za-z0-9_]*)+$/);
+export const copilotPackagesSchema = z.array(packageName).max(20).transform((items) => [...new Set(items)]);
 export const copilotPreferencesSchema = z.object({
   enabled: z.boolean(),
-  packages: z.array(packageName).max(20).transform((items) => [...new Set(items)]),
+  packages: copilotPackagesSchema,
 }).refine((value) => !value.enabled || value.packages.length > 0, 'Select at least one app before enabling Copilot.');
 
 export type CopilotPreferences = z.infer<typeof copilotPreferencesSchema>;

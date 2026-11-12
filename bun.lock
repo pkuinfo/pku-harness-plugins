@@ -183,6 +183,14 @@
         "zod": "^4.0.0",
       },
     },
+    "plugins/settings": {
+      "name": "@pku-harness/plugin-settings",
+      "version": "0.1.0",
+      "peerDependencies": {
+        "@pku-harness/sdk": "*",
+        "zod": "^4.0.0",
+      },
+    },
     "plugins/siliconflow": {
       "name": "@pku-harness/plugin-siliconflow",
       "version": "0.1.0",
@@ -328,6 +336,8 @@
     "@pku-harness/plugin-schedule": ["@pku-harness/plugin-schedule@workspace:plugins/schedule"],
 
     "@pku-harness/plugin-scheduler": ["@pku-harness/plugin-scheduler@workspace:plugins/scheduler"],
+
+    "@pku-harness/plugin-settings": ["@pku-harness/plugin-settings@workspace:plugins/settings"],
 
     "@pku-harness/plugin-siliconflow": ["@pku-harness/plugin-siliconflow@workspace:plugins/siliconflow"],
 

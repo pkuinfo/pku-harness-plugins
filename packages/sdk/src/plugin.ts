@@ -6,6 +6,7 @@ import type { CloudManifest, PluginCloud } from './cloud';
 import type { Binding, Widget, WidgetSize } from './dashboard';
 import type { SpecCheck, UISpec } from './genui';
 import type { FilesService } from './files';
+import type { PluginPreferenceDef, SettingsService } from './settings';
 import type { NotifyFixKind, NotifyReadiness } from './notify';
 import type { Action, Job, JobSource, Trigger } from './scheduler/types';
 import type { Course, Semester } from './timetable';
@@ -28,6 +29,8 @@ export type PluginTranslation = {
   screens?: Record<string, { title?: string }>;
   /** Settings rows, keyed by the screen they open. */
   settings?: Record<string, { title?: string; subtitle?: string }>;
+  /** Preference titles and descriptions (PluginDef.preferences), keyed by name. */
+  preferences?: Record<string, { title?: string; description?: string; options?: Record<string, string> }>;
   /** `prompt`: the English template for prompt commands (sent as the user's message). */
   commands?: Record<string, { description?: string; argHint?: string; aliases?: string[]; prompt?: string }>;
   /** Provider plugins: display name, description, credential hint and model names/descriptions. */
@@ -123,6 +126,8 @@ export interface OngoingHandle {
 export interface HostServices {
   /** Native Copilot sessions. Scope and setup are selected by the user. */
   phone: PhoneService;
+  /** Every app and plugin setting, read and changed in one place (./settings.ts). */
+  settings: SettingsService;
   /**
    * Hand the user to a web page in the system browser tab (Custom Tabs / SFSafariViewController),
    * outside the app: a payment cashier, a login the harness can't do, a document. App links on
@@ -526,6 +531,13 @@ export interface PluginDef {
    * sheet), E2E. Without `optional: true`, also list 'cloud' in `requires`.
    */
   cloud?: CloudManifest;
+  /**
+   * The plugin's own settings, which the user (its screen) and the agent (core `settings`
+   * plugin) read and change through the host's settings registry, as `<plugin id>.<name>`
+   * (./settings.ts). Not to be confused with `contributes.settings` (rows on the Settings page).
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  preferences?: Record<string, PluginPreferenceDef<any>>;
   /** Remote (MCP) plugin: where its tools run. Set by the host for installed remote plugins. */
   remote?: { url: string; server: string };
   /** Default per-effect modes; the user can change them. */
