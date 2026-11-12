@@ -1,8 +1,17 @@
 blank_issues_enabled: false
 contact_links:
+  - name: Questions and ideas (Discussions)
+    url: https://github.com/pkuinfo/pku-harness/discussions
+    about: Ask how to write a plugin, share an idea, or show what you built.
+  - name: Plugin documentation
+    url: https://harness.novadiffusion.com/en/docs/build
+    about: Quick start, plugin language, tools and effects, testing, publishing (中文 at /docs/build).
+  - name: Submit a plugin to the marketplace
+    url: https://harness.novadiffusion.com/en/marketplace/submit
+    about: Scan your GitHub repository and list its plugins. No pull request needed here.
+  - name: App issue
+    url: https://github.com/pkuinfo/pku-harness/issues/new/choose
+    about: Chat, dashboard, schedule, Copilot, settings and other problems in the app itself.
   - name: Security vulnerability
     url: https://github.com/pkuinfo/pku-harness-plugins/security/advisories/new
     about: Please report privately, never in a public issue (see SECURITY.md).
-  - name: App issue
-    url: https://github.com/pkuinfo/pku-harness/issues/new/choose
-    about: Chat, dashboard, schedule, settings and other problems in the app itself.

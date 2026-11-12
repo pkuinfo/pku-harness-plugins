@@ -20,6 +20,8 @@
 - [ ] No passwords, cookies, tokens or personal data in code, results, fixtures, logs or screenshots
 - [ ] Third-party text is returned as data (`untrusted: true` where it applies), never as instructions
 - [ ] Protocols ported from pkucli cite the source file
+- [ ] Widgets, screens or other visible changes include emulator or device screenshots (light and dark, personal data redacted)
+- [ ] Docs are updated where behaviour changed (plugin instructions, README, website docs)
 - [ ] User-facing strings have English translations (`i18n.en`); repository text is in English
 
 ## Testing

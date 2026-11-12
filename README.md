@@ -1,14 +1,16 @@
 <div align="center">
 
+<img src="https://harness.novadiffusion.com/icon.png" width="88" alt="PKU Harness logo" />
+
 # PKU Harness Plugins
 
 **Every campus service in [PKU Harness](https://github.com/pkuinfo/pku-harness), as a plugin you can read, share and write yourself.**
 
 [![CI](https://github.com/pkuinfo/pku-harness-plugins/actions/workflows/ci.yml/badge.svg)](https://github.com/pkuinfo/pku-harness-plugins/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Plugin language](https://img.shields.io/badge/plugin%20language-spec%201-8B0012.svg)](https://github.com/pkuinfo/pku-harness/blob/master/docs/PLUGIN-LANGUAGE.md)
+[![Plugin language](https://img.shields.io/badge/plugin%20language-spec%201-8B0012.svg)](https://github.com/pkuinfo/pku-harness/blob/main/docs/PLUGIN-LANGUAGE.md)
 
-[Website](https://harness.novadiffusion.com) · [Download the app](https://harness.novadiffusion.com/download) · [Marketplace](https://harness.novadiffusion.com/marketplace) · [Write a plugin](#write-a-plugin-in-five-minutes) · [Language reference](https://github.com/pkuinfo/pku-harness/blob/master/docs/PLUGIN-LANGUAGE.md)
+[Website](https://harness.novadiffusion.com/en) · [Download the app](https://harness.novadiffusion.com/en/download) · [Marketplace](https://harness.novadiffusion.com/en/marketplace) · [Docs](https://harness.novadiffusion.com/en/docs/build) · [Write a plugin](#write-a-plugin-in-five-minutes) · [Language reference](https://github.com/pkuinfo/pku-harness/blob/main/docs/PLUGIN-LANGUAGE.md)
 
 </div>
 
@@ -120,9 +122,40 @@ bun run plugin test path/to/my-plugin          # replay tests/*.yaml
 ```
 
 Then push the folder to GitHub and install it in the app with its link, or with
-`pkuharness://plugin?src=<link>`. The [language reference](https://github.com/pkuinfo/pku-harness/blob/master/docs/PLUGIN-LANGUAGE.md)
+`pkuharness://plugin?src=<link>`. The [language reference](https://github.com/pkuinfo/pku-harness/blob/main/docs/PLUGIN-LANGUAGE.md)
 covers every step, the expression standard library, host abilities, widgets and limits, and
 [`plugins/classrooms`](plugins/classrooms) is a complete, tested example.
+
+## Publish to the marketplace
+
+The [marketplace](https://harness.novadiffusion.com/en/marketplace) indexes GitHub repositories
+the way [skills.sh](https://skills.sh) indexes skills: one repository can hold many plugins, each
+found by its `PLUGIN.md`.
+
+1. Push your plugin folder (or a repository of several) to a public GitHub repository.
+2. Open [harness.novadiffusion.com/marketplace/submit](https://harness.novadiffusion.com/en/marketplace/submit),
+   paste the repository and fix anything the scanner reports.
+3. Submit. A bot rescans the repository, comments its report on the submission issue and opens
+   a pull request that lists it. Once merged, your plugin gets a page with its access review,
+   install link, deep link and QR code.
+
+You don't need a pull request here. The curated [`registry/registry.json`](registry/registry.json)
+holds official and reviewed plugins; see [CONTRIBUTING.md](CONTRIBUTING.md#listing-a-plugin-in-the-marketplace)
+to add a remote (MCP) plugin to it, and the [publishing guide](https://harness.novadiffusion.com/en/docs/marketplace/publishing)
+for details.
+
+## Documentation
+
+| Topic | Where |
+|---|---|
+| Quick start: your first plugin | [Build → Quick start](https://harness.novadiffusion.com/en/docs/build/quickstart) |
+| Tools, effects and permissions | [Build → Tools](https://harness.novadiffusion.com/en/docs/build/tools) · [Concepts → Permissions](https://harness.novadiffusion.com/en/docs/concepts/permissions) |
+| Recorded tests | [Build → Testing](https://harness.novadiffusion.com/en/docs/build/testing) |
+| Porting a service from pkucli | [Build → Porting from pkucli](https://harness.novadiffusion.com/en/docs/build/porting-from-pkucli) |
+| Remote (MCP) plugins | [Build → Remote plugin](https://harness.novadiffusion.com/en/docs/build/remote-plugin) |
+| SDK and host services | [SDK reference](https://harness.novadiffusion.com/en/docs/sdk) |
+| Language specification | [PLUGIN-LANGUAGE.md](https://github.com/pkuinfo/pku-harness/blob/main/docs/PLUGIN-LANGUAGE.md) |
+| For AI coding agents | [`/llms.txt`](https://harness.novadiffusion.com/llms.txt) · [`/llms-full.txt`](https://harness.novadiffusion.com/llms-full.txt) |
 
 ## Three kinds of plugin, one contract
 
@@ -169,6 +202,14 @@ run `bun run bundle` so the app ships the new version; CI fails if you forget.
 Contributions are welcome, from fixing a parser after a university site changes to writing a new
 plugin. Read [CONTRIBUTING.md](CONTRIBUTING.md) for the plugin rules and the review process, and
 please follow the [Code of Conduct](CODE_OF_CONDUCT.md).
+
+## Community
+
+- Questions and ideas: [Discussions](https://github.com/pkuinfo/pku-harness/discussions) in the app repository
+- A campus service broke, or you want a new one: [issues](https://github.com/pkuinfo/pku-harness-plugins/issues/new/choose)
+- Good places to start: [`good first issue`](https://github.com/pkuinfo/pku-harness-plugins/labels/good%20first%20issue)
+  and [`help wanted`](https://github.com/pkuinfo/pku-harness-plugins/labels/help%20wanted)
+- Where to ask what: [SUPPORT.md](SUPPORT.md)
 
 ## Security
 

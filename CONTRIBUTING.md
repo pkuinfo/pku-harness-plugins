@@ -23,7 +23,7 @@ go through [SECURITY.md](SECURITY.md), never through public issues.
   [new plugin](https://github.com/pkuinfo/pku-harness-plugins/issues/new?template=new_plugin.yml)
   issue, so we can agree on its tools and permissions.
 - **Port a TypeScript plugin to a plugin document** (see the port list in the app's
-  [`docs/PLAN.md`](https://github.com/pkuinfo/pku-harness/blob/master/docs/PLAN.md)).
+  [`docs/PLAN.md`](https://github.com/pkuinfo/pku-harness/blob/main/docs/PLAN.md)).
 - **Improve the SDK or the plugin language** in `packages/sdk`. Larger changes start with an
   [SDK issue](https://github.com/pkuinfo/pku-harness-plugins/issues/new?template=plugin_dev.yml).
 
@@ -43,7 +43,7 @@ bundled-documents check, and every test, including the recorded tests of each pl
 Run it before every push and only push when it passes.
 
 To try plugins in the app, follow the app's
-[contributing guide](https://github.com/pkuinfo/pku-harness/blob/master/CONTRIBUTING.md): the
+[contributing guide](https://github.com/pkuinfo/pku-harness/blob/main/CONTRIBUTING.md): the
 app consumes this repository as its `plugins/` submodule.
 
 ## Writing a plugin
@@ -57,7 +57,7 @@ Choose the kind:
 | **TypeScript** (bundled) | Only for the harness's own features or new host abilities. Open an issue first. |
 
 A plugin document is a folder with a `PLUGIN.md` and the tool files it names. The
-[language reference](https://github.com/pkuinfo/pku-harness/blob/master/docs/PLUGIN-LANGUAGE.md)
+[language reference](https://github.com/pkuinfo/pku-harness/blob/main/docs/PLUGIN-LANGUAGE.md)
 is the specification; [`plugins/classrooms`](plugins/classrooms) is a short, complete example and
 [`plugins/notices`](plugins/notices) a large one. The author CLI checks your work as you go:
 

@@ -1,6 +1,6 @@
 name: New plugin proposal
 description: Connect a new campus service, or add a new capability.
-labels: [plugin-proposal]
+labels: [plugin-proposal, plugin]
 body:
   - type: input
     id: service
