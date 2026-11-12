@@ -86,12 +86,15 @@ app ships the new version (the check fails otherwise).
 5. **Return data, not instructions.** Tool results reach the model as data. Mark tools that
    return third-party text (posts, notices) with `untrusted: true`, and never put prompts in
    results.
-6. **Port protocols from [pkucli](https://github.com/pkuinfo/pkucli)** when it already implements
+6. **Keep the default prompt small.** A TypeScript core plugin's tools ride in every request; mark
+   rarely needed ones `onDemand: true` so they load only after `plugins.use`. A model provider
+   lists the thinking-effort levels its API takes in `efforts`.
+7. **Port protocols from [pkucli](https://github.com/pkuinfo/pkucli)** when it already implements
    a service, and cite the source file in a comment.
-7. **Be bilingual where users read.** Put English translations of user-facing manifest strings
+8. **Be bilingual where users read.** Put English translations of user-facing manifest strings
    (name, description, tool titles, widgets, commands) under `i18n.en`. Descriptions and
    instructions for the model don't need translating.
-8. **Keep repository documents in English.** READMEs, comments, commit messages, issues and pull
+9. **Keep repository documents in English.** READMEs, comments, commit messages, issues and pull
    requests are in English; Chinese belongs only in user-facing app text.
 
 ## Testing
