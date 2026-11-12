@@ -42,6 +42,8 @@ export const pluginsPlugin = definePlugin({
       description: 'See installed plugins, install or remove plugins, and write new ones (PLUGIN.md) with the AI.',
       tools: {
         list: { title: 'View plugins' },
+        search: { title: 'Find a plugin' },
+        use: { title: 'Use a plugin' },
         installRemote: { title: 'Install remote plugin' },
         uninstall: { title: 'Remove remote plugin' },
         reference: { title: 'Plugin language reference' },
@@ -54,12 +56,56 @@ export const pluginsPlugin = definePlugin({
   },
   icon: 'puzzle',
   core: true,
-  instructions: `插件可以由你和用户一起写：一个插件就是一个 PLUGIN.md 文件夹（YAML 前言 + 给 AI 的说明 + tools/*.yaml），由 App 解释执行，不运行代码。
+  instructions: `你一开始只带着核心工具（设置、文件、日程、提醒、看板、记忆、界面）。其他能力都在插件里，按需加载：
+- 用户要的事现有工具做不到时，先看 <可加载插件> 里有没有合适的，有就 plugins__use { ids } 加载，它会返回该插件的用法，之后它的工具就能用了；没有就 plugins__search { query } 搜索已安装插件和社区插件市场。
+- 搜到的社区插件用 plugins__install { link } 打开确认页（远程插件用 plugins__installRemote），由用户决定是否安装；安装后再 plugins__use 加载。
+- 都没有时，可以和用户一起写一个新插件（见下）。不要说“我做不到”之前没搜过。
+- 不要向用户罗列你有哪些插件或能力；用户问什么就做什么，需要时自己去找。
+插件可以由你和用户一起写：一个插件就是一个 PLUGIN.md 文件夹（YAML 前言 + 给 AI 的说明 + tools/*.yaml），由 App 解释执行，不运行代码。
 写插件的流程：plugins__reference 读语言参考 → 写出文件 → plugins__validate 直到没有问题 → 对只读工具用 plugins__tryTool 实际跑一次给用户看结果 → plugins__install 打开权限确认页，由用户决定安装。
 用户贴出插件链接（GitHub 文件夹或 PLUGIN.md 链接）时，用 plugins__install { link } 打开确认页。改已有插件：plugins__source 读源码再改。`,
   scopes: [],
   defaultModes: { write: 'ask' },
   tools: {
+    search: defineTool({
+      title: '查找插件',
+      description:
+        'Find plugins for what the user needs: installed ones (with whether they are loaded, enabled and usable here) and community marketplace plugins (with the link or endpoint to install). Search by need, e.g. "空闲教室", "card balance", "图书馆座位". Then plugins__use an installed one, or plugins__install a marketplace one.',
+      input: z.object({ query: z.string().min(1).max(80).describe('what the user needs, in a few words (Chinese or English)') }),
+      effect: 'read',
+      execute: async ({ query }, ctx) => {
+        const q = query.toLowerCase();
+        const words = q.split(/\s+/).filter(Boolean);
+        const score = (text: string) => words.reduce((n, w) => n + (text.includes(w) ? 1 : 0), 0) + (text.includes(q) ? 2 : 0);
+        const installed = ctx.services.registry
+          .plugins()
+          .map((p) => ctx.services.registry.describe(p.id))
+          .filter((d): d is NonNullable<typeof d> => !!d && d.tools.length > 0)
+          .map((d) => ({ d, n: score(`${d.id} ${d.name} ${d.description} ${d.tools.map((t) => t.title).join(' ')}`.toLowerCase()) }))
+          .filter((x) => x.n > 0)
+          .sort((a, b) => b.n - a.n)
+          .slice(0, 8)
+          .map(({ d }) => ({ id: d.id, name: d.name, description: d.description, core: d.core, enabled: d.enabled, unavailable: d.unavailable }));
+        const market = await ctx.services.registry.marketplace(query).catch(() => []);
+        return { installed, marketplace: market.filter((m) => !m.installed).slice(0, 8) };
+      },
+    }),
+    use: defineTool({
+      title: '加载插件',
+      description:
+        'Load installed plugins into this chat by id (from <可加载插件> or plugins__search). Returns each plugin’s instructions and tools; from the next step its tools are available. A plugin that is switched off is not loaded: ask the user, then turn it on with settings__change plugin.<id>.enabled.',
+      input: z.object({ ids: z.array(z.string().min(1)).min(1).max(5).describe('plugin ids') }),
+      effect: 'read',
+      execute: async ({ ids }, ctx) => ({
+        loaded: ids.map((id) => {
+          const d = ctx.services.registry.describe(id);
+          if (!d) return { id, error: 'No installed plugin with this id; use plugins__search.' };
+          if (!d.enabled) return { id, error: `Switched off. Ask the user, then settings__change plugin.${id}.enabled = true.` };
+          if (d.unavailable) return { id, error: `Not usable on this device: ${d.unavailable}` };
+          return { id, name: d.name, instructions: d.instructions ?? '', tools: d.tools };
+        }),
+      }),
+    }),
     list: defineTool({
       title: '查看插件',
       description: 'Installed plugins with their tools, whether they are enabled, and their per-effect modes.',

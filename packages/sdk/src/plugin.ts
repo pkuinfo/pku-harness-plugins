@@ -89,6 +89,36 @@ export type PluginInfo = {
   tools: { id: string; title: string; effect: ToolEffect }[];
 };
 
+/** An installed plugin, described for the agent (`registry.describe`). */
+export type PluginDetail = {
+  id: string;
+  name: string;
+  description: string;
+  /** Core plugins are always loaded; the others load into a chat with `plugins.use`. */
+  core: boolean;
+  enabled: boolean;
+  /** Why it can't run on this device (missing capability), or null. */
+  unavailable: string | null;
+  instructions?: string;
+  tools: { name: string; title: string; effect: ToolEffect }[];
+};
+
+/** A plugin from the community marketplace (`registry.marketplace`). */
+export type MarketplaceHit = {
+  id: string;
+  name: string;
+  description: string;
+  author: string;
+  /** Published by pkuinfo (official) and reviewed (verified). */
+  official: boolean;
+  verified: boolean;
+  installed: boolean;
+  /** What `plugins.install { link }` takes: a GitHub folder or PLUGIN.md URL; null for remote (MCP) plugins. */
+  link: string | null;
+  /** Remote (MCP) plugin endpoint for `plugins.installRemote`, or null. */
+  endpoint: string | null;
+};
+
 export type JobInput = { title: string; trigger: Trigger; action: Action; source: JobSource; enabled?: boolean; meta?: Record<string, unknown> };
 export type JobPatch = Partial<Pick<Job, 'title' | 'trigger' | 'action' | 'enabled' | 'meta'>>;
 export type CheckResult = { notified: boolean; value?: unknown; error?: string };
@@ -159,6 +189,13 @@ export interface HostServices {
   registry: {
     plugins(): PluginInfo[];
     tool(id: string): ToolInfo | undefined;
+    /**
+     * One installed plugin as the agent needs it to use it: what it does, its instructions and
+     * tools, and whether it can run here. Null when no such plugin is installed.
+     */
+    describe(id: string): PluginDetail | null;
+    /** Community marketplace plugins matching `query` (name, description, tags), best first. */
+    marketplace(query: string): Promise<MarketplaceHit[]>;
   };
   /**
    * Plugin documents (PLUGIN.md, pku-harness docs/PLUGIN-LANGUAGE.md). Installing always goes
