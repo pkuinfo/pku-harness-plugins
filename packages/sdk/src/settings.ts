@@ -38,7 +38,11 @@ export interface SettingChange {
 export interface SettingsService {
   /** Every setting with its current value. */
   list(): Promise<SettingInfo[]>;
-  /** Apply changes in order; a key that is unknown, `uiOnly` or given a bad value fails the call before anything changes. */
+  /**
+   * Apply changes in order. Unknown and `uiOnly` keys fail the call before anything changes;
+   * each value is validated as it is applied, so a bad value stops the call there (earlier
+   * changes stay).
+   */
   change(changes: { key: string; value: SettingValue }[]): Promise<SettingChange[]>;
   /** Show the screen of a setting (for `uiOnly` ones, or when the user wants to look). */
   open(key: string): void;
