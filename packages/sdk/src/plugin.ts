@@ -365,6 +365,12 @@ export interface ToolContext {
    * host). Plugins declaring `PluginDef.cloud` get it; optional until every host build wires it.
    */
   cloud?: PluginCloud;
+  /**
+   * Address and key of one of this plugin's own model providers (`PluginDef.providers`, by key),
+   * as the user set them up, for tools that call the same service (e.g. DeepSeek web search with
+   * the DeepSeek chat key). Never another plugin's. Optional until every host build wires it.
+   */
+  provider?: (key: string) => Promise<{ baseURL: string; credential?: string }>;
   signal?: AbortSignal;
 }
 
@@ -560,8 +566,31 @@ export interface SpeechProviderDef {
   credentialHint?: string;
   /** Where to get a key, shown under the field. */
   keyURL?: string;
+  /**
+   * Use the key of this plugin's model provider with this id (`PluginDef.providers`) instead of
+   * a key of its own, e.g. DeepSeek speech-to-text with the DeepSeek chat key. The host then
+   * asks for no separate key.
+   */
+  credentialFrom?: string;
   transcribe?: (config: SpeechConfig, audio: SpeechAudio, signal?: AbortSignal) => Promise<string>;
   stream?: (config: SpeechConfig, handlers: SpeechStreamHandlers) => Promise<SpeechStream>;
+}
+
+/** A document to recognise: a local file the user attached (`file` uploads in a FormData). */
+export interface OcrDocument {
+  file: Blob;
+  uri: string;
+  name: string;
+  mimeType: string;
+}
+
+/** Text recognition (OCR) for scanned documents, with the key of one of the plugin's model providers. */
+export interface OcrProviderDef {
+  name: string;
+  /** This plugin's model provider (`PluginDef.providers` key) whose address and key it uses. */
+  credentialFrom: string;
+  /** Recognised text in reading order, Markdown with `## Page n` headings per page. */
+  recognize: (config: { baseURL: string; credential: string; fetch: typeof fetch }, doc: OcrDocument, signal?: AbortSignal) => Promise<string>;
 }
 
 export interface PluginDef {
@@ -600,6 +629,12 @@ export interface PluginDef {
   providers?: Record<string, ProviderDef>;
   /** Speech-to-text services for voice input, keyed by local id (host id: `<plugin>.<key>`). */
   speech?: Record<string, SpeechProviderDef>;
+  /**
+   * Text recognition for documents the phone can't read itself (scanned PDFs without a text
+   * layer), keyed by local id. Used only when the user attaches such a file and the plugin's
+   * `credentialFrom` provider has a key.
+   */
+  ocr?: Record<string, OcrProviderDef>;
   /** Extra guidance appended to the agent's system prompt. */
   instructions?: Dynamic<string>;
   /**

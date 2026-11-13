@@ -2,21 +2,35 @@ import { definePlugin } from '@pku-harness/sdk';
 
 import { fetchBalance, PRICING } from './balance';
 import { listOpenAIModels, openAICompatibleModel } from './model';
+import { deepseekOcr, deepseekTranscribe, webTools } from './tools';
 
 /**
  * DeepSeek, the default model provider. Catalog follows DeepSeek Harness
  * (`packages/llm/llm-deepseek/src/models.ts`); the live `/models` listing wins when available.
  * An `account` provider (DeepSeek sign-in, like `llm-deepseek-account`) can be added here.
+ * With the same key: voice input (speech recognition), web search and page reading for the agent,
+ * and OCR for scanned documents (./tools.ts).
  */
 export const deepseekPlugin = definePlugin({
   id: 'deepseek',
   name: 'DeepSeek',
-  description: 'DeepSeek 官方 API（默认 AI 服务）。',
-  version: '0.3.0',
+  description: 'DeepSeek 官方 API（默认 AI 服务），同一个 Key 还可用于语音输入、联网搜索和扫描件识别。',
+  version: '0.4.0',
   i18n: {
     en: {
       name: 'DeepSeek',
-      description: 'The official DeepSeek API (the default AI service).',
+      description: 'The official DeepSeek API (the default AI service). The same key also covers voice input, web search and scanned-document recognition.',
+      tools: {
+        web_search: { title: 'Search the web' },
+        web_read: { title: 'Read a web page' },
+      },
+      speech: {
+        asr: {
+          name: 'DeepSeek',
+          description: 'Uses your DeepSeek API key, no extra key; text arrives in phrases',
+          models: { asr: { name: 'DeepSeek speech recognition', description: 'Detects the language (Mandarin, Cantonese, English and more)' } },
+        },
+      },
       providers: {
         api: {
           name: 'DeepSeek',
@@ -33,7 +47,7 @@ export const deepseekPlugin = definePlugin({
   requires: ['network'],
   icon: 'sparkles',
   scopes: ['api.deepseek.com'],
-  tools: {},
+  tools: webTools,
   providers: {
     api: {
       name: 'DeepSeek',
@@ -54,4 +68,17 @@ export const deepseekPlugin = definePlugin({
       createModel: (config) => openAICompatibleModel('deepseek', config),
     },
   },
+  speech: {
+    asr: {
+      name: 'DeepSeek',
+      description: '使用你的 DeepSeek API Key，无需另外申请；文字按句子出现',
+      defaultBaseURL: 'https://api.deepseek.com',
+      // The API takes no model; one entry so the host has something to show and select.
+      models: [{ id: 'asr', name: 'DeepSeek 语音识别', description: '自动识别语言（普通话、粤语、英语等）' }],
+      defaultModel: 'asr',
+      credentialFrom: 'api',
+      transcribe: deepseekTranscribe,
+    },
+  },
+  ocr: { ocr: deepseekOcr },
 });
