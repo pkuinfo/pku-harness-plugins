@@ -2,11 +2,11 @@
 
 | You want to… | Go to |
 |---|---|
-| Write, test or publish a plugin | [Plugin docs](https://harness.novadiffusion.com/en/docs/build) (中文: [/docs/build](https://harness.novadiffusion.com/docs/build)) and [CONTRIBUTING.md](CONTRIBUTING.md) |
+| Write, test or publish a plugin | [Plugin docs](https://pkuharness.com/en/docs/build) (中文: [/docs/build](https://pkuharness.com/docs/build)) and [CONTRIBUTING.md](CONTRIBUTING.md) |
 | Ask a question, share an idea, show your plugin | [GitHub Discussions](https://github.com/pkuinfo/pku-harness/discussions) |
 | Report a broken campus service | [A campus service broke](https://github.com/pkuinfo/pku-harness-plugins/issues/new?template=service_broken.yml) |
 | Propose a new plugin | [New plugin proposal](https://github.com/pkuinfo/pku-harness-plugins/issues/new?template=new_plugin.yml) |
-| List your plugin in the marketplace | [Submit page](https://harness.novadiffusion.com/en/marketplace/submit) |
+| List your plugin in the marketplace | [Submit page](https://pkuharness.com/en/marketplace/submit) |
 | Report an app bug | [App issues](https://github.com/pkuinfo/pku-harness/issues/new/choose) |
 | Report a security vulnerability | Privately, as described in [SECURITY.md](SECURITY.md) |
 

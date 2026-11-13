@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://harness.novadiffusion.com/icon.png" width="88" alt="PKU harness logo" />
+<img src="https://pkuharness.com/icon.png" width="88" alt="PKU harness logo" />
 
 # PKU harness Plugins
 
@@ -10,7 +10,7 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Plugin language](https://img.shields.io/badge/plugin%20language-spec%201-8B0012.svg)](https://github.com/pkuinfo/pku-harness/blob/main/docs/PLUGIN-LANGUAGE.md)
 
-[Website](https://harness.novadiffusion.com/en) · [Download the app](https://harness.novadiffusion.com/en/download) · [Marketplace](https://harness.novadiffusion.com/en/marketplace) · [Docs](https://harness.novadiffusion.com/en/docs/build) · [Write a plugin](#write-a-plugin-in-five-minutes) · [Language reference](https://github.com/pkuinfo/pku-harness/blob/main/docs/PLUGIN-LANGUAGE.md)
+[Website](https://pkuharness.com/en) · [Download the app](https://pkuharness.com/en/download) · [Marketplace](https://pkuharness.com/en/marketplace) · [Docs](https://pkuharness.com/en/docs/build) · [Write a plugin](#write-a-plugin-in-five-minutes) · [Language reference](https://github.com/pkuinfo/pku-harness/blob/main/docs/PLUGIN-LANGUAGE.md)
 
 </div>
 
@@ -58,7 +58,7 @@ SDK, the plugin language, and the marketplace registry.
 | `dashboard`, `schedule`, `scheduler`, `todo`, `timetable`, `ledger`, `memory`, `plugins`, `ui`, `deepseek`, `openai-compatible` | The harness's own features and model providers | TypeScript |
 
 The full list, including community plugins, is in [`registry/registry.json`](registry/registry.json)
-and on the [marketplace](https://harness.novadiffusion.com/marketplace).
+and on the [marketplace](https://pkuharness.com/marketplace).
 
 ## Write a plugin in five minutes
 
@@ -128,12 +128,12 @@ covers every step, the expression standard library, host abilities, widgets and 
 
 ## Publish to the marketplace
 
-The [marketplace](https://harness.novadiffusion.com/en/marketplace) indexes GitHub repositories
+The [marketplace](https://pkuharness.com/en/marketplace) indexes GitHub repositories
 the way [skills.sh](https://skills.sh) indexes skills: one repository can hold many plugins, each
 found by its `PLUGIN.md`.
 
 1. Push your plugin folder (or a repository of several) to a public GitHub repository.
-2. Open [harness.novadiffusion.com/marketplace/submit](https://harness.novadiffusion.com/en/marketplace/submit),
+2. Open [pkuharness.com/marketplace/submit](https://pkuharness.com/en/marketplace/submit),
    paste the repository and fix anything the scanner reports.
 3. Submit. A bot rescans the repository, comments its report on the submission issue and opens
    a pull request that lists it. Once merged, your plugin gets a page with its access review,
@@ -141,21 +141,21 @@ found by its `PLUGIN.md`.
 
 You don't need a pull request here. The curated [`registry/registry.json`](registry/registry.json)
 holds official and reviewed plugins; see [CONTRIBUTING.md](CONTRIBUTING.md#listing-a-plugin-in-the-marketplace)
-to add a remote (MCP) plugin to it, and the [publishing guide](https://harness.novadiffusion.com/en/docs/marketplace/publishing)
+to add a remote (MCP) plugin to it, and the [publishing guide](https://pkuharness.com/en/docs/marketplace/publishing)
 for details.
 
 ## Documentation
 
 | Topic | Where |
 |---|---|
-| Quick start: your first plugin | [Build → Quick start](https://harness.novadiffusion.com/en/docs/build/quickstart) |
-| Tools, effects and permissions | [Build → Tools](https://harness.novadiffusion.com/en/docs/build/tools) · [Concepts → Permissions](https://harness.novadiffusion.com/en/docs/concepts/permissions) |
-| Recorded tests | [Build → Testing](https://harness.novadiffusion.com/en/docs/build/testing) |
-| Porting a service from pkucli | [Build → Porting from pkucli](https://harness.novadiffusion.com/en/docs/build/porting-from-pkucli) |
-| Remote (MCP) plugins | [Build → Remote plugin](https://harness.novadiffusion.com/en/docs/build/remote-plugin) |
-| SDK and host services | [SDK reference](https://harness.novadiffusion.com/en/docs/sdk) |
+| Quick start: your first plugin | [Build → Quick start](https://pkuharness.com/en/docs/build/quickstart) |
+| Tools, effects and permissions | [Build → Tools](https://pkuharness.com/en/docs/build/tools) · [Concepts → Permissions](https://pkuharness.com/en/docs/concepts/permissions) |
+| Recorded tests | [Build → Testing](https://pkuharness.com/en/docs/build/testing) |
+| Porting a service from pkucli | [Build → Porting from pkucli](https://pkuharness.com/en/docs/build/porting-from-pkucli) |
+| Remote (MCP) plugins | [Build → Remote plugin](https://pkuharness.com/en/docs/build/remote-plugin) |
+| SDK and host services | [SDK reference](https://pkuharness.com/en/docs/sdk) |
 | Language specification | [PLUGIN-LANGUAGE.md](https://github.com/pkuinfo/pku-harness/blob/main/docs/PLUGIN-LANGUAGE.md) |
-| For AI coding agents | [`/llms.txt`](https://harness.novadiffusion.com/llms.txt) · [`/llms-full.txt`](https://harness.novadiffusion.com/llms-full.txt) |
+| For AI coding agents | [`/llms.txt`](https://pkuharness.com/llms.txt) · [`/llms-full.txt`](https://pkuharness.com/llms-full.txt) |
 
 ## Three kinds of plugin, one contract
 

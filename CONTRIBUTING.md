@@ -118,7 +118,7 @@ responses before removing the TypeScript code.
 ## Listing a plugin in the marketplace
 
 Community plugins don't need a pull request here: register your repository on the
-[website](https://harness.novadiffusion.com/marketplace), which indexes every `PLUGIN.md` in it.
+[website](https://pkuharness.com/marketplace), which indexes every `PLUGIN.md` in it.
 
 The curated list in [`registry/registry.json`](registry/registry.json) holds official and
 reviewed plugins. To add a remote (MCP) plugin to it:
