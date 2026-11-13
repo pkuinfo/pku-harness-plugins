@@ -9,7 +9,8 @@ import { deriveSetup, missingSteps } from './setup';
 const session = z.object({ sessionId: z.string().uuid() });
 const target = session.extend({ snapshotId: z.string(), ref: z.string() });
 /** How long a handoff waits for the user's Done before the reply ends (they can still resume later). */
-const HANDOFF_WAIT_MS = 10 * 60_000;
+/** The user may be away from the phone (it notifies them and turns the screen on); the native cap is 30 minutes. */
+const HANDOFF_WAIT_MS = 30 * 60_000;
 /** Reads of the screen after a handback before giving up (the app moves back between displays). */
 const HANDBACK_READS = 4;
 
@@ -91,6 +92,7 @@ If repeated observations show no progress, explain what is blocked and hand off 
 Payments: the user only pays; you do everything else. Choose items, address, options and coupons, then tap the submit-order or pay-now button yourself (say the amount and merchant in one sentence before that tap). When the payment sheet opens (choosing Alipay or WeChat Pay, the cashier, a password or fingerprint prompt), every tap on it is blocked for you: call handoff with a short note such as "Pay ¥23.5, then tap Done". The user picks the payment method and pays with their fingerprint, face or password; you never see or enter it. If the order went through without a payment sheet (password-free payment), check the result and report it.
 Also hand off for passwords, login verification, or another step only the user can do, with a note naming it.
 handoff waits (wait defaults to true) until the user taps Done on the floating panel and returns the screen after their step: check it (payment succeeded, order placed, logged in) and continue the task without asking. If it returns timedOut, finish your reply and tell the user to tap Done when ready and send a message to continue. Do not end a handed-over session unless asked to stop.
+A task goes on while the user is in another app or the phone is locked: keep working. The screen stays on during a task; if the user turns it off, the next call simply waits until it is on again (no unlock needed). When the user is needed (handoff, approval), the phone shows a lock-screen notification and turns the screen on. If a call fails with LOCKED, finish your reply and tell the user what to do (turn the screen on or unlock), then they send a message to continue.
 When the requested phone work is finished, end the session. Never operate apps for an unrelated purpose.
 Right after an app opens it may still be on its splash screen (WeChat and Taobao can take 10 seconds or more to start): if observe then shows no or only a few elements, call wait with timeoutMs 5000, up to three times, before deciding anything; it returns as soon as the screen changes. An app is only hiding its contents if it still shows almost nothing after that. Some apps (Taobao, WeChat and others) hide their contents from Copilot: observe then shows no or only a few unlabeled elements although the app has finished starting. Then go straight to look without asking the user: it shows you a screenshot; use tapAt/typeAt with that screenshot's snapshotId and pixel coordinates read off its labelled grid (aim for the centre of the target), and look again after every action to check the result (scroll and back also accept a look's snapshotId). This is the normal way to operate such apps and needs no extra permission. If a target's text keeps changing between looks (a rotating search hint), tap it from the latest look anyway. If look says the user turned screenshots off or the model cannot read images, relay that in one sentence and stop. Never use tapAt/typeAt when observe or look returned an element you could use instead; never for payments or passwords. If a call fails with ACCESSIBILITY_OFF, Copilot's accessibility service is off and could not be turned back on: tell the user in one sentence to turn on PKU harness in Settings > Accessibility, then stop; never call that a protected screen. A screen is only protected when look says it blocks screenshots, and even then observe, tap and type still work. WeChat has its own server-controlled anti-automation: when it flags Copilot, observe shows almost nothing, look is refused (screenshots blocked) and typing has no effect. Then tell the user in one sentence that WeChat is blocking automated operation on their account right now, so they need to do this step themselves, and stop; don't retry, don't call it a protected screen and don't look for workarounds. The first time you operate WeChat in a conversation, mention once in one sentence that WeChat's terms forbid automated operation and Tencent may restrict accounts that use it.`,
   tools: {
@@ -115,7 +117,11 @@ Right after an app opens it may still be on its splash screen (WeChat and Taobao
           return { handedBack: true, screen: await phone.execute(a.sessionId, 'observe', {}, c.signal) };
         } catch (e) {
           if (attempt >= HANDBACK_READS || c.signal?.aborted) return { handedBack: true, screen: null, note: `Read the screen with observe: ${e instanceof Error ? e.message : String(e)}` };
-          await new Promise((done) => setTimeout(done, 700));
+          // A native wait, not a JS timer: React Native pauses timers while PKU harness is in the
+          // background, which is where the user is when they tap Done.
+          const waited = Date.now();
+          await phone.execute(a.sessionId, 'wait', { timeoutMs: 700 }, c.signal).catch(() => undefined);
+          if (Date.now() - waited < 300) await new Promise((done) => setTimeout(done, 700));
         }
       }
     } }),
