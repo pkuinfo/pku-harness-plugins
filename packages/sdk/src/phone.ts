@@ -61,11 +61,13 @@ export type PhoneElement = {
   role: string;
   text: string;
   bounds: number[];
-  resourceId: string | null;
-  clickable: boolean;
-  editable: boolean;
-  scrollable: boolean;
-  secret: boolean;
+  /** The view id without its package prefix (`search_box`, not `com.app:id/search_box`). */
+  resourceId?: string | null;
+  /** Flags are present only when true. */
+  clickable?: boolean;
+  editable?: boolean;
+  scrollable?: boolean;
+  secret?: boolean;
   range?: { min: number; max: number; current: number } | null;
 };
 export type PhoneSnapshot = {
