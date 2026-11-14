@@ -213,13 +213,13 @@ export function CopilotScreen({ host, services, invoke, focused = true }: Plugin
     setAppFilter('all');
     scrollRef.current?.scrollTo({ y: theme.spacing.lg + appPanelY.current, animated: true });
   };
-  const stepTitle: Record<SetupStepId, string> = { helper: s.helperTitle, accessibility: s.accessibilityTitle, notifications: s.notificationsTitle, apps: s.appsTitle, enable: s.enableTitle };
+  const stepTitle: Record<SetupStepId, string> = { helper: s.helperTitle, accessibility: s.accessibilityTitle, overlays: s.overlaysTitle, notifications: s.notificationsTitle, apps: s.appsTitle, enable: s.enableTitle };
   const stepStatus = (step: Step): string => {
     if (step.state === 'working') return step.id === 'accessibility' ? s.accessibilityTurningOn : s.connecting;
     switch (step.id) {
       case 'helper': return step.state === 'done' ? s.connected : step.state === 'attention' ? s.connectionFailed : s.stepNeeded;
       case 'accessibility': return step.state === 'done' ? s.enabled : status?.helper ? s.stepNeeded : s.stepAutomatic;
-      case 'notifications': return step.state === 'done' ? s.allowed : s.stepRecommended;
+      case 'notifications': case 'overlays': return step.state === 'done' ? s.allowed : s.stepRecommended;
       case 'apps': return step.state === 'attention' ? fill(s.appsMissing, { n: missingPackages.length }) : step.state === 'done' ? fill(s.appsCount, { n: selected.length }) : s.stepNeeded;
       case 'enable': return step.state === 'done' ? s.on : s.stepNeeded;
     }
@@ -289,6 +289,11 @@ export function CopilotScreen({ host, services, invoke, focused = true }: Plugin
             <Button title={notifications === 'denied' ? s.openNotificationSettings : s.allowNotifications} variant="secondary" size="sm" disabled={busy}
               onPress={() => void run(async () => { setNotifications((await services.notify.fix('notifications')).notifications); })} />
           </> : null}
+        </>;
+      case 'overlays':
+        return <>
+          {why(s.overlaysWhy)}
+          {step.state !== 'done' ? <Button title={s.allowOverlays} variant="secondary" size="sm" disabled={busy} onPress={() => void run(() => services.phone.setup('overlays'))} /> : null}
         </>;
       case 'apps':
         return <>

@@ -7,10 +7,12 @@ import type { NotifyPermission, PhoneReadiness } from '@pku-harness/sdk';
  * - helper: the on-device helper started through Wireless debugging (virtual display, input).
  * - accessibility: Copilot's accessibility service (reads screens, floating controls). Turned on
  *   by the helper itself once it connects.
+ * - overlays: "Display over other apps", so the floating window shows in Samsung screen recordings.
+ *   Recommended, never blocking.
  * - apps: at least one allowed app, all still installed.
  * - enable: the user's switch for future tasks.
  */
-export type SetupStepId = 'helper' | 'accessibility' | 'notifications' | 'apps' | 'enable';
+export type SetupStepId = 'helper' | 'accessibility' | 'overlays' | 'notifications' | 'apps' | 'enable';
 
 /** done; todo = not done yet; working = in progress (helper connecting, accessibility turning on); attention = failed or broken. */
 export type SetupStepState = 'done' | 'todo' | 'working' | 'attention';
@@ -38,7 +40,7 @@ export type CopilotSetup = {
   required: number;
 };
 
-const ORDER: readonly SetupStepId[] = ['notifications', 'helper', 'accessibility', 'apps', 'enable'];
+const ORDER: readonly SetupStepId[] = ['notifications', 'helper', 'accessibility', 'overlays', 'apps', 'enable'];
 
 function stateOf(id: SetupStepId, input: SetupInput): SetupStepState {
   const { readiness: r } = input;
@@ -52,6 +54,8 @@ function stateOf(id: SetupStepId, input: SetupInput): SetupStepState {
       return r.accessibilityAuto ? 'working' : 'todo';
     case 'notifications':
       return input.notifications === 'granted' ? 'done' : 'todo';
+    case 'overlays':
+      return r.overlays ? 'done' : 'todo';
     case 'apps':
       if (input.missingPackages > 0) return 'attention';
       return input.configuredPackages.length > 0 ? 'done' : 'todo';
@@ -62,7 +66,7 @@ function stateOf(id: SetupStepId, input: SetupInput): SetupStepState {
 
 /** Derive every setup step and the overall phase from live readiness and saved preferences. */
 export function deriveSetup(input: SetupInput): CopilotSetup {
-  const steps = ORDER.map((id) => ({ id, state: stateOf(id, input), required: id !== 'notifications' }));
+  const steps = ORDER.map((id) => ({ id, state: stateOf(id, input), required: id !== 'notifications' && id !== 'overlays' }));
   const required = steps.filter((s) => s.required);
   const done = required.filter((s) => s.state === 'done').length;
   const current = required.find((s) => s.state !== 'done')?.id ?? null;

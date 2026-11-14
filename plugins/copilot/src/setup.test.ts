@@ -12,7 +12,7 @@ describe('deriveSetup', () => {
     const setup = deriveSetup(fresh);
     expect(setup.phase).toBe('setup');
     expect(setup.current).toBe('helper');
-    expect(setup.steps.map((s) => s.id)).toEqual(['notifications', 'helper', 'accessibility', 'apps', 'enable']);
+    expect(setup.steps.map((s) => s.id)).toEqual(['notifications', 'helper', 'accessibility', 'overlays', 'apps', 'enable']);
     expect(setup).toMatchObject({ done: 0, required: 4 });
   });
 
@@ -26,6 +26,14 @@ describe('deriveSetup', () => {
     expect(states({ ...ready, notifications: 'denied' }).notifications).toBe('todo');
     expect(states({ ...ready, notifications: null }).notifications).toBe('todo');
     expect(missingSteps(setup)).toEqual([]);
+  });
+
+  test('display over other apps is recommended, never blocking', () => {
+    const setup = deriveSetup(ready);
+    expect(setup.phase).toBe('ready');
+    expect(states(ready).overlays).toBe('todo');
+    expect(states({ ...ready, readiness: { ...ready.readiness, overlays: true } }).overlays).toBe('done');
+    expect(setup.steps.find((s) => s.id === 'overlays')?.required).toBe(false);
   });
 
   test('the current step is the first required one left, in order', () => {

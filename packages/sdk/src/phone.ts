@@ -18,6 +18,8 @@ export type PhoneReadiness = {
   locked: boolean;
   /** Android blocks accessibility for this install until the user allows restricted settings in App info. */
   restricted?: boolean;
+  /** "Display over other apps" is allowed: Copilot's floating window then shows in Samsung screen recordings. */
+  overlays?: boolean;
   sessionId: string | null;
   packages: string[];
   handedOver: boolean;
@@ -87,7 +89,7 @@ export type PhoneLook = { screen: PhoneSnapshot; image: { data: string; mediaTyp
 
 export interface PhoneService {
   readiness(signal?: AbortSignal): Promise<PhoneReadiness>;
-  setup(kind: 'accessibility' | 'wireless' | 'appInfo'): Promise<void>;
+  setup(kind: 'accessibility' | 'wireless' | 'appInfo' | 'overlays'): Promise<void>;
   /** Pair with the six-digit code; without a port, the pairing dialog found on this phone is used. */
   pair(code: string, port?: number): Promise<PhoneReadiness>;
   /**
