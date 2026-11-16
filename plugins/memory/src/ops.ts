@@ -1,6 +1,6 @@
 import type { Actor } from '@pku-harness/sdk';
 
-import { admission, checkText, dropRetractionsOf, factLine, logChanges, MAX_ITEMS, MAX_PENDING, SOFT_LIMIT, type Change, type Rejection } from './policy';
+import { admission, checkText, dropRetractionsOf, factLine, logChanges, MAX_ITEMS, MAX_PENDING, MAX_ROUTE_TEXT, MAX_TEXT, SOFT_LIMIT, type Change, type Rejection } from './policy';
 import { findSimilar, rankForQuery, type Memory, type MemoryKind } from './rank';
 
 /**
@@ -28,12 +28,14 @@ type Out = { state: State; result: WriteResult };
 const same = (a: string, b: string) => factLine(a).toLowerCase() === factLine(b).toLowerCase();
 
 /** Save a new memory, or update `replaces` (an id; 'new' = keep both despite a similar one). */
+const maxText = (kind: MemoryKind | undefined) => (kind === 'route' ? MAX_ROUTE_TEXT : MAX_TEXT);
+
 export function remember(state: State, input: TextInput & { replaces?: string }, who: Who, now: number, newId: () => string): Out {
-  const checked = checkText(input.text);
+  const target = input.replaces && input.replaces !== 'new' ? state.items.find((m) => m.id === input.replaces) : undefined;
+  const checked = checkText(input.text, maxText(input.kind ?? target?.kind));
   if (!checked.ok) return { state, result: { status: 'rejected', reason: checked.reason } };
   const text = checked.text;
   if (input.replaces && input.replaces !== 'new') {
-    const target = state.items.find((m) => m.id === input.replaces);
     if (!target) return { state, result: { status: 'notFound' } };
     return writeText(state, target, { ...input, text }, who, now, newId);
   }
@@ -46,7 +48,7 @@ export function remember(state: State, input: TextInput & { replaces?: string },
   }
   // At the cap the model is asked to consolidate; nothing is evicted silently.
   if (state.items.length >= MAX_ITEMS) return { state, result: { status: 'full' } };
-  const adm = admission({ ...who, userSaid: input.userSaid });
+  const adm = admission({ ...who, userSaid: input.userSaid, route: input.kind === 'route' });
   if (adm.status === 'pending' && state.items.filter((m) => m.status === 'pending').length >= MAX_PENDING) return { state, result: { status: 'pendingFull' } };
   const memory: Memory = {
     id: newId(),
@@ -72,7 +74,7 @@ export function remember(state: State, input: TextInput & { replaces?: string },
  * model may have seen); an untrusted one becomes a pending replacement the user approves.
  */
 function writeText(state: State, target: Memory, input: TextInput, who: Who, now: number, newId: () => string): Out {
-  const adm = admission({ ...who, userSaid: input.userSaid });
+  const adm = admission({ ...who, userSaid: input.userSaid, route: (input.kind ?? target.kind) === 'route' });
   const source = { kind: adm.source, ...(who.sessionId ? { sessionId: who.sessionId } : null) };
   if (adm.status === 'active' || target.status === 'pending') {
     const memory: Memory = { ...target, text: input.text, kind: input.kind ?? target.kind, pinned: input.pinned ?? target.pinned, updatedAt: now, source };
@@ -105,7 +107,7 @@ export function update(state: State, input: { id: string; text?: string; kind?: 
   const target = state.items.find((m) => m.id === input.id);
   if (!target) return { state, result: { status: 'notFound' } };
   if (input.text != null && !same(input.text, target.text)) {
-    const checked = checkText(input.text);
+    const checked = checkText(input.text, maxText(input.kind ?? target.kind));
     if (!checked.ok) return { state, result: { status: 'rejected', reason: checked.reason } };
     return writeText(state, target, { text: checked.text, kind: input.kind, pinned: input.pinned }, who, now, newId);
   }

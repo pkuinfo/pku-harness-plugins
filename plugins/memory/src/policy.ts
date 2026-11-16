@@ -15,6 +15,8 @@ import { selectSnapshot, type Memory, type SourceKind } from './rank';
  */
 
 export const MAX_TEXT = 120;
+/** A route lists every step, so it gets more room than a one-line fact. */
+export const MAX_ROUTE_TEXT = 400;
 export const MAX_ITEMS = 300;
 export const MAX_PENDING = 30;
 /** Above this many memories, `remember` suggests consolidating. */
@@ -70,19 +72,19 @@ export function isInstruction(text: string): boolean {
 }
 
 /** Clean and check a memory's text. */
-export function checkText(raw: string): { ok: true; text: string } | { ok: false; reason: Rejection } {
+export function checkText(raw: string, max = MAX_TEXT): { ok: true; text: string } | { ok: false; reason: Rejection } {
   const text = cleanText(raw);
   if ([...text].length < 2) return { ok: false, reason: 'empty' };
   if (containsSecret(text) || containsSecret(raw)) return { ok: false, reason: 'secret' };
   if (isInstruction(text)) return { ok: false, reason: 'instruction' };
-  if ([...text].length > MAX_TEXT) return { ok: false, reason: 'tooLong' };
+  if ([...text].length > max) return { ok: false, reason: 'tooLong' };
   return { ok: true, text };
 }
 
 /** Errors for the model (tool results); the memory screen shows its own localized ones. */
 export const REJECTION_MESSAGE: Record<Rejection, string> = {
   empty: '记忆内容为空',
-  tooLong: `记忆要精简成一句话（${MAX_TEXT} 字以内），请缩短后再记`,
+  tooLong: `记忆要精简成一句话（${MAX_TEXT} 字以内；Copilot 路线 ${MAX_ROUTE_TEXT} 字以内），请缩短后再记`,
   secret: '不会记住密码、验证码、证件号、银行卡号、手机号或密钥一类的信息',
   instruction: '记忆要写成关于用户的陈述（如"用户喜欢……"），不能是给 AI 的指令',
 };
@@ -94,9 +96,13 @@ export const REJECTION_MESSAGE: Record<Rejection, string> = {
  * Exception: the user's own message in this turn asked to remember (`TurnInfo.userAsked`) — saved
  * at once, since third-party text can't write the user's message.
  */
-export function admission(o: { actor: Actor; tainted?: boolean; userAsked?: boolean; autoRemember: boolean; userSaid?: boolean }): { status: Memory['status']; source: SourceKind } {
+export function admission(o: { actor: Actor; tainted?: boolean; userAsked?: boolean; autoRemember: boolean; userSaid?: boolean; route?: boolean }): { status: Memory['status']; source: SourceKind } {
   if (o.actor === 'user') return { status: 'active', source: 'ui' };
   if (o.actor === 'scheduler') return { status: 'pending', source: 'inferred' };
+  // A route is written right after Copilot read an app's screens, so its turn is always tainted;
+  // waiting for approval would stop Copilot learning. It only lists taps in that app, is never in
+  // the chat snapshot, and every tap still goes through Copilot's action checks.
+  if (o.route && o.tainted !== undefined) return { status: o.autoRemember ? 'active' : 'pending', source: 'inferred' };
   // The user's own message asked to remember: that is their intent, whatever the turn read.
   if (o.userAsked && o.tainted !== undefined) return { status: 'active', source: 'user_said' };
   const source: SourceKind = o.userSaid ? 'user_said' : 'inferred';
@@ -106,7 +112,7 @@ export function admission(o: { actor: Actor; tainted?: boolean; userAsked?: bool
 const memorySchema = z.object({
   id: z.string().min(1),
   text: z.string(),
-  kind: z.enum(['preference', 'fact', 'routine', 'person', 'other']).catch('other'),
+  kind: z.enum(['preference', 'fact', 'routine', 'person', 'other', 'route']).catch('other'),
   pinned: z.boolean().catch(false),
   uses: z.number().catch(0),
   createdAt: z.number().catch(0),

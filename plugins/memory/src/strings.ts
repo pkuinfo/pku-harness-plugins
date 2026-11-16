@@ -4,7 +4,7 @@ export const strings = defineStrings({
   'zh-Hans': {
     title: 'AI 记忆',
     subtitle: 'Memory',
-    kinds: { preference: '偏好', fact: '信息', routine: '习惯', person: '人', other: '其他' } as Record<string, string>,
+    kinds: { preference: '偏好', fact: '信息', routine: '习惯', person: '人', other: '其他', route: 'Copilot 路线' } as Record<string, string>,
     kindOptions: { preference: '偏好', fact: '信息', routine: '习惯', person: '人', other: '其他' } as Record<string, string>,
     sources: { user_said: '你说的', ui: '设置里添加', inferred: 'AI 推断' } as Record<string, string>,
     intro: 'AI 会记下你提到的长期信息，每次新对话开始时带上。记忆只保存在这台手机上；置顶的排在最前。',
@@ -46,6 +46,7 @@ export const strings = defineStrings({
     textHint: (n: number, max: number) => `一句话，${n}/${max}`,
     kind: '类型',
     pinLabel: '置顶（每次都带上）',
+    routeNote: 'Copilot 上次完成这件事时走的最短步骤。下次做同样的事时它会照着走，不再从头摸索。改错了的步骤可以直接改，删掉后它会重新摸索。',
     pendingNote: '这条还在等你确认，确认前 AI 看不到它。',
     save: '保存',
     delete: '删除',
@@ -65,7 +66,7 @@ export const strings = defineStrings({
   en: {
     title: 'AI memory',
     subtitle: '',
-    kinds: { preference: 'Preferences', fact: 'Facts', routine: 'Habits', person: 'People', other: 'Other' } as Record<string, string>,
+    kinds: { preference: 'Preferences', fact: 'Facts', routine: 'Habits', person: 'People', other: 'Other', route: 'Copilot routes' } as Record<string, string>,
     kindOptions: { preference: 'Likes', fact: 'Fact', routine: 'Habit', person: 'Person', other: 'Other' } as Record<string, string>,
     sources: { user_said: 'You said', ui: 'Added here', inferred: 'AI guess' } as Record<string, string>,
     intro: 'The AI notes down lasting things you mention and brings them into each new chat. Memories stay on this phone; pinned ones come first.',
@@ -106,6 +107,7 @@ export const strings = defineStrings({
     textHint: (n: number, max: number) => `One line, ${n}/${max}`,
     kind: 'Kind',
     pinLabel: 'Pin (always included)',
+    routeNote: 'The shortest steps Copilot took the last time it did this. Next time it follows them instead of finding its way again. Fix a wrong step here, or delete the route and it finds its way again.',
     pendingNote: 'This one is waiting for your approval; the AI can’t see it yet.',
     save: 'Save',
     delete: 'Delete',

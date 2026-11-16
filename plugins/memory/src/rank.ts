@@ -5,8 +5,15 @@
  * plus small boosts for pinned, recently updated and frequently used memories. Pure, unit-tested.
  */
 
-export type MemoryKind = 'preference' | 'fact' | 'routine' | 'person' | 'other';
+export type MemoryKind = 'preference' | 'fact' | 'routine' | 'person' | 'other' | 'route';
+/** Kinds the user picks from when writing a memory. */
 export const KINDS: readonly MemoryKind[] = ['preference', 'fact', 'routine', 'person', 'other'];
+/**
+ * Every kind, in snapshot and screen order. A route is the fastest way Copilot found to get
+ * something done in an app (the taps, in order): recalled when the same task comes again, never
+ * in the per-chat snapshot.
+ */
+export const ALL_KINDS: readonly MemoryKind[] = [...KINDS, 'route'];
 
 /** Who a memory came from: the user's own words in chat, the memory screen, or the AI's guess. */
 export type SourceKind = 'user_said' | 'ui' | 'inferred';
@@ -68,7 +75,7 @@ export function score(m: Memory, query: string, now: number): number {
 /** Snapshot order: pinned first, then by kind (KINDS order), then oldest first, then id. */
 export function bySnapshotOrder(a: Ordered, b: Ordered): number {
   if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
-  const k = KINDS.indexOf(a.kind) - KINDS.indexOf(b.kind);
+  const k = ALL_KINDS.indexOf(a.kind) - ALL_KINDS.indexOf(b.kind);
   if (k) return k;
   if (a.createdAt !== b.createdAt) return a.createdAt - b.createdAt;
   return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
@@ -81,7 +88,7 @@ export function bySnapshotOrder(a: Ordered, b: Ordered): number {
 export function selectSnapshot(memories: Memory[], limit = 30, maxChars = 1500): Memory[] {
   const out: Memory[] = [];
   let chars = 0;
-  for (const m of memories.filter((x) => x.status === 'active').sort(bySnapshotOrder)) {
+  for (const m of memories.filter((x) => x.status === 'active' && x.kind !== 'route').sort(bySnapshotOrder)) {
     if (out.length >= limit || chars + m.text.length > maxChars) break;
     out.push(m);
     chars += m.text.length;

@@ -18,13 +18,11 @@ export type PhoneReadiness = {
   locked: boolean;
   /** Android blocks accessibility for this install until the user allows restricted settings in App info. */
   restricted?: boolean;
-  /** "Display over other apps" is allowed: Copilot's floating window then shows in Samsung screen recordings. */
-  overlays?: boolean;
   sessionId: string | null;
   packages: string[];
   handedOver: boolean;
-  /** While handed over: Android reloaded the app on its way to the user's screen (a WeChat mini program is back on its home page). */
-  handoffRestarted?: boolean;
+  /** Handed over, but the app reloaded on its way to the user's screen and Copilot is tapping it back to its page there. */
+  restoring?: boolean;
   paused?: boolean;
 };
 
@@ -93,7 +91,7 @@ export type PhoneLook = { screen: PhoneSnapshot; image: { data: string; mediaTyp
 
 export interface PhoneService {
   readiness(signal?: AbortSignal): Promise<PhoneReadiness>;
-  setup(kind: 'accessibility' | 'wireless' | 'appInfo' | 'overlays'): Promise<void>;
+  setup(kind: 'accessibility' | 'wireless' | 'appInfo'): Promise<void>;
   /** Pair with the six-digit code; without a port, the pairing dialog found on this phone is used. */
   pair(code: string, port?: number): Promise<PhoneReadiness>;
   /**
@@ -131,6 +129,10 @@ export interface PhoneService {
    * button), then waits until they tap Done, the session ends, or `timeoutMs` passes. Lets a task
    * continue by itself after a payment or login. Missing on hosts or APKs that predate it.
    */
-  handoffAndWait?(sessionId: string, note: string, timeoutMs: number, signal?: AbortSignal): Promise<{ handedBack: boolean; ended: boolean; timedOut?: boolean }>;
+  /**
+   * Hand the app to the user and wait for Done. restarted: the app reloaded on its way to the user's
+   * screen (nothing waited): bring it back to its page there, then call this again to give the user control.
+   */
+  handoffAndWait?(sessionId: string, note: string, timeoutMs: number, signal?: AbortSignal): Promise<{ handedBack: boolean; ended: boolean; timedOut?: boolean; restarted?: boolean }>;
   handback(sessionId: string): Promise<void>;
 }

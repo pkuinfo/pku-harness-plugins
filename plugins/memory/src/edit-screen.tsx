@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { Alert, View } from 'react-native';
 
 import { memoryChanged } from './events';
-import { checkText, cleanText, MAX_TEXT } from './policy';
+import { checkText, cleanText, MAX_ROUTE_TEXT, MAX_TEXT } from './policy';
 import { KINDS, type MemoryKind, type MemoryView } from './rank';
 import { strings } from './strings';
 
@@ -43,13 +43,16 @@ export function EditMemoryScreen({ host, invoke, params }: PluginScreenProps) {
   }, [id, invoke]);
 
   const length = [...cleanText(text)].length;
+  // A route Copilot saved stays a route: it lists steps, so it has its own length limit and no kind picker.
+  const route = kind === 'route';
+  const max = route ? MAX_ROUTE_TEXT : MAX_TEXT;
   const done = () => {
     memoryChanged();
     host.dismiss(BACK);
   };
 
   const save = async () => {
-    const checked = checkText(text);
+    const checked = checkText(text, max);
     if (!checked.ok) {
       host.haptics.warning();
       return setError(s.errors[checked.reason]);
@@ -118,7 +121,7 @@ export function EditMemoryScreen({ host, invoke, params }: PluginScreenProps) {
           setError(null);
         }}
         placeholder={s.textPlaceholder}
-        hint={s.textHint(length, MAX_TEXT)}
+        hint={s.textHint(length, max)}
         multiline
         autoFocus={!id}
       />
@@ -127,13 +130,21 @@ export function EditMemoryScreen({ host, invoke, params }: PluginScreenProps) {
           {error}
         </Text>
       ) : null}
-      <View style={{ gap: t.spacing.sm }}>
-        <Text variant="callout" tone="muted">
-          {s.kind}
+      {route ? (
+        <Text variant="caption" tone="muted">
+          {s.routeNote}
         </Text>
-        <Segmented options={KINDS.map((k) => ({ label: s.kindOptions[k], value: k }))} value={kind} onChange={(v) => setKind(v as MemoryKind)} />
-      </View>
-      <Switch value={pinned} onValueChange={setPinned} label={s.pinLabel} />
+      ) : (
+        <>
+          <View style={{ gap: t.spacing.sm }}>
+            <Text variant="callout" tone="muted">
+              {s.kind}
+            </Text>
+            <Segmented options={KINDS.map((k) => ({ label: s.kindOptions[k], value: k }))} value={kind} onChange={(v) => setKind(v as MemoryKind)} />
+          </View>
+          <Switch value={pinned} onValueChange={setPinned} label={s.pinLabel} />
+        </>
+      )}
     </SheetScreen>
   );
 }

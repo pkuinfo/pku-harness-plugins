@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Share } from 'react-native';
 
 import { onMemoryChanged } from './events';
-import { bySnapshotOrder, KINDS, type MemoryView as Item } from './rank';
+import { ALL_KINDS, bySnapshotOrder, type MemoryView as Item } from './rank';
 import { strings } from './strings';
 
 const SOURCE_TONE = { user_said: 'info', ui: 'neutral', inferred: 'warn' } as const;
@@ -42,7 +42,7 @@ export function MemoryScreen({ host, invoke }: PluginScreenProps) {
   const pending = useMemo(() => (items ?? []).filter((m) => m.status === 'pending').sort((a, b) => a.createdAt - b.createdAt), [items]);
   const groups = useMemo(() => {
     const active = (items ?? []).filter((m) => m.status === 'active').sort(bySnapshotOrder);
-    return KINDS.map((k) => ({ kind: k, list: active.filter((m) => m.kind === k) })).filter((g) => g.list.length);
+    return ALL_KINDS.map((k) => ({ kind: k, list: active.filter((m) => m.kind === k) })).filter((g) => g.list.length);
   }, [items]);
   const byId = useMemo(() => new Map((items ?? []).map((m) => [m.id, m])), [items]);
   const activeCount = groups.reduce((n, g) => n + g.list.length, 0);
@@ -79,7 +79,7 @@ export function MemoryScreen({ host, invoke }: PluginScreenProps) {
         ? JSON.stringify({ exportedAt: new Date().toISOString(), memories: list }, null, 2)
         : [
             s.exportHeader(list.length),
-            ...KINDS.flatMap((k) => {
+            ...ALL_KINDS.flatMap((k) => {
               const of = list.filter((m) => m.kind === k);
               return of.length ? ['', s.kinds[k], ...of.map((m) => `- ${s.exportLine(m.text, s.sources[m.source] ?? m.source, m.status === 'pending')}`)] : [];
             }),
