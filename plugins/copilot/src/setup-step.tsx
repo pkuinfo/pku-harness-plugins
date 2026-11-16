@@ -37,20 +37,20 @@ export function SetupStep({ host, index, total, title, status, state, current, s
     <View style={{ borderBottomWidth: index < total ? StyleSheet.hairlineWidth : 0, borderColor: theme.colors.border }}>
       <Pressable onPress={onToggle} haptic={false} scaleTo={1} accessibilityRole="button"
         accessibilityLabel={`${stepLabel}, ${title}, ${status}`}
-        style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.md, paddingVertical: theme.spacing.md, minHeight: theme.spacing.xxxl }}>
+        style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.md, paddingVertical: theme.spacing.sm, minHeight: theme.spacing.xxxl }}>
         <View style={{ width: size, height: size, borderRadius: theme.radius.full, backgroundColor: badgeFill, alignItems: 'center', justifyContent: 'center' }}>
           {done ? <Icon name="check" size={theme.spacing.md + theme.spacing.xxs} color={theme.colors.up} />
             : attention ? <Icon name="warning" size={theme.spacing.md + theme.spacing.xxs} color={theme.colors.warn} />
             : <Text variant="micro" tone={current ? 'onAccent' : 'muted'}>{index}</Text>}
         </View>
         <View style={{ flex: 1 }}>
-          <Text variant={current ? 'bodyStrong' : 'body'} tone={done ? 'muted' : 'default'}>{title}</Text>
+          <Text variant="callout" tone={done ? 'muted' : 'default'}>{title}</Text>
         </View>
         <Text variant="caption" tone={statusTone}>{status}</Text>
         <Icon name={expanded ? 'chevronDown' : 'chevronRight'} size={theme.spacing.lg} color={theme.colors.textFaint} />
       </Pressable>
       {expanded && children ? (
-        <View style={{ gap: theme.spacing.md, paddingLeft: size + theme.spacing.md, paddingBottom: theme.spacing.lg }}>{children}</View>
+        <View style={{ gap: theme.spacing.sm, paddingLeft: size + theme.spacing.md, paddingBottom: theme.spacing.md }}>{children}</View>
       ) : null}
     </View>
   );

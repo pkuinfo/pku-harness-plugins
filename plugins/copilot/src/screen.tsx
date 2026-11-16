@@ -348,7 +348,7 @@ export function CopilotScreen({ host, services, invoke, focused = true }: Plugin
         </View>
       </View>
     ) : null} back trailing={<IconButton icon="refresh" label={s.refresh} variant="ghost" disabled={busy || appsLoading} onPress={() => void reload()} />}>
-      <View style={{ gap: theme.spacing.xl, paddingRight: rail ? theme.spacing.xl : 0 }}>
+      <View style={{ gap: theme.spacing.lg, paddingRight: rail ? theme.spacing.xl : 0 }}>
         {error ? <View style={{ gap: theme.spacing.sm }}><Text tone="down">{error}</Text><Button title={s.retry} variant="ghost" size="sm" disabled={busy} onPress={() => void reload()} /></View> : null}
         {!status || !setup ? <View style={{ gap: theme.spacing.sm, padding: theme.spacing.lg }}>
           <Skeleton width="65%" height={theme.spacing.lg} />
@@ -369,12 +369,10 @@ export function CopilotScreen({ host, services, invoke, focused = true }: Plugin
               </View>
             </Surface>
           </FadeIn> : null}
-          {setup.phase === 'ready' || status.enabled ? <ListGroup variant="plain">
+          {setup.phase === 'ready' || status.enabled ? <ListGroup variant="plain" footer={s.screenshotsWhy}>
             <ListRow compact title={s.enableCopilot} subtitle={status.enabled ? setup.phase === 'ready' ? s.readyForTasks : s.connectionNeeded : s.off} accessory={
               <Switch label={s.enableCopilot} value={status.enabled} disabled={!status.enabled && !enableAllowed} onValueChange={(enabled) => choose(enabled, selected)} />
             } />
-          </ListGroup> : null}
-          {setup.phase === 'ready' || status.enabled ? <ListGroup variant="plain" footer={s.screenshotsWhy}>
             <ListRow compact title={s.screenshots} accessory={
               <Switch label={s.screenshots} value={status.screenshots !== false} onValueChange={setScreenshots} />
             } />
@@ -382,7 +380,8 @@ export function CopilotScreen({ host, services, invoke, focused = true }: Plugin
           {setup.phase === 'ready' ? <ListGroup variant="plain">
             <ListRow compact leading={<Icon name="shield" size={theme.spacing.lg} color={theme.colors.textMuted} />} title={s.permissions} subtitle={s.permissionsReady}
               chevron={false} onPress={() => setPermissionsOpen(!permissionsOpen)} accessory={<Icon name={permissionsOpen ? 'chevronDown' : 'chevronRight'} size={theme.spacing.lg} color={theme.colors.textMuted} />} />
-            {permissionsOpen ? checklist : null}
+            {/* Inset like the rows above: the steps sit inside the same card. */}
+            {permissionsOpen ? <View style={{ paddingHorizontal: theme.spacing.md }}>{checklist}</View> : null}
           </ListGroup> : <View style={{ gap: theme.spacing.md }}>
             <View style={{ gap: theme.spacing.sm }}>
               <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: theme.spacing.sm }}>
