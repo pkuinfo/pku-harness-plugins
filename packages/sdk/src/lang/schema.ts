@@ -187,6 +187,11 @@ export const viewSchema = z
      * optionally raise brightness (payment codes, OTP digits); host.useSecureDisplay.
      */
     secure: z.object({ brightness: z.boolean().optional() }).strict().optional(),
+    /**
+     * Screens only: an endless feed. The screen scrolls the spec itself with pull to refresh (bindings
+     * reload, loadMore lists start over), and EndReached + loadMore load the next pages.
+     */
+    feed: z.boolean().optional(),
     /** UI text per language, read in the spec as { "$state": "/t/<key>" } (zh-Hans is the fallback). */
     strings: z.object({ 'zh-Hans': z.record(z.string(), z.string()), en: z.record(z.string(), z.string()).optional() }).optional(),
     spec: z.object({ root: z.string(), elements: z.record(z.string(), z.unknown()), state: z.record(z.string(), z.unknown()).optional() }),

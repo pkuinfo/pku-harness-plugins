@@ -3,7 +3,7 @@ spec: 1
 id: treehole
 name: 树洞
 description: 北大树洞：浏览、搜索、阅读帖子，关注帖子，匿名发帖和回复。
-version: 0.2.0
+version: 0.3.0
 author: pkuinfo
 icon: chat
 homepage: https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/treehole
@@ -20,6 +20,8 @@ tools:
   followed: tools/followed.yaml
   search: tools/search.yaml
   read: tools/read.yaml
+  comments: tools/comments.yaml
+  image: tools/image.yaml
   mine: tools/mine.yaml
   follow: tools/follow.yaml
   unfollow: tools/unfollow.yaml
@@ -30,6 +32,7 @@ widgets:
   latest: widgets/latest.json
 screens:
   home: screens/home.json
+  search: screens/search.json
   hole: screens/hole.json
 settings:
   - { screen: home, title: 树洞, subtitle: 浏览最新帖子、完成短信验证, icon: chat }
@@ -44,6 +47,8 @@ i18n:
       followed: { title: Followed posts, summary: New activity on the posts you follow }
       search: { title: Search Treehole, summary: Search Treehole posts by keyword }
       read: { title: Read post, summary: Read one post and all its comments }
+      comments: { title: Post comments, summary: One page of a post's comments }
+      image: { title: Treehole picture, summary: One picture from a post or comment }
       mine: { title: My posts, summary: The posts you have written }
       follow: { title: Follow post, summary: Follow a post to get notified of new replies }
       unfollow: { title: Unfollow post, summary: Stop following a post }
@@ -51,7 +56,7 @@ i18n:
       reply: { title: Reply to post, summary: Reply publicly under your anonymous name (you confirm the text) }
       sendCode: { title: Send Treehole verification code, summary: Text a Treehole verification code to your phone }
     widgets: { latest: { title: Latest on Treehole, description: 'The 3 newest Treehole posts (5 when large); tap one to open it.' } }
-    screens: { home: { title: Treehole }, hole: { title: "Treehole #{pid}" } }
+    screens: { home: { title: Treehole }, search: { title: "Search: {q}" }, hole: { title: "Treehole #{pid}" } }
     settings: { home: { title: Treehole, subtitle: Browse the latest posts and verify by SMS } }
     commands: { treehole: { prompt: 'Search Treehole (树洞) for “{{input}}” and summarise what people are saying.', description: Search Treehole and summarise, argHint: Keywords, aliases: [hole] } }
 ---

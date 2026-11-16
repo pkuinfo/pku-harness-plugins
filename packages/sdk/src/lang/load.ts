@@ -149,7 +149,7 @@ function checkStep(c: Ctx, where: string, step: unknown) {
   if ('let' in s && (typeof s.let !== 'string' || !/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(s.let))) c.issues.push(`${c.file} › ${where}.let: must be a name`);
   for (const f of Object.keys(s)) if (EXPR_FIELDS.has(f) && !(kind === 'call' && f === 'input' && typeof s[f] === 'object')) checkExpr(c, `${where}.${f}`, s[f]);
   if (kind === 'request' || (kind === 'each' && s.request)) checkRequest(c, `${where}.request`, s.request);
-  if (s.as !== undefined && !['json', 'text', 'html', 'response'].includes(String(s.as))) c.issues.push(`${c.file} › ${where}.as: json, text, html or response`);
+  if (s.as !== undefined && !['json', 'text', 'html', 'response', 'image'].includes(String(s.as))) c.issues.push(`${c.file} › ${where}.as: json, text, html, response or image`);
   if (kind === 'each' && !s.request && !s.steps && s.value === undefined) c.issues.push(`${c.file} › ${where}: each needs request, steps or value`);
   if (Array.isArray(s.steps)) checkSteps(c, `${where}.steps`, s.steps);
   if (kind === 'paginate') {

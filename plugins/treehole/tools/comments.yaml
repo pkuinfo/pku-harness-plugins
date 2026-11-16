@@ -1,0 +1,35 @@
+# One page of a hole's comments (the web app's getReplyList: comment/list { pid, page, limit,
+# sort }; api.rs get_hole pages it the same way). For screens that load a long thread page by page;
+# treehole__read gives the agent the whole thread at once.
+title: 树洞评论
+summary: 一个树洞帖子的一页评论
+description: 'One page of a hole''s comments, oldest first (comment/list). For reading a whole thread use treehole__read.'
+effect: read
+untrusted: true
+input:
+  pid: { type: integer, min: 1, description: 'hole id (the number after #)' }
+  page: { type: integer, min: 1, max: 200, default: 1, description: default 1 }
+  limit: { type: integer, min: 1, max: 50, default: 20, description: default 20 }
+  code: { type: string, optional: true, trim: true, min: 4, max: 8, description: 'SMS code, only when a previous call returned verification_required' }
+steps:
+  - let: data
+    value: "null"
+  - try:
+      - let: data
+        ability: verify.treehole
+        args: "{ request: { url: '/chapi/api/v3/comment/list?pid=' + input.pid + '&page=' + input.page + '&limit=' + input.limit + '&sort=0&comment_stream=1' }, code: input.code, via: 'sms', kind: 'login' }"
+    catch:
+      - check: "false"
+        error: "${failure(error.message)}"
+  - if: "obj(data).status == 'verification_required'"
+    then:
+      - return: VERIFY
+  - check: hasList(data)
+    error: 树洞返回的数据缺少评论列表
+return: |
+  {
+    status: 'ok',
+    page: input.page,
+    note: UNTRUSTED,
+    comments: comments(data, 'list').map(c => comment(c, 1000)),
+  }

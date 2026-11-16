@@ -1,0 +1,9 @@
+# An old picture post has no media_ids: the picture is looked up by pid (thumbnail even for full).
+tool: image
+input: { pid: 8132000, full: true }
+responses:
+  - match: /media/getThumbnail?pid=8132000
+    campus: treehole
+    body: iVBORw0KGgo=
+    headers: { content-type: image/png }
+expect: { uri: "data:image/png;base64,iVBORw0KGgo=" }

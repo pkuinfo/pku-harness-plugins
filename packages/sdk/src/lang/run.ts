@@ -258,7 +258,7 @@ async function request(run: Run, raw: unknown, as: unknown, scope: Scope): Promi
               followRedirects,
               timeoutMs,
             }
-          : { url, method: method as 'GET' | 'POST', headers, body, contentType, followRedirects, timeoutMs };
+          : { url, method: method as 'GET' | 'POST', headers, body, contentType, followRedirects, timeoutMs, ...(as === 'image' ? { responseType: 'base64' as const } : {}) };
       res = await run.env.services.campus.request(req.campus, creq);
     } else {
       let u: URL;
@@ -268,6 +268,7 @@ async function request(run: Run, raw: unknown, as: unknown, scope: Scope): Promi
         throw new ToolFailure(`not an absolute URL: ${url} (add campus: <service> for campus paths)`);
       }
       if (u.protocol !== 'https:') throw new ToolFailure(`only https:// is allowed (${u.host})`);
+      if (as === 'image') throw new ToolFailure("'as: image' is only for campus requests (campus: <service>)");
       if (!hostAllowed(u.hostname, run.env.manifest.network)) throw new ToolFailure(`host ${u.hostname} is not declared in PLUGIN.md (network: [...])`);
       if (contentType) headers['content-type'] = contentType;
       headers['user-agent'] ??= UA;
@@ -294,8 +295,15 @@ async function request(run: Run, raw: unknown, as: unknown, scope: Scope): Promi
       return req.campus ?? url;
     }
   })();
-  if (mode !== 'response' && (res.status < 200 || res.status >= 400)) throw new ToolFailure(`HTTP ${res.status} from ${shown}`);
+  if (mode !== 'response' && mode !== 'image' && (res.status < 200 || res.status >= 400)) throw new ToolFailure(`HTTP ${res.status} from ${shown}`);
   switch (mode) {
+    case 'image': {
+      // For screens (Gallery): the picture as a data: URI, or null when there is none. Kept out of
+      // the model by the tool (userOnly), as a picture is large and says nothing as text.
+      const type = (res.headers['content-type'] ?? '').split(';')[0]!.trim().toLowerCase();
+      if (res.status < 200 || res.status >= 300 || !/^image\/(jpeg|png|gif|webp|heic|heif|bmp)$/.test(type) || !res.body) return null;
+      return { uri: `data:${type};base64,${res.body}`, bytes: Math.floor((res.body.length * 3) / 4) - (res.body.endsWith('==') ? 2 : res.body.endsWith('=') ? 1 : 0) };
+    }
     case 'response':
       return { status: res.status, url: res.url, headers: res.headers, text: res.body };
     case 'text':
@@ -309,7 +317,7 @@ async function request(run: Run, raw: unknown, as: unknown, scope: Scope): Promi
         throw new ToolFailure(`${shown} did not return JSON (HTTP ${res.status}: ${squash(res.body).slice(0, 80)})`);
       }
     default:
-      throw new ToolFailure(`unknown 'as: ${mode}' (json, text, html or response)`);
+      throw new ToolFailure(`unknown 'as: ${mode}' (json, text, html, response or image)`);
   }
 }
 

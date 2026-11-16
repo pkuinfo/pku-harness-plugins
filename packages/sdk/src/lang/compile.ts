@@ -190,16 +190,26 @@ function viewComponent(pluginId: string, view: ViewDoc, tools: Record<string, To
     const data = host.useWidgetData({ spec, bindings });
     const { GenUI, Skeleton, Text } = host.components;
     const t = { ...(view.strings?.['zh-Hans'] ?? {}), ...(locale === 'en' ? (view.strings?.en ?? {}) : {}) };
-    if (data.status === 'loading' || (hasLive && !live.values && !live.error)) return createElement(Skeleton, { height: 56 });
+    // A feed screen has no padded Screen scroll around it: its loading and error states go through
+    // the feed view too (padding, and pull to refresh to try again).
+    const feed = !!view.feed && 'params' in props;
+    const note = (text: string) =>
+      feed
+        ? createElement(GenUI, { spec: { root: 'n', elements: { n: { type: 'Text', props: { text, tone: 'muted', size: 'small' } } } }, feed: true })
+        : createElement(Text, { variant: 'caption', tone: 'muted' } as never, text);
+    if (data.status === 'loading' || (hasLive && !live.values && !live.error))
+      return feed
+        ? createElement(GenUI, { spec: { root: 'l', elements: { l: { type: 'EndReached', props: { done: false, doneLabel: null } } } }, feed: true })
+        : createElement(Skeleton, { height: 56 });
     const fallback = locale === 'en' ? 'Couldn’t load' : '加载失败';
-    if (data.status === 'error' && !data.value) return createElement(Text, { variant: 'caption', tone: 'muted' } as never, data.error ?? fallback);
+    if (data.status === 'error' && !data.value) return note(data.error ?? fallback);
     // A failed refresh drops the live value: an expired payment code is never left on screen.
-    if (hasLive && !live.values) return createElement(Text, { variant: 'caption', tone: 'muted' } as never, live.error ?? fallback);
+    if (hasLive && !live.values) return note(live.error ?? fallback);
     let state: Record<string, unknown> = { ...(spec.state ?? {}), ...(data.value ?? {}), params, size: size ?? null, t };
     for (const [ptr, v] of Object.entries(live.values ?? {})) state = setPointer(state, ptr, v);
     if (hasLive) state.refreshIn = live.refreshIn;
     if (campus) state.account = { signedIn: accountOf(props.services).signedIn };
-    return createElement(GenUI, { spec: { ...spec, state } });
+    return createElement(GenUI, { spec: { ...spec, state }, feed });
   }
   return DocView;
 }
@@ -212,7 +222,8 @@ function screenComponent(pluginId: string, view: ViewDoc, tools: Record<string, 
     if (secure) props.host.useSecureDisplay({ brightness: secure.brightness ?? false });
     const { Screen } = props.host.components;
     const title = props.host.useLocale() === 'en' && enTitle ? enTitle : view.title;
-    return createElement(Screen, { title: titleWith(title, props.params ?? {}), back: true, children: createElement(Body, props) });
+    // A feed scrolls inside the GenUI view (pull to refresh, endless lists), not the Screen.
+    return createElement(Screen, { title: titleWith(title, props.params ?? {}), back: true, scroll: !view.feed, children: createElement(Body, props) });
   }
   return DocScreen;
 }

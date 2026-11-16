@@ -1,0 +1,9 @@
+# media/getThumbnail answers with the picture's bytes (treehole.pku.edu.cn/ch/web bundle).
+tool: image
+input: { id: "101" }
+responses:
+  - match: /media/getThumbnail?id=101
+    campus: treehole
+    body: /9j/4AAQSkZJRg==
+    headers: { content-type: image/jpeg }
+expect: { uri: "data:image/jpeg;base64,/9j/4AAQSkZJRg==" }

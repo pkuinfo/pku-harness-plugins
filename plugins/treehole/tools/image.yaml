@@ -1,0 +1,27 @@
+# The web app (treehole.pku.edu.cn/ch/web bundle): pictures come from media/getThumbnail { id }
+# (an old picture post: { pid }), the full picture from media/getMediaBinary { id }, as image
+# bytes. A 96-byte answer is the server's "no picture" placeholder. For screens only (Gallery):
+# a picture says nothing to the model and is large, so the tool is the user's.
+title: 树洞图片
+summary: 树洞帖子或评论里的一张图片
+description: 'One Treehole picture as a data: URI ({ uri }), for screens. Inputs come from a hole or comment pics entry; full = the original instead of the thumbnail.'
+effect: read
+userOnly: true
+input:
+  id: { type: string, optional: true, max: 40, description: "media id (pics[].id)" }
+  pid: { type: integer, optional: true, min: 1, description: "hole id of an old picture post (pics[].pid)" }
+  full: { type: boolean, default: false, description: the original picture instead of the thumbnail }
+steps:
+  - check: "input.id || input.pid"
+    error: 需要 id 或 pid
+  - check: "!input.id || test(input.id, '^[A-Za-z0-9_-]+$')"
+    error: 图片 id 不对
+  - let: path
+    value: "input.full && input.id ? '/chapi/api/v3/media/getMediaBinary' : '/chapi/api/v3/media/getThumbnail'"
+  - let: pic
+    request:
+      campus: treehole
+      url: "${path}?${input.id ? 'id=' + input.id : 'pid=' + input.pid}"
+      maxSize: 8000000
+    as: image
+return: "pic && pic.bytes != 96 ? { uri: pic.uri } : { uri: null }"

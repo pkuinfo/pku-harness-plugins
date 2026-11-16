@@ -1,13 +1,34 @@
 {
   "title": "树洞",
-  "description": "最新 20 条树洞，点按读全文；需要时在这里完成短信验证。",
+  "description": "北大树洞：最新和关注的帖子，一直往下滑就继续加载；搜索；点按读全文。需要时在这里完成短信验证。",
+  "feed": true,
   "bindings": {
-    "/feed": { "tool": "latest", "args": { "limit": 20 }, "ttlMinutes": 5 }
+    "/feed": {
+      "tool": "latest",
+      "args": {
+        "limit": 20
+      },
+      "ttlMinutes": 2
+    },
+    "/following": {
+      "tool": "followed",
+      "args": {
+        "limit": 20
+      },
+      "ttlMinutes": 2
+    }
   },
   "strings": {
     "zh-Hans": {
-      "replies": " 回复",
-      "images": " 图",
+      "searchHint": "搜索树洞",
+      "latest": "最新",
+      "followed": "关注",
+      "noMore": "没有更多了",
+      "empty": "暂时没有新帖子",
+      "noFollowed": "还没有关注的帖子",
+      "loadFailed": "加载失败",
+      "retry": "重试",
+      "noResults": "没有找到相关的树洞",
       "smsNeeded": "需要短信验证",
       "verifyWhy": "树洞需要确认是你本人。点下面的按钮把验证码发到账号绑定的手机，允许读取这条短信后会自动填好；也可以手动输入。",
       "sendSms": "发送短信验证码",
@@ -15,12 +36,18 @@
       "codePlaceholder": "6 位数字",
       "verify": "验证",
       "sent": "验证码已发送到绑定手机",
-      "stillValid": "之前的验证码还有效，可以直接输入",
-      "empty": "暂时没有新帖子"
+      "stillValid": "之前的验证码还有效，可以直接输入"
     },
     "en": {
-      "replies": " replies",
-      "images": " images",
+      "searchHint": "Search Treehole",
+      "latest": "Latest",
+      "followed": "Following",
+      "noMore": "That’s everything",
+      "empty": "No new posts yet",
+      "noFollowed": "You don’t follow any posts yet",
+      "loadFailed": "Couldn’t load more",
+      "retry": "Retry",
+      "noResults": "No posts found",
       "smsNeeded": "SMS verification needed",
       "verifyWhy": "Treehole wants to confirm it’s you. Send a code to the phone on your account; allow reading that SMS and the code fills in by itself, or type it.",
       "sendSms": "Send SMS code",
@@ -28,81 +55,605 @@
       "codePlaceholder": "6 digits",
       "verify": "Verify",
       "sent": "Code sent to the phone on your account",
-      "stillValid": "Your previous code is still valid; enter it here",
-      "empty": "No new posts yet"
+      "stillValid": "Your previous code is still valid; enter it here"
     }
   },
   "spec": {
     "root": "root",
     "elements": {
-      "root": { "type": "Column", "props": { "gap": "md" }, "children": ["list", "empty", "verify"] },
-      "list": {
+      "root": {
         "type": "Column",
-        "props": { "gap": "sm" },
-        "visible": { "$state": "/feed/status", "eq": "ok" },
-        "repeat": { "statePath": "/feed/holes", "key": "pid" },
-        "children": ["hole"]
+        "props": {
+          "gap": "md"
+        },
+        "children": [
+          "search",
+          "tabs",
+          "latest",
+          "followed",
+          "verify"
+        ]
+      },
+      "search": {
+        "type": "TextField",
+        "props": {
+          "label": null,
+          "placeholder": {
+            "$state": "/t/searchHint"
+          },
+          "value": {
+            "$bindState": "/form/q"
+          },
+          "keyboard": "default",
+          "returnKey": "search"
+        },
+        "on": {
+          "submit": {
+            "action": "navigate",
+            "params": {
+              "href": {
+                "$template": "/p/treehole/search?q=${/form/q}"
+              }
+            }
+          }
+        }
+      },
+      "tabs": {
+        "type": "Choice",
+        "props": {
+          "label": null,
+          "options": [
+            {
+              "label": {
+                "$state": "/t/latest"
+              },
+              "value": "latest",
+              "hint": null
+            },
+            {
+              "label": {
+                "$state": "/t/followed"
+              },
+              "value": "followed",
+              "hint": null
+            }
+          ],
+          "value": {
+            "$bindState": "/form/tab"
+          }
+        },
+        "visible": {
+          "$state": "/feed/status",
+          "eq": "ok"
+        }
+      },
+      "latest": {
+        "type": "Column",
+        "props": {
+          "gap": "md"
+        },
+        "visible": [
+          {
+            "$state": "/form/tab",
+            "neq": "followed"
+          },
+          {
+            "$state": "/feed/status",
+            "eq": "ok"
+          }
+        ],
+        "children": [
+          "latestList",
+          "latestMore",
+          "latestEnd",
+          "latestFailed",
+          "latestEmpty"
+        ]
+      },
+      "latestEmpty": {
+        "type": "Text",
+        "props": {
+          "text": {
+            "$state": "/t/empty"
+          },
+          "tone": "muted",
+          "size": "small"
+        },
+        "visible": {
+          "$state": "/feed/holes/0",
+          "not": true
+        }
+      },
+      "followed": {
+        "type": "Column",
+        "props": {
+          "gap": "md"
+        },
+        "visible": [
+          {
+            "$state": "/form/tab",
+            "eq": "followed"
+          },
+          {
+            "$state": "/following/status",
+            "eq": "ok"
+          }
+        ],
+        "children": [
+          "followedList",
+          "followedMore",
+          "followedEnd",
+          "followedFailed",
+          "followedEmpty"
+        ]
+      },
+      "followedEmpty": {
+        "type": "Text",
+        "props": {
+          "text": {
+            "$state": "/t/noFollowed"
+          },
+          "tone": "muted",
+          "size": "small"
+        },
+        "visible": {
+          "$state": "/following/holes/0",
+          "not": true
+        }
       },
       "hole": {
-        "type": "ListItem",
+        "type": "Post",
         "props": {
-          "title": { "$item": "text" },
-          "subtitle": { "$template": "#${pid} · ${time} · ${replies}${/t/replies}" },
-          "value": { "$cond": { "$item": "images" }, "$then": { "$template": "${images}${/t/images}" }, "$else": null },
-          "icon": null
+          "text": {
+            "$item": "text"
+          },
+          "meta": {
+            "$template": "#${pid} · ${time}"
+          },
+          "replies": {
+            "$item": "replies"
+          },
+          "likes": {
+            "$item": "likes"
+          },
+          "tags": {
+            "$item": "tags"
+          },
+          "lines": 8,
+          "pinned": {
+            "$item": "pinned"
+          },
+          "followed": {
+            "$item": "followed"
+          },
+          "preview": {
+            "$item": "comments"
+          }
         },
-        "on": { "press": { "action": "navigate", "params": { "href": { "$template": "/p/treehole/hole?pid=${pid}" } } } }
+        "children": [
+          "holePics"
+        ],
+        "on": {
+          "press": {
+            "action": "navigate",
+            "params": {
+              "href": {
+                "$template": "/p/treehole/hole?pid=${pid}"
+              }
+            }
+          }
+        }
       },
-      "empty": {
+      "holePics": {
+        "type": "Gallery",
+        "props": {
+          "tool": "treehole.image",
+          "items": {
+            "$item": "pics"
+          }
+        }
+      },
+      "latestList": {
+        "type": "Column",
+        "props": {
+          "gap": "md"
+        },
+        "repeat": {
+          "statePath": "/feed/holes",
+          "key": "pid"
+        },
+        "children": [
+          "hole"
+        ]
+      },
+      "latestMore": {
+        "type": "Column",
+        "props": {
+          "gap": "md"
+        },
+        "repeat": {
+          "statePath": "/more/latest",
+          "key": "pid"
+        },
+        "children": [
+          "hole"
+        ]
+      },
+      "latestEnd": {
+        "type": "EndReached",
+        "props": {
+          "done": {
+            "$state": "/moreStatus/latest/done"
+          },
+          "doneLabel": {
+            "$state": "/t/noMore"
+          }
+        },
+        "visible": [
+          {
+            "$state": "/feed/holes/0"
+          },
+          {
+            "$state": "/moreStatus/latest/error",
+            "not": true
+          }
+        ],
+        "on": {
+          "reach": {
+            "action": "loadMore",
+            "params": {
+              "tool": "treehole.latest",
+              "input": {
+                "limit": 20
+              },
+              "listPath": "/more/latest",
+              "itemsKey": "holes",
+              "statusPath": "/moreStatus/latest",
+              "key": "pid",
+              "basePath": "/feed/holes"
+            }
+          }
+        }
+      },
+      "latestFailed": {
+        "type": "Row",
+        "props": {
+          "gap": "md",
+          "align": "between"
+        },
+        "visible": {
+          "$state": "/moreStatus/latest/error"
+        },
+        "children": [
+          "latestFailedText",
+          "latestRetry"
+        ]
+      },
+      "latestFailedText": {
         "type": "Text",
-        "props": { "text": { "$state": "/t/empty" }, "tone": "muted", "size": "small" },
-        "visible": [{ "$state": "/feed/status", "eq": "ok" }, { "$state": "/feed/holes/0", "not": true }]
+        "props": {
+          "text": {
+            "$state": "/t/loadFailed"
+          },
+          "tone": "muted",
+          "size": "small"
+        }
+      },
+      "latestRetry": {
+        "type": "Button",
+        "props": {
+          "label": {
+            "$state": "/t/retry"
+          },
+          "variant": "ghost"
+        },
+        "on": {
+          "press": {
+            "action": "loadMore",
+            "params": {
+              "tool": "treehole.latest",
+              "input": {
+                "limit": 20
+              },
+              "listPath": "/more/latest",
+              "itemsKey": "holes",
+              "statusPath": "/moreStatus/latest",
+              "key": "pid",
+              "basePath": "/feed/holes"
+            }
+          }
+        }
+      },
+      "followedList": {
+        "type": "Column",
+        "props": {
+          "gap": "md"
+        },
+        "repeat": {
+          "statePath": "/following/holes",
+          "key": "pid"
+        },
+        "children": [
+          "hole"
+        ]
+      },
+      "followedMore": {
+        "type": "Column",
+        "props": {
+          "gap": "md"
+        },
+        "repeat": {
+          "statePath": "/more/followed",
+          "key": "pid"
+        },
+        "children": [
+          "hole"
+        ]
+      },
+      "followedEnd": {
+        "type": "EndReached",
+        "props": {
+          "done": {
+            "$state": "/moreStatus/followed/done"
+          },
+          "doneLabel": {
+            "$state": "/t/noMore"
+          }
+        },
+        "visible": [
+          {
+            "$state": "/following/holes/0"
+          },
+          {
+            "$state": "/moreStatus/followed/error",
+            "not": true
+          }
+        ],
+        "on": {
+          "reach": {
+            "action": "loadMore",
+            "params": {
+              "tool": "treehole.followed",
+              "input": {
+                "limit": 20
+              },
+              "listPath": "/more/followed",
+              "itemsKey": "holes",
+              "statusPath": "/moreStatus/followed",
+              "key": "pid",
+              "basePath": "/following/holes"
+            }
+          }
+        }
+      },
+      "followedFailed": {
+        "type": "Row",
+        "props": {
+          "gap": "md",
+          "align": "between"
+        },
+        "visible": {
+          "$state": "/moreStatus/followed/error"
+        },
+        "children": [
+          "followedFailedText",
+          "followedRetry"
+        ]
+      },
+      "followedFailedText": {
+        "type": "Text",
+        "props": {
+          "text": {
+            "$state": "/t/loadFailed"
+          },
+          "tone": "muted",
+          "size": "small"
+        }
+      },
+      "followedRetry": {
+        "type": "Button",
+        "props": {
+          "label": {
+            "$state": "/t/retry"
+          },
+          "variant": "ghost"
+        },
+        "on": {
+          "press": {
+            "action": "loadMore",
+            "params": {
+              "tool": "treehole.followed",
+              "input": {
+                "limit": 20
+              },
+              "listPath": "/more/followed",
+              "itemsKey": "holes",
+              "statusPath": "/moreStatus/followed",
+              "key": "pid",
+              "basePath": "/following/holes"
+            }
+          }
+        }
       },
       "verify": {
         "type": "Column",
-        "props": { "gap": "md" },
-        "visible": { "$state": "/feed/status", "eq": "verification_required" },
-        "children": ["verifyTitle", "verifyWhy", "send", "code", "check", "sent", "stillValid", "error"]
+        "props": {
+          "gap": "md"
+        },
+        "visible": {
+          "$state": "/feed/status",
+          "eq": "verification_required"
+        },
+        "children": [
+          "verifyTitle",
+          "verifyWhy",
+          "send",
+          "code",
+          "check",
+          "sent",
+          "stillValid",
+          "error"
+        ]
       },
-      "verifyTitle": { "type": "Heading", "props": { "text": { "$state": "/t/smsNeeded" }, "size": "md" } },
-      "verifyWhy": { "type": "Text", "props": { "text": { "$state": "/t/verifyWhy" }, "tone": "muted", "size": "body" } },
+      "verifyTitle": {
+        "type": "Heading",
+        "props": {
+          "text": {
+            "$state": "/t/smsNeeded"
+          },
+          "size": "md"
+        }
+      },
+      "verifyWhy": {
+        "type": "Text",
+        "props": {
+          "text": {
+            "$state": "/t/verifyWhy"
+          },
+          "tone": "muted",
+          "size": "body"
+        }
+      },
       "send": {
         "type": "Button",
-        "props": { "label": { "$state": "/t/sendSms" }, "variant": "secondary" },
+        "props": {
+          "label": {
+            "$state": "/t/sendSms"
+          },
+          "variant": "secondary"
+        },
         "on": {
           "press": [
-            { "action": "callTool", "params": { "tool": "treehole.sendCode", "input": {}, "resultPath": "/result/send", "errorPath": "/error" } },
-            { "action": "smsCode", "params": { "statePath": "/form/code" } }
+            {
+              "action": "callTool",
+              "params": {
+                "tool": "treehole.sendCode",
+                "input": {},
+                "resultPath": "/result/send",
+                "errorPath": "/error"
+              }
+            },
+            {
+              "action": "smsCode",
+              "params": {
+                "statePath": "/form/code"
+              }
+            }
           ]
         }
       },
       "code": {
         "type": "TextField",
-        "props": { "label": { "$state": "/t/smsCode" }, "placeholder": { "$state": "/t/codePlaceholder" }, "value": { "$bindState": "/form/code" }, "keyboard": "number" }
+        "props": {
+          "label": {
+            "$state": "/t/smsCode"
+          },
+          "placeholder": {
+            "$state": "/t/codePlaceholder"
+          },
+          "value": {
+            "$bindState": "/form/code"
+          },
+          "keyboard": "number"
+        }
       },
       "check": {
         "type": "Button",
-        "props": { "label": { "$state": "/t/verify" }, "variant": "primary" },
-        "visible": { "$state": "/form/code" },
+        "props": {
+          "label": {
+            "$state": "/t/verify"
+          },
+          "variant": "primary"
+        },
+        "visible": {
+          "$state": "/form/code"
+        },
         "on": {
           "press": {
             "action": "callTool",
-            "params": { "tool": "treehole.latest", "input": { "limit": 20, "code": { "$state": "/form/code" } }, "errorPath": "/error" }
+            "params": {
+              "tool": "treehole.latest",
+              "input": {
+                "limit": 20,
+                "code": {
+                  "$state": "/form/code"
+                }
+              },
+              "errorPath": "/error"
+            }
           }
         }
       },
       "sent": {
         "type": "Text",
-        "props": { "text": { "$state": "/t/sent" }, "tone": "muted", "size": "small" },
-        "visible": [{ "$state": "/result/send/sent" }, { "$state": "/result/send/sent", "eq": "验证码已发送到绑定手机" }, { "$state": "/error", "not": true }]
+        "props": {
+          "text": {
+            "$state": "/t/sent"
+          },
+          "tone": "muted",
+          "size": "small"
+        },
+        "visible": [
+          {
+            "$state": "/result/send/sent"
+          },
+          {
+            "$state": "/result/send/sent",
+            "eq": "验证码已发送到绑定手机"
+          },
+          {
+            "$state": "/error",
+            "not": true
+          }
+        ]
       },
       "stillValid": {
         "type": "Text",
-        "props": { "text": { "$state": "/t/stillValid" }, "tone": "muted", "size": "small" },
-        "visible": [{ "$state": "/result/send/sent" }, { "$state": "/result/send/sent", "neq": "验证码已发送到绑定手机" }, { "$state": "/error", "not": true }]
+        "props": {
+          "text": {
+            "$state": "/t/stillValid"
+          },
+          "tone": "muted",
+          "size": "small"
+        },
+        "visible": [
+          {
+            "$state": "/result/send/sent"
+          },
+          {
+            "$state": "/result/send/sent",
+            "neq": "验证码已发送到绑定手机"
+          },
+          {
+            "$state": "/error",
+            "not": true
+          }
+        ]
       },
-      "error": { "type": "Text", "props": { "text": { "$state": "/error" }, "tone": "down", "size": "small" }, "visible": { "$state": "/error" } }
+      "error": {
+        "type": "Text",
+        "props": {
+          "text": {
+            "$state": "/error"
+          },
+          "tone": "down",
+          "size": "small"
+        },
+        "visible": {
+          "$state": "/error"
+        }
+      }
     },
-    "state": { "feed": null, "form": { "code": "" }, "result": null, "error": null }
+    "state": {
+      "feed": null,
+      "following": null,
+      "form": {
+        "code": "",
+        "q": "",
+        "tab": "latest"
+      },
+      "result": null,
+      "error": null
+    }
   }
 }

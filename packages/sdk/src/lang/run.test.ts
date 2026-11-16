@@ -208,6 +208,22 @@ return: data
     expect(second.seen.map((s) => s.url)).toEqual(['/chapi/api/course/password_get_token', '/chapi/api/course/score_v2']);
   });
 
+  test('as: image reads a campus picture as a data: URI, and anything else as no picture', async () => {
+    const d = await doc({
+      'PLUGIN.md': md('campus: [treehole]\ntools:\n  pic: tools/pic.yaml'),
+      'tools/pic.yaml': "title: P\ndescription: A picture.\neffect: read\nuserOnly: true\ninput:\n  id: { type: string }\nsteps:\n  - let: r\n    request: { campus: treehole, url: '/media/getThumbnail', query: { id: '${input.id}' } }\n    as: image\nreturn: r\n",
+    });
+    const { env, seen } = replayEnv(d, [
+      { match: 'id=1', campus: 'treehole', text: '/9j/4AAQ', headers: { 'content-type': 'image/jpeg' } },
+      { match: 'id=2', campus: 'treehole', text: '{"code":1}', headers: { 'content-type': 'application/json' } },
+      { match: 'id=3', campus: 'treehole', status: 404, text: '', headers: { 'content-type': 'image/png' } },
+    ]);
+    expect(await runTool(env, 'pic', { id: '1' })).toEqual({ uri: 'data:image/jpeg;base64,/9j/4AAQ', bytes: 6 });
+    expect(seen[0]).toMatchObject({ campus: 'treehole', responseType: 'base64' });
+    expect(await runTool(env, 'pic', { id: '2' })).toBeNull();
+    expect(await runTool(env, 'pic', { id: '3' })).toBeNull();
+  });
+
   test('limits: undeclared campus service, step budget', async () => {
     const d = await doc({
       'PLUGIN.md': md('campus: [card]\ntools:\n  t: tools/t.yaml'),

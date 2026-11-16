@@ -1,0 +1,8 @@
+# Anything but a picture (an error envelope) reads as no picture.
+tool: image
+input: { id: "7", full: true }
+responses:
+  - match: /media/getMediaBinary?id=7
+    campus: treehole
+    body: { code: 500, success: false, message: 文件不存在 }
+expect: { uri: null }

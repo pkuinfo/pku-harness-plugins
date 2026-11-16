@@ -48,7 +48,7 @@ export function replayEnv(doc: PluginDocument, responses: Recorded[], opts: { no
         if (form && req.authIn === 'form') form = { ...form, 'synjones-auth': 'bearer test-token' };
         if (form && req.sign) form = await req.sign(form);
         const body = form ? new URLSearchParams(form).toString() : typeof req.body === 'string' ? req.body : undefined;
-        seen.push({ campus: service, url: req.url, method: req.method ?? 'GET', body, form, multipart: req.multipart, headers: req.headers ?? {} });
+        seen.push({ campus: service, url: req.url, method: req.method ?? 'GET', body, form, multipart: req.multipart, headers: req.headers ?? {}, ...(req.responseType ? { responseType: req.responseType } : {}) });
         return take(service, req.url);
       },
       otp: opts.services?.campus?.otp ?? (async () => null),

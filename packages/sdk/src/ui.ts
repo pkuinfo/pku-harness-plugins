@@ -18,7 +18,7 @@ type ChipTone = 'neutral' | 'accent' | 'up' | 'down' | 'warn' | 'info';
 type TextVariant = 'display' | 'title' | 'headline' | 'body' | 'bodyStrong' | 'callout' | 'caption' | 'micro' | 'numberXL' | 'numberL' | 'numberM';
 
 export interface HostComponents {
-  Screen: ComponentType<{ title: string; subtitle?: string; back?: boolean; appearance?: 'standard' | 'plain'; scrollRef?: Ref<{ scrollTo: (options: { y?: number; animated?: boolean }) => void }>; overlay?: ReactNode; trailing?: ReactNode; children: ReactNode; refreshControl?: ReactNode }>;
+  Screen: ComponentType<{ title: string; subtitle?: string; back?: boolean; appearance?: 'standard' | 'plain'; scrollRef?: Ref<{ scrollTo: (options: { y?: number; animated?: boolean }) => void }>; overlay?: ReactNode; trailing?: ReactNode; children: ReactNode; refreshControl?: ReactNode; scroll?: boolean }>;
   Text: ComponentType<{ variant?: TextVariant; tone?: Tone; align?: 'left' | 'center' | 'right'; numberOfLines?: number; selectable?: boolean; style?: Style; children?: ReactNode }>;
   Button: ComponentType<{ title: string; onPress?: () => void; variant?: 'primary' | 'secondary' | 'ghost' | 'danger'; size?: 'sm' | 'md' | 'lg'; icon?: string; loading?: boolean; disabled?: boolean; style?: Style }>;
   IconButton: ComponentType<{ icon: string; label: string; onPress?: () => void; variant?: 'primary' | 'secondary' | 'ghost' | 'danger'; size?: number; disabled?: boolean }>;
@@ -67,7 +67,8 @@ export interface HostComponents {
    */
   Hourglass: ComponentType<{ period?: number; size?: number; tone?: 'accent' | 'up' | 'down' | 'warn' }>;
   /** Render a generative-UI spec with the host catalog. */
-  GenUI: ComponentType<{ spec: Record<string, unknown>; onSubmit?: (form: Record<string, unknown>, label?: string) => void }>;
+  /** feed: the view scrolls itself (pull to refresh, EndReached for endless lists); put it in a Screen with scroll={false}. */
+  GenUI: ComponentType<{ spec: Record<string, unknown>; onSubmit?: (form: Record<string, unknown>, label?: string) => void; feed?: boolean }>;
   /** Vertical list sortable by dragging a handle; rows are rendered by the plugin. */
   SortableList: ComponentType<{ ids: string[]; rowHeight: number; onReorder: (ids: string[]) => void; renderRow: (id: string, handle: ReactNode) => ReactNode }>;
   /** Mount a plugin-contributed dashboard widget (error-isolated; shows a notice if the plugin is off). */

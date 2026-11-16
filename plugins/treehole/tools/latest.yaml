@@ -6,7 +6,7 @@ description: Latest holes on the PKU Treehole forum, newest first, each with up 
 effect: read
 untrusted: true
 input:
-  page: { type: integer, min: 1, max: 50, default: 1, description: default 1 }
+  page: { type: integer, min: 1, max: 200, default: 1, description: default 1 }
   limit: { type: integer, min: 1, max: 30, default: 10, description: default 10 }
   code: { type: string, optional: true, trim: true, min: 4, max: 8, description: 'SMS code, only when a previous call returned verification_required' }
 steps:

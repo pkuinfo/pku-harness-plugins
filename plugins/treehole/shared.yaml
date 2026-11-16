@@ -27,6 +27,11 @@ functions:
   s: "(v, k) => typeOf(obj(v)[k]) == 'string' ? obj(v)[k] : ''"
   # display.rs media_badge: `media_ids` is a comma list.
   mediaCount: "(ids) => split(ids, ',').filter(x => trim(x)).length"
+  # Pictures as treehole__image inputs (the web app: getThumbnail { id }; an old picture post of
+  # type "image" without media_ids is { pid }).
+  pics: |
+    (v) => mediaCount(s(v, 'media_ids')) ? split(s(v, 'media_ids'), ',').map(x => trim(x)).filter(x => x).map(x => ({ id: x }))
+      : s(v, 'type') == 'image' && n(v, 'pid') ? [{ pid: n(v, 'pid') }] : []
   # Cut to n characters with an ellipsis (the TS clip, not stdlib clip which keeps n - 1).
   cut: "(t, max) => length(t) > max ? slice(t, 0, max) + '…' : t"
   # Treehole timestamps are seconds; shown as Beijing "YYYY-MM-DD HH:mm".
@@ -45,6 +50,7 @@ functions:
       time: n(c, 'timestamp'),
       quote: quote(obj(c).quote),
       images: mediaCount(s(c, 'media_ids')),
+      pics: pics(c),
     })
   comments: "(v, key) => typeOf(obj(v)[key]) == 'list' ? obj(v)[key].map(c => parseComment(c)) : []"
   parseHole: |
@@ -58,7 +64,7 @@ functions:
       pinned: n(v, 'is_top') == 1,
       reward: n(v, 'reward_cost'),
       tags: tags(v),
-      images: mediaCount(s(v, 'media_ids')),
+      pics: pics(v),
     })
   # Tool output shapes (index.ts hole / comment).
   hole: |
@@ -72,7 +78,7 @@ functions:
       ...(h.pinned ? { pinned: true } : {}),
       ...(h.reward ? { reward: h.reward } : {}),
       ...(h.tags.length ? { tags: h.tags } : {}),
-      ...(h.images ? { images: h.images } : {}),
+      ...(h.pics.length ? { images: h.pics.length, pics: h.pics } : {}),
     })
   # The API already names the poster "洞主"; only tag a different display name.
   comment: |
@@ -81,8 +87,9 @@ functions:
       name: c.isOp ? (c.name && c.name != '洞主' ? c.name + '（洞主）' : '洞主') : c.name,
       text: cut(c.text, max),
       time: when(c.time),
+      ...(c.isOp ? { op: true } : {}),
       ...(c.quote ? { replyTo: { name: c.quote.name, text: cut(c.quote.text, 80) } } : {}),
-      ...(c.images ? { images: c.images } : {}),
+      ...(c.pics.length ? { images: c.pics.length, pics: c.pics } : {}),
     })
   hasList: "(data) => typeOf(obj(data).list) == 'list'"
   # api.rs check_resp failure text, as the TS v3() wrote it ("验证失败：…" from a wrong code passes
