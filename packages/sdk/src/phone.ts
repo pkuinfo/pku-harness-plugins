@@ -23,6 +23,8 @@ export type PhoneReadiness = {
   sessionId: string | null;
   packages: string[];
   handedOver: boolean;
+  /** While handed over: Android reloaded the app on its way to the user's screen (a WeChat mini program is back on its home page). */
+  handoffRestarted?: boolean;
   paused?: boolean;
 };
 
