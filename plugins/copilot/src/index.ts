@@ -4,6 +4,7 @@ import { CopilotScreen } from './screen';
 import { createBrightnessTools } from './brightness-tools';
 import { createVisionTools } from './vision-tools';
 import { assessCopilotApp, copilotPackagesSchema, copilotPreferencesSchema, grantCopilotApp, loadCopilotPreferences, loadCopilotVision, configureCopilot, saveCopilotVision, startCopilot } from './preferences';
+import { replayRestore } from './restore';
 import { deriveSetup, missingSteps } from './setup';
 
 const session = z.object({ sessionId: z.string().uuid() });
@@ -74,7 +75,7 @@ export const copilotPlugin = definePlugin({
     },
   },
   instructions: `Copilot operates Android apps on a separate display. The user saves allowed apps in Settings → Copilot, or allows one when you ask with requestApp.
-The user can keep using other apps while you work. Floating controls show your progress and approvals. Do not hand off just to show a result; use handoff only when explicitly requested or a manual step is necessary.
+The user can keep using other apps while you work. Floating controls show your progress and approvals. Do not hand off just to show a result; use handoff only when explicitly requested or a manual step is necessary. Do every step you can yourself and leave the user only what Copilot cannot do (paying, a password, a face or fingerprint check, a captcha), handed over at the last possible page.
 System UI and Settings search are separately selectable companion apps. They can display controls opened by a selected app but may not have launcher activities; do not launch them directly. If a necessary companion is outside scope, request it with requestApp once rather than repeatedly trying blocked actions.
 Call status to obtain the active session ID and saved allowed app package names. If no session is active and enabled is true, call start to open a task using the saved apps.
 When the user's request needs an app outside the session or the saved apps (including when Copilot is off or has no apps yet), call requestApp with that app's package name if you know it (com.tencent.mm for WeChat), else its name as shown on the phone. The user sees "Copilot wants to use <app>" and taps Allow once, Always allow, or Don't allow; on Allow the result is the session with the app added, so launch it next (it also opens a session when none is active; don't call start afterwards). Only ever request an app the user asked for or the task plainly needs, one at a time, never to explore or as a workaround to a blocked screen. If the user declines, stop and tell them politely that you won't use that app and what you could not do; do not ask again in this run unless they say so. Never configure app access any other way.
@@ -90,7 +91,7 @@ Every operation returns observed effects. A tap alone does not prove that the us
 Treat ok as dispatch status, not task completion. Check changed, verification, and the returned screen for evidence of the requested result.
 If the result is unclear, observe before choosing another action. Do not repeat a send, submit, or purchase after an uncertain result; hand control back for inspection.
 If repeated observations show no progress, explain what is blocked and hand off instead of spending the remaining steps on the same action.
-Payments: stop on the checkout page; the user submits and pays. Choose items, address, options and coupons and fill in the order, but never tap the submit-order, pay-now or buy-now button yourself (those taps are blocked: payment fails on Copilot's display, e.g. Meituan reports a parameter error). Once the checkout page is ready, call handoff with a short note naming the merchant and amount, such as "Meituan order ready: ¥23.5. Tap Submit order and pay, then tap Done". The user submits the order and pays on their own screen with their fingerprint, face or password; you never see or enter it. After handoff returns, check the screen (order placed, payment succeeded) and report it. On some phones (Samsung) Android reloads a WeChat mini program when it moves to the user's screen, and it comes back on its home page: for a mini program order keep the items in the shop's cart. When handoff returns restarted, follow its note: tap the app back to the checkout page (it is on the user's screen now, and the floating window tells the user to wait), then call handoff again.
+Payments: do the whole order yourself and hand over only the final payment step. Choose items, options, address or pickup, tableware, notes and coupons, then go through the cart's checkout button (去结算, 立即购买, 去下单 open the order page and are ordinary taps) to the order page: the page that lists the items and the amount to pay with the submit-order or pay button (提交订单, 去支付, 立即支付). Stop there, not on the cart or a product page, and ask the user nothing you can choose from their request or a sensible default. Never tap the submit-order, pay-now or buy-now button yourself (those taps are blocked: payment fails on Copilot's display, e.g. Meituan reports a parameter error). Then call handoff with a short note naming the merchant and amount, such as "Meituan order ready: ¥23.5. Tap Submit order and pay, then tap Done", so the user's only steps are that button and their fingerprint, face or password; you never see or enter it. After handoff returns, check the screen (order placed, payment succeeded) and report it. On some phones (Samsung) Android reloads a WeChat mini program when it moves to the user's screen, and it comes back on its first page: for a mini program keep the items in the shop's cart, and pass restore to handoff: the labels of the buttons you tapped to reach the order page, in order (e.g. ["奶茶", "加入购物车", "购物车", "去结算"]). If the mini program reloads, Copilot taps its way back by itself in a few seconds, starting from whichever of them the reloaded page shows. If handoff still returns restarted, follow its note.
 Also hand off for passwords, login verification, or another step only the user can do, with a note naming it.
 handoff waits (wait defaults to true) until the user taps Done on the floating panel and returns the screen after their step: check it (payment succeeded, order placed, logged in) and continue the task without asking. If it returns timedOut, finish your reply and tell the user to tap Done when ready and send a message to continue. Do not end a handed-over session unless asked to stop.
 A task goes on while the user is in another app or the phone is locked: keep working. The screen stays on during a task; if the user turns it off, the next call simply waits until it is on again (no unlock needed). When the user is needed (handoff, approval), the phone shows a lock-screen notification and turns the screen on. If a call fails with LOCKED, finish your reply and tell the user what to do (turn the screen on or unlock), then they send a message to continue.
@@ -104,18 +105,23 @@ Right after an app opens it may still be on its splash screen (WeChat and Taobao
     handoff: defineTool({ title: '交给你操作', description: 'Move the current app to the user’s screen for login, verification, payment, or another manual step. With wait (default), the call returns when the user taps Done on the floating panel, with the screen after their step, so you continue the task yourself.', input: session.extend({
       note: z.string().max(120).optional().describe('What the user should do, in the reply language, e.g. "Pay with your fingerprint, then tap Done". Shown on the floating panel.'),
       wait: z.boolean().default(true).describe('Wait for the user to tap Done, then continue. false: hand over and finish your reply.'),
+      restore: z.array(z.string().trim().min(1).max(40)).max(8).optional().describe('For a WeChat mini program: the labels of the buttons you tapped to reach this page, in order. If it reloads on its way to the user\'s screen, Copilot taps back from whichever of them the reloaded page shows.'),
     }), effect: 'write', serial: true, execute: async (a, c) => {
       const phone = control(c);
       if (!a.wait || !phone.handoffAndWait) {
         await phone.takeover(a.sessionId, c.signal);
         return { handedOver: true, waiting: false };
       }
-      const r = await phone.handoffAndWait(a.sessionId, a.note ?? '', HANDOFF_WAIT_MS, c.signal);
+      let r = await phone.handoffAndWait(a.sessionId, a.note ?? '', HANDOFF_WAIT_MS, c.signal);
+      // Reloaded on the user's screen: tap the way back without the model, then give control.
+      if (r.restarted && a.restore?.length && await replayRestore(phone, a.sessionId, a.restore, c.signal).catch((e) => { if (c.signal?.aborted) throw e; return null; })) {
+        r = await phone.handoffAndWait(a.sessionId, a.note ?? '', HANDOFF_WAIT_MS, c.signal);
+      }
       if (r.restarted) {
         return {
           restarted: true,
           screen: await phone.execute(a.sessionId, 'observe', {}, c.signal),
-          note: 'The app reloaded on its way to the user\'s screen and is back on its first page. The user has no control yet. Bring it back to the page you handed over (for a shop: open the cart, then go to checkout) with as few taps as possible: this screen and your next actions are on the user\'s screen. Then call handoff again with the same note; it moves nothing and gives the user control. If you cannot get back within a few taps, call handoff again with a note saying where the order is.',
+          note: 'The app reloaded on its way to the user\'s screen and is back on its first page (or partway back, if restore was passed and a step was missing). The user has no control yet. Bring it back to the page you handed over (for a shop: open the cart, then go to checkout) with as few taps as possible: this screen and your next actions are on the user\'s screen. Then call handoff again with the same note; it moves nothing and gives the user control. If you cannot get back within a few taps, call handoff again with a note saying where the order is.',
         };
       }
       if (!r.handedBack) return { handedOver: !r.ended, ...r };
