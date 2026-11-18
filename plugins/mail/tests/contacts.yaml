@@ -1,0 +1,15 @@
+tool: contacts
+input: { query: zhang }
+now: 2026-11-18 14:30
+responses:
+  - match: /cowork/api/biz/person/personContactList
+    campus: mail
+    body:
+      code: 200
+      success: true
+      data:
+        personContactVOList:
+          - { qiyeAccountName: 张三, email: zhangsan@pku.edu.cn, pinyinName: zhangsan, mobileList: ["13800000000"], personContactGroupList: [{ groupName: 课题组 }], marked: false }
+          - { qiyeAccountName: 李四, email: lisi@pku.edu.cn, pinyinName: lisi }
+          - { qiyeAccountName: Zhang Wei, email: zw@stu.pku.edu.cn, marked: true }
+expect: {"count": 2, "contacts": [{"name": "Zhang Wei", "email": "zw@stu.pku.edu.cn", "phones": [], "groups": [], "marked": true}, {"name": "张三", "email": "zhangsan@pku.edu.cn", "phones": ["13800000000"], "groups": ["课题组"], "marked": false}]}

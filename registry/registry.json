@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-10-23",
+  "updatedAt": "2026-11-18",
   "plugins": [
     {
       "id": "ui",
@@ -715,6 +715,34 @@
         "official",
         "campus",
         "library"
+      ],
+      "verified": true
+    },
+    {
+      "id": "mail",
+      "name": "学生邮箱",
+      "description": "北大学生邮箱（@stu.pku.edu.cn）：收件箱、未读、已发送、草稿、垃圾邮件和已删除，读信、搜索、通讯录，发邮件和回复。",
+      "i18n": {
+        "en": {
+          "name": "Student mail",
+          "description": "PKU student mail (@stu.pku.edu.cn): inbox, unread, sent, drafts, spam and trash; read, search, contacts; send and reply."
+        }
+      },
+      "author": "pkuinfo",
+      "source": "https://github.com/pkuinfo/pku-harness-plugins/tree/main/plugins/mail",
+      "kind": "builtin",
+      "icon": "mail",
+      "requires": [
+        "campus-session"
+      ],
+      "scopes": [
+        "mailh.qiye.163.com",
+        "*.qiye.163.com"
+      ],
+      "tags": [
+        "official",
+        "campus",
+        "mail"
       ],
       "verified": true
     },

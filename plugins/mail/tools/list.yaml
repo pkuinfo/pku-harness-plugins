@@ -1,0 +1,42 @@
+# mbox:listMessages: one page of a folder, newest first (unread only with filter.flags.read=false).
+title: 邮件列表
+summary: 看收件箱、已发送、草稿、垃圾邮件或已删除里的邮件，可只看未读
+description: "One page of a mail folder, newest first: mid, subject, from (name), fromEmail, to, date (Beijing, YYYY-MM-DD HH:mm:ss), summary, unread, replied, attachments. folder: inbox (default), sent, drafts, trash, spam, ads, subscriptions. unread: true lists unread mail only (inbox by default). Page with start (= nextStart of the previous page, null when done); older mail is further pages. Use mail__read with a mid for the full text."
+effect: read
+untrusted: true
+input:
+  folder: { type: string, enum: [inbox, sent, drafts, trash, spam, ads, subscriptions], default: inbox }
+  unread: { type: boolean, default: false, description: only unread mail }
+  start: { type: integer, min: 0, default: 0, description: offset of the first message (paging) }
+  limit: { type: integer, min: 1, max: 50, default: 20 }
+  page: { type: integer, min: 1, optional: true, description: 'page number (1 = newest); overrides start' }
+steps:
+  - let: from
+    value: "input.page ? (input.page - 1) * input.limit : input.start"
+  - let: res
+    request:
+      campus: mail
+      url: "${rpc('mbox:listMessages')}"
+      method: POST
+      json:
+        fid: "${FOLDERS[input.folder]}"
+        start: "${from}"
+        limit: "${input.limit}"
+        order: date
+        desc: true
+        returnTotal: true
+        returnAttachments: true
+        summaryWindowSize: "${input.limit}"
+        filter: "${input.unread ? { flags: { read: false } } : {}}"
+    as: response
+  - check: ok(res)
+    error: "${why(res)}"
+  - let: j
+    value: json(res.text)
+  - let: today
+    value: formatDate(now, 'YYYY-MM-DD')
+  - let: messages
+    value: "list(j.var).map(m => row(m, today))"
+  - let: total
+    value: num(j.total, 0)
+return: "{ folder: input.folder, unreadOnly: input.unread, total, messages, nextStart: from + length(messages) < total && length(messages) > 0 ? from + length(messages) : null, note: UNTRUSTED }"

@@ -1,0 +1,23 @@
+# mbox:getAllFolders { order: custom_virtual }: every folder with message and unread counts.
+title: 邮箱文件夹
+summary: 收件箱、已发送、草稿、垃圾邮件、已删除等文件夹和未读数
+description: "The mailbox folders with message and unread counts: id, name, key (inbox, sent, drafts, trash, spam, ads, subscriptions for the system folders), total, unread. Also inboxUnread."
+effect: read
+steps:
+  - let: res
+    request: { campus: mail, url: "${rpc('mbox:getAllFolders')}", method: POST, json: { order: custom_virtual } }
+    as: response
+  - check: ok(res)
+    error: "${why(res)}"
+  - let: keyOf
+    value: "fromEntries(entries(FOLDERS).map(e => [str(e[1]), e[0]]))"
+  - let: folders
+    value: |
+      list(json(res.text).var).filter(f => num(obj(f).id, 0) > 0).map(f => ({
+        id: f.id,
+        key: keyOf[str(f.id)] ?? null,
+        name: s(f.name),
+        total: num(obj(f.stats).messageCount, 0),
+        unread: num(obj(f.stats).unreadMessageCount, 0),
+      }))
+return: "{ folders, inboxUnread: folders.find(f => f.id == 1)?.unread ?? 0 }"

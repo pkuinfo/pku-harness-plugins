@@ -1,0 +1,560 @@
+{
+  "title": "学生邮箱",
+  "description": "学生邮箱首页：收件箱和未读（一直往下滑加载更早的邮件），搜索，写邮件，去已发送/草稿/垃圾邮件/已删除。点一封信打开。",
+  "feed": true,
+  "bindings": {
+    "/inbox": {
+      "tool": "list",
+      "args": {
+        "folder": "inbox",
+        "limit": 20
+      },
+      "ttlMinutes": 2
+    },
+    "/unreadBox": {
+      "tool": "list",
+      "args": {
+        "folder": "inbox",
+        "unread": true,
+        "limit": 20
+      },
+      "ttlMinutes": 2
+    }
+  },
+  "strings": {
+    "zh-Hans": {
+      "searchHint": "搜索邮件",
+      "inbox": "收件箱",
+      "unread": "未读",
+      "sent": "已发送",
+      "drafts": "草稿",
+      "spam": "垃圾邮件",
+      "trash": "已删除",
+      "compose": "写邮件",
+      "noMore": "没有更早的邮件了",
+      "empty": "这里没有邮件",
+      "noUnread": "没有未读邮件",
+      "loadFailed": "加载失败",
+      "retry": "重试",
+      "noResults": "没有找到相关邮件"
+    },
+    "en": {
+      "searchHint": "Search mail",
+      "inbox": "Inbox",
+      "unread": "Unread",
+      "sent": "Sent",
+      "drafts": "Drafts",
+      "spam": "Spam",
+      "trash": "Trash",
+      "compose": "New mail",
+      "noMore": "No older mail",
+      "empty": "No mail here",
+      "noUnread": "No unread mail",
+      "loadFailed": "Couldn’t load more",
+      "retry": "Retry",
+      "noResults": "No mail found"
+    }
+  },
+  "spec": {
+    "root": "root",
+    "elements": {
+      "root": {
+        "type": "Column",
+        "props": {
+          "gap": "md"
+        },
+        "children": [
+          "topRow",
+          "tabs",
+          "inbox",
+          "unread",
+          "folders"
+        ]
+      },
+      "topRow": {
+        "type": "Row",
+        "props": {
+          "gap": "sm",
+          "align": "between"
+        },
+        "children": [
+          "search",
+          "composeBtn"
+        ]
+      },
+      "search": {
+        "type": "TextField",
+        "props": {
+          "label": null,
+          "placeholder": {
+            "$state": "/t/searchHint"
+          },
+          "value": {
+            "$bindState": "/form/q"
+          },
+          "keyboard": "default",
+          "returnKey": "search"
+        },
+        "on": {
+          "submit": {
+            "action": "navigate",
+            "params": {
+              "href": {
+                "$template": "/p/mail/search?q=${/form/q}"
+              }
+            }
+          }
+        }
+      },
+      "composeBtn": {
+        "type": "Button",
+        "props": {
+          "label": {
+            "$state": "/t/compose"
+          },
+          "variant": "primary"
+        },
+        "on": {
+          "press": {
+            "action": "navigate",
+            "params": {
+              "href": "/p/mail/compose"
+            }
+          }
+        }
+      },
+      "tabs": {
+        "type": "Choice",
+        "props": {
+          "label": null,
+          "options": [
+            {
+              "label": {
+                "$state": "/t/inbox"
+              },
+              "value": "inbox",
+              "hint": null
+            },
+            {
+              "label": {
+                "$state": "/t/unread"
+              },
+              "value": "unread",
+              "hint": null
+            }
+          ],
+          "value": {
+            "$bindState": "/form/tab"
+          }
+        }
+      },
+      "inbox": {
+        "type": "Column",
+        "props": {
+          "gap": "sm"
+        },
+        "visible": {
+          "$state": "/form/tab",
+          "neq": "unread"
+        },
+        "children": [
+          "inboxList",
+          "inboxMore",
+          "inboxEnd",
+          "inboxFailed",
+          "inboxEmpty"
+        ]
+      },
+      "unread": {
+        "type": "Column",
+        "props": {
+          "gap": "sm"
+        },
+        "visible": {
+          "$state": "/form/tab",
+          "eq": "unread"
+        },
+        "children": [
+          "unreadList",
+          "unreadMore",
+          "unreadEnd",
+          "unreadFailed",
+          "unreadEmpty"
+        ]
+      },
+      "folders": {
+        "type": "Row",
+        "props": {
+          "gap": "sm",
+          "align": "start",
+          "wrap": true
+        },
+        "children": [
+          "go_sent",
+          "go_drafts",
+          "go_spam",
+          "go_trash"
+        ]
+      },
+      "go_sent": {
+        "type": "Button",
+        "props": {
+          "label": {
+            "$state": "/t/sent"
+          },
+          "variant": "ghost"
+        },
+        "on": {
+          "press": {
+            "action": "navigate",
+            "params": {
+              "href": "/p/mail/folder?f=sent"
+            }
+          }
+        }
+      },
+      "go_drafts": {
+        "type": "Button",
+        "props": {
+          "label": {
+            "$state": "/t/drafts"
+          },
+          "variant": "ghost"
+        },
+        "on": {
+          "press": {
+            "action": "navigate",
+            "params": {
+              "href": "/p/mail/folder?f=drafts"
+            }
+          }
+        }
+      },
+      "go_spam": {
+        "type": "Button",
+        "props": {
+          "label": {
+            "$state": "/t/spam"
+          },
+          "variant": "ghost"
+        },
+        "on": {
+          "press": {
+            "action": "navigate",
+            "params": {
+              "href": "/p/mail/folder?f=spam"
+            }
+          }
+        }
+      },
+      "go_trash": {
+        "type": "Button",
+        "props": {
+          "label": {
+            "$state": "/t/trash"
+          },
+          "variant": "ghost"
+        },
+        "on": {
+          "press": {
+            "action": "navigate",
+            "params": {
+              "href": "/p/mail/folder?f=trash"
+            }
+          }
+        }
+      },
+      "mailRow": {
+        "type": "ListItem",
+        "props": {
+          "title": {
+            "$item": "title"
+          },
+          "subtitle": {
+            "$item": "line"
+          },
+          "value": {
+            "$item": "time"
+          },
+          "icon": null
+        },
+        "on": {
+          "press": {
+            "action": "navigate",
+            "params": {
+              "href": {
+                "$template": "/p/mail/message?mid=${mid}"
+              }
+            }
+          }
+        }
+      },
+      "inboxList": {
+        "type": "Column",
+        "props": {
+          "gap": "sm"
+        },
+        "repeat": {
+          "statePath": "/inbox/messages",
+          "key": "mid"
+        },
+        "children": [
+          "mailRow"
+        ]
+      },
+      "inboxMore": {
+        "type": "Column",
+        "props": {
+          "gap": "sm"
+        },
+        "repeat": {
+          "statePath": "/more/inbox",
+          "key": "mid"
+        },
+        "children": [
+          "mailRow"
+        ]
+      },
+      "inboxEnd": {
+        "type": "EndReached",
+        "props": {
+          "done": {
+            "$state": "/moreStatus/inbox/done"
+          },
+          "doneLabel": {
+            "$state": "/t/noMore"
+          }
+        },
+        "visible": [
+          {
+            "$state": "/inbox/messages/0"
+          },
+          {
+            "$state": "/moreStatus/inbox/error",
+            "not": true
+          }
+        ],
+        "on": {
+          "reach": {
+            "action": "loadMore",
+            "params": {
+              "tool": "mail.list",
+              "input": {
+                "folder": "inbox",
+                "limit": 20
+              },
+              "listPath": "/more/inbox",
+              "itemsKey": "messages",
+              "statusPath": "/moreStatus/inbox",
+              "key": "mid",
+              "basePath": "/inbox/messages"
+            }
+          }
+        }
+      },
+      "inboxFailed": {
+        "type": "Row",
+        "props": {
+          "gap": "md",
+          "align": "between"
+        },
+        "visible": {
+          "$state": "/moreStatus/inbox/error"
+        },
+        "children": [
+          "inboxFailedText",
+          "inboxRetry"
+        ]
+      },
+      "inboxFailedText": {
+        "type": "Text",
+        "props": {
+          "text": {
+            "$state": "/t/loadFailed"
+          },
+          "tone": "muted",
+          "size": "small"
+        }
+      },
+      "inboxRetry": {
+        "type": "Button",
+        "props": {
+          "label": {
+            "$state": "/t/retry"
+          },
+          "variant": "ghost"
+        },
+        "on": {
+          "press": {
+            "action": "loadMore",
+            "params": {
+              "tool": "mail.list",
+              "input": {
+                "folder": "inbox",
+                "limit": 20
+              },
+              "listPath": "/more/inbox",
+              "itemsKey": "messages",
+              "statusPath": "/moreStatus/inbox",
+              "key": "mid",
+              "basePath": "/inbox/messages"
+            }
+          }
+        }
+      },
+      "inboxEmpty": {
+        "type": "Text",
+        "props": {
+          "text": {
+            "$state": "/t/empty"
+          },
+          "tone": "muted",
+          "size": "small"
+        },
+        "visible": {
+          "$state": "/inbox/messages/0",
+          "not": true
+        }
+      },
+      "unreadList": {
+        "type": "Column",
+        "props": {
+          "gap": "sm"
+        },
+        "repeat": {
+          "statePath": "/unreadBox/messages",
+          "key": "mid"
+        },
+        "children": [
+          "mailRow"
+        ]
+      },
+      "unreadMore": {
+        "type": "Column",
+        "props": {
+          "gap": "sm"
+        },
+        "repeat": {
+          "statePath": "/more/unread",
+          "key": "mid"
+        },
+        "children": [
+          "mailRow"
+        ]
+      },
+      "unreadEnd": {
+        "type": "EndReached",
+        "props": {
+          "done": {
+            "$state": "/moreStatus/unread/done"
+          },
+          "doneLabel": {
+            "$state": "/t/noMore"
+          }
+        },
+        "visible": [
+          {
+            "$state": "/unreadBox/messages/0"
+          },
+          {
+            "$state": "/moreStatus/unread/error",
+            "not": true
+          }
+        ],
+        "on": {
+          "reach": {
+            "action": "loadMore",
+            "params": {
+              "tool": "mail.list",
+              "input": {
+                "folder": "inbox",
+                "unread": true,
+                "limit": 20
+              },
+              "listPath": "/more/unread",
+              "itemsKey": "messages",
+              "statusPath": "/moreStatus/unread",
+              "key": "mid",
+              "basePath": "/unreadBox/messages"
+            }
+          }
+        }
+      },
+      "unreadFailed": {
+        "type": "Row",
+        "props": {
+          "gap": "md",
+          "align": "between"
+        },
+        "visible": {
+          "$state": "/moreStatus/unread/error"
+        },
+        "children": [
+          "unreadFailedText",
+          "unreadRetry"
+        ]
+      },
+      "unreadFailedText": {
+        "type": "Text",
+        "props": {
+          "text": {
+            "$state": "/t/loadFailed"
+          },
+          "tone": "muted",
+          "size": "small"
+        }
+      },
+      "unreadRetry": {
+        "type": "Button",
+        "props": {
+          "label": {
+            "$state": "/t/retry"
+          },
+          "variant": "ghost"
+        },
+        "on": {
+          "press": {
+            "action": "loadMore",
+            "params": {
+              "tool": "mail.list",
+              "input": {
+                "folder": "inbox",
+                "unread": true,
+                "limit": 20
+              },
+              "listPath": "/more/unread",
+              "itemsKey": "messages",
+              "statusPath": "/moreStatus/unread",
+              "key": "mid",
+              "basePath": "/unreadBox/messages"
+            }
+          }
+        }
+      },
+      "unreadEmpty": {
+        "type": "Text",
+        "props": {
+          "text": {
+            "$state": "/t/noUnread"
+          },
+          "tone": "muted",
+          "size": "small"
+        },
+        "visible": {
+          "$state": "/unreadBox/messages/0",
+          "not": true
+        }
+      }
+    },
+    "state": {
+      "inbox": null,
+      "unreadBox": null,
+      "form": {
+        "q": "",
+        "tab": "inbox"
+      },
+      "result": null,
+      "error": null
+    }
+  }
+}

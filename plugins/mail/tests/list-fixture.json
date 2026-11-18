@@ -1,0 +1,9 @@
+{
+  "code": "S_OK",
+  "total": 3,
+  "var": [
+    { "id": "AAAA1111", "fid": 1, "subject": "本周学术报告/The upcoming seminar", "from": "\"杨老师\" <teacher@pku.edu.cn>", "to": "\"all\" <list@pku.edu.cn>", "receivedDate": "2026-11-18 09:20:51", "sentDate": "2026-11-18 09:20:40", "summary": "各位老师同学：  本周学术报告信息如下，欢迎参加！", "flags": { "attached": true, "realAttached": true }, "attachments": [{ "id": "3", "filename": "讲座.pdf" }] },
+    { "id": "BBBB2222", "fid": 1, "subject": "", "from": "notice@stu.pku.edu.cn", "to": "2000000001@stu.pku.edu.cn", "receivedDate": "2026-11-17 11:11:00", "summary": "尊敬的用户：", "flags": { "read": true, "system": true } },
+    { "id": "CCCC3333", "fid": 1, "subject": "学籍自查", "from": "教务 <office@pku.edu.cn>", "to": "", "receivedDate": "2025-12-01 08:00:00", "summary": "", "flags": { "read": true, "replied": true } }
+  ]
+}

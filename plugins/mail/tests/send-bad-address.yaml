@@ -1,0 +1,5 @@
+tool: send
+input: { to: 'zhangsan, b@stu.pku.edu.cn', subject: 作业, body: hi }
+now: 2026-11-18 14:30
+responses: []
+expectError: 这些不是有效的邮箱地址：zhangsan

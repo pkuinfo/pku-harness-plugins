@@ -1,0 +1,7 @@
+tool: list
+now: 2026-11-18 14:30
+responses:
+  - match: func=mbox:listMessages
+    campus: mail
+    body: { code: FA_INVALID_PARAMETER }
+expectError: 邮箱服务器拒绝了请求（FA_INVALID_PARAMETER）

@@ -1,0 +1,41 @@
+# mbox:replyMessage { id, toAll } prepares the reply (Re: subject, recipients, quoted original);
+# mbox:compose with that id sends it with the user's text on top. The original gets flags.replied.
+title: 回复邮件
+summary: 回复一封邮件（可回复全部，需你确认内容）
+description: "REPLY to a message (mid from mail__list / mail__search / mail__read) from the user's address, quoting the original below the text. all: true = reply to everyone. Irreversible: only after the user approved the exact text. Returns the recipients it went to."
+effect: write
+input:
+  mid: { type: string, trim: true, min: 4, max: 80 }
+  body: { type: string, min: 1, max: 20000, description: plain text the user approved }
+  all: { type: boolean, default: false, description: reply to all recipients }
+steps:
+  - let: prep
+    request: { campus: mail, url: "${rpc('mbox:replyMessage')}", method: POST, json: { id: "${input.mid}", toAll: "${input.all}", withAttachments: false } }
+    as: response
+  - check: ok(prep)
+    error: "${why(prep)}"
+  - let: p
+    value: obj(json(prep.text).var)
+  - check: "s(p.id) && length(list(p.to)) > 0"
+    error: 邮箱服务器没有准备好回复（找不到这封邮件或收件人）
+  - let: res
+    request:
+      campus: mail
+      url: "${rpc('mbox:compose') + '&l=compose&action=deliver'}"
+      method: POST
+      json:
+        id: "${p.id}"
+        returnInfo: true
+        action: deliver
+        attrs:
+          account: "${s(p.account) || '{account}'}"
+          to: "${list(p.to)}"
+          cc: "${list(p.cc)}"
+          subject: "${s(p.subject)}"
+          content: "${toHtml(input.body) + '<br>' + s(p.content)}"
+          isHtml: true
+          saveSentCopy: true
+    as: response
+  - check: ok(res)
+    error: "回复没有发出去：${why(res)}"
+return: "{ status: 'sent', subject: s(p.subject), to: addrs(p.to).map(a => a.email), cc: addrs(p.cc).map(a => a.email) }"

@@ -1,0 +1,8 @@
+tool: send
+input: { to: '张三 <zhangsan@pku.edu.cn>, b@stu.pku.edu.cn', cc: '', subject: 作业, body: "老师好，\n附上作业。" }
+now: 2026-11-18 14:30
+responses:
+  - match: func=mbox:compose
+    campus: mail
+    body: { code: S_OK, var: { id: c0ffee, subject: 作业 } }
+expect: {"status": "sent", "to": ["zhangsan@pku.edu.cn", "b@stu.pku.edu.cn"], "cc": [], "bcc": [], "subject": "作业"}

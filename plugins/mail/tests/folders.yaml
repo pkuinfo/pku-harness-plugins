@@ -1,0 +1,17 @@
+# mbox:getAllFolders (shape from pkucli docs/stu-mail-api.md; synthetic counts)
+tool: folders
+now: 2026-11-18 14:30
+responses:
+  - match: func=mbox:getAllFolders
+    campus: mail
+    body:
+      code: S_OK
+      var:
+        - { id: 1, name: 收件箱, stats: { messageCount: 1758, unreadMessageCount: 393 } }
+        - { id: 3, name: 已发送, stats: { messageCount: 218, unreadMessageCount: 0 } }
+        - { id: -1, name: 红旗邮件, stats: { messageCount: 0 } }
+        - { id: 2, name: 草稿箱, stats: { messageCount: 1, unreadMessageCount: 0 } }
+        - { id: 5, name: 垃圾邮件, stats: { messageCount: 11, unreadMessageCount: 4 } }
+        - { id: 4, name: 已删除, stats: { messageCount: 0, unreadMessageCount: 0 } }
+        - { id: 102, name: 课程, stats: { messageCount: 12, unreadMessageCount: 2 } }
+expect: {"folders": [{"id": 1, "key": "inbox", "name": "收件箱", "total": 1758, "unread": 393}, {"id": 3, "key": "sent", "name": "已发送", "total": 218, "unread": 0}, {"id": 2, "key": "drafts", "name": "草稿箱", "total": 1, "unread": 0}, {"id": 5, "key": "spam", "name": "垃圾邮件", "total": 11, "unread": 4}, {"id": 4, "key": "trash", "name": "已删除", "total": 0, "unread": 0}, {"id": 102, "key": null, "name": "课程", "total": 12, "unread": 2}], "inboxUnread": 393}

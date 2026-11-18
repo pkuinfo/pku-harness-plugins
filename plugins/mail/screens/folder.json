@@ -1,0 +1,240 @@
+{
+  "title": "邮件",
+  "description": "一个邮件文件夹（f = sent 已发送 / drafts 草稿 / spam 垃圾邮件 / trash 已删除 / inbox），一直往下滑加载更早的。打开方式：/p/mail/folder?f=sent",
+  "feed": true,
+  "bindings": {
+    "/box": {
+      "tool": "list",
+      "args": {
+        "folder": {
+          "$param": "f"
+        },
+        "limit": 20
+      },
+      "ttlMinutes": 2
+    }
+  },
+  "strings": {
+    "zh-Hans": {
+      "searchHint": "搜索邮件",
+      "inbox": "收件箱",
+      "unread": "未读",
+      "sent": "已发送",
+      "drafts": "草稿",
+      "spam": "垃圾邮件",
+      "trash": "已删除",
+      "compose": "写邮件",
+      "noMore": "没有更早的邮件了",
+      "empty": "这里没有邮件",
+      "noUnread": "没有未读邮件",
+      "loadFailed": "加载失败",
+      "retry": "重试",
+      "noResults": "没有找到相关邮件"
+    },
+    "en": {
+      "searchHint": "Search mail",
+      "inbox": "Inbox",
+      "unread": "Unread",
+      "sent": "Sent",
+      "drafts": "Drafts",
+      "spam": "Spam",
+      "trash": "Trash",
+      "compose": "New mail",
+      "noMore": "No older mail",
+      "empty": "No mail here",
+      "noUnread": "No unread mail",
+      "loadFailed": "Couldn’t load more",
+      "retry": "Retry",
+      "noResults": "No mail found"
+    }
+  },
+  "spec": {
+    "root": "root",
+    "elements": {
+      "root": {
+        "type": "Column",
+        "props": {
+          "gap": "md"
+        },
+        "children": [
+          "box"
+        ]
+      },
+      "box": {
+        "type": "Column",
+        "props": {
+          "gap": "sm"
+        },
+        "children": [
+          "boxList",
+          "boxMore",
+          "boxEnd",
+          "boxFailed",
+          "boxEmpty"
+        ]
+      },
+      "mailRow": {
+        "type": "ListItem",
+        "props": {
+          "title": {
+            "$item": "title"
+          },
+          "subtitle": {
+            "$item": "line"
+          },
+          "value": {
+            "$item": "time"
+          },
+          "icon": null
+        },
+        "on": {
+          "press": {
+            "action": "navigate",
+            "params": {
+              "href": {
+                "$template": "/p/mail/message?mid=${mid}"
+              }
+            }
+          }
+        }
+      },
+      "boxList": {
+        "type": "Column",
+        "props": {
+          "gap": "sm"
+        },
+        "repeat": {
+          "statePath": "/box/messages",
+          "key": "mid"
+        },
+        "children": [
+          "mailRow"
+        ]
+      },
+      "boxMore": {
+        "type": "Column",
+        "props": {
+          "gap": "sm"
+        },
+        "repeat": {
+          "statePath": "/more/box",
+          "key": "mid"
+        },
+        "children": [
+          "mailRow"
+        ]
+      },
+      "boxEnd": {
+        "type": "EndReached",
+        "props": {
+          "done": {
+            "$state": "/moreStatus/box/done"
+          },
+          "doneLabel": {
+            "$state": "/t/noMore"
+          }
+        },
+        "visible": [
+          {
+            "$state": "/box/messages/0"
+          },
+          {
+            "$state": "/moreStatus/box/error",
+            "not": true
+          }
+        ],
+        "on": {
+          "reach": {
+            "action": "loadMore",
+            "params": {
+              "tool": "mail.list",
+              "input": {
+                "folder": {
+                  "$state": "/params/f"
+                },
+                "limit": 20
+              },
+              "listPath": "/more/box",
+              "itemsKey": "messages",
+              "statusPath": "/moreStatus/box",
+              "key": "mid",
+              "basePath": "/box/messages"
+            }
+          }
+        }
+      },
+      "boxFailed": {
+        "type": "Row",
+        "props": {
+          "gap": "md",
+          "align": "between"
+        },
+        "visible": {
+          "$state": "/moreStatus/box/error"
+        },
+        "children": [
+          "boxFailedText",
+          "boxRetry"
+        ]
+      },
+      "boxFailedText": {
+        "type": "Text",
+        "props": {
+          "text": {
+            "$state": "/t/loadFailed"
+          },
+          "tone": "muted",
+          "size": "small"
+        }
+      },
+      "boxRetry": {
+        "type": "Button",
+        "props": {
+          "label": {
+            "$state": "/t/retry"
+          },
+          "variant": "ghost"
+        },
+        "on": {
+          "press": {
+            "action": "loadMore",
+            "params": {
+              "tool": "mail.list",
+              "input": {
+                "folder": {
+                  "$state": "/params/f"
+                },
+                "limit": 20
+              },
+              "listPath": "/more/box",
+              "itemsKey": "messages",
+              "statusPath": "/moreStatus/box",
+              "key": "mid",
+              "basePath": "/box/messages"
+            }
+          }
+        }
+      },
+      "boxEmpty": {
+        "type": "Text",
+        "props": {
+          "text": {
+            "$state": "/t/empty"
+          },
+          "tone": "muted",
+          "size": "small"
+        },
+        "visible": {
+          "$state": "/box/messages/0",
+          "not": true
+        }
+      }
+    },
+    "state": {
+      "box": null,
+      "form": {},
+      "result": null,
+      "error": null
+    }
+  }
+}

@@ -1,0 +1,11 @@
+tool: reply
+input: { mid: AAAA1111, body: "收到，谢谢！", all: false }
+now: 2026-11-18 14:30
+responses:
+  - match: func=mbox:replyMessage
+    campus: mail
+    body: { code: S_OK, var: { id: 9fd3, subject: "Re:本周学术报告", to: ["teacher@pku.edu.cn"], account: "2000000001@stu.pku.edu.cn", content: "<div>-----原始邮件-----</div>", isHtml: true } }
+  - match: func=mbox:compose
+    campus: mail
+    body: { code: S_OK, var: { id: 9fd3 } }
+expect: {"status": "sent", "subject": "Re:本周学术报告", "to": ["teacher@pku.edu.cn"], "cc": []}

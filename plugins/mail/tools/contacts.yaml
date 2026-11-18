@@ -1,0 +1,29 @@
+# /cowork/api/biz/person/personContactList: the personal address book (the school directory is
+# not published to students, so this plus people in 已发送 is who you mail).
+title: 联系人
+summary: 邮箱通讯录里的联系人（姓名、邮箱、电话、分组）
+description: "Personal contacts from the mail address book: name, email, phones, group names. query filters by name, email or pinyin (case-insensitive). The university directory is not available to students; for other people look at senders in mail__list / mail__search."
+effect: read
+input:
+  query: { type: string, trim: true, optional: true, max: 60 }
+steps:
+  - let: res
+    request: { campus: mail, url: "/cowork/api/biz/person/personContactList?email={account}&lastUpdateTime=0" }
+    as: response
+  - check: res.status < 400 && num(obj(json(res.text)).code, 0) == 200
+    error: 邮箱通讯录返回了错误（HTTP ${res.status}）
+  - let: all
+    value: |
+      list(obj(json(res.text).data).personContactVOList).map(c => ({
+        name: s(c.qiyeAccountName) || s(c.email),
+        email: s(c.email),
+        phones: list(c.mobileList).map(p => s(typeOf(p) == 'object' ? p.value ?? p.mobile : p)).filter(p => p),
+        groups: list(c.personContactGroupList).map(g => s(obj(g).groupName ?? obj(g).name)).filter(g => g),
+        pinyin: s(c.pinyinName),
+        marked: c.marked == true || c.marked == 1,
+      })).filter(c => c.email)
+  - let: q
+    value: lower(input.query ?? '')
+  - let: contacts
+    value: "q ? all.filter(c => includes(lower(c.name), q) || includes(lower(c.email), q) || includes(lower(c.pinyin), q)) : all"
+return: "{ count: length(contacts), contacts: sortBy(contacts, c => c.marked ? 0 : 1).map(c => omit(c, ['pinyin'])) }"

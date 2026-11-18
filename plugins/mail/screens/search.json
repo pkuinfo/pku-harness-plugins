@@ -1,0 +1,267 @@
+{
+  "title": "搜索：{q}",
+  "description": "邮件搜索结果（发件人、收件人、主题、正文、附件名），一直往下滑加载更多。打开方式：/p/mail/search?q=…",
+  "feed": true,
+  "bindings": {
+    "/res": {
+      "tool": "search",
+      "args": {
+        "query": {
+          "$param": "q"
+        },
+        "limit": 20
+      },
+      "ttlMinutes": 5
+    }
+  },
+  "strings": {
+    "zh-Hans": {
+      "searchHint": "搜索邮件",
+      "inbox": "收件箱",
+      "unread": "未读",
+      "sent": "已发送",
+      "drafts": "草稿",
+      "spam": "垃圾邮件",
+      "trash": "已删除",
+      "compose": "写邮件",
+      "noMore": "没有更早的邮件了",
+      "empty": "这里没有邮件",
+      "noUnread": "没有未读邮件",
+      "loadFailed": "加载失败",
+      "retry": "重试",
+      "noResults": "没有找到相关邮件"
+    },
+    "en": {
+      "searchHint": "Search mail",
+      "inbox": "Inbox",
+      "unread": "Unread",
+      "sent": "Sent",
+      "drafts": "Drafts",
+      "spam": "Spam",
+      "trash": "Trash",
+      "compose": "New mail",
+      "noMore": "No older mail",
+      "empty": "No mail here",
+      "noUnread": "No unread mail",
+      "loadFailed": "Couldn’t load more",
+      "retry": "Retry",
+      "noResults": "No mail found"
+    }
+  },
+  "spec": {
+    "root": "root",
+    "elements": {
+      "root": {
+        "type": "Column",
+        "props": {
+          "gap": "md"
+        },
+        "children": [
+          "search",
+          "res"
+        ]
+      },
+      "search": {
+        "type": "TextField",
+        "props": {
+          "label": null,
+          "placeholder": {
+            "$state": "/t/searchHint"
+          },
+          "value": {
+            "$bindState": "/form/q"
+          },
+          "keyboard": "default",
+          "returnKey": "search"
+        },
+        "on": {
+          "submit": {
+            "action": "navigate",
+            "params": {
+              "href": {
+                "$template": "/p/mail/search?q=${/form/q}"
+              }
+            }
+          }
+        }
+      },
+      "res": {
+        "type": "Column",
+        "props": {
+          "gap": "sm"
+        },
+        "children": [
+          "resList",
+          "resMore",
+          "resEnd",
+          "resFailed",
+          "resEmpty"
+        ]
+      },
+      "mailRow": {
+        "type": "ListItem",
+        "props": {
+          "title": {
+            "$item": "title"
+          },
+          "subtitle": {
+            "$item": "line"
+          },
+          "value": {
+            "$item": "time"
+          },
+          "icon": null
+        },
+        "on": {
+          "press": {
+            "action": "navigate",
+            "params": {
+              "href": {
+                "$template": "/p/mail/message?mid=${mid}"
+              }
+            }
+          }
+        }
+      },
+      "resList": {
+        "type": "Column",
+        "props": {
+          "gap": "sm"
+        },
+        "repeat": {
+          "statePath": "/res/messages",
+          "key": "mid"
+        },
+        "children": [
+          "mailRow"
+        ]
+      },
+      "resMore": {
+        "type": "Column",
+        "props": {
+          "gap": "sm"
+        },
+        "repeat": {
+          "statePath": "/more/res",
+          "key": "mid"
+        },
+        "children": [
+          "mailRow"
+        ]
+      },
+      "resEnd": {
+        "type": "EndReached",
+        "props": {
+          "done": {
+            "$state": "/moreStatus/res/done"
+          },
+          "doneLabel": {
+            "$state": "/t/noMore"
+          }
+        },
+        "visible": [
+          {
+            "$state": "/res/messages/0"
+          },
+          {
+            "$state": "/moreStatus/res/error",
+            "not": true
+          }
+        ],
+        "on": {
+          "reach": {
+            "action": "loadMore",
+            "params": {
+              "tool": "mail.search",
+              "input": {
+                "query": {
+                  "$state": "/params/q"
+                },
+                "limit": 20
+              },
+              "listPath": "/more/res",
+              "itemsKey": "messages",
+              "statusPath": "/moreStatus/res",
+              "key": "mid",
+              "basePath": "/res/messages"
+            }
+          }
+        }
+      },
+      "resFailed": {
+        "type": "Row",
+        "props": {
+          "gap": "md",
+          "align": "between"
+        },
+        "visible": {
+          "$state": "/moreStatus/res/error"
+        },
+        "children": [
+          "resFailedText",
+          "resRetry"
+        ]
+      },
+      "resFailedText": {
+        "type": "Text",
+        "props": {
+          "text": {
+            "$state": "/t/loadFailed"
+          },
+          "tone": "muted",
+          "size": "small"
+        }
+      },
+      "resRetry": {
+        "type": "Button",
+        "props": {
+          "label": {
+            "$state": "/t/retry"
+          },
+          "variant": "ghost"
+        },
+        "on": {
+          "press": {
+            "action": "loadMore",
+            "params": {
+              "tool": "mail.search",
+              "input": {
+                "query": {
+                  "$state": "/params/q"
+                },
+                "limit": 20
+              },
+              "listPath": "/more/res",
+              "itemsKey": "messages",
+              "statusPath": "/moreStatus/res",
+              "key": "mid",
+              "basePath": "/res/messages"
+            }
+          }
+        }
+      },
+      "resEmpty": {
+        "type": "Text",
+        "props": {
+          "text": {
+            "$state": "/t/noResults"
+          },
+          "tone": "muted",
+          "size": "small"
+        },
+        "visible": {
+          "$state": "/res/messages/0",
+          "not": true
+        }
+      }
+    },
+    "state": {
+      "res": null,
+      "form": {
+        "q": ""
+      },
+      "result": null,
+      "error": null
+    }
+  }
+}

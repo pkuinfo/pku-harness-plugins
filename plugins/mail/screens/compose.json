@@ -1,0 +1,253 @@
+{
+  "title": "写邮件",
+  "description": "写一封新邮件：收件人（逗号分开）、抄送、主题、正文，点发送立即发出；下面是通讯录，点一个人填为收件人。打开方式：/p/mail/compose",
+  "bindings": {
+    "/book": {
+      "tool": "contacts",
+      "args": {},
+      "ttlMinutes": 60
+    }
+  },
+  "strings": {
+    "zh-Hans": {
+      "to": "收件人",
+      "toHint": "邮箱地址，多个用逗号分开",
+      "cc": "抄送",
+      "subject": "主题",
+      "body": "正文",
+      "send": "发送",
+      "sent": "已发送",
+      "contacts": "通讯录"
+    },
+    "en": {
+      "to": "To",
+      "toHint": "Email addresses, separated by commas",
+      "cc": "Cc",
+      "subject": "Subject",
+      "body": "Message",
+      "send": "Send",
+      "sent": "Sent",
+      "contacts": "Contacts"
+    }
+  },
+  "spec": {
+    "root": "root",
+    "elements": {
+      "root": {
+        "type": "Column",
+        "props": {
+          "gap": "md"
+        },
+        "children": [
+          "to",
+          "cc",
+          "subject",
+          "body",
+          "sendBtn",
+          "sentText",
+          "error",
+          "contactsTitle",
+          "contactList"
+        ]
+      },
+      "to": {
+        "type": "TextField",
+        "props": {
+          "label": {
+            "$state": "/t/to"
+          },
+          "placeholder": {
+            "$state": "/t/toHint"
+          },
+          "value": {
+            "$bindState": "/form/to"
+          },
+          "keyboard": "email"
+        }
+      },
+      "cc": {
+        "type": "TextField",
+        "props": {
+          "label": {
+            "$state": "/t/cc"
+          },
+          "placeholder": null,
+          "value": {
+            "$bindState": "/form/cc"
+          },
+          "keyboard": "email"
+        }
+      },
+      "subject": {
+        "type": "TextField",
+        "props": {
+          "label": {
+            "$state": "/t/subject"
+          },
+          "placeholder": null,
+          "value": {
+            "$bindState": "/form/subject"
+          },
+          "keyboard": "default"
+        }
+      },
+      "body": {
+        "type": "TextField",
+        "props": {
+          "label": {
+            "$state": "/t/body"
+          },
+          "placeholder": null,
+          "value": {
+            "$bindState": "/form/body"
+          },
+          "keyboard": "default",
+          "multiline": true
+        }
+      },
+      "sendBtn": {
+        "type": "Button",
+        "props": {
+          "label": {
+            "$state": "/t/send"
+          },
+          "variant": "primary"
+        },
+        "visible": [
+          {
+            "$state": "/form/to"
+          },
+          {
+            "$state": "/form/subject"
+          },
+          {
+            "$state": "/form/body"
+          }
+        ],
+        "on": {
+          "press": {
+            "action": "callTool",
+            "params": {
+              "tool": "mail.send",
+              "input": {
+                "to": {
+                  "$state": "/form/to"
+                },
+                "cc": {
+                  "$state": "/form/cc"
+                },
+                "subject": {
+                  "$state": "/form/subject"
+                },
+                "body": {
+                  "$state": "/form/body"
+                }
+              },
+              "resultPath": "/result/send",
+              "errorPath": "/error",
+              "clear": [
+                "/form/to",
+                "/form/cc",
+                "/form/subject",
+                "/form/body"
+              ]
+            }
+          }
+        }
+      },
+      "sentText": {
+        "type": "Text",
+        "props": {
+          "text": {
+            "$state": "/t/sent"
+          },
+          "tone": "up",
+          "size": "small"
+        },
+        "visible": [
+          {
+            "$state": "/result/send/status",
+            "eq": "sent"
+          },
+          {
+            "$state": "/form/body",
+            "not": true
+          }
+        ]
+      },
+      "error": {
+        "type": "Text",
+        "props": {
+          "text": {
+            "$state": "/error"
+          },
+          "tone": "down",
+          "size": "small"
+        },
+        "visible": {
+          "$state": "/error"
+        }
+      },
+      "contactsTitle": {
+        "type": "Heading",
+        "props": {
+          "text": {
+            "$state": "/t/contacts"
+          },
+          "size": "sm"
+        },
+        "visible": {
+          "$state": "/book/contacts/0"
+        }
+      },
+      "contactList": {
+        "type": "Column",
+        "props": {
+          "gap": "sm"
+        },
+        "repeat": {
+          "statePath": "/book/contacts",
+          "key": "email"
+        },
+        "children": [
+          "contact"
+        ]
+      },
+      "contact": {
+        "type": "ListItem",
+        "props": {
+          "title": {
+            "$item": "name"
+          },
+          "subtitle": {
+            "$item": "email"
+          },
+          "value": null,
+          "icon": null
+        },
+        "on": {
+          "press": {
+            "action": "setState",
+            "params": {
+              "statePath": "/form/to",
+              "value": {
+                "$item": "email"
+              }
+            }
+          }
+        }
+      }
+    },
+    "state": {
+      "book": null,
+      "form": {
+        "to": "",
+        "cc": "",
+        "subject": "",
+        "body": ""
+      },
+      "result": null,
+      "error": null
+    }
+  }
+}

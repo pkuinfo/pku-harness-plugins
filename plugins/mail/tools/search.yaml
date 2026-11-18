@@ -1,0 +1,42 @@
+# mbox:searchMessages: full-text search over sender, recipients, subject, body and attachment names.
+title: 搜索邮件
+summary: 按关键词在发件人、收件人、主题、正文和附件名里搜邮件
+description: "Search all mail (or one folder) for words in sender, recipients, subject, body and attachment names, newest first. Same rows as mail__list. Page with start (= nextStart)."
+effect: read
+untrusted: true
+input:
+  query: { type: string, trim: true, min: 1, max: 100 }
+  folder: { type: string, enum: [all, inbox, sent, drafts, trash, spam], default: all }
+  start: { type: integer, min: 0, default: 0 }
+  limit: { type: integer, min: 1, max: 50, default: 20 }
+  page: { type: integer, min: 1, optional: true, description: 'page number (1 = newest); overrides start' }
+steps:
+  - let: from
+    value: "input.page ? (input.page - 1) * input.limit : input.start"
+  - let: res
+    request:
+      campus: mail
+      url: "${rpc('mbox:searchMessages')}"
+      method: POST
+      json:
+        pattern: "${input.query}"
+        fts.ext: true
+        fts.fields: from,to,subj,cont,aname
+        conditions: []
+        operator: and
+        order: date
+        desc: true
+        start: "${from}"
+        windowSize: "${input.limit}"
+        summaryWindowSize: "${input.limit}"
+        returnAttachments: true
+        returnTotal: true
+        fids: "${input.folder == 'all' ? [] : [FOLDERS[input.folder]]}"
+    as: response
+  - check: ok(res)
+    error: "${why(res)}"
+  - let: today
+    value: formatDate(now, 'YYYY-MM-DD')
+  - let: messages
+    value: "list(json(res.text).var).map(m => row(m, today))"
+return: "{ query: input.query, messages, nextStart: length(messages) == input.limit ? from + input.limit : null, note: UNTRUSTED }"

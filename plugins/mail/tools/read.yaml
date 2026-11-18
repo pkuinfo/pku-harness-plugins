@@ -1,0 +1,36 @@
+# mbox:readMessage { id, mode: both, markRead }: the whole message. markRead false keeps it unread.
+title: 读邮件
+summary: 打开一封邮件：发件人、收件人、时间、正文和附件
+description: "The full message for a mid (from mail__list / mail__search): subject, from, fromEmail, to and cc ([{ name, email }]), date, text (the body as plain text), attachments ([{ part, name, size, type }], names only). Reading does not mark it read unless markRead: true (the user opened it)."
+effect: read
+untrusted: true
+input:
+  mid: { type: string, trim: true, min: 4, max: 80, description: message id from mail__list or mail__search }
+  markRead: { type: boolean, default: false }
+steps:
+  - let: res
+    request: { campus: mail, url: "${rpc('mbox:readMessage')}", method: POST, json: { id: "${input.mid}", mode: both, markRead: "${input.markRead}", filterStylesheets: false, supportTNEF: true, autoName: true } }
+    as: response
+  - check: ok(res)
+    error: "${why(res)}"
+  - let: m
+    value: obj(json(res.text).var)
+  - let: text
+    value: "s(obj(m.text).content) ? trim(s(obj(m.text).content)) : bodyText(s(obj(m.html).content))"
+return: |
+  {
+    mid: input.mid,
+    folder: m.fid,
+    subject: s(m.subject) || '（无主题）',
+    from: addr(m.from).name,
+    fromEmail: addr(m.from).email,
+    to: addrs(m.to),
+    cc: addrs(m.cc),
+    date: s(m.sentDate),
+    toLine: addrs(m.to).map(a => a.name == a.email ? a.email : a.name + ' <' + a.email + '>').join('、'),
+    ccLine: addrs(m.cc).map(a => a.name == a.email ? a.email : a.name + ' <' + a.email + '>').join('、'),
+    text: clip(text, 20000),
+    truncated: length(text) > 20000,
+    attachments: list(m.attachments).filter(a => !obj(a).inlined).map(a => ({ part: str(a.id), name: s(a.filename), size: num(a.estimateSize, 0), type: s(a.contentType), sizeText: num(a.estimateSize, 0) >= 1048576 ? round(num(a.estimateSize, 0) / 1048576, 1) + ' MB' : ceil(num(a.estimateSize, 0) / 1024) + ' KB' })),
+    note: UNTRUSTED,
+  }

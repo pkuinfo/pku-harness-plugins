@@ -1,0 +1,48 @@
+# mbox:compose (&l=compose&action=deliver), attrs as the web client sends them.
+title: 发邮件
+summary: 用你的学生邮箱给别人发一封邮件（需你确认收件人和内容）
+description: "SEND an email from the user's @stu.pku.edu.cn address. Irreversible: only after the user saw and approved the exact recipients, subject and text. to/cc/bcc are comma-separated email addresses (look names up with mail__contacts). body is plain text (line breaks kept). A copy goes to 已发送."
+effect: write
+input:
+  to: { type: string, trim: true, min: 3, max: 2000, description: 'recipient email addresses, separated by commas' }
+  cc: { type: string, trim: true, max: 2000, optional: true, description: comma-separated addresses }
+  bcc: { type: string, trim: true, max: 2000, optional: true, description: comma-separated addresses }
+  subject: { type: string, trim: true, min: 1, max: 200 }
+  body: { type: string, min: 1, max: 20000, description: plain text the user approved }
+functions:
+  # "a@x, B <b@y>; c@z" → ["a@x", "b@y", "c@z"]
+  emails: "(t) => split(t ?? '', '[,;，；\\n]', true).map(x => addr(x).email).filter(e => e)"
+steps:
+  - let: to
+    value: emails(input.to)
+  - let: cc
+    value: emails(input.cc)
+  - let: bcc
+    value: emails(input.bcc)
+  - check: "length(to) > 0"
+    error: 没有收件人
+  - let: bad
+    value: "[...to, ...cc, ...bcc].filter(a => !test(a, '^[^@\\s<>]+@[^@\\s<>]+\\.[^@\\s<>]+$'))"
+  - check: "length(bad) == 0"
+    error: "这些不是有效的邮箱地址：${bad.join('、')}"
+  - let: res
+    request:
+      campus: mail
+      url: "${rpc('mbox:compose') + '&l=compose&action=deliver'}"
+      method: POST
+      json:
+        returnInfo: true
+        action: deliver
+        attrs:
+          account: "{account}"
+          to: "${to}"
+          cc: "${cc}"
+          bcc: "${bcc}"
+          subject: "${input.subject}"
+          content: "${toHtml(input.body)}"
+          isHtml: true
+          saveSentCopy: true
+    as: response
+  - check: ok(res)
+    error: "邮件没有发出去：${why(res)}"
+return: "{ status: 'sent', to, cc, bcc, subject: input.subject }"
